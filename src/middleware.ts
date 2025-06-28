@@ -1,6 +1,8 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequestWithAuth } from "next-auth/middleware";
+import createIntlMiddleware from "next-intl/middleware";
+import { locales, defaultLocale } from "./i18n/request";
 
 // Route configuration
 const PUBLIC_ROUTES = [
@@ -30,8 +32,15 @@ const PROTECTED_API_ROUTES = [
 
 const PUBLIC_API_ROUTES = ["/api/auth", "/api/health"];
 
+// Create the intl middleware
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: "as-needed", // Only add locale prefix when not default
+});
+
 /**
- * Enhanced authentication middleware with comprehensive route protection
+ * Enhanced authentication middleware with i18n support and comprehensive route protection
  */
 export default withAuth(
   function middleware(req: NextRequestWithAuth) {
@@ -57,15 +66,25 @@ export default withAuth(
     };
 
     /**
-     * Handle authentication redirects with proper return URLs
+     * Handle authentication redirects with proper return URLs and locale preservation
      */
     const createAuthRedirect = (returnTo?: string) => {
-      const signInUrl = new URL("/sign-in", req.url);
+      // Extract locale from current pathname
+      const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*)?$/);
+      const currentLocale = localeMatch?.[1];
+      const localePrefix =
+        currentLocale && currentLocale !== defaultLocale
+          ? `/${currentLocale}`
+          : "";
+
+      const signInUrl = new URL(`${localePrefix}/sign-in`, req.url);
       if (returnTo && returnTo !== "/" && !returnTo.startsWith("/sign-")) {
         signInUrl.searchParams.set("redirect", returnTo);
       }
       console.info(
-        `[${requestTime}] Redirecting to sign-in with return URL: ${returnTo}`
+        `[${requestTime}] Redirecting to sign-in with return URL: ${returnTo} (locale: ${
+          currentLocale || defaultLocale
+        })`
       );
       return NextResponse.redirect(signInUrl);
     };
@@ -89,7 +108,21 @@ export default withAuth(
       );
     };
 
-    // Handle API routes
+    /**
+     * Get base pathname without locale prefix
+     */
+    const getBasePathname = (path: string) => {
+      const localeMatch = path.match(/^\/([a-z]{2})(\/.*)?$/);
+      if (
+        localeMatch &&
+        locales.includes(localeMatch[1] as (typeof locales)[number])
+      ) {
+        return localeMatch[2] || "/";
+      }
+      return path;
+    };
+
+    // Handle API routes (no i18n for API routes)
     if (pathname.startsWith("/api/")) {
       // Allow public API routes
       if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) {
@@ -134,8 +167,20 @@ export default withAuth(
       }
     }
 
-    // Allow access to public routes
-    if (PUBLIC_ROUTES.includes(pathname)) {
+    // Get the base pathname for route checking
+    const basePath = getBasePathname(pathname);
+
+    // Allow access to public routes (with or without locale)
+    if (PUBLIC_ROUTES.includes(basePath)) {
+      // Apply i18n middleware for public routes
+      const intlResponse = intlMiddleware(req);
+      if (intlResponse) {
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          intlResponse.headers.set(key, value);
+        });
+        return intlResponse;
+      }
+
       const response = NextResponse.next();
       Object.entries(securityHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
@@ -143,8 +188,16 @@ export default withAuth(
       return response;
     }
 
-    // Allow access to auth pages when not authenticated
-    if (!token && pathname.startsWith("/auth")) {
+    // Allow access to auth pages when not authenticated (with i18n)
+    if (!token && basePath.startsWith("/auth")) {
+      const intlResponse = intlMiddleware(req);
+      if (intlResponse) {
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          intlResponse.headers.set(key, value);
+        });
+        return intlResponse;
+      }
+
       const response = NextResponse.next();
       Object.entries(securityHeaders).forEach(([key, value]) => {
         response.headers.set(key, value);
@@ -155,7 +208,7 @@ export default withAuth(
     // Redirect unauthenticated users from protected routes
     if (
       !token &&
-      PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
+      PROTECTED_ROUTES.some((route) => basePath.startsWith(route))
     ) {
       return createAuthRedirect(pathname);
     }
@@ -179,7 +232,11 @@ export default withAuth(
         console.info(
           `[${requestTime}] Token refresh needed in ${timeToExpiry}s for session: ${token.sessionId}`
         );
-        const response = NextResponse.next();
+
+        // Apply i18n middleware for authenticated routes
+        const intlResponse = intlMiddleware(req);
+        const response = intlResponse || NextResponse.next();
+
         response.headers.set("x-token-refresh-needed", "true");
         response.headers.set("x-token-expires-in", timeToExpiry.toString());
         Object.entries(securityHeaders).forEach(([key, value]) => {
@@ -189,8 +246,10 @@ export default withAuth(
       }
     }
 
-    // Default response with security headers
-    const response = NextResponse.next();
+    // Apply i18n middleware for all other routes
+    const intlResponse = intlMiddleware(req);
+    const response = intlResponse || NextResponse.next();
+
     Object.entries(securityHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
@@ -210,11 +269,12 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
+        const basePath = getBasePathname(pathname);
 
         // Always allow public routes and auth routes
         if (
-          PUBLIC_ROUTES.includes(pathname) ||
-          pathname.startsWith("/auth/") ||
+          PUBLIC_ROUTES.includes(basePath) ||
+          basePath.startsWith("/auth/") ||
           PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
         ) {
           return true;
@@ -222,7 +282,7 @@ export default withAuth(
 
         // Always require authentication for protected routes and APIs
         if (
-          PROTECTED_ROUTES.some((route) => pathname.startsWith(route)) ||
+          PROTECTED_ROUTES.some((route) => basePath.startsWith(route)) ||
           PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))
         ) {
           return !!token;
@@ -234,6 +294,21 @@ export default withAuth(
     },
   }
 );
+
+// Helper function used in authorized callback
+function getBasePathname(path: string) {
+  const supportedLocales = ["en", "pl", "es"] as const; // Duplicated for use in authorized callback
+  const localeMatch = path.match(/^\/([a-z]{2})(\/.*)?$/);
+  if (
+    localeMatch &&
+    supportedLocales.includes(
+      localeMatch[1] as (typeof supportedLocales)[number]
+    )
+  ) {
+    return localeMatch[2] || "/";
+  }
+  return path;
+}
 
 export const config = {
   matcher: [

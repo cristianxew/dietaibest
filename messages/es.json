@@ -1,0 +1,173 @@
+{
+    "common": {
+        "loading": "Cargando...",
+        "retry": "Reintentar",
+        "tryAgain": "Intentar de nuevo",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "save": "Guardar",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "close": "Cerrar",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "previous": "Anterior",
+        "continue": "Continuar",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "firstName": "Nombre",
+        "lastName": "Apellido"
+    },
+    "auth": {
+        "signIn": "Iniciar sesión",
+        "signUp": "Registrarse",
+        "signOut": "Cerrar sesión",
+        "signInTitle": "Bienvenido de nuevo",
+        "signInDescription": "Inicia sesión en tu cuenta para acceder a tus planes de comidas personalizados y seguimiento nutricional.",
+        "signUpTitle": "Crea tu cuenta",
+        "signUpDescription": "Únete a Dietaibest para obtener planes de comidas personalizados y seguir tu viaje nutricional.",
+        "emailAndPassword": "Correo y contraseña",
+        "magicLink": "Enlace mágico",
+        "continueWithGoogle": "Continuar con Google",
+        "orContinueWith": "O continuar con",
+        "orSignUpWithEmail": "O registrarse con correo",
+        "sendMagicLink": "Enviar enlace mágico",
+        "signingIn": "Iniciando sesión...",
+        "sending": "Enviando...",
+        "creatingAccount": "Creando cuenta...",
+        "createAccount": "Crear cuenta",
+        "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+        "signInHere": "Inicia sesión aquí",
+        "dontHaveAccount": "¿No tienes una cuenta?",
+        "signUpHere": "Regístrate aquí",
+        "magicLinkSent": "¡Enlace mágico enviado! Revisa tu correo para completar el inicio de sesión.",
+        "magicLinkDescription": "Te enviaremos un enlace seguro para iniciar sesión sin contraseña.",
+        "checkYourEmail": "Revisa tu correo",
+        "magicLinkSentTo": "Hemos enviado un enlace mágico a",
+        "magicLinkInstructions": "Haz clic en el enlace de tu correo para iniciar sesión. El enlace expirará en 1 hora.",
+        "whatToExpected": "Qué esperar:",
+        "checkInboxAndSpam": "• Revisa tu bandeja de entrada (y carpeta de spam)",
+        "clickMagicLink": "• Haz clic en el enlace mágico para iniciar sesión automáticamente",
+        "redirectBack": "• Serás redirigido de vuelta a Dietaibest",
+        "linkOnceOnly": "• El enlace solo puede usarse una vez",
+        "sendAnotherLink": "Enviar otro enlace",
+        "didntReceiveEmail": "¿No recibiste el correo? Revisa tu carpeta de spam o intenta enviar otro enlace.",
+        "confirmPassword": "Confirmar contraseña",
+        "acceptTerms": "Acepto los",
+        "termsOfService": "Términos de servicio",
+        "and": "y",
+        "privacyPolicy": "Política de privacidad",
+        "marketingEmails": "Me gustaría recibir correos de marketing sobre nuevas funciones y actualizaciones",
+        "passwordRequirements": "La contraseña debe contener al menos 8 caracteres con mayúsculas, minúsculas y números.",
+        "bySigningIn": "Al iniciar sesión, aceptas nuestros",
+        "registrationSuccessful": "¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.",
+        "accountCreatedSignedIn": "¡Cuenta creada e iniciada sesión exitosamente!",
+        "accountCreatedFailedSignIn": "Cuenta creada pero falló el inicio de sesión. Intenta iniciar sesión manualmente.",
+        "successfullySignedIn": "¡Sesión iniciada exitosamente!",
+        "redirectingToGoogle": "Redirigiendo a Google...",
+        "authenticationRequired": "Autenticación requerida",
+        "needToSignIn": "Necesitas iniciar sesión para acceder a esta página.",
+        "signInToContinue": "Inicia sesión para continuar accediendo a este contenido protegido.",
+        "goToHome": "Ir al inicio"
+    },
+    "authCallback": {
+        "processing": "Procesando tu autenticación...",
+        "verifying": "Verificando tu autenticación...",
+        "creatingSession": "Creando tu sesión...",
+        "welcomeBack": "Bienvenido de nuevo",
+        "authenticationSuccessful": "¡Autenticación exitosa! Redirigiendo a tu panel...",
+        "linkExpired": "Enlace expirado",
+        "authenticationFailed": "Falló la autenticación",
+        "magicLinkAccessDenied": "El acceso al enlace mágico fue denegado o cancelado.",
+        "magicLinkExpired": "El enlace mágico ha expirado o es inválido.",
+        "sessionExpired": "Tu sesión ha expirado. Solicita un nuevo enlace mágico.",
+        "invalidMagicLink": "El enlace mágico es inválido o ya ha sido usado.",
+        "authenticationFailedTryAgain": "Falló la autenticación. Inténtalo de nuevo.",
+        "failedToCreateSession": "No se pudo crear tu sesión. Intenta iniciar sesión de nuevo.",
+        "noActiveSession": "No se encontró sesión activa. Tu enlace mágico puede haber expirado.",
+        "unexpectedError": "Ocurrió un error inesperado durante la autenticación.",
+        "requestNewMagicLink": "Solicitar nuevo enlace mágico",
+        "retryingAuthentication": "Reintentando autenticación..."
+    },
+    "validation": {
+        "required": "Este campo es requerido",
+        "invalidEmail": "Ingresa una dirección de correo válida",
+        "passwordMinLength": "La contraseña debe tener al menos {min} caracteres",
+        "passwordRequirements": "La contraseña debe contener al menos una letra mayúscula, una minúscula y un número",
+        "passwordsDontMatch": "Las contraseñas no coinciden",
+        "firstNameMinLength": "El nombre debe tener al menos 2 caracteres",
+        "lastNameMinLength": "El apellido debe tener al menos 2 caracteres",
+        "mustAcceptTerms": "Debes aceptar los términos y condiciones"
+    },
+    "errors": {
+        "generic": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+        "networkError": "Error de red. Verifica tu conexión e inténtalo de nuevo.",
+        "authError": "Error de autenticación. Inténtalo de nuevo.",
+        "magicLinkError": "No se pudo enviar el enlace mágico. Inténtalo de nuevo.",
+        "googleSignInError": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
+        "googleSignUpError": "No se pudo registrar con Google. Inténtalo de nuevo."
+    },
+    "navigation": {
+        "dashboard": "Panel",
+        "recipes": "Recetas",
+        "mealPlans": "Planes de comidas",
+        "shopping": "Compras",
+        "settings": "Configuración",
+        "profile": "Perfil"
+    },
+    "dashboard": {
+        "welcome": "¡Bienvenido a Dietaibest!",
+        "subtitle": "Tu compañero de planificación de comidas impulsado por IA. Comienza a planificar tu viaje saludable hoy.",
+        "quickActions": {
+            "createMealPlan": "Crear Plan de Comidas",
+            "browseRecipes": "Explorar Recetas",
+            "shoppingList": "Lista de Compras",
+            "profile": "Perfil",
+            "newPlan": "Nuevo Plan",
+            "explore": "Explorar",
+            "viewList": "Ver Lista",
+            "settings": "Configuración"
+        },
+        "recentActivity": {
+            "title": "Actividad Reciente",
+            "description": "Tus últimas actividades de planificación de comidas",
+            "welcome": "¡Bienvenido a Dietaibest!",
+            "getStarted": "Comienza creando tu primer plan de comidas o explorando nuestra colección de recetas."
+        },
+        "quickStats": {
+            "title": "Estadísticas Rápidas",
+            "description": "Resumen de tu nutrición",
+            "mealPlans": "Planes de Comidas",
+            "savedRecipes": "Recetas Guardadas",
+            "shoppingLists": "Listas de Compras"
+        },
+        "gettingStarted": {
+            "title": "Primeros Pasos",
+            "description": "Así es como aprovechar al máximo Dietaibest",
+            "step1": {
+                "title": "1. Configura Tu Perfil",
+                "description": "Cuéntanos sobre tus preferencias dietéticas y objetivos de salud."
+            },
+            "step2": {
+                "title": "2. Explora Recetas",
+                "description": "Descubre deliciosas recetas adaptadas a tus preferencias."
+            },
+            "step3": {
+                "title": "3. Planifica Tus Comidas",
+                "description": "Crea planes semanales de comidas con asistencia de IA."
+            }
+        }
+    },
+    "meta": {
+        "title": "Dietaibest - Planificación de comidas con IA",
+        "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
+    },
+    "placeholders": {
+        "enterEmail": "Ingresa tu correo",
+        "enterPassword": "Ingresa tu contraseña",
+        "createPassword": "Crea una contraseña",
+        "confirmPassword": "Confirma tu contraseña",
+        "enterFirstName": "Ingresa tu nombre",
+        "enterLastName": "Ingresa tu apellido"
+    }
+}

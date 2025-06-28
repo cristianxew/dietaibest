@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { SignUpForm } from "@/components/forms/SignUpForm";
 import {
   Card,
@@ -15,6 +16,7 @@ import {
 export default function SignUpPage() {
   const { status } = useSession();
   const router = useRouter();
+  const t = useTranslations();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -41,11 +43,8 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Create your account</CardTitle>
-          <CardDescription>
-            Join Dietaibest to get personalized meal plans and track your
-            nutrition journey.
-          </CardDescription>
+          <CardTitle className="text-2xl">{t("auth.signUpTitle")}</CardTitle>
+          <CardDescription>{t("auth.signUpDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <SignUpForm callbackUrl="/dashboard" />

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { SignInForm } from "@/components/forms/SignInForm";
 import {
@@ -16,6 +17,7 @@ import {
 export default function SignInPage() {
   const { status } = useSession();
   const router = useRouter();
+  const t = useTranslations();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -42,30 +44,27 @@ export default function SignInPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to your account to access your personalized meal plans and
-            nutrition tracking.
-          </CardDescription>
+          <CardTitle className="text-2xl">{t("auth.signInTitle")}</CardTitle>
+          <CardDescription>{t("auth.signInDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <SignInForm callbackUrl="/dashboard" />
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t("auth.dontHaveAccount")}{" "}
             <Link href="/sign-up" className="text-primary hover:underline">
-              Sign up here
+              {t("auth.signUpHere")}
             </Link>
           </div>
 
           <div className="mt-4 text-center text-xs text-muted-foreground">
-            By signing in, you agree to our{" "}
+            {t("auth.bySigningIn")}{" "}
             <Link href="/terms" className="text-primary hover:underline">
-              Terms of Service
+              {t("auth.termsOfService")}
             </Link>{" "}
-            and{" "}
+            {t("auth.and")}{" "}
             <Link href="/privacy" className="text-primary hover:underline">
-              Privacy Policy
+              {t("auth.privacyPolicy")}
             </Link>
           </div>
         </CardContent>

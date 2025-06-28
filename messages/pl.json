@@ -1,0 +1,173 @@
+{
+    "common": {
+        "loading": "Ładowanie...",
+        "retry": "Ponów",
+        "tryAgain": "Spróbuj ponownie",
+        "cancel": "Anuluj",
+        "confirm": "Potwierdź",
+        "save": "Zapisz",
+        "edit": "Edytuj",
+        "delete": "Usuń",
+        "close": "Zamknij",
+        "back": "Wstecz",
+        "next": "Dalej",
+        "previous": "Poprzedni",
+        "continue": "Kontynuuj",
+        "email": "E-mail",
+        "password": "Hasło",
+        "firstName": "Imię",
+        "lastName": "Nazwisko"
+    },
+    "auth": {
+        "signIn": "Zaloguj się",
+        "signUp": "Zarejestruj się",
+        "signOut": "Wyloguj się",
+        "signInTitle": "Witamy z powrotem",
+        "signInDescription": "Zaloguj się do swojego konta, aby uzyskać dostęp do spersonalizowanych planów posiłków i śledzenia odżywiania.",
+        "signUpTitle": "Utwórz swoje konto",
+        "signUpDescription": "Dołącz do Dietaibest, aby otrzymywać spersonalizowane plany posiłków i śledzić swoją podróż żywieniową.",
+        "emailAndPassword": "E-mail i hasło",
+        "magicLink": "Magiczny link",
+        "continueWithGoogle": "Kontynuuj z Google",
+        "orContinueWith": "Lub kontynuuj z",
+        "orSignUpWithEmail": "Lub zarejestruj się e-mailem",
+        "sendMagicLink": "Wyślij magiczny link",
+        "signingIn": "Logowanie...",
+        "sending": "Wysyłanie...",
+        "creatingAccount": "Tworzenie konta...",
+        "createAccount": "Utwórz konto",
+        "alreadyHaveAccount": "Masz już konto?",
+        "signInHere": "Zaloguj się tutaj",
+        "dontHaveAccount": "Nie masz konta?",
+        "signUpHere": "Zarejestruj się tutaj",
+        "magicLinkSent": "Magiczny link został wysłany! Sprawdź swoją skrzynkę e-mail, aby zakończyć logowanie.",
+        "magicLinkDescription": "Wyślemy Ci bezpieczny link do logowania bez hasła.",
+        "checkYourEmail": "Sprawdź swoją skrzynkę e-mail",
+        "magicLinkSentTo": "Wysłaliśmy magiczny link na adres",
+        "magicLinkInstructions": "Kliknij link w swojej skrzynce e-mail, aby się zalogować. Link wygaśnie za 1 godzinę.",
+        "whatToExpect": "Czego się spodziewać:",
+        "checkInboxAndSpam": "• Sprawdź swoją skrzynkę odbiorczą (i folder spam)",
+        "clickMagicLink": "• Kliknij magiczny link, aby zalogować się automatycznie",
+        "redirectBack": "• Zostaniesz przekierowany z powrotem do Dietaibest",
+        "linkOnceOnly": "• Link może być użyty tylko raz",
+        "sendAnotherLink": "Wyślij kolejny link",
+        "didntReceiveEmail": "Nie otrzymałeś e-maila? Sprawdź folder spam lub spróbuj wysłać kolejny link.",
+        "confirmPassword": "Potwierdź hasło",
+        "acceptTerms": "Akceptuję",
+        "termsOfService": "Warunki korzystania z usługi",
+        "and": "i",
+        "privacyPolicy": "Politykę prywatności",
+        "marketingEmails": "Chciałbym otrzymywać e-maile marketingowe o nowych funkcjach i aktualizacjach",
+        "passwordRequirements": "Hasło musi zawierać co najmniej 8 znaków z wielkimi i małymi literami oraz cyframi.",
+        "bySigningIn": "Logując się, zgadzasz się na nasze",
+        "registrationSuccessful": "Rejestracja zakończona pomyślnie! Sprawdź swoją skrzynkę e-mail, aby potwierdzić swoje konto.",
+        "accountCreatedSignedIn": "Konto zostało utworzone i zalogowane pomyślnie!",
+        "accountCreatedFailedSignIn": "Konto zostało utworzone, ale logowanie nie powiodło się. Spróbuj zalogować się ręcznie.",
+        "successfullySignedIn": "Pomyślnie zalogowano!",
+        "redirectingToGoogle": "Przekierowywanie do Google...",
+        "authenticationRequired": "Wymagane uwierzytelnienie",
+        "needToSignIn": "Musisz się zalogować, aby uzyskać dostęp do tej strony.",
+        "signInToContinue": "Zaloguj się, aby kontynuować dostęp do tej chronionej treści.",
+        "goToHome": "Przejdź do strony głównej"
+    },
+    "authCallback": {
+        "processing": "Przetwarzanie uwierzytelnienia...",
+        "verifying": "Weryfikacja uwierzytelnienia...",
+        "creatingSession": "Tworzenie sesji...",
+        "welcomeBack": "Witamy z powrotem",
+        "authenticationSuccessful": "Uwierzytelnienie zakończone pomyślnie! Przekierowywanie do panelu...",
+        "linkExpired": "Link wygasł",
+        "authenticationFailed": "Uwierzytelnienie nie powiodło się",
+        "magicLinkAccessDenied": "Dostęp do magicznego linku został odrzucony lub anulowany.",
+        "magicLinkExpired": "Magiczny link wygasł lub jest nieprawidłowy.",
+        "sessionExpired": "Twoja sesja wygasła. Poproś o nowy magiczny link.",
+        "invalidMagicLink": "Magiczny link jest nieprawidłowy lub został już użyty.",
+        "authenticationFailedTryAgain": "Uwierzytelnienie nie powiodło się. Spróbuj ponownie.",
+        "failedToCreateSession": "Nie udało się utworzyć sesji. Spróbuj zalogować się ponownie.",
+        "noActiveSession": "Nie znaleziono aktywnej sesji. Twój magiczny link mógł wygasnąć.",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd podczas uwierzytelniania.",
+        "requestNewMagicLink": "Poproś o nowy magiczny link",
+        "retryingAuthentication": "Ponowna próba uwierzytelnienia..."
+    },
+    "validation": {
+        "required": "To pole jest wymagane",
+        "invalidEmail": "Wprowadź prawidłowy adres e-mail",
+        "passwordMinLength": "Hasło musi mieć co najmniej {min} znaków",
+        "passwordRequirements": "Hasło musi zawierać co najmniej jedną wielką literę, jedną małą literę i jedną cyfrę",
+        "passwordsDontMatch": "Hasła nie pasują do siebie",
+        "firstNameMinLength": "Imię musi mieć co najmniej 2 znaki",
+        "lastNameMinLength": "Nazwisko musi mieć co najmniej 2 znaki",
+        "mustAcceptTerms": "Musisz zaakceptować warunki i zasady"
+    },
+    "errors": {
+        "generic": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+        "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
+        "authError": "Błąd uwierzytelnienia. Spróbuj ponownie.",
+        "magicLinkError": "Nie udało się wysłać magicznego linku. Spróbuj ponownie.",
+        "googleSignInError": "Nie udało się zalogować przez Google. Spróbuj ponownie.",
+        "googleSignUpError": "Nie udało się zarejestrować przez Google. Spróbuj ponownie."
+    },
+    "navigation": {
+        "dashboard": "Panel",
+        "recipes": "Przepisy",
+        "mealPlans": "Plany posiłków",
+        "shopping": "Zakupy",
+        "settings": "Ustawienia",
+        "profile": "Profil"
+    },
+    "dashboard": {
+        "welcome": "Witamy w Dietaibest!",
+        "subtitle": "Twój asystent planowania posiłków oparty na AI. Zacznij planować swoją zdrową podróż już dziś.",
+        "quickActions": {
+            "createMealPlan": "Utwórz Plan Posiłków",
+            "browseRecipes": "Przeglądaj Przepisy",
+            "shoppingList": "Lista Zakupów",
+            "profile": "Profil",
+            "newPlan": "Nowy Plan",
+            "explore": "Eksploruj",
+            "viewList": "Zobacz Listę",
+            "settings": "Ustawienia"
+        },
+        "recentActivity": {
+            "title": "Ostatnia Aktywność",
+            "description": "Twoje najnowsze działania związane z planowaniem posiłków",
+            "welcome": "Witamy w Dietaibest!",
+            "getStarted": "Zacznij od utworzenia swojego pierwszego planu posiłków lub przeglądania naszej kolekcji przepisów."
+        },
+        "quickStats": {
+            "title": "Szybkie Statystyki",
+            "description": "Przegląd Twojego odżywiania",
+            "mealPlans": "Plany Posiłków",
+            "savedRecipes": "Zapisane Przepisy",
+            "shoppingLists": "Listy Zakupów"
+        },
+        "gettingStarted": {
+            "title": "Pierwsze Kroki",
+            "description": "Oto jak najlepiej wykorzystać Dietaibest",
+            "step1": {
+                "title": "1. Skonfiguruj Swój Profil",
+                "description": "Opowiedz nam o swoich preferencjach żywieniowych i celach zdrowotnych."
+            },
+            "step2": {
+                "title": "2. Eksploruj Przepisy",
+                "description": "Odkryj pyszne przepisy dostosowane do Twoich preferencji."
+            },
+            "step3": {
+                "title": "3. Planuj Swoje Posiłki",
+                "description": "Twórz tygodniowe plany posiłków z pomocą AI."
+            }
+        }
+    },
+    "meta": {
+        "title": "Dietaibest - Planowanie posiłków z AI",
+        "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
+    },
+    "placeholders": {
+        "enterEmail": "Wprowadź swój e-mail",
+        "enterPassword": "Wprowadź swoje hasło",
+        "createPassword": "Utwórz hasło",
+        "confirmPassword": "Potwierdź swoje hasło",
+        "enterFirstName": "Wprowadź swoje imię",
+        "enterLastName": "Wprowadź swoje nazwisko"
+    }
+}

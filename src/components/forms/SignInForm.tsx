@@ -8,6 +8,7 @@ import { signIn } from "next-auth/react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,18 +23,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-// Validation schemas
-const emailPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
+// Validation schemas using translations
+const createEmailPasswordSchema = (
+  t: (key: string, params?: Record<string, number>) => string
+) =>
+  z.object({
+    email: z.string().email(t("validation.invalidEmail")),
+    password: z.string().min(6, t("validation.passwordMinLength", { min: 6 })),
+  });
 
-const magicLinkSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-});
-
-type EmailPasswordFormData = z.infer<typeof emailPasswordSchema>;
-type MagicLinkFormData = z.infer<typeof magicLinkSchema>;
+const createMagicLinkSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z.string().email(t("validation.invalidEmail")),
+  });
 
 interface SignInFormProps {
   callbackUrl?: string;
@@ -47,6 +49,14 @@ export function SignInForm({
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("email");
+  const t = useTranslations();
+
+  // Create schemas with translations
+  const emailPasswordSchema = createEmailPasswordSchema(t);
+  const magicLinkSchema = createMagicLinkSchema(t);
+
+  type EmailPasswordFormData = z.infer<typeof emailPasswordSchema>;
+  type MagicLinkFormData = z.infer<typeof magicLinkSchema>;
 
   // Email/Password form
   const emailPasswordForm = useForm<EmailPasswordFormData>({
@@ -93,17 +103,17 @@ export function SignInForm({
         });
 
         if (result?.error) {
-          toast.error("Failed to create session. Please try again.");
+          toast.error(t("errors.authError"));
           return;
         }
 
-        toast.success("Successfully signed in!");
+        toast.success(t("auth.successfullySignedIn"));
         onSuccess?.();
         router.push(callbackUrl);
       }
     } catch (error) {
       console.error("Sign-in error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(t("errors.generic"));
     } finally {
       setIsLoading(false);
     }
@@ -130,11 +140,11 @@ export function SignInForm({
         return;
       }
 
-      toast.success("Magic link sent! Check your email to complete sign-in.");
+      toast.success(t("auth.magicLinkSent"));
       magicLinkForm.reset();
     } catch (error) {
       console.error("Magic link error:", error);
-      toast.error("Failed to send magic link. Please try again.");
+      toast.error(t("errors.magicLinkError"));
     } finally {
       setIsLoading(false);
     }
@@ -153,17 +163,17 @@ export function SignInForm({
       });
 
       if (result?.error) {
-        toast.error("Failed to sign in with Google. Please try again.");
+        toast.error(t("errors.googleSignInError"));
         return;
       }
 
       if (result?.url) {
-        toast.success("Redirecting to Google...");
+        toast.success(t("auth.redirectingToGoogle"));
         router.push(result.url);
       }
     } catch (error) {
       console.error("Google sign-in error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      toast.error(t("errors.generic"));
     } finally {
       setIsLoading(false);
     }
@@ -173,8 +183,8 @@ export function SignInForm({
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="email">Email & Password</TabsTrigger>
-          <TabsTrigger value="magic">Magic Link</TabsTrigger>
+          <TabsTrigger value="email">{t("auth.emailAndPassword")}</TabsTrigger>
+          <TabsTrigger value="magic">{t("auth.magicLink")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="email" className="space-y-4">
@@ -190,12 +200,12 @@ export function SignInForm({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("common.email")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t("placeholders.enterEmail")}
                         autoComplete="email"
                         disabled={isLoading}
                       />
@@ -210,12 +220,12 @@ export function SignInForm({
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("common.password")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t("placeholders.enterPassword")}
                         autoComplete="current-password"
                         disabled={isLoading}
                       />
@@ -226,7 +236,7 @@ export function SignInForm({
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
             </form>
           </Form>
@@ -243,12 +253,12 @@ export function SignInForm({
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t("common.email")}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t("placeholders.enterEmail")}
                         autoComplete="email"
                         disabled={isLoading}
                       />
@@ -259,13 +269,13 @@ export function SignInForm({
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send Magic Link"}
+                {isLoading ? t("auth.sending") : t("auth.sendMagicLink")}
               </Button>
             </form>
           </Form>
 
           <div className="text-sm text-muted-foreground">
-            We&apos;ll send you a secure link to sign in without a password.
+            {t("auth.magicLinkDescription")}
           </div>
         </TabsContent>
       </Tabs>
@@ -276,7 +286,7 @@ export function SignInForm({
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            {t("auth.orContinueWith")}
           </span>
         </div>
       </div>
@@ -305,7 +315,7 @@ export function SignInForm({
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        Continue with Google
+        {t("auth.continueWithGoogle")}
       </Button>
     </div>
   );

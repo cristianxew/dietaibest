@@ -285,7 +285,7 @@ export async function GET(req: NextRequest) {
  * Cleanup function to remove old rate limit entries
  * Should be called periodically in production
  */
-export function cleanupRateLimitMap() {
+function cleanupRateLimitMap() {
   const now = Date.now();
   for (const [key, value] of rateLimitMap.entries()) {
     if (now > value.resetTime) {

@@ -1,0 +1,173 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "retry": "Retry",
+        "tryAgain": "Try Again",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "save": "Save",
+        "edit": "Edit",
+        "delete": "Delete",
+        "close": "Close",
+        "back": "Back",
+        "next": "Next",
+        "previous": "Previous",
+        "continue": "Continue",
+        "email": "Email",
+        "password": "Password",
+        "firstName": "First Name",
+        "lastName": "Last Name"
+    },
+    "auth": {
+        "signIn": "Sign In",
+        "signUp": "Sign Up",
+        "signOut": "Sign Out",
+        "signInTitle": "Welcome back",
+        "signInDescription": "Sign in to your account to access your personalized meal plans and nutrition tracking.",
+        "signUpTitle": "Create your account",
+        "signUpDescription": "Join Dietaibest to get personalized meal plans and track your nutrition journey.",
+        "emailAndPassword": "Email & Password",
+        "magicLink": "Magic Link",
+        "continueWithGoogle": "Continue with Google",
+        "orContinueWith": "Or continue with",
+        "orSignUpWithEmail": "Or sign up with email",
+        "sendMagicLink": "Send Magic Link",
+        "signingIn": "Signing in...",
+        "sending": "Sending...",
+        "creatingAccount": "Creating account...",
+        "createAccount": "Create Account",
+        "alreadyHaveAccount": "Already have an account?",
+        "signInHere": "Sign in here",
+        "dontHaveAccount": "Don't have an account?",
+        "signUpHere": "Sign up here",
+        "magicLinkSent": "Magic link sent! Check your email to complete sign-in.",
+        "magicLinkDescription": "We'll send you a secure link to sign in without a password.",
+        "checkYourEmail": "Check your email",
+        "magicLinkSentTo": "We've sent a magic link to",
+        "magicLinkInstructions": "Click the link in your email to sign in. The link will expire in 1 hour.",
+        "whatToExpect": "What to expect:",
+        "checkInboxAndSpam": "• Check your email inbox (and spam folder)",
+        "clickMagicLink": "• Click the magic link to sign in automatically",
+        "redirectBack": "• You'll be redirected back to Dietaibest",
+        "linkOnceOnly": "• The link can only be used once",
+        "sendAnotherLink": "Send another link",
+        "didntReceiveEmail": "Didn't receive the email? Check your spam folder or try sending another link.",
+        "confirmPassword": "Confirm Password",
+        "acceptTerms": "I accept the",
+        "termsOfService": "Terms of Service",
+        "and": "and",
+        "privacyPolicy": "Privacy Policy",
+        "marketingEmails": "I would like to receive marketing emails about new features and updates",
+        "passwordRequirements": "Password must contain at least 8 characters with uppercase, lowercase, and numbers.",
+        "bySigningIn": "By signing in, you agree to our",
+        "registrationSuccessful": "Registration successful! Please check your email to confirm your account.",
+        "accountCreatedSignedIn": "Account created and signed in successfully!",
+        "accountCreatedFailedSignIn": "Account created but failed to sign in. Please try signing in manually.",
+        "successfullySignedIn": "Successfully signed in!",
+        "redirectingToGoogle": "Redirecting to Google...",
+        "authenticationRequired": "Authentication Required",
+        "needToSignIn": "You need to sign in to access this page.",
+        "signInToContinue": "Please sign in to continue accessing this protected content.",
+        "goToHome": "Go to Home"
+    },
+    "authCallback": {
+        "processing": "Processing your authentication...",
+        "verifying": "Verifying your authentication...",
+        "creatingSession": "Creating your session...",
+        "welcomeBack": "Welcome back",
+        "authenticationSuccessful": "Authentication successful! Redirecting to your dashboard...",
+        "linkExpired": "Link Expired",
+        "authenticationFailed": "Authentication Failed",
+        "magicLinkAccessDenied": "Magic link access was denied or cancelled.",
+        "magicLinkExpired": "The magic link has expired or is invalid.",
+        "sessionExpired": "Your session has expired. Please request a new magic link.",
+        "invalidMagicLink": "The magic link is invalid or has already been used.",
+        "authenticationFailedTryAgain": "Authentication failed. Please try again.",
+        "failedToCreateSession": "Failed to create your session. Please try signing in again.",
+        "noActiveSession": "No active session found. Your magic link may have expired.",
+        "unexpectedError": "An unexpected error occurred during authentication.",
+        "requestNewMagicLink": "Request New Magic Link",
+        "retryingAuthentication": "Retrying authentication..."
+    },
+    "validation": {
+        "required": "This field is required",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordMinLength": "Password must be at least {min} characters",
+        "passwordRequirements": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+        "passwordsDontMatch": "Passwords don't match",
+        "firstNameMinLength": "First name must be at least 2 characters",
+        "lastNameMinLength": "Last name must be at least 2 characters",
+        "mustAcceptTerms": "You must accept the terms and conditions"
+    },
+    "errors": {
+        "generic": "An unexpected error occurred. Please try again.",
+        "networkError": "Network error. Please check your connection and try again.",
+        "authError": "Authentication error. Please try again.",
+        "magicLinkError": "Failed to send magic link. Please try again.",
+        "googleSignInError": "Failed to sign in with Google. Please try again.",
+        "googleSignUpError": "Failed to sign up with Google. Please try again."
+    },
+    "navigation": {
+        "dashboard": "Dashboard",
+        "recipes": "Recipes",
+        "mealPlans": "Meal Plans",
+        "shopping": "Shopping",
+        "settings": "Settings",
+        "profile": "Profile"
+    },
+    "dashboard": {
+        "welcome": "Welcome to Dietaibest!",
+        "subtitle": "Your AI-powered meal planning companion. Start planning your healthy journey today.",
+        "quickActions": {
+            "createMealPlan": "Create Meal Plan",
+            "browseRecipes": "Browse Recipes",
+            "shoppingList": "Shopping List",
+            "profile": "Profile",
+            "newPlan": "New Plan",
+            "explore": "Explore",
+            "viewList": "View List",
+            "settings": "Settings"
+        },
+        "recentActivity": {
+            "title": "Recent Activity",
+            "description": "Your latest meal planning activities",
+            "welcome": "Welcome to Dietaibest!",
+            "getStarted": "Start by creating your first meal plan or browsing our recipe collection."
+        },
+        "quickStats": {
+            "title": "Quick Stats",
+            "description": "Your nutrition overview",
+            "mealPlans": "Meal Plans",
+            "savedRecipes": "Saved Recipes",
+            "shoppingLists": "Shopping Lists"
+        },
+        "gettingStarted": {
+            "title": "Getting Started",
+            "description": "Here's how to make the most of Dietaibest",
+            "step1": {
+                "title": "1. Set Up Your Profile",
+                "description": "Tell us about your dietary preferences and health goals."
+            },
+            "step2": {
+                "title": "2. Explore Recipes",
+                "description": "Discover delicious recipes tailored to your preferences."
+            },
+            "step3": {
+                "title": "3. Plan Your Meals",
+                "description": "Create weekly meal plans with AI assistance."
+            }
+        }
+    },
+    "meta": {
+        "title": "Dietaibest - AI-Powered Meal Planning",
+        "description": "Personalized meal planning and nutrition tracking with AI assistance"
+    },
+    "placeholders": {
+        "enterEmail": "Enter your email",
+        "enterPassword": "Enter your password",
+        "createPassword": "Create a password",
+        "confirmPassword": "Confirm your password",
+        "enterFirstName": "Enter your first name",
+        "enterLastName": "Enter your last name"
+    }
+}
