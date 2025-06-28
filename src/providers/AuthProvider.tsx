@@ -25,7 +25,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  signOut: () => Promise<void>;
+  signOut: (redirectTo?: string) => Promise<void>;
   refreshSession: () => Promise<boolean>;
   clearError: () => void;
 }
@@ -85,19 +85,53 @@ function AuthContextProvider({ children }: AuthProviderProps) {
   }, [status, error]);
 
   /**
-   * Sign out the user and clear all auth state
+   * Enhanced sign out with comprehensive session cleanup
    */
-  const signOut = async (): Promise<void> => {
+  const signOut = async (redirectTo?: string): Promise<void> => {
     try {
       setError(null);
+
+      // Import Supabase client for cleanup
+      const { supabase } = await import("@/lib/supabase");
       const { signOut: nextAuthSignOut } = await import("next-auth/react");
-      await nextAuthSignOut({ callbackUrl: "/" });
+
+      // Sign out from Supabase to clear server-side sessions
+      const { error: supabaseError } = await supabase.auth.signOut();
+      if (
+        supabaseError &&
+        !supabaseError.message.includes("session_not_found")
+      ) {
+        console.warn("Supabase sign out warning:", supabaseError);
+      }
+
+      // Clear browser storage
+      try {
+        localStorage.removeItem("supabase.auth.token");
+        localStorage.removeItem("sb-auth-token");
+        sessionStorage.clear();
+      } catch (storageError) {
+        console.warn("Storage cleanup warning:", storageError);
+      }
+
+      // Sign out from NextAuth (clears httpOnly cookies)
+      await nextAuthSignOut({
+        callbackUrl: redirectTo || "/",
+        redirect: true,
+      });
+
       toast.success("Signed out successfully");
     } catch (err) {
+      console.error("Sign out error:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Sign out failed";
       setError(errorMessage);
-      toast.error(errorMessage);
+
+      // Even if sign out fails, try to redirect to clear state
+      try {
+        window.location.href = redirectTo || "/";
+      } catch {
+        toast.error("Please refresh the page to complete sign out");
+      }
     }
   };
 

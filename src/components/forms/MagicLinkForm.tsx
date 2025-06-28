@@ -102,6 +102,18 @@ export function MagicLinkForm({
             Click the link in your email to sign in. The link will expire in 1
             hour.
           </p>
+
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+            <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+              What to expect:
+            </h4>
+            <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <li>• Check your email inbox (and spam folder)</li>
+              <li>• Click the magic link to sign in automatically</li>
+              <li>• You&apos;ll be redirected back to Dietaibest</li>
+              <li>• The link can only be used once</li>
+            </ul>
+          </div>
         </div>
 
         <div className="space-y-4">

@@ -1,70 +1,235 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequestWithAuth } from "next-auth/middleware";
 
-// Middleware to protect routes with JWT validation
+// Route configuration
+const PUBLIC_ROUTES = [
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/auth/callback",
+  "/auth/error",
+];
+
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/profile",
+  "/settings",
+  "/meal-plans",
+  "/recipes",
+  "/shopping-lists",
+];
+
+const PROTECTED_API_ROUTES = [
+  "/api/user",
+  "/api/meals",
+  "/api/recipes",
+  "/api/shopping-lists",
+  "/api/profiles",
+];
+
+const PUBLIC_API_ROUTES = ["/api/auth", "/api/health"];
+
+/**
+ * Enhanced authentication middleware with comprehensive route protection
+ */
 export default withAuth(
-  function middleware(req) {
+  function middleware(req: NextRequestWithAuth) {
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
+    const method = req.method;
+    const userAgent = req.headers.get("user-agent") || "";
+    const requestTime = new Date().toISOString();
+
+    // Enhanced logging for monitoring
+    console.info(
+      `[${requestTime}] ${method} ${pathname} - Token: ${
+        !!token ? "Valid" : "None"
+      } - UA: ${userAgent.slice(0, 50)}`
+    );
+
+    // Security headers for all responses
+    const securityHeaders = {
+      "X-Frame-Options": "DENY",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "X-XSS-Protection": "1; mode=block",
+    };
+
+    /**
+     * Handle authentication redirects with proper return URLs
+     */
+    const createAuthRedirect = (returnTo?: string) => {
+      const signInUrl = new URL("/sign-in", req.url);
+      if (returnTo && returnTo !== "/" && !returnTo.startsWith("/sign-")) {
+        signInUrl.searchParams.set("redirect", returnTo);
+      }
+      console.info(
+        `[${requestTime}] Redirecting to sign-in with return URL: ${returnTo}`
+      );
+      return NextResponse.redirect(signInUrl);
+    };
+
+    /**
+     * Create API error response
+     */
+    const createApiError = (status: number, message: string) => {
+      console.warn(
+        `[${requestTime}] API Error ${status}: ${message} for ${pathname}`
+      );
+      return new NextResponse(
+        JSON.stringify({ error: message, timestamp: requestTime }),
+        {
+          status,
+          headers: {
+            "Content-Type": "application/json",
+            ...securityHeaders,
+          },
+        }
+      );
+    };
+
+    // Handle API routes
+    if (pathname.startsWith("/api/")) {
+      // Allow public API routes
+      if (PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))) {
+        const response = NextResponse.next();
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        return response;
+      }
+
+      // Protect private API routes
+      if (PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))) {
+        if (!token) {
+          return createApiError(401, "Authentication required");
+        }
+
+        // Check token expiry for API routes
+        if (token?.exp && typeof token.exp === "number") {
+          const now = Math.floor(Date.now() / 1000);
+          if (now > token.exp) {
+            return createApiError(401, "Token has expired");
+          }
+        }
+
+        // Validate session ID for API calls
+        if (!token?.sessionId) {
+          return createApiError(401, "Invalid session");
+        }
+
+        const response = NextResponse.next();
+        response.headers.set("x-user-id", token.sub || "");
+        response.headers.set("x-session-id", token.sessionId as string);
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
+        return response;
+      }
+
+      // Default API protection - require auth for unknown API routes
+      if (!token) {
+        return createApiError(401, "Authentication required");
+      }
+    }
+
+    // Allow access to public routes
+    if (PUBLIC_ROUTES.includes(pathname)) {
+      const response = NextResponse.next();
+      Object.entries(securityHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
 
     // Allow access to auth pages when not authenticated
+    if (!token && pathname.startsWith("/auth")) {
+      const response = NextResponse.next();
+      Object.entries(securityHeaders).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
+      return response;
+    }
+
+    // Redirect unauthenticated users from protected routes
     if (
       !token &&
-      (pathname.startsWith("/sign-in") ||
-        pathname.startsWith("/sign-up") ||
-        pathname.startsWith("/auth"))
+      PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
     ) {
-      return NextResponse.next();
+      return createAuthRedirect(pathname);
     }
 
-    // Redirect to sign-in if accessing protected routes without token
-    if (!token && pathname.startsWith("/dashboard")) {
-      return NextResponse.redirect(new URL("/sign-in", req.url));
-    }
-
-    // Check token expiry and redirect to refresh if needed
+    // Token validation for authenticated requests
     if (token?.exp && typeof token.exp === "number") {
       const now = Math.floor(Date.now() / 1000);
       const tokenExp = token.exp;
+      const timeToExpiry = tokenExp - now;
 
       // If token has expired, redirect to sign-in
       if (now > tokenExp) {
-        return NextResponse.redirect(new URL("/sign-in", req.url));
+        console.warn(
+          `[${requestTime}] Expired token access attempt for session: ${token.sessionId}`
+        );
+        return createAuthRedirect(pathname);
       }
 
-      // If token is about to expire (within 5 minutes), allow but flag for refresh
-      if (now > tokenExp - 300) {
+      // If token is about to expire (within 5 minutes), flag for refresh
+      if (timeToExpiry < 300) {
+        console.info(
+          `[${requestTime}] Token refresh needed in ${timeToExpiry}s for session: ${token.sessionId}`
+        );
         const response = NextResponse.next();
         response.headers.set("x-token-refresh-needed", "true");
+        response.headers.set("x-token-expires-in", timeToExpiry.toString());
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
         return response;
       }
     }
 
-    return NextResponse.next();
+    // Default response with security headers
+    const response = NextResponse.next();
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    // Add user context headers for authenticated requests
+    if (token) {
+      response.headers.set("x-user-authenticated", "true");
+      response.headers.set("x-user-id", token.sub || "");
+      if (token.sessionId) {
+        response.headers.set("x-session-id", token.sessionId as string);
+      }
+    }
+
+    return response;
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
         const pathname = req.nextUrl.pathname;
 
-        // Allow public routes
+        // Always allow public routes and auth routes
         if (
-          pathname === "/" ||
-          pathname.startsWith("/api/auth") ||
-          pathname.startsWith("/sign-")
+          PUBLIC_ROUTES.includes(pathname) ||
+          pathname.startsWith("/auth/") ||
+          PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
         ) {
           return true;
         }
 
-        // Require authentication for protected routes
+        // Always require authentication for protected routes and APIs
         if (
-          pathname.startsWith("/dashboard") ||
-          (pathname.startsWith("/api/") && !pathname.startsWith("/api/auth"))
+          PROTECTED_ROUTES.some((route) => pathname.startsWith(route)) ||
+          PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))
         ) {
           return !!token;
         }
 
-        return true;
+        // Default to requiring authentication for unknown routes
+        return !!token;
       },
     },
   }
