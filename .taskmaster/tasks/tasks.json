@@ -26,56 +26,126 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Set Up Supabase and Next.js Environment",
-            "description": "Initialize a new Supabase project and Next.js app, configure environment variables, and install required packages for authentication.",
+            "title": "Configure Supabase Auth Project",
+            "description": "Set up a new Supabase project, enable authentication providers, and configure environment variables for integration.",
             "dependencies": [],
-            "details": "Create a Supabase project, set up a Next.js app, and install @supabase/supabase-js and next-auth. Populate .env.local with Supabase URL and Anon Key.",
+            "details": "Create a Supabase project, enable desired auth methods (email, magic link, social), and obtain Project URL and Anon Key for use in the app.",
             "status": "pending",
-            "testStrategy": "Verify that the Next.js app runs locally and can connect to the Supabase project."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Configure Supabase Client and Next-Auth Providers",
-            "description": "Create Supabase client utilities and configure next-auth with Supabase and Google OAuth providers.",
+            "title": "Integrate Supabase Auth Client in Next.js",
+            "description": "Install Supabase client libraries and initialize them in the Next.js project for frontend and backend usage.",
             "dependencies": [
               1
             ],
-            "details": "Implement Supabase client utilities for both client and server components. Set up next-auth in the API route, add Supabase and Google OAuth providers, and configure credentials in the Supabase dashboard.",
+            "details": "Install Supabase packages, set up utility functions for client/server, and ensure environment variables are loaded securely.",
             "status": "pending",
-            "testStrategy": "Test that authentication endpoints are available and Google OAuth sign-in flow initiates correctly."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Implement JWT Handling with httpOnly Cookies",
-            "description": "Set up JWT storage and management using httpOnly cookies for secure session handling.",
+            "title": "Implement next-auth Configuration",
+            "description": "Set up next-auth in the Next.js project, configure providers (including Supabase and Google), and define callbacks.",
             "dependencies": [
               2
             ],
-            "details": "Configure next-auth to store JWTs in httpOnly cookies, ensuring tokens are inaccessible to client-side JavaScript and are sent with each request.",
+            "details": "Install next-auth, configure providers in [...nextauth].js, and set up session and JWT callbacks for token management.",
             "status": "pending",
-            "testStrategy": "Inspect cookies in the browser to confirm JWTs are httpOnly and verify authentication persists across page reloads."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Develop Silent JWT Refresh Mechanism",
-            "description": "Create an endpoint and logic to silently refresh JWTs before expiration to maintain user sessions.",
+            "title": "Integrate Google OAuth Provider",
+            "description": "Register the app with Google, obtain OAuth credentials, and configure Google as a provider in next-auth and/or Supabase.",
             "dependencies": [
               3
             ],
-            "details": "Implement an /auth/refresh API route that issues new JWTs using refresh tokens, and integrate silent refresh logic in the authentication context provider.",
+            "details": "Set up Google OAuth credentials, add Google provider to next-auth and/or Supabase, and test login flow.",
             "status": "pending",
-            "testStrategy": "Simulate token expiration and verify that the silent refresh mechanism renews tokens without user intervention."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Integrate Authentication Context and Route Protection",
-            "description": "Build an authentication context provider, sign-in/sign-up forms, and middleware/components to protect routes and manage authentication state.",
+            "title": "Implement JWT Handling and Storage",
+            "description": "Configure JWT issuance, secure storage, and validation for both client and server, ensuring proper claims and expiry.",
             "dependencies": [
-              4
+              3
             ],
-            "details": "Create AuthContext for global auth state, implement sign-in/sign-up forms with email validation and magic link flow, add authentication middleware, and build AuthGuard components for protected routes.",
+            "details": "Ensure JWTs are securely stored (e.g., HTTP-only cookies), validate tokens on backend, and handle token parsing and renewal.",
             "status": "pending",
-            "testStrategy": "Test sign-in, sign-up, magic link, and access to protected routes as both authenticated and unauthenticated users."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Silent Token Refresh",
+            "description": "Set up silent refresh logic to renew JWTs before expiry without user interaction, using refresh tokens or session endpoints.",
+            "dependencies": [
+              5
+            ],
+            "details": "Implement client-side logic to detect token expiry and call refresh endpoint, update tokens in storage, and handle errors.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Authentication Context Provider",
+            "description": "Develop a React context provider to manage authentication state, user info, and expose auth actions to the app.",
+            "dependencies": [],
+            "details": "Implement context with hooks for login, logout, and user state, and ensure it updates on token changes or refresh.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Build Authentication Forms (Login, Signup, Magic Link)",
+            "description": "Design and implement UI forms for login, signup, and magic link flows, integrating with Supabase and next-auth APIs.",
+            "dependencies": [],
+            "details": "Create accessible forms, handle input validation, connect to backend actions, and display error/success messages.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Magic Link Authentication Flow",
+            "description": "Enable magic link authentication in Supabase, configure email templates, and handle confirmation routes in the app.",
+            "dependencies": [],
+            "details": "Set up magic link provider, customize email templates, and implement frontend logic for handling magic link callbacks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Develop Refresh Token Endpoint",
+            "description": "Create a secure backend endpoint to handle refresh token requests and issue new JWTs as needed.",
+            "dependencies": [],
+            "details": "Implement endpoint with proper validation, rate limiting, and security checks to prevent abuse.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Implement Authentication Middleware",
+            "description": "Add middleware to protect API routes and pages, verifying JWTs and enforcing authentication requirements.",
+            "dependencies": [
+              5
+            ],
+            "details": "Develop middleware for Next.js API routes and pages, check token validity, and redirect or error on failure.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Implement Sign-Out and AuthGuard Logic",
+            "description": "Provide sign-out functionality and AuthGuard components to protect routes, ensuring proper cleanup and redirection.",
+            "dependencies": [
+              7,
+              11
+            ],
+            "details": "Implement sign-out logic to clear tokens and session, create AuthGuard components/HOCs to restrict access to authenticated users.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -165,57 +235,145 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Design Multi-Step Onboarding Flow",
-            "description": "Map out and design the sequential steps of the onboarding wizard, including user demographics, dietary goals, preferences, and family member management, ensuring a logical and user-friendly progression.",
+            "title": "Design Form Step Structure",
+            "description": "Define and structure each step of the onboarding wizard, outlining the sequence and content for each form step.",
             "dependencies": [],
-            "details": "Define the structure and order of each onboarding step, referencing best practices for wizard UI patterns to ensure clarity and engagement.",
+            "details": "Identify all required steps (e.g., user info, preferences, macro calculator, family members) and create a logical flow.",
             "status": "pending",
-            "testStrategy": "Review the flow with stakeholders and conduct usability walkthroughs to confirm logical progression and completeness."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Form Components with State Management",
-            "description": "Develop reusable form components for each onboarding step, integrating state management to persist user input across steps.",
+            "title": "Implement Form Step Components",
+            "description": "Develop UI components for each form step based on the defined structure.",
             "dependencies": [
               1
             ],
-            "details": "Utilize a state management solution to handle form data, navigation, and progress tracking throughout the wizard.",
+            "details": "Create reusable components for each step, ensuring consistency and modularity.",
             "status": "pending",
-            "testStrategy": "Unit test form components for correct rendering and state updates; verify state persistence through navigation."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Integrate Validation and Macro Calculator Utility",
-            "description": "Apply Zod schema validation to all form inputs and connect the macro calculator utility to compute nutritional targets based on user data.",
+            "title": "Add Input Validation Logic",
+            "description": "Implement validation rules for each form step to ensure data integrity.",
             "dependencies": [
               2
             ],
-            "details": "Ensure all user inputs are validated in real-time and that macro calculations are triggered and displayed as users provide relevant information.",
+            "details": "Define synchronous and asynchronous validation for all user inputs, including edge cases.",
             "status": "pending",
-            "testStrategy": "Write validation tests for each schema; test macro calculator outputs with various input scenarios."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Develop Family Member Management Functionality",
-            "description": "Build components to add, edit, and remove family members within the onboarding wizard, ensuring seamless integration with the overall form state.",
+            "title": "Develop Macro Calculator Functionality",
+            "description": "Build the macro calculator logic and UI for users to calculate nutritional needs.",
             "dependencies": [
               2
             ],
-            "details": "Allow users to manage multiple family members, with each member's data incorporated into the onboarding process and macro calculations as needed.",
+            "details": "Integrate formulas and user input handling for macro calculations within the wizard.",
             "status": "pending",
-            "testStrategy": "Test add/edit/remove operations for family members and verify correct state updates and data persistence."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Implement Completion Handling and Dashboard Redirect",
-            "description": "Create logic to store the completed user profile in Supabase and redirect users to the dashboard upon successful onboarding completion.",
+            "title": "Implement Family Member Management",
+            "description": "Enable users to add, edit, or remove family members during onboarding.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create dynamic forms and logic to manage multiple family members' data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Integrate API Calls",
+            "description": "Connect the onboarding wizard to backend APIs for data submission and retrieval.",
             "dependencies": [
               3,
-              4
+              4,
+              5
             ],
-            "details": "Ensure all collected data is securely stored and users are seamlessly transitioned to the main application experience.",
+            "details": "Handle API requests for user data, macro calculations, and family member management.",
             "status": "pending",
-            "testStrategy": "Integration test the completion handler for data storage and verify redirect behavior after onboarding."
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Implement Progress Tracking",
+            "description": "Add a progress indicator to visually show users their current step and remaining steps.",
+            "dependencies": [
+              2
+            ],
+            "details": "Display a progress bar or stepper that updates as users advance through the wizard.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Add State Persistence",
+            "description": "Ensure user input and progress are saved locally or remotely to prevent data loss.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement mechanisms to persist state across sessions and page reloads.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Implement Navigation Controls",
+            "description": "Add navigation logic for moving between steps, including next, previous, and skip actions.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Ensure navigation respects validation and state, and allows users to revisit previous steps.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Develop Completion Logic",
+            "description": "Define and implement logic for successful onboarding completion and final submission.",
+            "dependencies": [
+              6,
+              9
+            ],
+            "details": "Show a confirmation message and handle post-onboarding transitions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Ensure Responsive Design",
+            "description": "Adapt the onboarding wizard UI for various screen sizes and devices.",
+            "dependencies": [
+              2
+            ],
+            "details": "Use responsive layouts and test on multiple devices for optimal usability.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Conduct End-to-End Testing",
+            "description": "Test the entire onboarding wizard for usability, validation, API integration, and responsiveness.",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
+            "details": "Perform manual and automated tests to ensure a seamless onboarding experience.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -234,56 +392,134 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Design and Implement Recipe Database Schema",
-            "description": "Create a normalized database schema for recipes in Supabase, including tables for recipes, categories, tags, ingredients, and user favorites. Ensure support for CRUD operations and relationships.",
+            "title": "Design Recipe Schema",
+            "description": "Define the overall schema structure for the recipe module including fields, relationships, and data organization.",
             "dependencies": [],
-            "details": "Use Supabase's visual schema designer or SQL migrations to define tables and relationships. Include fields for recipe metadata, categorization, and user associations. Plan for future extensibility.",
+            "details": "Identify key entities such as Recipe, Ingredient, Category, User, and their relationships to form the base schema.",
             "status": "pending",
-            "testStrategy": "Verify schema correctness by creating, reading, updating, and deleting sample records. Check referential integrity and relationship constraints."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Develop Recipe Data Types and Validation Schemas",
-            "description": "Define TypeScript data types and Zod validation schemas for recipes, categories, tags, and user favorites to ensure type safety and data integrity.",
+            "title": "Define Data Types for Schema Fields",
+            "description": "Specify appropriate data types for each field in the recipe schema to ensure data integrity and efficient storage.",
             "dependencies": [
               1
             ],
-            "details": "Map database schema fields to TypeScript interfaces. Implement Zod schemas for validating recipe forms and API payloads, covering all required and optional fields.",
+            "details": "Assign data types like string, number, date, boolean, arrays, and nested objects to schema fields based on their nature.",
             "status": "pending",
-            "testStrategy": "Write unit tests for Zod schemas to confirm correct validation of valid and invalid data."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Build Recipe Card and List Components",
-            "description": "Create reusable UI components for displaying recipe cards with macro chips, and implement a list view with filtering, sorting, and pagination.",
+            "title": "Implement Validation Rules",
+            "description": "Create validation logic for recipe data inputs to enforce correctness and completeness before storage or processing.",
             "dependencies": [
               2
             ],
-            "details": "Design responsive recipe card components showing key info and macro chips. Implement a recipe list view supporting category/tag filters, sorting, and pagination controls.",
+            "details": "Include required fields, format checks, range limits, and custom validations for complex fields like ingredients and instructions.",
             "status": "pending",
-            "testStrategy": "Perform UI tests to ensure correct rendering, filtering, sorting, and pagination. Validate accessibility and responsiveness."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement Recipe Detail and Editing Interfaces",
-            "description": "Develop detailed recipe view components showing ingredients, instructions, and nutritional info, and create forms for manual entry and editing with validation.",
+            "title": "Develop Recipe Card Component",
+            "description": "Build a UI component to display recipe summary information in a card format for lists and previews.",
             "dependencies": [
-              3
+              1
             ],
-            "details": "Build a detail view displaying all recipe data. Implement a form for creating and editing recipes, integrating Zod validation and supporting image uploads if needed.",
+            "details": "Include recipe title, image, brief description, rating, and key metadata in a visually appealing card layout.",
             "status": "pending",
-            "testStrategy": "Test form validation, submission, and error handling. Verify detail view displays all fields accurately."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Add Categorization, Tagging, Favorites, and Tabbed Navigation",
-            "description": "Implement recipe categorization, tagging, and user favorites functionality with optimistic UI updates. Create a tabbed interface for In-house, My Recipes, and Favorites.",
+            "title": "Develop Recipe List Component",
+            "description": "Create a component to render a list of recipe cards with support for dynamic data loading.",
             "dependencies": [
               4
             ],
-            "details": "Enable users to categorize and tag recipes, mark favorites, and switch between recipe sources using tabs. Ensure UI updates optimistically and syncs with backend.",
+            "details": "Support pagination, filtering, and sorting integration to display multiple recipes efficiently.",
             "status": "pending",
-            "testStrategy": "Test categorization, tagging, and favorites interactions for correctness and UI responsiveness. Validate tab navigation and state persistence."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Develop Recipe Detail Component",
+            "description": "Build a detailed view component showing full recipe information including ingredients, steps, and user comments.",
+            "dependencies": [
+              1
+            ],
+            "details": "Ensure clear layout for instructions, nutritional info, and related recipes or categories.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Recipe Forms for CRUD Operations",
+            "description": "Design and implement forms for creating, updating, and deleting recipes with validation and user feedback.",
+            "dependencies": [
+              3
+            ],
+            "details": "Include fields for all recipe attributes, support image uploads, and handle form submission and error states.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Recipe Categorization",
+            "description": "Add functionality to categorize recipes by type, cuisine, difficulty, or other relevant tags.",
+            "dependencies": [
+              1
+            ],
+            "details": "Enable assigning multiple categories per recipe and filtering recipes by category.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Add Favorites Feature",
+            "description": "Allow users to mark recipes as favorites and manage their favorite recipes list.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement UI indicators for favorites and backend support for storing user preferences.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Filtering and Sorting",
+            "description": "Enable filtering recipes by categories, ingredients, difficulty, and sorting by popularity, date, or rating.",
+            "dependencies": [
+              5,
+              8
+            ],
+            "details": "Integrate filtering and sorting controls with the recipe list component for dynamic updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Add Pagination Support",
+            "description": "Implement pagination in the recipe list to handle large datasets efficiently.",
+            "dependencies": [
+              5
+            ],
+            "details": "Support page navigation controls and backend query adjustments for paged data retrieval.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Implement Recipe Search Functionality",
+            "description": "Create a search feature to find recipes by keywords in titles, ingredients, or descriptions.",
+            "dependencies": [
+              5
+            ],
+            "details": "Support real-time search suggestions and integration with filtering and sorting.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -303,58 +539,138 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Develop Unified Recipe Import Interface",
-            "description": "Create a single interface that allows users to import recipes via URL, image upload, or PDF upload, with clear input validation and user guidance.",
+            "title": "Design Unified Import Interface",
+            "description": "Create a unified frontend interface that allows users to select and submit documents via URL, image upload, or PDF upload.",
             "dependencies": [],
-            "details": "The interface should support all input methods, provide feedback on supported formats, and validate URLs and file sizes (PDF ≤10MB).",
+            "details": "Ensure the interface is intuitive and supports all input methods with clear instructions.",
             "status": "pending",
-            "testStrategy": "Test with valid and invalid URLs, images, and PDFs to ensure correct validation and user feedback."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Backend Extraction Services",
-            "description": "Build backend endpoints for recipe extraction: web scraping for URLs, OCR for images and PDFs, and parsing for ingredient/instruction extraction.",
+            "title": "Implement URL Input Method",
+            "description": "Develop the frontend and backend logic to accept document URLs and validate their accessibility.",
             "dependencies": [
               1
             ],
-            "details": "Integrate Tesseract or EasyOCR for OCR processing, and ensure robust scraping/parsing logic for various recipe formats and languages.",
+            "details": "Support common document formats and handle invalid or unreachable URLs gracefully.",
             "status": "pending",
-            "testStrategy": "Use a suite of sample URLs, images, and PDFs to verify accurate extraction and error handling for unsupported formats."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Design Extraction Status and Progress Indicators",
-            "description": "Provide real-time feedback to users on the status of their import, including loading states, progress bars, and OCR processing indicators.",
+            "title": "Implement Image Input Method",
+            "description": "Enable users to upload image files (JPG, PNG, etc.) for extraction.",
             "dependencies": [
-              1,
-              2
+              1
             ],
-            "details": "Display clear progress and status updates for each import method, and handle transitions between states (e.g., uploading, processing, completed, failed).",
+            "details": "Include file size/type validation and preview functionality.",
             "status": "pending",
-            "testStrategy": "Simulate slow and failed imports to verify correct status updates and user notifications."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Build Editable Ingredient and Instruction Components",
-            "description": "Create UI components that display extracted ingredients and instructions, allowing users to edit, add, or remove items before saving.",
+            "title": "Implement PDF Input Method",
+            "description": "Allow users to upload PDF documents for extraction.",
             "dependencies": [
-              2
+              1
             ],
-            "details": "Ensure extracted data is presented in an editable format, with validation for required fields and support for manual corrections.",
+            "details": "Support multi-page PDFs and validate file integrity.",
             "status": "pending",
-            "testStrategy": "Test editing, adding, and removing items in the ingredient/instruction lists, and validate data integrity before submission."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Implement Robust Error Handling and Retry Mechanisms",
-            "description": "Handle errors for unsupported sites, failed extractions, and invalid data, providing clear notifications and options to retry imports.",
+            "title": "Backend Extraction Pipeline",
+            "description": "Develop backend services to process input documents using OCR, scraping, or PDF parsing as appropriate.",
             "dependencies": [
               2,
-              3
+              3,
+              4
             ],
-            "details": "Show success/error toast notifications, allow users to retry failed imports, and ensure all error states are gracefully managed.",
+            "details": "Integrate with third-party extraction APIs or custom models for structured data extraction.",
             "status": "pending",
-            "testStrategy": "Force various error scenarios (e.g., unsupported site, OCR failure, network error) and verify user is notified and can retry."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Extraction Status and Progress UI",
+            "description": "Build a frontend component to display real-time extraction status and progress to users.",
+            "dependencies": [
+              5
+            ],
+            "details": "Show progress bars, estimated time, and handle asynchronous updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Editable Extraction Results UI",
+            "description": "Create an interface for users to review and edit extracted data before finalizing.",
+            "dependencies": [],
+            "details": "Allow inline editing, field validation, and highlight low-confidence extractions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Error and Retry Handling",
+            "description": "Implement robust error detection, user-friendly error messages, and retry mechanisms for failed extractions.",
+            "dependencies": [
+              5
+            ],
+            "details": "Cover network issues, extraction failures, and unsupported formats.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Extraction Result Validation",
+            "description": "Validate extracted data for completeness, accuracy, and required fields before allowing submission.",
+            "dependencies": [],
+            "details": "Use confidence scores and business rules to flag questionable data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Notification System",
+            "description": "Develop a notification system to inform users of extraction completion, errors, or required actions.",
+            "dependencies": [
+              6,
+              8
+            ],
+            "details": "Support in-app notifications and optional email alerts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Integrate All Input Methods into Unified Workflow",
+            "description": "Ensure all input methods (URL, image, PDF) flow through the same backend and UI processes for consistency.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10
+            ],
+            "details": "Test end-to-end flows for each input type and resolve integration issues.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Comprehensive Testing and QA",
+            "description": "Perform thorough testing of all modules, including edge cases, error handling, and user experience.",
+            "dependencies": [],
+            "details": "Include unit, integration, and user acceptance testing for all supported document types and flows.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -443,56 +759,129 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Design and Implement Responsive Weekly Calendar Grid",
-            "description": "Create a visually appealing, responsive calendar grid that displays days of the week and meal slots for each day, ensuring usability across mobile, tablet, and desktop devices.",
+            "title": "Design Calendar Grid Layout",
+            "description": "Create the foundational grid structure for the calendar interface, ensuring clarity and ease of navigation for users.",
             "dependencies": [],
-            "details": "The grid should adapt to different screen sizes and orientations, providing a clear overview of the weekly meal plan. Use modern UI/UX principles and reference popular meal planner designs for inspiration.",
+            "details": "Focus on intuitive layout, clear navigation, and support for different calendar views (day, week, month).",
             "status": "pending",
-            "testStrategy": "Test on multiple devices and screen sizes to ensure layout consistency and usability."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Develop Drag-and-Drop Meal Slot Functionality",
-            "description": "Implement drag-and-drop interactions for meal slots using Framer Motion with spring physics, allowing users to rearrange meals within the calendar.",
+            "title": "Implement Responsive Design",
+            "description": "Ensure the calendar grid and all interface elements adapt seamlessly to various screen sizes and devices.",
             "dependencies": [
               1
             ],
-            "details": "Ensure smooth, intuitive drag-and-drop behavior with visual feedback. Support undo (Ctrl+Z) for drag operations to enhance user experience.",
+            "details": "Test and optimize for mobile, tablet, and desktop experiences.",
             "status": "pending",
-            "testStrategy": "Verify drag-and-drop works across all supported devices and that undo functionality reliably reverts changes."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Integrate Real-Time Macro Calculation and Visual Indicators",
-            "description": "Build a service to calculate nutritional macros for the meal plan in real time and display visual indicators for macro balance as users modify the plan.",
+            "title": "Add Meal Slots to Calendar",
+            "description": "Integrate meal slots (e.g., breakfast, lunch, dinner) into each calendar cell for detailed meal planning.",
             "dependencies": [
-              2
+              1
             ],
-            "details": "Macros should update instantly as meals are added, removed, or rearranged. Visual cues should alert users to macro imbalances or targets met.",
+            "details": "Allow users to view and interact with meal slots within each day.",
             "status": "pending",
-            "testStrategy": "Test macro calculations for accuracy and responsiveness; confirm visual indicators update correctly with every change."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement Plan Persistence and Retrieval with Supabase",
-            "description": "Enable saving, loading, and sharing of meal plans by integrating with Supabase for backend storage and retrieval.",
+            "title": "Enable Drag-and-Drop Functionality",
+            "description": "Allow users to drag and drop meals or meal slots within the calendar for easy rescheduling.",
             "dependencies": [
+              1,
               3
             ],
-            "details": "Users should be able to save their current plan, load previous plans, and share plans with others. Ensure data integrity and secure access.",
+            "details": "Ensure smooth interactions and visual feedback during drag-and-drop operations.",
             "status": "pending",
-            "testStrategy": "Test saving, loading, and sharing workflows; verify data is correctly stored and retrieved from Supabase."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Enable PDF Export and Print-Ready Output",
-            "description": "Provide functionality to export the meal plan calendar as a PDF, ensuring the output is formatted for printing and easy sharing.",
+            "title": "Implement Macro Calculation Engine",
+            "description": "Develop logic to calculate nutritional macros (e.g., calories, protein, carbs, fats) for each meal and aggregate them per day.",
             "dependencies": [
-              4
+              3
             ],
-            "details": "The exported PDF should reflect the current state of the meal plan, including all meals and macro indicators, and be visually consistent with the app interface.",
+            "details": "Display macro totals in each calendar cell and update dynamically as meals are added or changed.",
             "status": "pending",
-            "testStrategy": "Generate PDFs from various plans and review formatting, completeness, and print quality."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add Real-Time Updates",
+            "description": "Ensure that changes to meals, macros, or calendar structure are reflected instantly across the interface.",
+            "dependencies": [
+              4,
+              5
+            ],
+            "details": "Utilize state management and, if applicable, real-time backend updates.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Integrate Visual Indicators",
+            "description": "Incorporate color coding, icons, or badges to visually distinguish meal types, macro targets, or special events.",
+            "dependencies": [
+              3,
+              5
+            ],
+            "details": "Use visual cues to enhance clarity and help users quickly interpret calendar data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Undo Functionality",
+            "description": "Allow users to undo recent actions such as meal moves, deletions, or edits within the calendar.",
+            "dependencies": [
+              4,
+              6
+            ],
+            "details": "Maintain a history stack for reversible actions and provide an intuitive undo interface.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Data Persistence Layer",
+            "description": "Ensure all calendar data, meal plans, and user preferences are saved and loaded reliably.",
+            "dependencies": [],
+            "details": "Support both local storage and optional cloud sync for user data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Loading States and Feedback",
+            "description": "Provide clear loading indicators and feedback during data fetches, saves, or heavy computations.",
+            "dependencies": [],
+            "details": "Enhance user experience by preventing confusion during asynchronous operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Enable Calendar Sharing Features",
+            "description": "Allow users to share their meal calendar with others via link, email, or social platforms.",
+            "dependencies": [],
+            "details": "Implement permission controls and sharing options for collaborative planning.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Add PDF Export Capability",
+            "description": "Allow users to export their meal calendar as a well-formatted PDF document.",
+            "dependencies": [],
+            "details": "Ensure exported PDFs include all relevant meal, macro, and visual indicator information.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -514,56 +903,138 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Design User Input Interface for Meal Plan Generation",
-            "description": "Create an intuitive interface for users to input dietary preferences, nutritional targets, and select recipe sources (in-house, favorites, mixed).",
+            "title": "User Input Collection",
+            "description": "Design and implement the UI for users to input dietary preferences, restrictions, goals, and other relevant information for meal plan generation.",
             "dependencies": [],
-            "details": "The interface should allow users to specify allergies, preferred cuisines, macro targets, and source selection, ensuring all necessary data is collected for personalized meal plan generation.",
+            "details": "Include fields for calorie targets, macronutrient ratios, allergies, ingredient dislikes, and meal frequency.",
             "status": "pending",
-            "testStrategy": "Test with various user profiles to ensure all preference and source options are captured and correctly formatted for backend requests."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Develop Backend Endpoint for AI Meal Plan Generation",
-            "description": "Implement the `/api/ai/meal-plan` endpoint to process user input, invoke AI generation, and return structured meal plans.",
+            "title": "Backend Endpoint for Meal Plan Generation",
+            "description": "Develop a backend API endpoint that receives user input and initiates the AI meal plan generation process.",
             "dependencies": [
               1
             ],
-            "details": "The endpoint should validate input, interact with the AI model, and return meal plans with macro breakdowns. Include error handling for invalid input or generation failures.",
+            "details": "Ensure the endpoint validates input and triggers the AI workflow for meal plan creation.",
             "status": "pending",
-            "testStrategy": "Unit and integration tests to verify correct plan generation, input validation, and error responses."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Implement Real-Time Progress Tracking and Error Handling",
-            "description": "Enable Server-Sent Events (SSE) for progress updates and robust error handling during meal plan generation.",
+            "title": "Server-Sent Events (SSE) Progress Updates",
+            "description": "Implement SSE or similar real-time communication to stream progress updates from the backend to the frontend during meal plan generation.",
             "dependencies": [
               2
             ],
-            "details": "Display real-time progress to users, handle and display errors gracefully, and provide loading states and notifications for both success and failure.",
+            "details": "Allow the frontend to display generation progress and intermediate statuses to the user.",
             "status": "pending",
-            "testStrategy": "Simulate slow and failed generations to verify progress updates, loading states, and error notifications are triggered appropriately."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Build Meal Plan Display and Macro Validation",
-            "description": "Create a user interface to display generated meal plans, validate macro targets (±5%), and allow users to review results.",
+            "title": "Error Handling Mechanisms",
+            "description": "Design robust error handling for both frontend and backend to manage failures during input, generation, or communication.",
             "dependencies": [
-              3
+              2
             ],
-            "details": "Show meal details, macro breakdowns, and highlight any deviations from nutritional targets. Include visual cues for macro compliance.",
+            "details": "Display user-friendly error messages and provide recovery options.",
             "status": "pending",
-            "testStrategy": "Test with meal plans at, above, and below macro thresholds to ensure correct validation and display."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Enable Plan Customization, Regeneration, and Saving",
-            "description": "Allow users to adjust meal plans, regenerate specific days/meals, and save finalized plans.",
+            "title": "Meal Plan Result Display",
+            "description": "Create a UI component to display the generated meal plan, including meals, recipes, and a grocery list.",
             "dependencies": [
-              4
+              3
             ],
-            "details": "Provide interfaces for fine-tuning meals, triggering partial regenerations, and persisting plans to user accounts. Ensure changes are reflected in macro validation.",
+            "details": "Ensure the display is clear, structured, and allows for easy review of all meal plan details.",
             "status": "pending",
-            "testStrategy": "Verify that adjustments, regenerations, and saves work as expected and that macro validation updates accordingly."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Macronutrient and Calorie Validation",
+            "description": "Implement logic to validate that the generated meal plan meets user-specified macronutrient and calorie targets.",
+            "dependencies": [
+              5
+            ],
+            "details": "Highlight discrepancies and suggest adjustments if targets are not met.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Adjustment Interface for Customization",
+            "description": "Develop an interface allowing users to adjust meals, swap recipes, or modify ingredients to better fit their preferences or nutritional goals.",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Enable real-time feedback on how changes affect macros and calories.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Meal Plan Regeneration",
+            "description": "Allow users to regenerate the meal plan based on updated preferences or after making adjustments.",
+            "dependencies": [
+              7
+            ],
+            "details": "Trigger the backend generation process again with revised parameters.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Loading and Progress States",
+            "description": "Implement frontend loading indicators and progress bars to inform users of ongoing operations during meal plan generation and regeneration.",
+            "dependencies": [
+              3,
+              8
+            ],
+            "details": "Ensure smooth user experience with clear visual feedback.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "User Notifications",
+            "description": "Set up notification mechanisms to alert users of completion, errors, or important events during the meal plan workflow.",
+            "dependencies": [
+              4,
+              9
+            ],
+            "details": "Support both in-app and optional email/push notifications.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Saving Meal Plans",
+            "description": "Enable users to save generated meal plans to their account for future reference or reuse.",
+            "dependencies": [
+              5,
+              7
+            ],
+            "details": "Implement backend storage and retrieval of saved plans.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Tolerance Checking and Warnings",
+            "description": "Add logic to check if generated meal plans are within acceptable tolerance ranges for macros and calories, and warn users if not.",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "Display warnings and suggest corrective actions if tolerances are exceeded.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -653,56 +1124,137 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Develop Store Preference and Item Selection Interface",
-            "description": "Create a user interface for selecting preferred grocery stores and specifying shopping items, supporting both manual entry and saved preferences.",
+            "title": "Design Store Preference UI",
+            "description": "Create a user interface for selecting and managing preferred stores for shopping automation.",
             "dependencies": [],
-            "details": "This interface should allow users to choose their preferred store and input or select items for the shopping list. It must support easy modification and saving of preferences for future sessions.",
+            "details": "UI should allow users to add, remove, and prioritize stores. Preferences should be saved for use in automation flows.",
             "status": "pending",
-            "testStrategy": "Verify that users can select stores, add/remove items, and that preferences persist across sessions."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Automated Cart Filling and Checkout Integration",
-            "description": "Integrate with browser automation or available APIs to fill the cart and generate checkout payloads at the selected grocery store.",
+            "title": "Implement Store Preference Data Handling",
+            "description": "Develop backend logic to store and retrieve user store preferences.",
             "dependencies": [
               1
             ],
-            "details": "Use browser automation tools (e.g., Selenium, Puppeteer) or store APIs where available to add items to the cart and prepare the checkout request. Ensure compatibility with multiple store platforms.",
+            "details": "Integrate with user profile storage and ensure preferences are accessible to automation modules.",
             "status": "pending",
-            "testStrategy": "Test cart filling and checkout initiation for each supported store, confirming all selected items are added."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Build Progress Tracking and Status Polling Mechanism",
-            "description": "Create a system to track the progress of the shopping automation, polling for status updates and reflecting them in the UI.",
+            "title": "Integrate Cart Filling Mechanism",
+            "description": "Automate the process of adding selected products to the cart using browser agents or APIs.",
             "dependencies": [
               2
             ],
-            "details": "Implement a polling mechanism (every 3 seconds) to fetch and display the current status of the cart filling and checkout process, including loading states and the ability to cancel.",
+            "details": "Support multiple stores and handle session management, product selection, and quantity updates.",
             "status": "pending",
-            "testStrategy": "Simulate various stages of the process and verify that the UI updates accurately and promptly."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Design Error Handling and Item Substitution Workflow",
-            "description": "Implement robust error handling for unavailable items, including user prompts for substitutions and partial success management.",
+            "title": "Develop Status Polling Service",
+            "description": "Implement a service to poll the status of cart filling and order processing.",
             "dependencies": [
               3
             ],
-            "details": "Detect unavailable items, prompt users for substitutions, and handle cases where some items are skipped. Provide clear feedback and maintain a list of skipped items.",
+            "details": "Regularly check for updates on cart state, product availability, and order progress.",
             "status": "pending",
-            "testStrategy": "Test with unavailable items and verify substitution prompts, skipped item reporting, and partial success handling."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Integrate Logging, Retry, and Completion Handlers",
-            "description": "Add detailed logging for debugging, implement retry mechanisms for failed operations, and handle cart completion by opening the store URL.",
+            "title": "Build Progress Tracking UI",
+            "description": "Create a user interface to display real-time progress of the shopping automation process.",
             "dependencies": [
               4
             ],
-            "details": "Ensure all operations are logged for troubleshooting, failed steps can be retried, and upon successful cart completion, the user is redirected to the store for final checkout.",
+            "details": "Show stages such as cart filling, checkout, payment, and completion with visual indicators.",
             "status": "pending",
-            "testStrategy": "Force errors and failures to verify logging, retry, and completion flows work as intended."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement Error and Substitution Handling",
+            "description": "Develop logic to detect errors (e.g., out-of-stock, API failures) and handle product substitutions.",
+            "dependencies": [
+              3
+            ],
+            "details": "Prompt users for substitution preferences or apply predefined rules for automatic substitutions.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Create Completion Handler",
+            "description": "Develop a handler to finalize the automation process and notify the user upon successful completion.",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Trigger notifications, update order status, and provide a summary of the completed shopping session.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Implement Loading and Cancel Mechanisms",
+            "description": "Add functionality to show loading states and allow users to cancel ongoing automation tasks.",
+            "dependencies": [
+              5
+            ],
+            "details": "Ensure graceful cancellation and rollback of partial operations if needed.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Develop Logging Infrastructure",
+            "description": "Set up comprehensive logging for all automation steps, errors, and user actions.",
+            "dependencies": [
+              3,
+              4,
+              6
+            ],
+            "details": "Logs should be structured, searchable, and support troubleshooting and analytics.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Implement Retry Mechanisms",
+            "description": "Add robust retry logic for transient failures during cart filling, status polling, and order submission.",
+            "dependencies": [
+              6,
+              9
+            ],
+            "details": "Define retry policies, backoff strategies, and escalation paths for persistent failures.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Integrate All Components",
+            "description": "Combine UI, backend, and automation modules into a cohesive workflow.",
+            "dependencies": [
+              7,
+              8,
+              10
+            ],
+            "details": "Ensure seamless data flow, error propagation, and user feedback across all modules.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "End-to-End Testing and Validation",
+            "description": "Test the entire shopping automation system for reliability, usability, and edge cases.",
+            "dependencies": [],
+            "details": "Simulate various scenarios including store preference changes, cart errors, substitutions, and cancellations.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -794,56 +1346,138 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Register Service Worker in Application",
-            "description": "Set up and register the service worker in the app's entry point to enable offline capabilities.",
+            "title": "Service Worker Registration",
+            "description": "Implement code to register a service worker in the application, ensuring it is registered after the page loads and only in supported browsers.",
             "dependencies": [],
-            "details": "Implement service worker registration in `app/layout.tsx` or the main entry file, ensuring the worker is correctly registered and activated for offline support.",
+            "details": "Add registration logic in the main JavaScript entry point. Handle registration success and failure with appropriate logging.",
             "status": "pending",
-            "testStrategy": "Verify that the service worker is registered and active in the browser's DevTools and that it intercepts network requests."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Asset and Data Caching Strategy",
-            "description": "Develop a caching strategy within the service worker to store static assets and API responses for offline access.",
+            "title": "Service Worker Installation and Activation",
+            "description": "Set up the service worker's install and activate event handlers to prepare for caching and lifecycle management.",
             "dependencies": [
               1
             ],
-            "details": "Configure the service worker to cache essential assets and data, using a cache-first or network-first approach as appropriate for recipes and meal plans.",
+            "details": "Implement event listeners for 'install' and 'activate' events in the service worker file.",
             "status": "pending",
-            "testStrategy": "Test offline access to cached assets and data by disabling the network and confirming resources are served from cache."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Build IndexedDB Storage for Recipes and Meal Plans",
-            "description": "Create an IndexedDB database to persist recipes and meal plans locally for offline read-only access.",
+            "title": "Asset and Data Caching",
+            "description": "Cache essential static assets and API responses during the service worker install phase for offline availability.",
             "dependencies": [
               2
             ],
-            "details": "Design and implement IndexedDB schema and logic to store, retrieve, and update recipes and meal plans data.",
+            "details": "Use the Cache Storage API to store HTML, CSS, JS, images, and initial data payloads.",
             "status": "pending",
-            "testStrategy": "Add, retrieve, and update sample data in IndexedDB and verify persistence across sessions and offline scenarios."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement Offline Detection and UI Indicators",
-            "description": "Detect offline status and display appropriate UI indicators, including an offline banner and read-only mode.",
+            "title": "Offline-First Fetch Handling",
+            "description": "Intercept network requests in the service worker and serve cached responses when offline, falling back to the network when online.",
             "dependencies": [
               3
             ],
-            "details": "Monitor network status changes, trigger UI updates such as banners, and enforce read-only mode when offline.",
+            "details": "Implement fetch event handler to prioritize cache, then network, and update cache as needed.",
             "status": "pending",
-            "testStrategy": "Simulate offline mode and verify that UI indicators appear and the app restricts editing features."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Synchronize Data Between Supabase and IndexedDB",
-            "description": "Develop a synchronization mechanism to update IndexedDB from Supabase and queue changes for later sync when offline.",
+            "title": "IndexedDB Storage Integration",
+            "description": "Set up IndexedDB for structured data storage to persist user-generated or dynamic data offline.",
             "dependencies": [
-              4
+              2
             ],
-            "details": "Implement logic to sync data between Supabase and IndexedDB, handle pending changes, and resolve conflicts when reconnecting.",
+            "details": "Create and manage an IndexedDB database for storing application data that needs to be available offline.",
             "status": "pending",
-            "testStrategy": "Test data synchronization by making changes offline, reconnecting, and verifying that updates are correctly applied and conflicts are handled."
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Offline Detection Logic",
+            "description": "Implement logic to detect when the application is offline or online using browser APIs.",
+            "dependencies": [],
+            "details": "Use the Navigator API and listen for 'online' and 'offline' events to track connectivity status.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "UI Indicators for Offline Status",
+            "description": "Display clear UI indicators to inform users of their current connectivity status.",
+            "dependencies": [],
+            "details": "Show banners, icons, or notifications when offline or reconnecting, and update them dynamically.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Read-Only Mode Implementation",
+            "description": "Restrict certain actions and switch the UI to read-only mode when offline to prevent unsupported operations.",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "Disable or hide features that require connectivity, and provide user feedback about limitations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Queueing User Actions Offline",
+            "description": "Queue user actions (such as form submissions or edits) performed while offline for later synchronization.",
+            "dependencies": [
+              5,
+              8
+            ],
+            "details": "Store queued actions in IndexedDB or local storage, ensuring they persist across reloads.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Sync Logic for Reconnection",
+            "description": "Implement logic to process and synchronize queued actions with the server once connectivity is restored.",
+            "dependencies": [
+              9,
+              6
+            ],
+            "details": "Listen for 'online' events and attempt to replay queued actions, handling conflicts and errors.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Error Handling and Recovery",
+            "description": "Add robust error handling for offline scenarios, failed syncs, and cache issues to ensure graceful recovery.",
+            "dependencies": [
+              4,
+              5,
+              10
+            ],
+            "details": "Provide user feedback on errors, retry mechanisms, and fallback strategies for failed operations.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Graceful Degradation",
+            "description": "Ensure the application remains usable with limited functionality if offline features or service workers are unsupported.",
+            "dependencies": [
+              1,
+              4,
+              5,
+              8,
+              11
+            ],
+            "details": "Detect lack of support and provide alternative flows or messaging to maintain a baseline user experience.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },
@@ -868,56 +1502,131 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Accessibility Audit of UI Components",
-            "description": "Conduct a comprehensive audit of all user interface components to identify accessibility issues and gaps in WCAG 2.1 AA compliance.",
+            "title": "Conduct Accessibility Audit",
+            "description": "Perform a comprehensive audit of the application to identify existing accessibility barriers and prioritize remediation based on WCAG 2.1 AA standards.",
             "dependencies": [],
-            "details": "Review each component for compliance with accessibility standards, including ARIA usage, keyboard navigation, focus management, and screen reader support. Document all issues found.",
+            "details": "Use automated tools and manual testing, including assistive technology, to document issues related to navigation, labeling, contrast, and dynamic content.",
             "status": "pending",
-            "testStrategy": "Use automated tools (Axe, WAVE, Lighthouse) and manual testing with screen readers to identify and log accessibility issues."
+            "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement ARIA Attributes and Roles",
-            "description": "Apply appropriate ARIA attributes and roles to all interactive and dynamic elements to ensure semantic clarity for assistive technologies.",
+            "title": "Implement ARIA Roles and Attributes",
+            "description": "Add appropriate ARIA roles, states, and properties to enhance semantic meaning and support assistive technologies.",
             "dependencies": [
               1
             ],
-            "details": "Assign ARIA roles (e.g., button, navigation), labels, and state properties (e.g., aria-expanded, aria-live) to elements as needed, following best practices for ARIA implementation.",
+            "details": "Ensure all interactive elements and dynamic regions are properly described for screen readers and other AT.",
             "status": "pending",
-            "testStrategy": "Verify ARIA attributes using browser accessibility inspectors and test with screen readers to ensure correct announcements and navigation."
+            "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Keyboard Navigation and Focus Management",
-            "description": "Implement robust keyboard navigation and focus management across all interactive components.",
+            "title": "Enhance Keyboard Navigation",
+            "description": "Ensure all interactive elements are accessible and operable via keyboard alone, with a logical tab order.",
             "dependencies": [
-              2
+              1
             ],
-            "details": "Ensure all interactive elements are reachable and operable via keyboard, implement logical tab order, visible focus indicators, and skip-to-main-content links.",
+            "details": "Test navigation using only the keyboard and address any focus traps or inaccessible controls.",
             "status": "pending",
-            "testStrategy": "Test navigation using only the keyboard (Tab, Shift+Tab, Enter, Space, Arrow keys) and confirm focus is managed correctly throughout the interface."
+            "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Screen Reader Support and Live Region Announcements",
-            "description": "Enhance screen reader support by providing accessible labels, headings, and live region announcements for dynamic content.",
+            "title": "Manage Focus States",
+            "description": "Implement and maintain visible focus indicators and logical focus management for all interactive elements.",
             "dependencies": [
               3
             ],
-            "details": "Add accessible form labels, error messages, proper heading hierarchy, and ARIA live regions for status updates and dynamic changes.",
+            "details": "Ensure focus is programmatically set after dynamic updates and that users never lose track of their position.",
             "status": "pending",
-            "testStrategy": "Test with multiple screen readers (NVDA, JAWS, VoiceOver) to ensure all content and updates are announced as intended."
+            "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "High-Contrast Mode and Visual Accessibility Enhancements",
-            "description": "Implement a high-contrast mode toggle and ensure all visual accessibility enhancements are in place.",
+            "title": "Add Skip Links",
+            "description": "Provide skip navigation links to allow users to bypass repetitive content and quickly access main sections.",
+            "dependencies": [
+              3
+            ],
+            "details": "Ensure skip links are visible on focus and function correctly with keyboard navigation.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement High-Contrast Mode Support",
+            "description": "Ensure the application supports high-contrast mode and meets minimum color contrast requirements.",
+            "dependencies": [
+              1
+            ],
+            "details": "Test with system high-contrast settings and verify all content remains readable and usable.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Configure Live Regions",
+            "description": "Use ARIA live regions to announce dynamic content changes to assistive technologies.",
+            "dependencies": [
+              2
+            ],
+            "details": "Mark notifications, alerts, and other dynamic updates with appropriate ARIA live attributes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 8,
+            "title": "Establish Heading Hierarchy",
+            "description": "Structure content with a logical and semantic heading hierarchy for improved navigation by screen readers.",
+            "dependencies": [
+              1
+            ],
+            "details": "Ensure headings are not skipped and reflect the document structure accurately.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 9,
+            "title": "Label All Form Elements",
+            "description": "Ensure every form field has a clear, programmatically associated label for screen reader users.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use <label> elements or ARIA labeling techniques as appropriate.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 10,
+            "title": "Ensure Visible Focus Rings",
+            "description": "Guarantee that focus rings are visible and meet contrast requirements for all interactive elements.",
             "dependencies": [
               4
             ],
-            "details": "Create a toggle for high-contrast mode, ensure focus rings are visible, and verify that all images have descriptive alt text.",
+            "details": "Test across browsers and platforms to confirm consistent focus visibility.",
             "status": "pending",
-            "testStrategy": "Test high-contrast mode visually and with assistive technologies to confirm readability and usability for users with low vision."
+            "testStrategy": ""
+          },
+          {
+            "id": 11,
+            "title": "Provide Descriptive Alt Text",
+            "description": "Add meaningful alt text to all informative images and mark decorative images appropriately.",
+            "dependencies": [
+              1
+            ],
+            "details": "Review all images and ensure alt attributes are present and contextually accurate.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 12,
+            "title": "Implement Screen Reader Announcements",
+            "description": "Ensure important updates and changes are announced to screen reader users using ARIA and live regions.",
+            "dependencies": [],
+            "details": "Test with multiple screen readers to verify announcements are timely and clear.",
+            "status": "pending",
+            "testStrategy": ""
           }
         ]
       },

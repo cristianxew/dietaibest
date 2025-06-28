@@ -29,33 +29,75 @@
 8. Test form validation error announcements
 
 # Subtasks:
-## 1. Accessibility Audit of UI Components [pending]
+## 1. Conduct Accessibility Audit [pending]
 ### Dependencies: None
-### Description: Conduct a comprehensive audit of all user interface components to identify accessibility issues and gaps in WCAG 2.1 AA compliance.
+### Description: Perform a comprehensive audit of the application to identify existing accessibility barriers and prioritize remediation based on WCAG 2.1 AA standards.
 ### Details:
-Review each component for compliance with accessibility standards, including ARIA usage, keyboard navigation, focus management, and screen reader support. Document all issues found.
+Use automated tools and manual testing, including assistive technology, to document issues related to navigation, labeling, contrast, and dynamic content.
 
-## 2. Implement ARIA Attributes and Roles [pending]
+## 2. Implement ARIA Roles and Attributes [pending]
 ### Dependencies: 14.1
-### Description: Apply appropriate ARIA attributes and roles to all interactive and dynamic elements to ensure semantic clarity for assistive technologies.
+### Description: Add appropriate ARIA roles, states, and properties to enhance semantic meaning and support assistive technologies.
 ### Details:
-Assign ARIA roles (e.g., button, navigation), labels, and state properties (e.g., aria-expanded, aria-live) to elements as needed, following best practices for ARIA implementation.
+Ensure all interactive elements and dynamic regions are properly described for screen readers and other AT.
 
-## 3. Keyboard Navigation and Focus Management [pending]
-### Dependencies: 14.2
-### Description: Implement robust keyboard navigation and focus management across all interactive components.
+## 3. Enhance Keyboard Navigation [pending]
+### Dependencies: 14.1
+### Description: Ensure all interactive elements are accessible and operable via keyboard alone, with a logical tab order.
 ### Details:
-Ensure all interactive elements are reachable and operable via keyboard, implement logical tab order, visible focus indicators, and skip-to-main-content links.
+Test navigation using only the keyboard and address any focus traps or inaccessible controls.
 
-## 4. Screen Reader Support and Live Region Announcements [pending]
+## 4. Manage Focus States [pending]
 ### Dependencies: 14.3
-### Description: Enhance screen reader support by providing accessible labels, headings, and live region announcements for dynamic content.
+### Description: Implement and maintain visible focus indicators and logical focus management for all interactive elements.
 ### Details:
-Add accessible form labels, error messages, proper heading hierarchy, and ARIA live regions for status updates and dynamic changes.
+Ensure focus is programmatically set after dynamic updates and that users never lose track of their position.
 
-## 5. High-Contrast Mode and Visual Accessibility Enhancements [pending]
-### Dependencies: 14.4
-### Description: Implement a high-contrast mode toggle and ensure all visual accessibility enhancements are in place.
+## 5. Add Skip Links [pending]
+### Dependencies: 14.3
+### Description: Provide skip navigation links to allow users to bypass repetitive content and quickly access main sections.
 ### Details:
-Create a toggle for high-contrast mode, ensure focus rings are visible, and verify that all images have descriptive alt text.
+Ensure skip links are visible on focus and function correctly with keyboard navigation.
+
+## 6. Implement High-Contrast Mode Support [pending]
+### Dependencies: 14.1
+### Description: Ensure the application supports high-contrast mode and meets minimum color contrast requirements.
+### Details:
+Test with system high-contrast settings and verify all content remains readable and usable.
+
+## 7. Configure Live Regions [pending]
+### Dependencies: 14.2
+### Description: Use ARIA live regions to announce dynamic content changes to assistive technologies.
+### Details:
+Mark notifications, alerts, and other dynamic updates with appropriate ARIA live attributes.
+
+## 8. Establish Heading Hierarchy [pending]
+### Dependencies: 14.1
+### Description: Structure content with a logical and semantic heading hierarchy for improved navigation by screen readers.
+### Details:
+Ensure headings are not skipped and reflect the document structure accurately.
+
+## 9. Label All Form Elements [pending]
+### Dependencies: 14.1
+### Description: Ensure every form field has a clear, programmatically associated label for screen reader users.
+### Details:
+Use <label> elements or ARIA labeling techniques as appropriate.
+
+## 10. Ensure Visible Focus Rings [pending]
+### Dependencies: 14.4
+### Description: Guarantee that focus rings are visible and meet contrast requirements for all interactive elements.
+### Details:
+Test across browsers and platforms to confirm consistent focus visibility.
+
+## 11. Provide Descriptive Alt Text [pending]
+### Dependencies: 14.1
+### Description: Add meaningful alt text to all informative images and mark decorative images appropriately.
+### Details:
+Review all images and ensure alt attributes are present and contextually accurate.
+
+## 12. Implement Screen Reader Announcements [pending]
+### Dependencies: None
+### Description: Ensure important updates and changes are announced to screen reader users using ARIA and live regions.
+### Details:
+Test with multiple screen readers to verify announcements are timely and clear.
 

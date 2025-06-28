@@ -29,33 +29,75 @@
 8. Verify loading states and skeleton UI
 
 # Subtasks:
-## 1. Design User Input Interface for Meal Plan Generation [pending]
+## 1. User Input Collection [pending]
 ### Dependencies: None
-### Description: Create an intuitive interface for users to input dietary preferences, nutritional targets, and select recipe sources (in-house, favorites, mixed).
+### Description: Design and implement the UI for users to input dietary preferences, restrictions, goals, and other relevant information for meal plan generation.
 ### Details:
-The interface should allow users to specify allergies, preferred cuisines, macro targets, and source selection, ensuring all necessary data is collected for personalized meal plan generation.
+Include fields for calorie targets, macronutrient ratios, allergies, ingredient dislikes, and meal frequency.
 
-## 2. Develop Backend Endpoint for AI Meal Plan Generation [pending]
+## 2. Backend Endpoint for Meal Plan Generation [pending]
 ### Dependencies: 9.1
-### Description: Implement the `/api/ai/meal-plan` endpoint to process user input, invoke AI generation, and return structured meal plans.
+### Description: Develop a backend API endpoint that receives user input and initiates the AI meal plan generation process.
 ### Details:
-The endpoint should validate input, interact with the AI model, and return meal plans with macro breakdowns. Include error handling for invalid input or generation failures.
+Ensure the endpoint validates input and triggers the AI workflow for meal plan creation.
 
-## 3. Implement Real-Time Progress Tracking and Error Handling [pending]
+## 3. Server-Sent Events (SSE) Progress Updates [pending]
 ### Dependencies: 9.2
-### Description: Enable Server-Sent Events (SSE) for progress updates and robust error handling during meal plan generation.
+### Description: Implement SSE or similar real-time communication to stream progress updates from the backend to the frontend during meal plan generation.
 ### Details:
-Display real-time progress to users, handle and display errors gracefully, and provide loading states and notifications for both success and failure.
+Allow the frontend to display generation progress and intermediate statuses to the user.
 
-## 4. Build Meal Plan Display and Macro Validation [pending]
+## 4. Error Handling Mechanisms [pending]
+### Dependencies: 9.2
+### Description: Design robust error handling for both frontend and backend to manage failures during input, generation, or communication.
+### Details:
+Display user-friendly error messages and provide recovery options.
+
+## 5. Meal Plan Result Display [pending]
 ### Dependencies: 9.3
-### Description: Create a user interface to display generated meal plans, validate macro targets (±5%), and allow users to review results.
+### Description: Create a UI component to display the generated meal plan, including meals, recipes, and a grocery list.
 ### Details:
-Show meal details, macro breakdowns, and highlight any deviations from nutritional targets. Include visual cues for macro compliance.
+Ensure the display is clear, structured, and allows for easy review of all meal plan details.
 
-## 5. Enable Plan Customization, Regeneration, and Saving [pending]
-### Dependencies: 9.4
-### Description: Allow users to adjust meal plans, regenerate specific days/meals, and save finalized plans.
+## 6. Macronutrient and Calorie Validation [pending]
+### Dependencies: 9.5
+### Description: Implement logic to validate that the generated meal plan meets user-specified macronutrient and calorie targets.
 ### Details:
-Provide interfaces for fine-tuning meals, triggering partial regenerations, and persisting plans to user accounts. Ensure changes are reflected in macro validation.
+Highlight discrepancies and suggest adjustments if targets are not met.
+
+## 7. Adjustment Interface for Customization [pending]
+### Dependencies: 9.5, 9.6
+### Description: Develop an interface allowing users to adjust meals, swap recipes, or modify ingredients to better fit their preferences or nutritional goals.
+### Details:
+Enable real-time feedback on how changes affect macros and calories.
+
+## 8. Meal Plan Regeneration [pending]
+### Dependencies: 9.7
+### Description: Allow users to regenerate the meal plan based on updated preferences or after making adjustments.
+### Details:
+Trigger the backend generation process again with revised parameters.
+
+## 9. Loading and Progress States [pending]
+### Dependencies: 9.3, 9.8
+### Description: Implement frontend loading indicators and progress bars to inform users of ongoing operations during meal plan generation and regeneration.
+### Details:
+Ensure smooth user experience with clear visual feedback.
+
+## 10. User Notifications [pending]
+### Dependencies: 9.4, 9.9
+### Description: Set up notification mechanisms to alert users of completion, errors, or important events during the meal plan workflow.
+### Details:
+Support both in-app and optional email/push notifications.
+
+## 11. Saving Meal Plans [pending]
+### Dependencies: 9.5, 9.7
+### Description: Enable users to save generated meal plans to their account for future reference or reuse.
+### Details:
+Implement backend storage and retrieval of saved plans.
+
+## 12. Tolerance Checking and Warnings [pending]
+### Dependencies: 9.6, 9.7
+### Description: Add logic to check if generated meal plans are within acceptable tolerance ranges for macros and calories, and warn users if not.
+### Details:
+Display warnings and suggest corrective actions if tolerances are exceeded.
 

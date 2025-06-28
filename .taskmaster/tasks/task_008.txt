@@ -29,33 +29,75 @@
 8. Verify visual indicators reflect macro balance accurately
 
 # Subtasks:
-## 1. Design and Implement Responsive Weekly Calendar Grid [pending]
+## 1. Design Calendar Grid Layout [pending]
 ### Dependencies: None
-### Description: Create a visually appealing, responsive calendar grid that displays days of the week and meal slots for each day, ensuring usability across mobile, tablet, and desktop devices.
+### Description: Create the foundational grid structure for the calendar interface, ensuring clarity and ease of navigation for users.
 ### Details:
-The grid should adapt to different screen sizes and orientations, providing a clear overview of the weekly meal plan. Use modern UI/UX principles and reference popular meal planner designs for inspiration.
+Focus on intuitive layout, clear navigation, and support for different calendar views (day, week, month).
 
-## 2. Develop Drag-and-Drop Meal Slot Functionality [pending]
+## 2. Implement Responsive Design [pending]
 ### Dependencies: 8.1
-### Description: Implement drag-and-drop interactions for meal slots using Framer Motion with spring physics, allowing users to rearrange meals within the calendar.
+### Description: Ensure the calendar grid and all interface elements adapt seamlessly to various screen sizes and devices.
 ### Details:
-Ensure smooth, intuitive drag-and-drop behavior with visual feedback. Support undo (Ctrl+Z) for drag operations to enhance user experience.
+Test and optimize for mobile, tablet, and desktop experiences.
 
-## 3. Integrate Real-Time Macro Calculation and Visual Indicators [pending]
-### Dependencies: 8.2
-### Description: Build a service to calculate nutritional macros for the meal plan in real time and display visual indicators for macro balance as users modify the plan.
+## 3. Add Meal Slots to Calendar [pending]
+### Dependencies: 8.1
+### Description: Integrate meal slots (e.g., breakfast, lunch, dinner) into each calendar cell for detailed meal planning.
 ### Details:
-Macros should update instantly as meals are added, removed, or rearranged. Visual cues should alert users to macro imbalances or targets met.
+Allow users to view and interact with meal slots within each day.
 
-## 4. Implement Plan Persistence and Retrieval with Supabase [pending]
+## 4. Enable Drag-and-Drop Functionality [pending]
+### Dependencies: 8.1, 8.3
+### Description: Allow users to drag and drop meals or meal slots within the calendar for easy rescheduling.
+### Details:
+Ensure smooth interactions and visual feedback during drag-and-drop operations.
+
+## 5. Implement Macro Calculation Engine [pending]
 ### Dependencies: 8.3
-### Description: Enable saving, loading, and sharing of meal plans by integrating with Supabase for backend storage and retrieval.
+### Description: Develop logic to calculate nutritional macros (e.g., calories, protein, carbs, fats) for each meal and aggregate them per day.
 ### Details:
-Users should be able to save their current plan, load previous plans, and share plans with others. Ensure data integrity and secure access.
+Display macro totals in each calendar cell and update dynamically as meals are added or changed.
 
-## 5. Enable PDF Export and Print-Ready Output [pending]
-### Dependencies: 8.4
-### Description: Provide functionality to export the meal plan calendar as a PDF, ensuring the output is formatted for printing and easy sharing.
+## 6. Add Real-Time Updates [pending]
+### Dependencies: 8.4, 8.5
+### Description: Ensure that changes to meals, macros, or calendar structure are reflected instantly across the interface.
 ### Details:
-The exported PDF should reflect the current state of the meal plan, including all meals and macro indicators, and be visually consistent with the app interface.
+Utilize state management and, if applicable, real-time backend updates.
+
+## 7. Integrate Visual Indicators [pending]
+### Dependencies: 8.3, 8.5
+### Description: Incorporate color coding, icons, or badges to visually distinguish meal types, macro targets, or special events.
+### Details:
+Use visual cues to enhance clarity and help users quickly interpret calendar data.
+
+## 8. Implement Undo Functionality [pending]
+### Dependencies: 8.4, 8.6
+### Description: Allow users to undo recent actions such as meal moves, deletions, or edits within the calendar.
+### Details:
+Maintain a history stack for reversible actions and provide an intuitive undo interface.
+
+## 9. Develop Data Persistence Layer [pending]
+### Dependencies: None
+### Description: Ensure all calendar data, meal plans, and user preferences are saved and loaded reliably.
+### Details:
+Support both local storage and optional cloud sync for user data.
+
+## 10. Implement Loading States and Feedback [pending]
+### Dependencies: None
+### Description: Provide clear loading indicators and feedback during data fetches, saves, or heavy computations.
+### Details:
+Enhance user experience by preventing confusion during asynchronous operations.
+
+## 11. Enable Calendar Sharing Features [pending]
+### Dependencies: None
+### Description: Allow users to share their meal calendar with others via link, email, or social platforms.
+### Details:
+Implement permission controls and sharing options for collaborative planning.
+
+## 12. Add PDF Export Capability [pending]
+### Dependencies: None
+### Description: Allow users to export their meal calendar as a well-formatted PDF document.
+### Details:
+Ensure exported PDFs include all relevant meal, macro, and visual indicator information.
 

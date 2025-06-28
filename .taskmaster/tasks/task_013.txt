@@ -29,33 +29,75 @@
 8. Verify graceful degradation for unavailable features
 
 # Subtasks:
-## 1. Register Service Worker in Application [pending]
+## 1. Service Worker Registration [pending]
 ### Dependencies: None
-### Description: Set up and register the service worker in the app's entry point to enable offline capabilities.
+### Description: Implement code to register a service worker in the application, ensuring it is registered after the page loads and only in supported browsers.
 ### Details:
-Implement service worker registration in `app/layout.tsx` or the main entry file, ensuring the worker is correctly registered and activated for offline support.
+Add registration logic in the main JavaScript entry point. Handle registration success and failure with appropriate logging.
 
-## 2. Implement Asset and Data Caching Strategy [pending]
+## 2. Service Worker Installation and Activation [pending]
 ### Dependencies: 13.1
-### Description: Develop a caching strategy within the service worker to store static assets and API responses for offline access.
+### Description: Set up the service worker's install and activate event handlers to prepare for caching and lifecycle management.
 ### Details:
-Configure the service worker to cache essential assets and data, using a cache-first or network-first approach as appropriate for recipes and meal plans.
+Implement event listeners for 'install' and 'activate' events in the service worker file.
 
-## 3. Build IndexedDB Storage for Recipes and Meal Plans [pending]
+## 3. Asset and Data Caching [pending]
 ### Dependencies: 13.2
-### Description: Create an IndexedDB database to persist recipes and meal plans locally for offline read-only access.
+### Description: Cache essential static assets and API responses during the service worker install phase for offline availability.
 ### Details:
-Design and implement IndexedDB schema and logic to store, retrieve, and update recipes and meal plans data.
+Use the Cache Storage API to store HTML, CSS, JS, images, and initial data payloads.
 
-## 4. Implement Offline Detection and UI Indicators [pending]
+## 4. Offline-First Fetch Handling [pending]
 ### Dependencies: 13.3
-### Description: Detect offline status and display appropriate UI indicators, including an offline banner and read-only mode.
+### Description: Intercept network requests in the service worker and serve cached responses when offline, falling back to the network when online.
 ### Details:
-Monitor network status changes, trigger UI updates such as banners, and enforce read-only mode when offline.
+Implement fetch event handler to prioritize cache, then network, and update cache as needed.
 
-## 5. Synchronize Data Between Supabase and IndexedDB [pending]
-### Dependencies: 13.4
-### Description: Develop a synchronization mechanism to update IndexedDB from Supabase and queue changes for later sync when offline.
+## 5. IndexedDB Storage Integration [pending]
+### Dependencies: 13.2
+### Description: Set up IndexedDB for structured data storage to persist user-generated or dynamic data offline.
 ### Details:
-Implement logic to sync data between Supabase and IndexedDB, handle pending changes, and resolve conflicts when reconnecting.
+Create and manage an IndexedDB database for storing application data that needs to be available offline.
+
+## 6. Offline Detection Logic [pending]
+### Dependencies: None
+### Description: Implement logic to detect when the application is offline or online using browser APIs.
+### Details:
+Use the Navigator API and listen for 'online' and 'offline' events to track connectivity status.
+
+## 7. UI Indicators for Offline Status [pending]
+### Dependencies: None
+### Description: Display clear UI indicators to inform users of their current connectivity status.
+### Details:
+Show banners, icons, or notifications when offline or reconnecting, and update them dynamically.
+
+## 8. Read-Only Mode Implementation [pending]
+### Dependencies: 13.6, 13.7
+### Description: Restrict certain actions and switch the UI to read-only mode when offline to prevent unsupported operations.
+### Details:
+Disable or hide features that require connectivity, and provide user feedback about limitations.
+
+## 9. Queueing User Actions Offline [pending]
+### Dependencies: 13.5, 13.8
+### Description: Queue user actions (such as form submissions or edits) performed while offline for later synchronization.
+### Details:
+Store queued actions in IndexedDB or local storage, ensuring they persist across reloads.
+
+## 10. Sync Logic for Reconnection [pending]
+### Dependencies: 13.9, 13.6
+### Description: Implement logic to process and synchronize queued actions with the server once connectivity is restored.
+### Details:
+Listen for 'online' events and attempt to replay queued actions, handling conflicts and errors.
+
+## 11. Error Handling and Recovery [pending]
+### Dependencies: 13.4, 13.5, 13.10
+### Description: Add robust error handling for offline scenarios, failed syncs, and cache issues to ensure graceful recovery.
+### Details:
+Provide user feedback on errors, retry mechanisms, and fallback strategies for failed operations.
+
+## 12. Graceful Degradation [pending]
+### Dependencies: 13.1, 13.4, 13.5, 13.8, 13.11
+### Description: Ensure the application remains usable with limited functionality if offline features or service workers are unsupported.
+### Details:
+Detect lack of support and provide alternative flows or messaging to maintain a baseline user experience.
 

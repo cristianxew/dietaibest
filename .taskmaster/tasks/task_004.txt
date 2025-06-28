@@ -29,33 +29,75 @@
 8. Verify error handling for invalid inputs
 
 # Subtasks:
-## 1. Design Multi-Step Onboarding Flow [pending]
+## 1. Design Form Step Structure [pending]
 ### Dependencies: None
-### Description: Map out and design the sequential steps of the onboarding wizard, including user demographics, dietary goals, preferences, and family member management, ensuring a logical and user-friendly progression.
+### Description: Define and structure each step of the onboarding wizard, outlining the sequence and content for each form step.
 ### Details:
-Define the structure and order of each onboarding step, referencing best practices for wizard UI patterns to ensure clarity and engagement.
+Identify all required steps (e.g., user info, preferences, macro calculator, family members) and create a logical flow.
 
-## 2. Implement Form Components with State Management [pending]
+## 2. Implement Form Step Components [pending]
 ### Dependencies: 4.1
-### Description: Develop reusable form components for each onboarding step, integrating state management to persist user input across steps.
+### Description: Develop UI components for each form step based on the defined structure.
 ### Details:
-Utilize a state management solution to handle form data, navigation, and progress tracking throughout the wizard.
+Create reusable components for each step, ensuring consistency and modularity.
 
-## 3. Integrate Validation and Macro Calculator Utility [pending]
+## 3. Add Input Validation Logic [pending]
 ### Dependencies: 4.2
-### Description: Apply Zod schema validation to all form inputs and connect the macro calculator utility to compute nutritional targets based on user data.
+### Description: Implement validation rules for each form step to ensure data integrity.
 ### Details:
-Ensure all user inputs are validated in real-time and that macro calculations are triggered and displayed as users provide relevant information.
+Define synchronous and asynchronous validation for all user inputs, including edge cases.
 
-## 4. Develop Family Member Management Functionality [pending]
+## 4. Develop Macro Calculator Functionality [pending]
 ### Dependencies: 4.2
-### Description: Build components to add, edit, and remove family members within the onboarding wizard, ensuring seamless integration with the overall form state.
+### Description: Build the macro calculator logic and UI for users to calculate nutritional needs.
 ### Details:
-Allow users to manage multiple family members, with each member's data incorporated into the onboarding process and macro calculations as needed.
+Integrate formulas and user input handling for macro calculations within the wizard.
 
-## 5. Implement Completion Handling and Dashboard Redirect [pending]
-### Dependencies: 4.3, 4.4
-### Description: Create logic to store the completed user profile in Supabase and redirect users to the dashboard upon successful onboarding completion.
+## 5. Implement Family Member Management [pending]
+### Dependencies: 4.2
+### Description: Enable users to add, edit, or remove family members during onboarding.
 ### Details:
-Ensure all collected data is securely stored and users are seamlessly transitioned to the main application experience.
+Create dynamic forms and logic to manage multiple family members' data.
+
+## 6. Integrate API Calls [pending]
+### Dependencies: 4.3, 4.4, 4.5
+### Description: Connect the onboarding wizard to backend APIs for data submission and retrieval.
+### Details:
+Handle API requests for user data, macro calculations, and family member management.
+
+## 7. Implement Progress Tracking [pending]
+### Dependencies: 4.2
+### Description: Add a progress indicator to visually show users their current step and remaining steps.
+### Details:
+Display a progress bar or stepper that updates as users advance through the wizard.
+
+## 8. Add State Persistence [pending]
+### Dependencies: 4.2
+### Description: Ensure user input and progress are saved locally or remotely to prevent data loss.
+### Details:
+Implement mechanisms to persist state across sessions and page reloads.
+
+## 9. Implement Navigation Controls [pending]
+### Dependencies: 4.2, 4.3
+### Description: Add navigation logic for moving between steps, including next, previous, and skip actions.
+### Details:
+Ensure navigation respects validation and state, and allows users to revisit previous steps.
+
+## 10. Develop Completion Logic [pending]
+### Dependencies: 4.6, 4.9
+### Description: Define and implement logic for successful onboarding completion and final submission.
+### Details:
+Show a confirmation message and handle post-onboarding transitions.
+
+## 11. Ensure Responsive Design [pending]
+### Dependencies: 4.2
+### Description: Adapt the onboarding wizard UI for various screen sizes and devices.
+### Details:
+Use responsive layouts and test on multiple devices for optimal usability.
+
+## 12. Conduct End-to-End Testing [pending]
+### Dependencies: 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11
+### Description: Test the entire onboarding wizard for usability, validation, API integration, and responsiveness.
+### Details:
+Perform manual and automated tests to ensure a seamless onboarding experience.
 

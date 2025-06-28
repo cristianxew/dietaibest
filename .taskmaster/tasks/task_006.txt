@@ -29,33 +29,75 @@
 8. Verify toast notifications for success/error states
 
 # Subtasks:
-## 1. Develop Unified Recipe Import Interface [pending]
+## 1. Design Unified Import Interface [pending]
 ### Dependencies: None
-### Description: Create a single interface that allows users to import recipes via URL, image upload, or PDF upload, with clear input validation and user guidance.
+### Description: Create a unified frontend interface that allows users to select and submit documents via URL, image upload, or PDF upload.
 ### Details:
-The interface should support all input methods, provide feedback on supported formats, and validate URLs and file sizes (PDF ≤10MB).
+Ensure the interface is intuitive and supports all input methods with clear instructions.
 
-## 2. Implement Backend Extraction Services [pending]
+## 2. Implement URL Input Method [pending]
 ### Dependencies: 6.1
-### Description: Build backend endpoints for recipe extraction: web scraping for URLs, OCR for images and PDFs, and parsing for ingredient/instruction extraction.
+### Description: Develop the frontend and backend logic to accept document URLs and validate their accessibility.
 ### Details:
-Integrate Tesseract or EasyOCR for OCR processing, and ensure robust scraping/parsing logic for various recipe formats and languages.
+Support common document formats and handle invalid or unreachable URLs gracefully.
 
-## 3. Design Extraction Status and Progress Indicators [pending]
-### Dependencies: 6.1, 6.2
-### Description: Provide real-time feedback to users on the status of their import, including loading states, progress bars, and OCR processing indicators.
+## 3. Implement Image Input Method [pending]
+### Dependencies: 6.1
+### Description: Enable users to upload image files (JPG, PNG, etc.) for extraction.
 ### Details:
-Display clear progress and status updates for each import method, and handle transitions between states (e.g., uploading, processing, completed, failed).
+Include file size/type validation and preview functionality.
 
-## 4. Build Editable Ingredient and Instruction Components [pending]
-### Dependencies: 6.2
-### Description: Create UI components that display extracted ingredients and instructions, allowing users to edit, add, or remove items before saving.
+## 4. Implement PDF Input Method [pending]
+### Dependencies: 6.1
+### Description: Allow users to upload PDF documents for extraction.
 ### Details:
-Ensure extracted data is presented in an editable format, with validation for required fields and support for manual corrections.
+Support multi-page PDFs and validate file integrity.
 
-## 5. Implement Robust Error Handling and Retry Mechanisms [pending]
-### Dependencies: 6.2, 6.3
-### Description: Handle errors for unsupported sites, failed extractions, and invalid data, providing clear notifications and options to retry imports.
+## 5. Backend Extraction Pipeline [pending]
+### Dependencies: 6.2, 6.3, 6.4
+### Description: Develop backend services to process input documents using OCR, scraping, or PDF parsing as appropriate.
 ### Details:
-Show success/error toast notifications, allow users to retry failed imports, and ensure all error states are gracefully managed.
+Integrate with third-party extraction APIs or custom models for structured data extraction.
+
+## 6. Extraction Status and Progress UI [pending]
+### Dependencies: 6.5
+### Description: Build a frontend component to display real-time extraction status and progress to users.
+### Details:
+Show progress bars, estimated time, and handle asynchronous updates.
+
+## 7. Editable Extraction Results UI [pending]
+### Dependencies: None
+### Description: Create an interface for users to review and edit extracted data before finalizing.
+### Details:
+Allow inline editing, field validation, and highlight low-confidence extractions.
+
+## 8. Error and Retry Handling [pending]
+### Dependencies: 6.5
+### Description: Implement robust error detection, user-friendly error messages, and retry mechanisms for failed extractions.
+### Details:
+Cover network issues, extraction failures, and unsupported formats.
+
+## 9. Extraction Result Validation [pending]
+### Dependencies: None
+### Description: Validate extracted data for completeness, accuracy, and required fields before allowing submission.
+### Details:
+Use confidence scores and business rules to flag questionable data.
+
+## 10. Notification System [pending]
+### Dependencies: 6.6, 6.8
+### Description: Develop a notification system to inform users of extraction completion, errors, or required actions.
+### Details:
+Support in-app notifications and optional email alerts.
+
+## 11. Integrate All Input Methods into Unified Workflow [pending]
+### Dependencies: 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10
+### Description: Ensure all input methods (URL, image, PDF) flow through the same backend and UI processes for consistency.
+### Details:
+Test end-to-end flows for each input type and resolve integration issues.
+
+## 12. Comprehensive Testing and QA [pending]
+### Dependencies: None
+### Description: Perform thorough testing of all modules, including edge cases, error handling, and user experience.
+### Details:
+Include unit, integration, and user acceptance testing for all supported document types and flows.
 

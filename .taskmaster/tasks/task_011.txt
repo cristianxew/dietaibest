@@ -29,33 +29,75 @@
 8. Verify retry mechanism handles failed operations
 
 # Subtasks:
-## 1. Develop Store Preference and Item Selection Interface [pending]
+## 1. Design Store Preference UI [pending]
 ### Dependencies: None
-### Description: Create a user interface for selecting preferred grocery stores and specifying shopping items, supporting both manual entry and saved preferences.
+### Description: Create a user interface for selecting and managing preferred stores for shopping automation.
 ### Details:
-This interface should allow users to choose their preferred store and input or select items for the shopping list. It must support easy modification and saving of preferences for future sessions.
+UI should allow users to add, remove, and prioritize stores. Preferences should be saved for use in automation flows.
 
-## 2. Implement Automated Cart Filling and Checkout Integration [pending]
+## 2. Implement Store Preference Data Handling [pending]
 ### Dependencies: 11.1
-### Description: Integrate with browser automation or available APIs to fill the cart and generate checkout payloads at the selected grocery store.
+### Description: Develop backend logic to store and retrieve user store preferences.
 ### Details:
-Use browser automation tools (e.g., Selenium, Puppeteer) or store APIs where available to add items to the cart and prepare the checkout request. Ensure compatibility with multiple store platforms.
+Integrate with user profile storage and ensure preferences are accessible to automation modules.
 
-## 3. Build Progress Tracking and Status Polling Mechanism [pending]
+## 3. Integrate Cart Filling Mechanism [pending]
 ### Dependencies: 11.2
-### Description: Create a system to track the progress of the shopping automation, polling for status updates and reflecting them in the UI.
+### Description: Automate the process of adding selected products to the cart using browser agents or APIs.
 ### Details:
-Implement a polling mechanism (every 3 seconds) to fetch and display the current status of the cart filling and checkout process, including loading states and the ability to cancel.
+Support multiple stores and handle session management, product selection, and quantity updates.
 
-## 4. Design Error Handling and Item Substitution Workflow [pending]
+## 4. Develop Status Polling Service [pending]
 ### Dependencies: 11.3
-### Description: Implement robust error handling for unavailable items, including user prompts for substitutions and partial success management.
+### Description: Implement a service to poll the status of cart filling and order processing.
 ### Details:
-Detect unavailable items, prompt users for substitutions, and handle cases where some items are skipped. Provide clear feedback and maintain a list of skipped items.
+Regularly check for updates on cart state, product availability, and order progress.
 
-## 5. Integrate Logging, Retry, and Completion Handlers [pending]
+## 5. Build Progress Tracking UI [pending]
 ### Dependencies: 11.4
-### Description: Add detailed logging for debugging, implement retry mechanisms for failed operations, and handle cart completion by opening the store URL.
+### Description: Create a user interface to display real-time progress of the shopping automation process.
 ### Details:
-Ensure all operations are logged for troubleshooting, failed steps can be retried, and upon successful cart completion, the user is redirected to the store for final checkout.
+Show stages such as cart filling, checkout, payment, and completion with visual indicators.
+
+## 6. Implement Error and Substitution Handling [pending]
+### Dependencies: 11.3
+### Description: Develop logic to detect errors (e.g., out-of-stock, API failures) and handle product substitutions.
+### Details:
+Prompt users for substitution preferences or apply predefined rules for automatic substitutions.
+
+## 7. Create Completion Handler [pending]
+### Dependencies: 11.5, 11.6
+### Description: Develop a handler to finalize the automation process and notify the user upon successful completion.
+### Details:
+Trigger notifications, update order status, and provide a summary of the completed shopping session.
+
+## 8. Implement Loading and Cancel Mechanisms [pending]
+### Dependencies: 11.5
+### Description: Add functionality to show loading states and allow users to cancel ongoing automation tasks.
+### Details:
+Ensure graceful cancellation and rollback of partial operations if needed.
+
+## 9. Develop Logging Infrastructure [pending]
+### Dependencies: 11.3, 11.4, 11.6
+### Description: Set up comprehensive logging for all automation steps, errors, and user actions.
+### Details:
+Logs should be structured, searchable, and support troubleshooting and analytics.
+
+## 10. Implement Retry Mechanisms [pending]
+### Dependencies: 11.6, 11.9
+### Description: Add robust retry logic for transient failures during cart filling, status polling, and order submission.
+### Details:
+Define retry policies, backoff strategies, and escalation paths for persistent failures.
+
+## 11. Integrate All Components [pending]
+### Dependencies: 11.7, 11.8, 11.10
+### Description: Combine UI, backend, and automation modules into a cohesive workflow.
+### Details:
+Ensure seamless data flow, error propagation, and user feedback across all modules.
+
+## 12. End-to-End Testing and Validation [pending]
+### Dependencies: None
+### Description: Test the entire shopping automation system for reliability, usability, and edge cases.
+### Details:
+Simulate various scenarios including store preference changes, cart errors, substitutions, and cancellations.
 

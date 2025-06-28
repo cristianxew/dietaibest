@@ -28,33 +28,75 @@
 7. Verify sign-out clears cookies and session state
 
 # Subtasks:
-## 1. Set Up Supabase and Next.js Environment [pending]
+## 1. Configure Supabase Auth Project [pending]
 ### Dependencies: None
-### Description: Initialize a new Supabase project and Next.js app, configure environment variables, and install required packages for authentication.
+### Description: Set up a new Supabase project, enable authentication providers, and configure environment variables for integration.
 ### Details:
-Create a Supabase project, set up a Next.js app, and install @supabase/supabase-js and next-auth. Populate .env.local with Supabase URL and Anon Key.
+Create a Supabase project, enable desired auth methods (email, magic link, social), and obtain Project URL and Anon Key for use in the app.
 
-## 2. Configure Supabase Client and Next-Auth Providers [pending]
+## 2. Integrate Supabase Auth Client in Next.js [pending]
 ### Dependencies: 2.1
-### Description: Create Supabase client utilities and configure next-auth with Supabase and Google OAuth providers.
+### Description: Install Supabase client libraries and initialize them in the Next.js project for frontend and backend usage.
 ### Details:
-Implement Supabase client utilities for both client and server components. Set up next-auth in the API route, add Supabase and Google OAuth providers, and configure credentials in the Supabase dashboard.
+Install Supabase packages, set up utility functions for client/server, and ensure environment variables are loaded securely.
 
-## 3. Implement JWT Handling with httpOnly Cookies [pending]
+## 3. Implement next-auth Configuration [pending]
 ### Dependencies: 2.2
-### Description: Set up JWT storage and management using httpOnly cookies for secure session handling.
+### Description: Set up next-auth in the Next.js project, configure providers (including Supabase and Google), and define callbacks.
 ### Details:
-Configure next-auth to store JWTs in httpOnly cookies, ensuring tokens are inaccessible to client-side JavaScript and are sent with each request.
+Install next-auth, configure providers in [...nextauth].js, and set up session and JWT callbacks for token management.
 
-## 4. Develop Silent JWT Refresh Mechanism [pending]
+## 4. Integrate Google OAuth Provider [pending]
 ### Dependencies: 2.3
-### Description: Create an endpoint and logic to silently refresh JWTs before expiration to maintain user sessions.
+### Description: Register the app with Google, obtain OAuth credentials, and configure Google as a provider in next-auth and/or Supabase.
 ### Details:
-Implement an /auth/refresh API route that issues new JWTs using refresh tokens, and integrate silent refresh logic in the authentication context provider.
+Set up Google OAuth credentials, add Google provider to next-auth and/or Supabase, and test login flow.
 
-## 5. Integrate Authentication Context and Route Protection [pending]
-### Dependencies: 2.4
-### Description: Build an authentication context provider, sign-in/sign-up forms, and middleware/components to protect routes and manage authentication state.
+## 5. Implement JWT Handling and Storage [pending]
+### Dependencies: 2.3
+### Description: Configure JWT issuance, secure storage, and validation for both client and server, ensuring proper claims and expiry.
 ### Details:
-Create AuthContext for global auth state, implement sign-in/sign-up forms with email validation and magic link flow, add authentication middleware, and build AuthGuard components for protected routes.
+Ensure JWTs are securely stored (e.g., HTTP-only cookies), validate tokens on backend, and handle token parsing and renewal.
+
+## 6. Implement Silent Token Refresh [pending]
+### Dependencies: 2.5
+### Description: Set up silent refresh logic to renew JWTs before expiry without user interaction, using refresh tokens or session endpoints.
+### Details:
+Implement client-side logic to detect token expiry and call refresh endpoint, update tokens in storage, and handle errors.
+
+## 7. Create Authentication Context Provider [pending]
+### Dependencies: None
+### Description: Develop a React context provider to manage authentication state, user info, and expose auth actions to the app.
+### Details:
+Implement context with hooks for login, logout, and user state, and ensure it updates on token changes or refresh.
+
+## 8. Build Authentication Forms (Login, Signup, Magic Link) [pending]
+### Dependencies: None
+### Description: Design and implement UI forms for login, signup, and magic link flows, integrating with Supabase and next-auth APIs.
+### Details:
+Create accessible forms, handle input validation, connect to backend actions, and display error/success messages.
+
+## 9. Implement Magic Link Authentication Flow [pending]
+### Dependencies: None
+### Description: Enable magic link authentication in Supabase, configure email templates, and handle confirmation routes in the app.
+### Details:
+Set up magic link provider, customize email templates, and implement frontend logic for handling magic link callbacks.
+
+## 10. Develop Refresh Token Endpoint [pending]
+### Dependencies: None
+### Description: Create a secure backend endpoint to handle refresh token requests and issue new JWTs as needed.
+### Details:
+Implement endpoint with proper validation, rate limiting, and security checks to prevent abuse.
+
+## 11. Implement Authentication Middleware [pending]
+### Dependencies: 2.5
+### Description: Add middleware to protect API routes and pages, verifying JWTs and enforcing authentication requirements.
+### Details:
+Develop middleware for Next.js API routes and pages, check token validity, and redirect or error on failure.
+
+## 12. Implement Sign-Out and AuthGuard Logic [pending]
+### Dependencies: 2.7, 2.11
+### Description: Provide sign-out functionality and AuthGuard components to protect routes, ensuring proper cleanup and redirection.
+### Details:
+Implement sign-out logic to clear tokens and session, create AuthGuard components/HOCs to restrict access to authenticated users.
 
