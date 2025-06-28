@@ -1,0 +1,61 @@
+# Task ID: 10
+# Title: Shopping List Generation
+# Status: pending
+# Dependencies: 1, 2, 5, 8
+# Priority: medium
+# Description: Create shopping list generation from meal plans with ingredient consolidation, quantity adjustment, and category organization.
+# Details:
+1. Build shopping list data model
+2. Implement ingredient extraction from meal plans
+3. Create ingredient consolidation algorithm
+4. Build category-based organization
+5. Implement quantity adjustment interface with debounce
+6. Create real-time macro recalculation on quantity changes
+7. Implement pantry management to exclude owned items
+8. Build PDF export functionality
+9. Create shopping list persistence in Supabase
+10. Implement date-range selection for list generation
+11. Add loading states and error handling
+12. Create responsive design for shopping list view
+
+# Test Strategy:
+1. Test ingredient extraction from various meal plans
+2. Verify consolidation algorithm combines similar ingredients
+3. Test quantity adjustment updates totals correctly
+4. Verify category organization groups items properly
+5. Test PDF export generates correct output
+6. Verify shopping list persistence
+7. Test date-range selection generates correct lists
+8. Verify responsive layout on different devices
+
+# Subtasks:
+## 1. Build Shopping List Data Model [pending]
+### Dependencies: None
+### Description: Design and implement a data model to represent shopping lists, including ingredients, quantities, categories, and metadata such as dates and pantry status.
+### Details:
+Define entities and relationships for ingredients, meal plans, categories, quantities, and user pantry items to support efficient data handling and future extensions.
+
+## 2. Implement Ingredient Extraction from Meal Plans [pending]
+### Dependencies: 10.1
+### Description: Develop functionality to parse meal plans and extract ingredient lists with initial quantities for shopping list generation.
+### Details:
+Create parsers or algorithms to identify and extract ingredients from structured or unstructured meal plan data, ensuring accuracy and completeness.
+
+## 3. Create Ingredient Consolidation Algorithm [pending]
+### Dependencies: 10.2
+### Description: Develop an algorithm to consolidate duplicate ingredients from multiple meal plans, summing quantities and resolving unit differences.
+### Details:
+Implement logic to merge ingredients by name and category, convert units where necessary, and produce a unified list with adjusted quantities.
+
+## 4. Build Category-Based Organization and Pantry Management [pending]
+### Dependencies: 10.3
+### Description: Organize consolidated ingredients into categories and implement pantry management to exclude items already owned by the user.
+### Details:
+Assign ingredients to predefined categories for better shopping navigation and filter out pantry items to avoid redundant purchases.
+
+## 5. Implement Quantity Adjustment Interface with Real-Time Macro Recalculation [pending]
+### Dependencies: 10.4
+### Description: Create a user interface allowing quantity adjustments with debounce to optimize performance and update nutritional macros in real time.
+### Details:
+Develop interactive UI components for quantity editing, implement debounce to limit update frequency, and recalculate macros dynamically as quantities change.
+

@@ -1,0 +1,61 @@
+# Task ID: 5
+# Title: Recipe Storage and Management
+# Status: pending
+# Dependencies: 1, 2
+# Priority: high
+# Description: Implement the recipe module with CRUD operations, categorization, and favorites management. Create components for recipe cards, detail view, and editing interface.
+# Details:
+1. Design database schema for recipes with Supabase
+2. Create recipe data types and Zod validation schemas
+3. Implement recipe card component with macro chips
+4. Build recipe detail view with ingredients, instructions, and nutritional information
+5. Create recipe form for manual entry with validation
+6. Implement recipe categorization and tagging system
+7. Add favorites functionality with optimistic UI updates
+8. Create recipe list view with filtering and sorting
+9. Implement tabbed interface for In-house, My Recipes, and Favorites
+10. Add pagination for recipe lists
+11. Implement recipe search functionality
+12. Create recipe deletion with confirmation dialog
+
+# Test Strategy:
+1. Test CRUD operations for recipes
+2. Verify recipe form validation
+3. Test favorites toggling and persistence
+4. Verify filtering and sorting functionality
+5. Test recipe search with various queries
+6. Verify macro chips display correct nutritional information
+7. Test responsive layout of recipe cards and detail view
+8. Verify tabbed interface navigation
+
+# Subtasks:
+## 1. Design and Implement Recipe Database Schema [pending]
+### Dependencies: None
+### Description: Create a normalized database schema for recipes in Supabase, including tables for recipes, categories, tags, ingredients, and user favorites. Ensure support for CRUD operations and relationships.
+### Details:
+Use Supabase's visual schema designer or SQL migrations to define tables and relationships. Include fields for recipe metadata, categorization, and user associations. Plan for future extensibility.
+
+## 2. Develop Recipe Data Types and Validation Schemas [pending]
+### Dependencies: 5.1
+### Description: Define TypeScript data types and Zod validation schemas for recipes, categories, tags, and user favorites to ensure type safety and data integrity.
+### Details:
+Map database schema fields to TypeScript interfaces. Implement Zod schemas for validating recipe forms and API payloads, covering all required and optional fields.
+
+## 3. Build Recipe Card and List Components [pending]
+### Dependencies: 5.2
+### Description: Create reusable UI components for displaying recipe cards with macro chips, and implement a list view with filtering, sorting, and pagination.
+### Details:
+Design responsive recipe card components showing key info and macro chips. Implement a recipe list view supporting category/tag filters, sorting, and pagination controls.
+
+## 4. Implement Recipe Detail and Editing Interfaces [pending]
+### Dependencies: 5.3
+### Description: Develop detailed recipe view components showing ingredients, instructions, and nutritional info, and create forms for manual entry and editing with validation.
+### Details:
+Build a detail view displaying all recipe data. Implement a form for creating and editing recipes, integrating Zod validation and supporting image uploads if needed.
+
+## 5. Add Categorization, Tagging, Favorites, and Tabbed Navigation [pending]
+### Dependencies: 5.4
+### Description: Implement recipe categorization, tagging, and user favorites functionality with optimistic UI updates. Create a tabbed interface for In-house, My Recipes, and Favorites.
+### Details:
+Enable users to categorize and tag recipes, mark favorites, and switch between recipe sources using tabs. Ensure UI updates optimistically and syncs with backend.
+

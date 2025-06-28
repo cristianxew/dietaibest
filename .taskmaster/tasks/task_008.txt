@@ -1,0 +1,61 @@
+# Task ID: 8
+# Title: Meal Plan Calendar Interface
+# Status: pending
+# Dependencies: 1, 2, 5, 7
+# Priority: high
+# Description: Create a weekly meal plan calendar with drag-and-drop functionality, real-time macro calculation, and plan persistence.
+# Details:
+1. Build responsive calendar grid component
+2. Implement drag-and-drop using Framer Motion with spring physics
+3. Create meal slot component for calendar cells
+4. Build macro calculation service for meal plans
+5. Implement real-time macro updates on plan changes
+6. Create visual indicators for macro balance
+7. Add undo functionality (Ctrl+Z) for drag operations
+8. Implement plan saving to Supabase
+9. Create plan loading from saved plans
+10. Build plan sharing functionality
+11. Implement PDF export for meal plans
+12. Add responsive design for mobile, tablet, and desktop views
+
+# Test Strategy:
+1. Test drag-and-drop functionality
+2. Verify macro calculations update in real-time
+3. Test undo functionality reverts last action
+4. Verify plan saving and loading
+5. Test PDF export generates correct output
+6. Verify responsive layout on different devices
+7. Test plan sharing functionality
+8. Verify visual indicators reflect macro balance accurately
+
+# Subtasks:
+## 1. Design and Implement Responsive Weekly Calendar Grid [pending]
+### Dependencies: None
+### Description: Create a visually appealing, responsive calendar grid that displays days of the week and meal slots for each day, ensuring usability across mobile, tablet, and desktop devices.
+### Details:
+The grid should adapt to different screen sizes and orientations, providing a clear overview of the weekly meal plan. Use modern UI/UX principles and reference popular meal planner designs for inspiration.
+
+## 2. Develop Drag-and-Drop Meal Slot Functionality [pending]
+### Dependencies: 8.1
+### Description: Implement drag-and-drop interactions for meal slots using Framer Motion with spring physics, allowing users to rearrange meals within the calendar.
+### Details:
+Ensure smooth, intuitive drag-and-drop behavior with visual feedback. Support undo (Ctrl+Z) for drag operations to enhance user experience.
+
+## 3. Integrate Real-Time Macro Calculation and Visual Indicators [pending]
+### Dependencies: 8.2
+### Description: Build a service to calculate nutritional macros for the meal plan in real time and display visual indicators for macro balance as users modify the plan.
+### Details:
+Macros should update instantly as meals are added, removed, or rearranged. Visual cues should alert users to macro imbalances or targets met.
+
+## 4. Implement Plan Persistence and Retrieval with Supabase [pending]
+### Dependencies: 8.3
+### Description: Enable saving, loading, and sharing of meal plans by integrating with Supabase for backend storage and retrieval.
+### Details:
+Users should be able to save their current plan, load previous plans, and share plans with others. Ensure data integrity and secure access.
+
+## 5. Enable PDF Export and Print-Ready Output [pending]
+### Dependencies: 8.4
+### Description: Provide functionality to export the meal plan calendar as a PDF, ensuring the output is formatted for printing and easy sharing.
+### Details:
+The exported PDF should reflect the current state of the meal plan, including all meals and macro indicators, and be visually consistent with the app interface.
+

@@ -1,0 +1,61 @@
+# Task ID: 15
+# Title: Performance Optimization and Analytics
+# Status: pending
+# Dependencies: 1, 2, 5, 8, 9, 10, 11
+# Priority: medium
+# Description: Optimize application performance with code splitting, lazy loading, and implement Plausible analytics for tracking user journeys and conversion funnels.
+# Details:
+1. Implement code splitting for large components
+2. Create lazy loading for non-critical components
+3. Optimize image loading with next/image
+4. Implement Plausible analytics
+5. Create custom events for user journey tracking
+6. Build conversion funnel tracking (plan→cart)
+7. Implement performance monitoring
+8. Create error boundary components
+9. Build retry mechanisms for failed requests
+10. Implement skeleton loaders for all data-dependent components
+11. Create toast notification system
+12. Optimize bundle size to keep main chunk ≤ 200 kB
+
+# Test Strategy:
+1. Measure bundle size with `next build`
+2. Test code splitting reduces initial load size
+3. Verify lazy loading defers non-critical components
+4. Test Plausible events fire correctly
+5. Verify error boundaries catch and display errors
+6. Test retry mechanisms recover from failures
+7. Verify skeleton loaders display during data fetching
+8. Test toast notifications for various states
+
+# Subtasks:
+## 1. Implement Code Splitting for Large Components [pending]
+### Dependencies: None
+### Description: Divide the application into smaller code chunks by applying code splitting to large and distinct components, prioritizing route-based splitting for maximum bundle size reduction.
+### Details:
+Identify large components and routes that can be split, use dynamic import() and React.lazy to load them only when needed, and ensure critical components remain in the main bundle for optimal user experience.
+
+## 2. Create Lazy Loading for Non-Critical Components [pending]
+### Dependencies: 15.1
+### Description: Defer the loading of non-essential or secondary components using lazy loading techniques to further optimize performance.
+### Details:
+Identify non-critical components (e.g., modals, secondary widgets) and implement React.lazy and Suspense to load them on demand, ensuring that essential UI remains unaffected.
+
+## 3. Integrate Plausible Analytics for User Tracking [pending]
+### Dependencies: None
+### Description: Set up Plausible analytics to monitor user journeys and gather data on application usage and conversion funnels.
+### Details:
+Install and configure Plausible analytics, ensuring privacy compliance and accurate event tracking across the application.
+
+## 4. Implement Custom Events for User Journey and Conversion Funnel Tracking [pending]
+### Dependencies: 15.3
+### Description: Define and trigger custom analytics events to capture key user actions and transitions through the conversion funnel (e.g., plan selection to cart).
+### Details:
+Map out the user journey and conversion funnel steps, implement event triggers in the codebase, and ensure events are sent to Plausible for analysis.
+
+## 5. Optimize Bundle Size and Monitor Performance [pending]
+### Dependencies: 15.1, 15.2
+### Description: Continuously monitor and optimize the application's bundle size, aiming to keep the main chunk ≤ 200 kB, and assess performance improvements from code splitting and lazy loading.
+### Details:
+Use build tools and performance monitoring solutions (e.g., Lighthouse, Webpack Bundle Analyzer) to track bundle size and loading metrics, making further adjustments as needed.
+

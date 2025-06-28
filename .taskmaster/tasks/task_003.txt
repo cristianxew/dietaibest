@@ -1,0 +1,59 @@
+# Task ID: 3
+# Title: Multi-language Support
+# Status: pending
+# Dependencies: 1, 2
+# Priority: medium
+# Description: Implement internationalization (i18n) with next-intl to support English, Polish, and Spanish languages. Create language switcher and ensure all UI strings are translatable.
+# Details:
+1. Install next-intl: `npm install next-intl@3.0.0`
+2. Configure next-intl in `next.config.js` with supported locales (EN, PL, ES)
+3. Create locale files in `messages/{locale}.json` for each supported language
+4. Set up language detection middleware in `middleware.ts`
+5. Create a language switcher component in `components/LanguageSwitcher.tsx`
+6. Implement locale persistence using cookies
+7. Extract all UI strings into translation keys
+8. Create a custom hook `useTranslation` for accessing translations
+9. Implement locale-specific formatting for dates, numbers, and currencies
+10. Add language preference to user profile in Supabase
+11. Ensure all dynamic content (errors, notifications) uses translation keys
+
+# Test Strategy:
+1. Test language switcher changes locale correctly
+2. Verify translations load for each supported language
+3. Test locale persistence across page refreshes
+4. Verify date and number formatting follows locale conventions
+5. Test language preference syncs with user profile
+6. Verify all UI components display translated content
+7. Test fallback behavior for missing translations
+
+# Subtasks:
+## 1. Configure next-intl and Supported Locales [pending]
+### Dependencies: None
+### Description: Install next-intl and configure it in next.config.js to support English, Polish, and Spanish languages.
+### Details:
+Run 'npm install next-intl@3.0.0'. Update next.config.js to include the supported locales (EN, PL, ES) and set the default locale.
+
+## 2. Set Up Locale Files and Translation Keys [pending]
+### Dependencies: 3.1
+### Description: Create locale-specific JSON files for each language and extract all UI strings into translation keys.
+### Details:
+Create 'messages/en.json', 'messages/pl.json', and 'messages/es.json'. Move all UI strings into these files as translation keys.
+
+## 3. Implement Language Detection and Persistence [pending]
+### Dependencies: 3.1
+### Description: Set up middleware for automatic language detection and implement locale persistence using cookies.
+### Details:
+Configure 'middleware.ts' to detect the user's preferred language and store the selection in cookies for persistence.
+
+## 4. Develop Language Switcher Component [pending]
+### Dependencies: 3.2, 3.3
+### Description: Create a language switcher UI component to allow users to change languages manually.
+### Details:
+Build 'components/LanguageSwitcher.tsx' to let users select their preferred language, updating the locale and persisting the choice.
+
+## 5. Integrate Translations and Locale Formatting Throughout App [pending]
+### Dependencies: 3.2, 3.4
+### Description: Ensure all UI components, dynamic content, and formatting use translation keys and locale-specific formats.
+### Details:
+Use the custom 'useTranslation' hook and next-intl's formatting utilities to handle translations, dates, numbers, and currencies. Update error messages and notifications to use translation keys.
+

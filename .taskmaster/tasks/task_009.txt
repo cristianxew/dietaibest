@@ -1,0 +1,61 @@
+# Task ID: 9
+# Title: AI-Powered Meal Plan Generation
+# Status: pending
+# Dependencies: 1, 2, 5, 7, 8
+# Priority: high
+# Description: Implement automated meal plan generation based on user preferences and nutritional targets. Create interface for source selection and plan customization.
+# Details:
+1. Create meal plan generation request interface
+2. Implement source selection (in-house recipes, favorites, mixed)
+3. Build `/api/ai/meal-plan` endpoint connection
+4. Create progress tracking with Server-Sent Events (SSE)
+5. Implement error handling for generation failures
+6. Build result display with macro validation
+7. Create plan adjustment interface for fine-tuning
+8. Implement plan regeneration for specific days/meals
+9. Add loading states and skeleton UI
+10. Create success/error toast notifications
+11. Implement plan saving after generation
+12. Build tolerance checking (±5% of target macros)
+
+# Test Strategy:
+1. Test meal plan generation with various preferences
+2. Verify progress tracking updates correctly
+3. Test error handling for generation failures
+4. Verify macro validation identifies plans outside tolerance
+5. Test plan adjustment interface
+6. Verify plan saving after generation
+7. Test regeneration for specific days/meals
+8. Verify loading states and skeleton UI
+
+# Subtasks:
+## 1. Design User Input Interface for Meal Plan Generation [pending]
+### Dependencies: None
+### Description: Create an intuitive interface for users to input dietary preferences, nutritional targets, and select recipe sources (in-house, favorites, mixed).
+### Details:
+The interface should allow users to specify allergies, preferred cuisines, macro targets, and source selection, ensuring all necessary data is collected for personalized meal plan generation.
+
+## 2. Develop Backend Endpoint for AI Meal Plan Generation [pending]
+### Dependencies: 9.1
+### Description: Implement the `/api/ai/meal-plan` endpoint to process user input, invoke AI generation, and return structured meal plans.
+### Details:
+The endpoint should validate input, interact with the AI model, and return meal plans with macro breakdowns. Include error handling for invalid input or generation failures.
+
+## 3. Implement Real-Time Progress Tracking and Error Handling [pending]
+### Dependencies: 9.2
+### Description: Enable Server-Sent Events (SSE) for progress updates and robust error handling during meal plan generation.
+### Details:
+Display real-time progress to users, handle and display errors gracefully, and provide loading states and notifications for both success and failure.
+
+## 4. Build Meal Plan Display and Macro Validation [pending]
+### Dependencies: 9.3
+### Description: Create a user interface to display generated meal plans, validate macro targets (±5%), and allow users to review results.
+### Details:
+Show meal details, macro breakdowns, and highlight any deviations from nutritional targets. Include visual cues for macro compliance.
+
+## 5. Enable Plan Customization, Regeneration, and Saving [pending]
+### Dependencies: 9.4
+### Description: Allow users to adjust meal plans, regenerate specific days/meals, and save finalized plans.
+### Details:
+Provide interfaces for fine-tuning meals, triggering partial regenerations, and persisting plans to user accounts. Ensure changes are reflected in macro validation.
+

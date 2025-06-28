@@ -1,0 +1,61 @@
+# Task ID: 6
+# Title: Recipe Import and OCR
+# Status: pending
+# Dependencies: 1, 2, 5
+# Priority: medium
+# Description: Implement multiple recipe input methods including URL scraping, image OCR, and PDF upload with automatic extraction of ingredients and instructions.
+# Details:
+1. Create URL import component with validation
+2. Implement recipe scraping endpoint that connects to backend service
+3. Build image upload component with preview and cropping
+4. Implement PDF upload with size validation (≤10MB)
+5. Create OCR processing status indicator
+6. Build editable ingredient list component for post-extraction editing
+7. Implement error handling for unsupported sites and failed extractions
+8. Add loading states and progress indicators
+9. Create retry mechanism for failed imports
+10. Implement validation for extracted data
+11. Add success/error toast notifications
+12. Create unified import interface that handles all input methods
+
+# Test Strategy:
+1. Test URL validation and scraping with various recipe websites
+2. Verify PDF upload size restrictions
+3. Test image upload and preview functionality
+4. Verify extracted data can be edited before saving
+5. Test error handling for unsupported sites
+6. Verify loading states and progress indicators
+7. Test retry mechanism for failed imports
+8. Verify toast notifications for success/error states
+
+# Subtasks:
+## 1. Develop Unified Recipe Import Interface [pending]
+### Dependencies: None
+### Description: Create a single interface that allows users to import recipes via URL, image upload, or PDF upload, with clear input validation and user guidance.
+### Details:
+The interface should support all input methods, provide feedback on supported formats, and validate URLs and file sizes (PDF ≤10MB).
+
+## 2. Implement Backend Extraction Services [pending]
+### Dependencies: 6.1
+### Description: Build backend endpoints for recipe extraction: web scraping for URLs, OCR for images and PDFs, and parsing for ingredient/instruction extraction.
+### Details:
+Integrate Tesseract or EasyOCR for OCR processing, and ensure robust scraping/parsing logic for various recipe formats and languages.
+
+## 3. Design Extraction Status and Progress Indicators [pending]
+### Dependencies: 6.1, 6.2
+### Description: Provide real-time feedback to users on the status of their import, including loading states, progress bars, and OCR processing indicators.
+### Details:
+Display clear progress and status updates for each import method, and handle transitions between states (e.g., uploading, processing, completed, failed).
+
+## 4. Build Editable Ingredient and Instruction Components [pending]
+### Dependencies: 6.2
+### Description: Create UI components that display extracted ingredients and instructions, allowing users to edit, add, or remove items before saving.
+### Details:
+Ensure extracted data is presented in an editable format, with validation for required fields and support for manual corrections.
+
+## 5. Implement Robust Error Handling and Retry Mechanisms [pending]
+### Dependencies: 6.2, 6.3
+### Description: Handle errors for unsupported sites, failed extractions, and invalid data, providing clear notifications and options to retry imports.
+### Details:
+Show success/error toast notifications, allow users to retry failed imports, and ensure all error states are gracefully managed.
+

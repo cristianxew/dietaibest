@@ -1,0 +1,24 @@
+# Task ID: 1
+# Title: Project Setup and Configuration
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Initialize the Next.js 15 project with TypeScript, Tailwind CSS, and Shadcn UI components. Configure ESLint, Prettier, and set up the project structure.
+# Details:
+1. Create a new Next.js 15 project with App Router: `npx create-next-app@latest dietaibest --typescript --tailwind --eslint --app`
+2. Install and configure Shadcn UI: `npx shadcn-ui@latest init`
+3. Set up project structure with directories for components, hooks, utils, types, and API services
+4. Configure TypeScript with strict mode in tsconfig.json
+5. Set up ESLint and Prettier with recommended rules
+6. Configure Tailwind CSS with custom theme tokens for the design system
+7. Create a base layout with responsive breakpoints (mobile < 640px, tablet 641-1024px, desktop > 1024px)
+8. Set up Git repository with appropriate .gitignore
+9. Configure Vercel deployment settings
+10. Install required dependencies: `npm install next-intl@3.0.0 react-query@5.0.0 framer-motion@11.0.0 zod@3.22.4`
+
+# Test Strategy:
+1. Verify project builds without errors: `npm run build`
+2. Ensure TypeScript type checking passes: `npm run typecheck`
+3. Validate ESLint configuration: `npm run lint`
+4. Test responsive layout rendering on different viewport sizes using Playwright
+5. Verify Shadcn UI components render correctly

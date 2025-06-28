@@ -1,0 +1,61 @@
+# Task ID: 4
+# Title: User Onboarding Wizard
+# Status: pending
+# Dependencies: 1, 2, 3
+# Priority: high
+# Description: Create a multi-step onboarding wizard to collect user demographics, dietary goals, preferences, and family members. Implement macro calculator for nutritional target setting.
+# Details:
+1. Create a multi-step form component with state management
+2. Design three wizard steps: demographics, goals, and preferences
+3. Implement form validation using Zod schema validation
+4. Create macro calculator utility in `utils/macroCalculator.ts` based on user inputs
+5. Build family member management component with add/edit/remove functionality
+6. Implement `/api/macros/estimate` endpoint for real-time macro calculation
+7. Create progress indicator for wizard steps
+8. Add form state persistence between steps
+9. Implement back/next navigation with state preservation
+10. Create completion handler to store profile in Supabase
+11. Add redirect to dashboard on completion
+12. Implement responsive design for all wizard screens
+
+# Test Strategy:
+1. Test form validation for required fields
+2. Verify macro calculation accuracy with test cases
+3. Test navigation between steps preserves state
+4. Verify family member addition/removal works correctly
+5. Test form submission stores data in Supabase
+6. Verify redirect to dashboard after completion
+7. Test responsive layout on different devices
+8. Verify error handling for invalid inputs
+
+# Subtasks:
+## 1. Design Multi-Step Onboarding Flow [pending]
+### Dependencies: None
+### Description: Map out and design the sequential steps of the onboarding wizard, including user demographics, dietary goals, preferences, and family member management, ensuring a logical and user-friendly progression.
+### Details:
+Define the structure and order of each onboarding step, referencing best practices for wizard UI patterns to ensure clarity and engagement.
+
+## 2. Implement Form Components with State Management [pending]
+### Dependencies: 4.1
+### Description: Develop reusable form components for each onboarding step, integrating state management to persist user input across steps.
+### Details:
+Utilize a state management solution to handle form data, navigation, and progress tracking throughout the wizard.
+
+## 3. Integrate Validation and Macro Calculator Utility [pending]
+### Dependencies: 4.2
+### Description: Apply Zod schema validation to all form inputs and connect the macro calculator utility to compute nutritional targets based on user data.
+### Details:
+Ensure all user inputs are validated in real-time and that macro calculations are triggered and displayed as users provide relevant information.
+
+## 4. Develop Family Member Management Functionality [pending]
+### Dependencies: 4.2
+### Description: Build components to add, edit, and remove family members within the onboarding wizard, ensuring seamless integration with the overall form state.
+### Details:
+Allow users to manage multiple family members, with each member's data incorporated into the onboarding process and macro calculations as needed.
+
+## 5. Implement Completion Handling and Dashboard Redirect [pending]
+### Dependencies: 4.3, 4.4
+### Description: Create logic to store the completed user profile in Supabase and redirect users to the dashboard upon successful onboarding completion.
+### Details:
+Ensure all collected data is securely stored and users are seamlessly transitioned to the main application experience.
+
