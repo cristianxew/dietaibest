@@ -1,5 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { supabase } from "@/lib/supabase";
 
 // This is the Next.js route handler for next-auth. It configures authentication providers and session handling.
 // Providers are configured using environment variables for security and flexibility.
@@ -18,6 +20,51 @@ const handler = NextAuth({
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      id: "credentials",
+      name: "Email and Password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        supabaseToken: { label: "Supabase Token", type: "text" },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.email || !credentials?.supabaseToken) {
+            return null;
+          }
+
+          // Verify the Supabase token and get user info
+          const {
+            data: { user },
+            error,
+          } = await supabase.auth.getUser(credentials.supabaseToken);
+
+          if (error || !user) {
+            console.error("Supabase auth verification failed:", error);
+            return null;
+          }
+
+          // Ensure email matches
+          if (user.email !== credentials.email) {
+            console.error("Email mismatch in credentials");
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name:
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email,
+            image: user.user_metadata?.avatar_url || null,
+          };
+        } catch (error) {
+          console.error("Credentials authorization error:", error);
+          return null;
+        }
+      },
     }),
   ],
   session: {
