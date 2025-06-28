@@ -24,6 +24,21 @@ const handler = NextAuth({
     strategy: "jwt", // Use JWT for stateless sessions
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  jwt: {
+    // JWT tokens expire in 1 hour to enable proper refresh cycle
+    maxAge: 60 * 60, // 1 hour
+  },
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   callbacks: {
     async signIn({ user, account }) {
       // Custom sign-in logic - sync user with Supabase if needed
@@ -54,10 +69,28 @@ const handler = NextAuth({
       if (account) {
         token.provider = account.provider;
         token.accessToken = account.access_token;
+        // Set issued at time for refresh logic
+        token.iat = Math.floor(Date.now() / 1000);
+        token.exp = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour expiry
       }
       if (user) {
         token.email = user.email;
+        token.name = user.name;
+        token.picture = user.image;
+        // Generate a unique session ID for this login session
+        if (!token.sessionId) {
+          token.sessionId = crypto.randomUUID();
+        }
       }
+
+      // Check if token needs refresh (within 5 minutes of expiry)
+      const now = Math.floor(Date.now() / 1000);
+      const tokenExp = token.exp as number;
+      if (tokenExp && now > tokenExp - 300) {
+        // Token is about to expire, trigger refresh
+        token.shouldRefresh = true;
+      }
+
       return token;
     },
     async redirect({ url, baseUrl }) {
