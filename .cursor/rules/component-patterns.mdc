@@ -1,0 +1,195 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Component Patterns & Development Standards
+
+## Component Structure
+
+### UI Component Hierarchy
+```
+components/
+  ui/              # Shadcn UI components (never modify directly)
+  forms/           # Reusable form components with validation
+  _components/     # Route-specific components (co-located)
+```
+
+### Form Component Patterns
+```typescript
+// Always use react-hook-form + zod validation
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Server action integration
+const handleSubmit = async (data: FormData) => {
+  const result = await serverAction(data);
+  if (result.error) {
+    toast.error(result.error);
+  } else {
+    toast.success("Success!");
+  }
+};
+```
+
+## Nutrition Data Standards
+
+### Macro Display Format
+```typescript
+type NutritionMacros = {
+  calories: number;      // kcal
+  protein: number;       // grams  
+  carbs: number;         // grams
+  fat: number;           // grams
+  fiber?: number;        // grams (optional)
+};
+
+// Always display as: "1,240 cal • 45g protein • 120g carbs • 38g fat"
+```
+
+### Nutritional Tolerance System
+```typescript
+// Green: within 5% of target
+// Yellow: 5-15% over target  
+// Red: >15% over target
+const getToleranceColor = (actual: number, target: number) => {
+  const ratio = actual / target;
+  if (ratio <= 1.05) return "green";
+  if (ratio <= 1.15) return "yellow"; 
+  return "red";
+};
+```
+
+## Authentication Patterns
+
+### Route Protection
+```typescript
+// All server actions must include auth check
+export async function serverAction() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { error: "Authentication required" };
+  }
+  // ... action logic
+}
+```
+
+### Component Auth State
+```typescript
+// Use Supabase auth context
+const { user, loading } = useAuth();
+
+if (loading) return <LoadingSkeleton />;
+if (!user) return <AuthPrompt />;
+```
+
+## Data Fetching Patterns
+
+### Server Components (Preferred)
+```typescript
+// Fetch data at page level, pass to components
+export default async function Page() {
+  const recipes = await getRecipes();
+  return <RecipeList recipes={recipes} />;
+}
+```
+
+### Client Components (When Interactive)
+```typescript
+// Use for real-time updates, form interactions
+"use client";
+import { useState, useEffect } from "react";
+```
+
+## Error Handling Standards
+
+### API Responses
+```typescript
+// Consistent response format
+type APIResponse<T> = {
+  data?: T;
+  error?: string;
+};
+
+// Client-side error display
+if (response.error) {
+  toast.error(response.error);
+  return;
+}
+```
+
+### Loading States
+```typescript
+// Use Shadcn UI skeleton components
+import { Skeleton } from "@/components/ui/skeleton";
+
+const LoadingCard = () => (
+  <div className="space-y-2">
+    <Skeleton className="h-4 w-[250px]" />
+    <Skeleton className="h-4 w-[200px]" />
+  </div>
+);
+```
+
+## Styling Conventions
+
+### Tailwind Classes Order
+1. **Layout**: `flex`, `grid`, `absolute`, etc.
+2. **Sizing**: `w-*`, `h-*`, `max-w-*`, etc.  
+3. **Spacing**: `m-*`, `p-*`, `gap-*`, etc.
+4. **Typography**: `text-*`, `font-*`, etc.
+5. **Colors**: `bg-*`, `text-*`, `border-*`, etc.
+6. **Effects**: `shadow-*`, `rounded-*`, etc.
+
+### Responsive Design
+```typescript
+// Mobile-first approach
+className="w-full md:w-1/2 lg:w-1/3"
+
+// Common breakpoints:
+// sm: 640px (tablet)
+// md: 768px (small desktop)  
+// lg: 1024px (desktop)
+// xl: 1280px (large desktop)
+```
+
+## Real-time Features
+
+### Macro Recalculation
+```typescript
+// Trigger on any nutrition-related change
+useEffect(() => {
+  recalculateMacros();
+}, [recipes, mealPlan, userTargets]);
+```
+
+### Supabase Subscriptions
+```typescript
+// Real-time data updates
+useEffect(() => {
+  const subscription = supabase
+    .channel('recipes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, 
+        (payload) => {
+          // Handle real-time updates
+        })
+    .subscribe();
+
+  return () => subscription.unsubscribe();
+}, []);
+```
+
+## Testing Integration Points
+
+### Component Testing
+- Test user interactions (form submission, button clicks)
+- Test error states and loading states
+- Test responsive design breakpoints
+- Mock API calls with consistent response format
+
+### API Testing  
+- Test server actions with/without authentication
+- Test error handling for external API failures
+- Test rate limiting and fallback behaviors
+- Validate Prisma schema changes don't break existing code
