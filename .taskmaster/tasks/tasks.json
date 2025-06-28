@@ -677,68 +677,68 @@
       {
         "id": 7,
         "title": "Edamam API Integration",
-        "description": "Integrate with Edamam API for automatic nutritional calculation of recipes. Implement caching and error handling for API requests.",
-        "details": "1. Set up Edamam API client in `lib/edamam.ts`\n2. Create environment variables for API keys\n3. Implement ingredient parsing and normalization\n4. Build nutritional calculation service that calls Edamam API\n5. Create caching mechanism for API responses\n6. Implement retry logic for failed API requests\n7. Build macro calculation utility that processes Edamam responses\n8. Create fallback mechanism for when API is unavailable\n9. Implement rate limiting handling\n10. Add detailed error logging\n11. Create utility for converting between measurement units\n12. Implement batch processing for multiple ingredients",
-        "testStrategy": "1. Test API client with mock responses\n2. Verify nutritional calculation accuracy\n3. Test caching mechanism reduces API calls\n4. Verify retry logic handles temporary failures\n5. Test rate limit handling\n6. Verify fallback mechanism works when API is down\n7. Test unit conversion utility\n8. Verify batch processing handles multiple ingredients correctly",
-        "priority": "medium",
+        "description": "Integrate with both Edamam Recipe Search API and Meal Planner API. Use the Recipe Search API for automatic nutritional calculation of user-created recipes, and the Meal Planner API for generating complete meal plans. Implement caching and error handling for both API request types.",
+        "status": "pending",
         "dependencies": [
           1,
           5
         ],
-        "status": "pending",
+        "priority": "medium",
+        "details": "1. Set up Edamam API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs\n2. Create environment variables for shared API keys\n3. Implement ingredient parsing and normalization for Recipe Search API\n4. Build nutritional calculation service using Recipe Search API for user recipes\n5. Build meal plan generation service using Meal Planner API\n6. Create caching mechanism for both API response types\n7. Implement retry logic for failed API requests\n8. Build macro calculation utility that processes Recipe Search API responses\n9. Create fallback mechanism for when either API is unavailable\n10. Implement rate limiting handling for both APIs\n11. Add detailed error logging for both API integrations\n12. Create utility for converting between measurement units\n13. Implement batch processing for multiple ingredients and meal plan requests",
+        "testStrategy": "1. Test both API clients with mock responses\n2. Verify nutritional calculation accuracy for user recipes via Recipe Search API\n3. Verify meal plan generation via Meal Planner API\n4. Test caching mechanism reduces API calls for both endpoints\n5. Verify retry logic handles temporary failures for both APIs\n6. Test rate limit handling for both APIs\n7. Verify fallback mechanism works when either API is down\n8. Test unit conversion utility\n9. Verify batch processing handles multiple ingredients and meal plan requests correctly",
         "subtasks": [
           {
             "id": 1,
             "title": "Configure Edamam API Client and Environment",
-            "description": "Set up the Edamam API client in the codebase and configure environment variables for API credentials.",
-            "dependencies": [],
-            "details": "Implement the API client in `lib/edamam.ts` and ensure API keys are securely managed using environment variables.",
+            "description": "Set up the Edamam API clients in the codebase for both Recipe Search and Meal Planner APIs, and configure environment variables for shared API credentials.",
             "status": "pending",
-            "testStrategy": "Verify that the client can successfully authenticate and make a basic request to the Edamam API using test credentials."
+            "dependencies": [],
+            "details": "Implement API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs. Ensure API keys are securely managed using environment variables.",
+            "testStrategy": "Verify that both clients can successfully authenticate and make basic requests to their respective Edamam APIs using test credentials."
           },
           {
             "id": 2,
             "title": "Implement Ingredient Parsing and Normalization",
-            "description": "Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam API requirements.",
+            "description": "Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam Recipe Search API requirements.",
+            "status": "pending",
             "dependencies": [
               1
             ],
-            "details": "Create functions to standardize ingredient formats and units, ensuring accurate API queries.",
-            "status": "pending",
-            "testStrategy": "Test with a variety of ingredient strings to confirm correct normalization and compatibility with Edamam API."
+            "details": "Create functions to standardize ingredient formats and units, ensuring accurate Recipe Search API queries.",
+            "testStrategy": "Test with a variety of ingredient strings to confirm correct normalization and compatibility with Edamam Recipe Search API."
           },
           {
             "id": 3,
-            "title": "Develop Nutritional Calculation Service",
-            "description": "Build a service that sends parsed ingredients to the Edamam API and processes the nutritional data response.",
+            "title": "Develop Nutritional Calculation and Meal Plan Services",
+            "description": "Build services that send parsed ingredients to the Recipe Search API for nutritional analysis and use the Meal Planner API for automated meal plan generation.",
+            "status": "pending",
             "dependencies": [
               2
             ],
-            "details": "Implement API calls for nutritional analysis and extract macro and micronutrient information from responses.",
-            "status": "pending",
-            "testStrategy": "Validate that the service returns accurate nutritional data for sample recipes and handles API response variations."
+            "details": "Implement API calls for nutritional analysis of user recipes via Recipe Search API and for generating meal plans via Meal Planner API. Extract macro and micronutrient information from Recipe Search API responses and structure meal plan data from Meal Planner API.",
+            "testStrategy": "Validate that the services return accurate nutritional data for sample recipes and generate valid meal plans, handling API response variations."
           },
           {
             "id": 4,
             "title": "Implement Caching and Rate Limiting Handling",
-            "description": "Add caching for API responses and logic to handle Edamam API rate limits efficiently.",
+            "description": "Add caching for both Recipe Search and Meal Planner API responses and logic to handle Edamam API rate limits efficiently.",
+            "status": "pending",
             "dependencies": [
               3
             ],
-            "details": "Store frequently requested nutritional data and implement mechanisms to respect API rate limits, reducing redundant calls.",
-            "status": "pending",
-            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded."
+            "details": "Store frequently requested nutritional and meal plan data and implement mechanisms to respect API rate limits, reducing redundant calls.",
+            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded for both APIs."
           },
           {
             "id": 5,
             "title": "Add Robust Error Handling and Fallback Mechanisms",
-            "description": "Implement retry logic, detailed error logging, and fallback strategies for API failures or unavailability.",
+            "description": "Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of either Edamam API.",
+            "status": "pending",
             "dependencies": [
               4
             ],
-            "details": "Ensure the system gracefully handles API errors, logs issues for debugging, and provides fallback responses when needed.",
-            "status": "pending",
-            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended."
+            "details": "Ensure the system gracefully handles errors from both APIs, logs issues for debugging, and provides fallback responses when needed.",
+            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended for both APIs."
           }
         ]
       },
@@ -888,10 +888,8 @@
       {
         "id": 9,
         "title": "AI-Powered Meal Plan Generation",
-        "description": "Implement automated meal plan generation based on user preferences and nutritional targets. Create interface for source selection and plan customization.",
-        "details": "1. Create meal plan generation request interface\n2. Implement source selection (in-house recipes, favorites, mixed)\n3. Build `/api/ai/meal-plan` endpoint connection\n4. Create progress tracking with Server-Sent Events (SSE)\n5. Implement error handling for generation failures\n6. Build result display with macro validation\n7. Create plan adjustment interface for fine-tuning\n8. Implement plan regeneration for specific days/meals\n9. Add loading states and skeleton UI\n10. Create success/error toast notifications\n11. Implement plan saving after generation\n12. Build tolerance checking (±5% of target macros)",
-        "testStrategy": "1. Test meal plan generation with various preferences\n2. Verify progress tracking updates correctly\n3. Test error handling for generation failures\n4. Verify macro validation identifies plans outside tolerance\n5. Test plan adjustment interface\n6. Verify plan saving after generation\n7. Test regeneration for specific days/meals\n8. Verify loading states and skeleton UI",
-        "priority": "high",
+        "description": "Integrate Edamam's Meal Planner API to automate meal plan generation based on user preferences, dietary restrictions, and nutritional targets. Build an interface for user input, source selection, and plan customization, leveraging Edamam's features such as multi-week planning, nutrient personalization, diet/health labels, shopping list generation, and AI Assistant support.",
+        "status": "pending",
         "dependencies": [
           1,
           2,
@@ -899,140 +897,137 @@
           7,
           8
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "1. Build user input interface to collect preferences, dietary restrictions, and nutritional targets\n2. Implement source selection (in-house recipes, favorites, Edamam API, or mixed)\n3. Integrate with Edamam Meal Planner API endpoints for meal plan generation\n4. Construct and validate API request payloads based on user input\n5. Handle API responses and display generated meal plans, including up to 2 weeks of planning and 28 nutrients\n6. Display and manage diet/health labels (up to 40 supported by Edamam)\n7. Show automatically generated shopping lists from Edamam\n8. Provide plan adjustment and fine-tuning interface (e.g., swap meals, adjust servings)\n9. Implement plan regeneration for specific days/meals via Edamam API\n10. Add loading states, skeleton UI, and progress tracking (SSE if supported by Edamam)\n11. Implement robust error handling for API failures and invalid responses\n12. Create success/error toast notifications\n13. Enable plan saving and export after generation\n14. Build tolerance checking (±5% of target macros, using Edamam's nutrient data)",
+        "testStrategy": "1. Test meal plan generation with various user preferences and dietary restrictions via Edamam API\n2. Verify correct construction and validation of API request payloads\n3. Test error handling for API failures and invalid responses\n4. Verify macro and nutrient validation using Edamam's data\n5. Test plan adjustment and regeneration features\n6. Verify plan saving and export after generation\n7. Test shopping list generation and display\n8. Verify loading states, skeleton UI, and progress tracking\n9. Ensure diet/health label filtering and display works as expected",
         "subtasks": [
           {
             "id": 1,
-            "title": "User Input Collection",
-            "description": "Design and implement the UI for users to input dietary preferences, restrictions, goals, and other relevant information for meal plan generation.",
+            "title": "API Setup and Authentication",
+            "description": "Register for Edamam Meal Planner API, obtain API keys, and configure secure storage and usage of credentials in backend services.",
             "dependencies": [],
-            "details": "Include fields for calorie targets, macronutrient ratios, allergies, ingredient dislikes, and meal frequency.",
+            "details": "Follow Edamam's documentation to set up API access and ensure secure handling of app_id and app_key for all API requests.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Backend Endpoint for Meal Plan Generation",
-            "description": "Develop a backend API endpoint that receives user input and initiates the AI meal plan generation process.",
-            "dependencies": [
-              1
-            ],
-            "details": "Ensure the endpoint validates input and triggers the AI workflow for meal plan creation.",
+            "title": "User Input Collection Interface",
+            "description": "Design and implement frontend forms to collect user meal preferences, dietary restrictions, allergies, and nutrition targets.",
+            "dependencies": [],
+            "details": "Ensure the UI supports all Edamam-supported filters, including diet/health labels, calorie/nutrient targets, and meal frequency.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Server-Sent Events (SSE) Progress Updates",
-            "description": "Implement SSE or similar real-time communication to stream progress updates from the backend to the frontend during meal plan generation.",
+            "title": "Request Payload Construction",
+            "description": "Map user input to Edamam's required JSON structure for meal plan requests.",
             "dependencies": [
               2
             ],
-            "details": "Allow the frontend to display generation progress and intermediate statuses to the user.",
+            "details": "Transform frontend data into the format specified in Edamam's Meal Planner API documentation, including all necessary fields.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Error Handling Mechanisms",
-            "description": "Design robust error handling for both frontend and backend to manage failures during input, generation, or communication.",
+            "title": "Backend API Endpoint Integration",
+            "description": "Implement backend endpoints to receive user requests, validate input, and forward requests to Edamam's Meal Planner API.",
             "dependencies": [
-              2
+              1,
+              3
             ],
-            "details": "Display user-friendly error messages and provide recovery options.",
+            "details": "Ensure endpoints handle authentication, input validation, and error propagation from Edamam.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Meal Plan Result Display",
-            "description": "Create a UI component to display the generated meal plan, including meals, recipes, and a grocery list.",
+            "title": "Server-Sent Events (SSE) Progress Updates",
+            "description": "Implement SSE or similar mechanism to provide real-time progress updates to the frontend during meal plan generation.",
             "dependencies": [
-              3
+              4
             ],
-            "details": "Ensure the display is clear, structured, and allows for easy review of all meal plan details.",
+            "details": "Notify users of request status, including loading, partial results, or completion.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
-            "title": "Macronutrient and Calorie Validation",
-            "description": "Implement logic to validate that the generated meal plan meets user-specified macronutrient and calorie targets.",
+            "title": "Response Handling and Result Display",
+            "description": "Parse Edamam API responses and render meal plans, recipes, and nutrition summaries in the frontend.",
             "dependencies": [
+              4,
               5
             ],
-            "details": "Highlight discrepancies and suggest adjustments if targets are not met.",
+            "details": "Display meal plans in a user-friendly format, including recipe links, nutrition breakdowns, and meal timing.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 7,
-            "title": "Adjustment Interface for Customization",
-            "description": "Develop an interface allowing users to adjust meals, swap recipes, or modify ingredients to better fit their preferences or nutritional goals.",
-            "dependencies": [
-              5,
-              6
-            ],
-            "details": "Enable real-time feedback on how changes affect macros and calories.",
+            "title": "Macro and Nutrition Validation",
+            "description": "Validate that generated meal plans meet user-specified macro and nutrition targets.",
+            "dependencies": [],
+            "details": "Highlight discrepancies and provide feedback if targets are not met.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 8,
-            "title": "Meal Plan Regeneration",
-            "description": "Allow users to regenerate the meal plan based on updated preferences or after making adjustments.",
+            "title": "Plan Adjustment and Customization Interface",
+            "description": "Allow users to adjust meal plans, swap recipes, or modify targets and regenerate plans as needed.",
             "dependencies": [
+              6,
               7
             ],
-            "details": "Trigger the backend generation process again with revised parameters.",
+            "details": "Provide UI controls for plan editing and trigger backend regeneration as required.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 9,
-            "title": "Loading and Progress States",
-            "description": "Implement frontend loading indicators and progress bars to inform users of ongoing operations during meal plan generation and regeneration.",
-            "dependencies": [
-              3,
-              8
-            ],
-            "details": "Ensure smooth user experience with clear visual feedback.",
+            "title": "Shopping List Integration",
+            "description": "Extract ingredients from meal plans and generate a consolidated shopping list, optionally integrating with Instacart or similar services.",
+            "dependencies": [],
+            "details": "Support exporting or sharing shopping lists and ensure ingredient deduplication.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 10,
-            "title": "User Notifications",
-            "description": "Set up notification mechanisms to alert users of completion, errors, or important events during the meal plan workflow.",
+            "title": "User Tracking and Billing Integration",
+            "description": "Track API usage per user for billing and quota management, ensuring compliance with Edamam's usage limits.",
             "dependencies": [
-              4,
-              9
+              4
             ],
-            "details": "Support both in-app and optional email/push notifications.",
+            "details": "Implement backend logic to log requests and enforce rate limits or quotas.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 11,
-            "title": "Saving Meal Plans",
-            "description": "Enable users to save generated meal plans to their account for future reference or reuse.",
+            "title": "Error Handling and User Notifications",
+            "description": "Implement robust error handling for API failures, invalid input, and quota issues, with clear user notifications.",
             "dependencies": [
+              4,
               5,
-              7
+              6
             ],
-            "details": "Implement backend storage and retrieval of saved plans.",
+            "details": "Display actionable error messages and suggest corrective actions.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 12,
-            "title": "Tolerance Checking and Warnings",
-            "description": "Add logic to check if generated meal plans are within acceptable tolerance ranges for macros and calories, and warn users if not.",
+            "title": "Plan Saving, Export, and AI Assistant Integration",
+            "description": "Enable users to save, export, or share meal plans and interact with the AI Assistant for further customization or questions.",
             "dependencies": [
               6,
-              7
+              8
             ],
-            "details": "Display warnings and suggest corrective actions if tolerances are exceeded.",
+            "details": "Support plan export (PDF, CSV), persistent storage, and AI chat integration for meal plan advice.",
             "status": "pending",
             "testStrategy": ""
           }
@@ -1111,148 +1106,122 @@
       {
         "id": 11,
         "title": "One-Click Shopping Automation",
-        "description": "Implement Browser-Use agent integration for automated cart filling at preferred grocery stores. Create progress tracking and error handling for the shopping process.",
-        "details": "1. Create store preference selection interface\n2. Build checkout request payload generator\n3. Implement cart filling endpoint connection\n4. Create polling mechanism (every 3s) for status updates\n5. Build progress tracking UI with detailed status\n6. Implement error handling for unavailable items\n7. Create item substitution interface\n8. Build cart completion handler that opens store URL\n9. Implement partial success handling with skipped items list\n10. Add loading states and cancel functionality\n11. Create detailed logging for debugging\n12. Implement retry mechanism for failed operations",
-        "testStrategy": "1. Test checkout request with various shopping lists\n2. Verify polling mechanism updates status correctly\n3. Test error handling for unavailable items\n4. Verify substitution interface allows item replacement\n5. Test cart completion opens correct store URL\n6. Verify partial success handling lists skipped items\n7. Test cancel functionality aborts operation\n8. Verify retry mechanism handles failed operations",
-        "priority": "medium",
+        "description": "Integrate with the Browser-Use cloud API service to automate grocery shopping. The Browser-Use service provides AI agents that handle all browser interactions, including navigating grocery store websites, searching for products, and adding items to shopping carts. The integration should send shopping list data to the Browser-Use API, track progress, and handle responses, including errors and substitutions.",
+        "status": "pending",
         "dependencies": [
           1,
           2,
           10
         ],
-        "status": "pending",
+        "priority": "medium",
+        "details": "1. Integrate with Browser-Use cloud API for automated grocery shopping\n2. Create store preference selection interface (to select supported stores for Browser-Use agents)\n3. Build shopping list payload generator for Browser-Use API\n4. Implement endpoint connection to send shopping list and preferences to Browser-Use\n5. Create polling mechanism (every 3s) to fetch status updates from Browser-Use API\n6. Build progress tracking UI with detailed status from Browser-Use responses\n7. Implement error handling for unavailable items as reported by Browser-Use\n8. Create item substitution interface based on Browser-Use suggestions\n9. Build cart completion handler that opens the store URL provided by Browser-Use\n10. Implement partial success handling with skipped items list from Browser-Use\n11. Add loading states and cancel functionality for the shopping process\n12. Create detailed logging for API requests, responses, and errors\n13. Implement retry mechanism for failed API operations",
+        "testStrategy": "1. Test integration with Browser-Use API using various shopping lists\n2. Verify polling mechanism updates status correctly from Browser-Use\n3. Test error handling for unavailable items as reported by Browser-Use\n4. Verify substitution interface allows item replacement based on Browser-Use suggestions\n5. Test cart completion opens correct store URL from Browser-Use\n6. Verify partial success handling lists skipped items from Browser-Use\n7. Test cancel functionality aborts operation and notifies Browser-Use\n8. Verify retry mechanism handles failed API operations",
         "subtasks": [
           {
             "id": 1,
-            "title": "Design Store Preference UI",
-            "description": "Create a user interface for selecting and managing preferred stores for shopping automation.",
+            "title": "API Setup and Authentication",
+            "description": "Register for a Browser-Use Cloud account, obtain an API key, and configure authentication headers for secure API access.",
             "dependencies": [],
-            "details": "UI should allow users to add, remove, and prioritize stores. Preferences should be saved for use in automation flows.",
+            "details": "Follow the documentation to create an account and retrieve the API key. Implement secure storage and retrieval of the API key for all API requests.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement Store Preference Data Handling",
-            "description": "Develop backend logic to store and retrieve user store preferences.",
+            "title": "Shopping List Data Transformation",
+            "description": "Transform the user’s shopping list into the format required by the Browser-Use Cloud API for cart automation.",
             "dependencies": [
               1
             ],
-            "details": "Integrate with user profile storage and ensure preferences are accessible to automation modules.",
+            "details": "Map shopping list items to the expected API payload structure, handling product names, quantities, and any metadata needed for automation.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Integrate Cart Filling Mechanism",
-            "description": "Automate the process of adding selected products to the cart using browser agents or APIs.",
+            "title": "Store Selection UI Implementation",
+            "description": "Design and implement a user interface for selecting preferred stores before initiating automation.",
             "dependencies": [
-              2
+              1
             ],
-            "details": "Support multiple stores and handle session management, product selection, and quantity updates.",
+            "details": "Provide a list of supported stores, allow users to select one or more, and pass the selection to the automation workflow.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Develop Status Polling Service",
-            "description": "Implement a service to poll the status of cart filling and order processing.",
+            "title": "API Endpoint Integration for Cart Filling",
+            "description": "Integrate with Browser-Use Cloud API endpoints to initiate and manage cart filling tasks based on the transformed shopping list and selected store.",
             "dependencies": [
+              2,
               3
             ],
-            "details": "Regularly check for updates on cart state, product availability, and order progress.",
+            "details": "Use the API to create a browser automation agent, send the shopping list and store data, and start the cart filling process.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Build Progress Tracking UI",
-            "description": "Create a user interface to display real-time progress of the shopping automation process.",
+            "title": "Status Polling and Progress Tracking",
+            "description": "Implement polling of the API for real-time task status and progress updates, displaying them to the user.",
             "dependencies": [
               4
             ],
-            "details": "Show stages such as cart filling, checkout, payment, and completion with visual indicators.",
+            "details": "Use the API’s real-time feedback endpoints to fetch and display progress, including live preview URLs if available.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
-            "title": "Implement Error and Substitution Handling",
-            "description": "Develop logic to detect errors (e.g., out-of-stock, API failures) and handle product substitutions.",
+            "title": "Error and Substitution Handling",
+            "description": "Detect and handle errors or product substitutions during automation, providing user feedback and options.",
             "dependencies": [
-              3
+              5
             ],
-            "details": "Prompt users for substitution preferences or apply predefined rules for automatic substitutions.",
+            "details": "Monitor API responses for errors or substitution events, notify users, and allow them to accept, reject, or modify substitutions.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 7,
-            "title": "Create Completion Handler",
-            "description": "Develop a handler to finalize the automation process and notify the user upon successful completion.",
-            "dependencies": [
-              5,
-              6
-            ],
-            "details": "Trigger notifications, update order status, and provide a summary of the completed shopping session.",
+            "title": "Completion Handler Implementation",
+            "description": "Implement logic to handle successful or failed completion of the automation task, including final user notifications.",
+            "dependencies": [],
+            "details": "On task completion, summarize results, handle any remaining actions, and inform the user of the outcome.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 8,
-            "title": "Implement Loading and Cancel Mechanisms",
-            "description": "Add functionality to show loading states and allow users to cancel ongoing automation tasks.",
+            "title": "Loading and Cancel Functionality",
+            "description": "Add UI and backend support for loading indicators and task cancellation during automation.",
             "dependencies": [
-              5
+              4
             ],
-            "details": "Ensure graceful cancellation and rollback of partial operations if needed.",
+            "details": "Show loading states while tasks are running and provide a cancel button that sends a cancellation request to the API.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 9,
-            "title": "Develop Logging Infrastructure",
-            "description": "Set up comprehensive logging for all automation steps, errors, and user actions.",
+            "title": "Logging and Audit Trail",
+            "description": "Implement logging of all API interactions, user actions, and automation events for debugging and audit purposes.",
             "dependencies": [
-              3,
-              4,
-              6
+              4
             ],
-            "details": "Logs should be structured, searchable, and support troubleshooting and analytics.",
+            "details": "Store logs securely, including timestamps, API requests/responses, and user decisions on errors or substitutions.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 10,
-            "title": "Implement Retry Mechanisms",
-            "description": "Add robust retry logic for transient failures during cart filling, status polling, and order submission.",
+            "title": "Retry Mechanisms for Failed Steps",
+            "description": "Develop robust retry logic for failed API calls or automation steps, with configurable retry limits and user notifications.",
             "dependencies": [
               6,
               9
             ],
-            "details": "Define retry policies, backoff strategies, and escalation paths for persistent failures.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 11,
-            "title": "Integrate All Components",
-            "description": "Combine UI, backend, and automation modules into a cohesive workflow.",
-            "dependencies": [
-              7,
-              8,
-              10
-            ],
-            "details": "Ensure seamless data flow, error propagation, and user feedback across all modules.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 12,
-            "title": "End-to-End Testing and Validation",
-            "description": "Test the entire shopping automation system for reliability, usability, and edge cases.",
-            "dependencies": [],
-            "details": "Simulate various scenarios including store preference changes, cart errors, substitutions, and cancellations.",
+            "details": "Automatically retry transient failures, escalate persistent errors to the user, and log all retry attempts.",
             "status": "pending",
             "testStrategy": ""
           }

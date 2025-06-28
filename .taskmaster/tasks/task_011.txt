@@ -3,101 +3,90 @@
 # Status: pending
 # Dependencies: 1, 2, 10
 # Priority: medium
-# Description: Implement Browser-Use agent integration for automated cart filling at preferred grocery stores. Create progress tracking and error handling for the shopping process.
+# Description: Integrate with the Browser-Use cloud API service to automate grocery shopping. The Browser-Use service provides AI agents that handle all browser interactions, including navigating grocery store websites, searching for products, and adding items to shopping carts. The integration should send shopping list data to the Browser-Use API, track progress, and handle responses, including errors and substitutions.
 # Details:
-1. Create store preference selection interface
-2. Build checkout request payload generator
-3. Implement cart filling endpoint connection
-4. Create polling mechanism (every 3s) for status updates
-5. Build progress tracking UI with detailed status
-6. Implement error handling for unavailable items
-7. Create item substitution interface
-8. Build cart completion handler that opens store URL
-9. Implement partial success handling with skipped items list
-10. Add loading states and cancel functionality
-11. Create detailed logging for debugging
-12. Implement retry mechanism for failed operations
+1. Integrate with Browser-Use cloud API for automated grocery shopping
+2. Create store preference selection interface (to select supported stores for Browser-Use agents)
+3. Build shopping list payload generator for Browser-Use API
+4. Implement endpoint connection to send shopping list and preferences to Browser-Use
+5. Create polling mechanism (every 3s) to fetch status updates from Browser-Use API
+6. Build progress tracking UI with detailed status from Browser-Use responses
+7. Implement error handling for unavailable items as reported by Browser-Use
+8. Create item substitution interface based on Browser-Use suggestions
+9. Build cart completion handler that opens the store URL provided by Browser-Use
+10. Implement partial success handling with skipped items list from Browser-Use
+11. Add loading states and cancel functionality for the shopping process
+12. Create detailed logging for API requests, responses, and errors
+13. Implement retry mechanism for failed API operations
 
 # Test Strategy:
-1. Test checkout request with various shopping lists
-2. Verify polling mechanism updates status correctly
-3. Test error handling for unavailable items
-4. Verify substitution interface allows item replacement
-5. Test cart completion opens correct store URL
-6. Verify partial success handling lists skipped items
-7. Test cancel functionality aborts operation
-8. Verify retry mechanism handles failed operations
+1. Test integration with Browser-Use API using various shopping lists
+2. Verify polling mechanism updates status correctly from Browser-Use
+3. Test error handling for unavailable items as reported by Browser-Use
+4. Verify substitution interface allows item replacement based on Browser-Use suggestions
+5. Test cart completion opens correct store URL from Browser-Use
+6. Verify partial success handling lists skipped items from Browser-Use
+7. Test cancel functionality aborts operation and notifies Browser-Use
+8. Verify retry mechanism handles failed API operations
 
 # Subtasks:
-## 1. Design Store Preference UI [pending]
+## 1. API Setup and Authentication [pending]
 ### Dependencies: None
-### Description: Create a user interface for selecting and managing preferred stores for shopping automation.
+### Description: Register for a Browser-Use Cloud account, obtain an API key, and configure authentication headers for secure API access.
 ### Details:
-UI should allow users to add, remove, and prioritize stores. Preferences should be saved for use in automation flows.
+Follow the documentation to create an account and retrieve the API key. Implement secure storage and retrieval of the API key for all API requests.
 
-## 2. Implement Store Preference Data Handling [pending]
+## 2. Shopping List Data Transformation [pending]
 ### Dependencies: 11.1
-### Description: Develop backend logic to store and retrieve user store preferences.
+### Description: Transform the user’s shopping list into the format required by the Browser-Use Cloud API for cart automation.
 ### Details:
-Integrate with user profile storage and ensure preferences are accessible to automation modules.
+Map shopping list items to the expected API payload structure, handling product names, quantities, and any metadata needed for automation.
 
-## 3. Integrate Cart Filling Mechanism [pending]
-### Dependencies: 11.2
-### Description: Automate the process of adding selected products to the cart using browser agents or APIs.
+## 3. Store Selection UI Implementation [pending]
+### Dependencies: 11.1
+### Description: Design and implement a user interface for selecting preferred stores before initiating automation.
 ### Details:
-Support multiple stores and handle session management, product selection, and quantity updates.
+Provide a list of supported stores, allow users to select one or more, and pass the selection to the automation workflow.
 
-## 4. Develop Status Polling Service [pending]
-### Dependencies: 11.3
-### Description: Implement a service to poll the status of cart filling and order processing.
+## 4. API Endpoint Integration for Cart Filling [pending]
+### Dependencies: 11.2, 11.3
+### Description: Integrate with Browser-Use Cloud API endpoints to initiate and manage cart filling tasks based on the transformed shopping list and selected store.
 ### Details:
-Regularly check for updates on cart state, product availability, and order progress.
+Use the API to create a browser automation agent, send the shopping list and store data, and start the cart filling process.
 
-## 5. Build Progress Tracking UI [pending]
+## 5. Status Polling and Progress Tracking [pending]
 ### Dependencies: 11.4
-### Description: Create a user interface to display real-time progress of the shopping automation process.
+### Description: Implement polling of the API for real-time task status and progress updates, displaying them to the user.
 ### Details:
-Show stages such as cart filling, checkout, payment, and completion with visual indicators.
+Use the API’s real-time feedback endpoints to fetch and display progress, including live preview URLs if available.
 
-## 6. Implement Error and Substitution Handling [pending]
-### Dependencies: 11.3
-### Description: Develop logic to detect errors (e.g., out-of-stock, API failures) and handle product substitutions.
-### Details:
-Prompt users for substitution preferences or apply predefined rules for automatic substitutions.
-
-## 7. Create Completion Handler [pending]
-### Dependencies: 11.5, 11.6
-### Description: Develop a handler to finalize the automation process and notify the user upon successful completion.
-### Details:
-Trigger notifications, update order status, and provide a summary of the completed shopping session.
-
-## 8. Implement Loading and Cancel Mechanisms [pending]
+## 6. Error and Substitution Handling [pending]
 ### Dependencies: 11.5
-### Description: Add functionality to show loading states and allow users to cancel ongoing automation tasks.
+### Description: Detect and handle errors or product substitutions during automation, providing user feedback and options.
 ### Details:
-Ensure graceful cancellation and rollback of partial operations if needed.
+Monitor API responses for errors or substitution events, notify users, and allow them to accept, reject, or modify substitutions.
 
-## 9. Develop Logging Infrastructure [pending]
-### Dependencies: 11.3, 11.4, 11.6
-### Description: Set up comprehensive logging for all automation steps, errors, and user actions.
-### Details:
-Logs should be structured, searchable, and support troubleshooting and analytics.
-
-## 10. Implement Retry Mechanisms [pending]
-### Dependencies: 11.6, 11.9
-### Description: Add robust retry logic for transient failures during cart filling, status polling, and order submission.
-### Details:
-Define retry policies, backoff strategies, and escalation paths for persistent failures.
-
-## 11. Integrate All Components [pending]
-### Dependencies: 11.7, 11.8, 11.10
-### Description: Combine UI, backend, and automation modules into a cohesive workflow.
-### Details:
-Ensure seamless data flow, error propagation, and user feedback across all modules.
-
-## 12. End-to-End Testing and Validation [pending]
+## 7. Completion Handler Implementation [pending]
 ### Dependencies: None
-### Description: Test the entire shopping automation system for reliability, usability, and edge cases.
+### Description: Implement logic to handle successful or failed completion of the automation task, including final user notifications.
 ### Details:
-Simulate various scenarios including store preference changes, cart errors, substitutions, and cancellations.
+On task completion, summarize results, handle any remaining actions, and inform the user of the outcome.
+
+## 8. Loading and Cancel Functionality [pending]
+### Dependencies: 11.4
+### Description: Add UI and backend support for loading indicators and task cancellation during automation.
+### Details:
+Show loading states while tasks are running and provide a cancel button that sends a cancellation request to the API.
+
+## 9. Logging and Audit Trail [pending]
+### Dependencies: 11.4
+### Description: Implement logging of all API interactions, user actions, and automation events for debugging and audit purposes.
+### Details:
+Store logs securely, including timestamps, API requests/responses, and user decisions on errors or substitutions.
+
+## 10. Retry Mechanisms for Failed Steps [pending]
+### Dependencies: 11.6, 11.9
+### Description: Develop robust retry logic for failed API calls or automation steps, with configurable retry limits and user notifications.
+### Details:
+Automatically retry transient failures, escalate persistent errors to the user, and log all retry attempts.
 

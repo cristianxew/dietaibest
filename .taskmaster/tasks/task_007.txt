@@ -3,59 +3,61 @@
 # Status: pending
 # Dependencies: 1, 5
 # Priority: medium
-# Description: Integrate with Edamam API for automatic nutritional calculation of recipes. Implement caching and error handling for API requests.
+# Description: Integrate with both Edamam Recipe Search API and Meal Planner API. Use the Recipe Search API for automatic nutritional calculation of user-created recipes, and the Meal Planner API for generating complete meal plans. Implement caching and error handling for both API request types.
 # Details:
-1. Set up Edamam API client in `lib/edamam.ts`
-2. Create environment variables for API keys
-3. Implement ingredient parsing and normalization
-4. Build nutritional calculation service that calls Edamam API
-5. Create caching mechanism for API responses
-6. Implement retry logic for failed API requests
-7. Build macro calculation utility that processes Edamam responses
-8. Create fallback mechanism for when API is unavailable
-9. Implement rate limiting handling
-10. Add detailed error logging
-11. Create utility for converting between measurement units
-12. Implement batch processing for multiple ingredients
+1. Set up Edamam API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs
+2. Create environment variables for shared API keys
+3. Implement ingredient parsing and normalization for Recipe Search API
+4. Build nutritional calculation service using Recipe Search API for user recipes
+5. Build meal plan generation service using Meal Planner API
+6. Create caching mechanism for both API response types
+7. Implement retry logic for failed API requests
+8. Build macro calculation utility that processes Recipe Search API responses
+9. Create fallback mechanism for when either API is unavailable
+10. Implement rate limiting handling for both APIs
+11. Add detailed error logging for both API integrations
+12. Create utility for converting between measurement units
+13. Implement batch processing for multiple ingredients and meal plan requests
 
 # Test Strategy:
-1. Test API client with mock responses
-2. Verify nutritional calculation accuracy
-3. Test caching mechanism reduces API calls
-4. Verify retry logic handles temporary failures
-5. Test rate limit handling
-6. Verify fallback mechanism works when API is down
-7. Test unit conversion utility
-8. Verify batch processing handles multiple ingredients correctly
+1. Test both API clients with mock responses
+2. Verify nutritional calculation accuracy for user recipes via Recipe Search API
+3. Verify meal plan generation via Meal Planner API
+4. Test caching mechanism reduces API calls for both endpoints
+5. Verify retry logic handles temporary failures for both APIs
+6. Test rate limit handling for both APIs
+7. Verify fallback mechanism works when either API is down
+8. Test unit conversion utility
+9. Verify batch processing handles multiple ingredients and meal plan requests correctly
 
 # Subtasks:
 ## 1. Configure Edamam API Client and Environment [pending]
 ### Dependencies: None
-### Description: Set up the Edamam API client in the codebase and configure environment variables for API credentials.
+### Description: Set up the Edamam API clients in the codebase for both Recipe Search and Meal Planner APIs, and configure environment variables for shared API credentials.
 ### Details:
-Implement the API client in `lib/edamam.ts` and ensure API keys are securely managed using environment variables.
+Implement API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs. Ensure API keys are securely managed using environment variables.
 
 ## 2. Implement Ingredient Parsing and Normalization [pending]
 ### Dependencies: 7.1
-### Description: Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam API requirements.
+### Description: Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam Recipe Search API requirements.
 ### Details:
-Create functions to standardize ingredient formats and units, ensuring accurate API queries.
+Create functions to standardize ingredient formats and units, ensuring accurate Recipe Search API queries.
 
-## 3. Develop Nutritional Calculation Service [pending]
+## 3. Develop Nutritional Calculation and Meal Plan Services [pending]
 ### Dependencies: 7.2
-### Description: Build a service that sends parsed ingredients to the Edamam API and processes the nutritional data response.
+### Description: Build services that send parsed ingredients to the Recipe Search API for nutritional analysis and use the Meal Planner API for automated meal plan generation.
 ### Details:
-Implement API calls for nutritional analysis and extract macro and micronutrient information from responses.
+Implement API calls for nutritional analysis of user recipes via Recipe Search API and for generating meal plans via Meal Planner API. Extract macro and micronutrient information from Recipe Search API responses and structure meal plan data from Meal Planner API.
 
 ## 4. Implement Caching and Rate Limiting Handling [pending]
 ### Dependencies: 7.3
-### Description: Add caching for API responses and logic to handle Edamam API rate limits efficiently.
+### Description: Add caching for both Recipe Search and Meal Planner API responses and logic to handle Edamam API rate limits efficiently.
 ### Details:
-Store frequently requested nutritional data and implement mechanisms to respect API rate limits, reducing redundant calls.
+Store frequently requested nutritional and meal plan data and implement mechanisms to respect API rate limits, reducing redundant calls.
 
 ## 5. Add Robust Error Handling and Fallback Mechanisms [pending]
 ### Dependencies: 7.4
-### Description: Implement retry logic, detailed error logging, and fallback strategies for API failures or unavailability.
+### Description: Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of either Edamam API.
 ### Details:
-Ensure the system gracefully handles API errors, logs issues for debugging, and provides fallback responses when needed.
+Ensure the system gracefully handles errors from both APIs, logs issues for debugging, and provides fallback responses when needed.
 

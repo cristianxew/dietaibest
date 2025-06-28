@@ -3,101 +3,104 @@
 # Status: pending
 # Dependencies: 1, 2, 5, 7, 8
 # Priority: high
-# Description: Implement automated meal plan generation based on user preferences and nutritional targets. Create interface for source selection and plan customization.
+# Description: Integrate Edamam's Meal Planner API to automate meal plan generation based on user preferences, dietary restrictions, and nutritional targets. Build an interface for user input, source selection, and plan customization, leveraging Edamam's features such as multi-week planning, nutrient personalization, diet/health labels, shopping list generation, and AI Assistant support.
 # Details:
-1. Create meal plan generation request interface
-2. Implement source selection (in-house recipes, favorites, mixed)
-3. Build `/api/ai/meal-plan` endpoint connection
-4. Create progress tracking with Server-Sent Events (SSE)
-5. Implement error handling for generation failures
-6. Build result display with macro validation
-7. Create plan adjustment interface for fine-tuning
-8. Implement plan regeneration for specific days/meals
-9. Add loading states and skeleton UI
-10. Create success/error toast notifications
-11. Implement plan saving after generation
-12. Build tolerance checking (±5% of target macros)
+1. Build user input interface to collect preferences, dietary restrictions, and nutritional targets
+2. Implement source selection (in-house recipes, favorites, Edamam API, or mixed)
+3. Integrate with Edamam Meal Planner API endpoints for meal plan generation
+4. Construct and validate API request payloads based on user input
+5. Handle API responses and display generated meal plans, including up to 2 weeks of planning and 28 nutrients
+6. Display and manage diet/health labels (up to 40 supported by Edamam)
+7. Show automatically generated shopping lists from Edamam
+8. Provide plan adjustment and fine-tuning interface (e.g., swap meals, adjust servings)
+9. Implement plan regeneration for specific days/meals via Edamam API
+10. Add loading states, skeleton UI, and progress tracking (SSE if supported by Edamam)
+11. Implement robust error handling for API failures and invalid responses
+12. Create success/error toast notifications
+13. Enable plan saving and export after generation
+14. Build tolerance checking (±5% of target macros, using Edamam's nutrient data)
 
 # Test Strategy:
-1. Test meal plan generation with various preferences
-2. Verify progress tracking updates correctly
-3. Test error handling for generation failures
-4. Verify macro validation identifies plans outside tolerance
-5. Test plan adjustment interface
-6. Verify plan saving after generation
-7. Test regeneration for specific days/meals
-8. Verify loading states and skeleton UI
+1. Test meal plan generation with various user preferences and dietary restrictions via Edamam API
+2. Verify correct construction and validation of API request payloads
+3. Test error handling for API failures and invalid responses
+4. Verify macro and nutrient validation using Edamam's data
+5. Test plan adjustment and regeneration features
+6. Verify plan saving and export after generation
+7. Test shopping list generation and display
+8. Verify loading states, skeleton UI, and progress tracking
+9. Ensure diet/health label filtering and display works as expected
 
 # Subtasks:
-## 1. User Input Collection [pending]
+## 1. API Setup and Authentication [pending]
 ### Dependencies: None
-### Description: Design and implement the UI for users to input dietary preferences, restrictions, goals, and other relevant information for meal plan generation.
+### Description: Register for Edamam Meal Planner API, obtain API keys, and configure secure storage and usage of credentials in backend services.
 ### Details:
-Include fields for calorie targets, macronutrient ratios, allergies, ingredient dislikes, and meal frequency.
+Follow Edamam's documentation to set up API access and ensure secure handling of app_id and app_key for all API requests.
 
-## 2. Backend Endpoint for Meal Plan Generation [pending]
-### Dependencies: 9.1
-### Description: Develop a backend API endpoint that receives user input and initiates the AI meal plan generation process.
+## 2. User Input Collection Interface [pending]
+### Dependencies: None
+### Description: Design and implement frontend forms to collect user meal preferences, dietary restrictions, allergies, and nutrition targets.
 ### Details:
-Ensure the endpoint validates input and triggers the AI workflow for meal plan creation.
+Ensure the UI supports all Edamam-supported filters, including diet/health labels, calorie/nutrient targets, and meal frequency.
 
-## 3. Server-Sent Events (SSE) Progress Updates [pending]
+## 3. Request Payload Construction [pending]
 ### Dependencies: 9.2
-### Description: Implement SSE or similar real-time communication to stream progress updates from the backend to the frontend during meal plan generation.
+### Description: Map user input to Edamam's required JSON structure for meal plan requests.
 ### Details:
-Allow the frontend to display generation progress and intermediate statuses to the user.
+Transform frontend data into the format specified in Edamam's Meal Planner API documentation, including all necessary fields.
 
-## 4. Error Handling Mechanisms [pending]
-### Dependencies: 9.2
-### Description: Design robust error handling for both frontend and backend to manage failures during input, generation, or communication.
+## 4. Backend API Endpoint Integration [pending]
+### Dependencies: 9.1, 9.3
+### Description: Implement backend endpoints to receive user requests, validate input, and forward requests to Edamam's Meal Planner API.
 ### Details:
-Display user-friendly error messages and provide recovery options.
+Ensure endpoints handle authentication, input validation, and error propagation from Edamam.
 
-## 5. Meal Plan Result Display [pending]
-### Dependencies: 9.3
-### Description: Create a UI component to display the generated meal plan, including meals, recipes, and a grocery list.
+## 5. Server-Sent Events (SSE) Progress Updates [pending]
+### Dependencies: 9.4
+### Description: Implement SSE or similar mechanism to provide real-time progress updates to the frontend during meal plan generation.
 ### Details:
-Ensure the display is clear, structured, and allows for easy review of all meal plan details.
+Notify users of request status, including loading, partial results, or completion.
 
-## 6. Macronutrient and Calorie Validation [pending]
-### Dependencies: 9.5
-### Description: Implement logic to validate that the generated meal plan meets user-specified macronutrient and calorie targets.
+## 6. Response Handling and Result Display [pending]
+### Dependencies: 9.4, 9.5
+### Description: Parse Edamam API responses and render meal plans, recipes, and nutrition summaries in the frontend.
 ### Details:
-Highlight discrepancies and suggest adjustments if targets are not met.
+Display meal plans in a user-friendly format, including recipe links, nutrition breakdowns, and meal timing.
 
-## 7. Adjustment Interface for Customization [pending]
-### Dependencies: 9.5, 9.6
-### Description: Develop an interface allowing users to adjust meals, swap recipes, or modify ingredients to better fit their preferences or nutritional goals.
+## 7. Macro and Nutrition Validation [pending]
+### Dependencies: None
+### Description: Validate that generated meal plans meet user-specified macro and nutrition targets.
 ### Details:
-Enable real-time feedback on how changes affect macros and calories.
+Highlight discrepancies and provide feedback if targets are not met.
 
-## 8. Meal Plan Regeneration [pending]
-### Dependencies: 9.7
-### Description: Allow users to regenerate the meal plan based on updated preferences or after making adjustments.
-### Details:
-Trigger the backend generation process again with revised parameters.
-
-## 9. Loading and Progress States [pending]
-### Dependencies: 9.3, 9.8
-### Description: Implement frontend loading indicators and progress bars to inform users of ongoing operations during meal plan generation and regeneration.
-### Details:
-Ensure smooth user experience with clear visual feedback.
-
-## 10. User Notifications [pending]
-### Dependencies: 9.4, 9.9
-### Description: Set up notification mechanisms to alert users of completion, errors, or important events during the meal plan workflow.
-### Details:
-Support both in-app and optional email/push notifications.
-
-## 11. Saving Meal Plans [pending]
-### Dependencies: 9.5, 9.7
-### Description: Enable users to save generated meal plans to their account for future reference or reuse.
-### Details:
-Implement backend storage and retrieval of saved plans.
-
-## 12. Tolerance Checking and Warnings [pending]
+## 8. Plan Adjustment and Customization Interface [pending]
 ### Dependencies: 9.6, 9.7
-### Description: Add logic to check if generated meal plans are within acceptable tolerance ranges for macros and calories, and warn users if not.
+### Description: Allow users to adjust meal plans, swap recipes, or modify targets and regenerate plans as needed.
 ### Details:
-Display warnings and suggest corrective actions if tolerances are exceeded.
+Provide UI controls for plan editing and trigger backend regeneration as required.
+
+## 9. Shopping List Integration [pending]
+### Dependencies: None
+### Description: Extract ingredients from meal plans and generate a consolidated shopping list, optionally integrating with Instacart or similar services.
+### Details:
+Support exporting or sharing shopping lists and ensure ingredient deduplication.
+
+## 10. User Tracking and Billing Integration [pending]
+### Dependencies: 9.4
+### Description: Track API usage per user for billing and quota management, ensuring compliance with Edamam's usage limits.
+### Details:
+Implement backend logic to log requests and enforce rate limits or quotas.
+
+## 11. Error Handling and User Notifications [pending]
+### Dependencies: 9.4, 9.5, 9.6
+### Description: Implement robust error handling for API failures, invalid input, and quota issues, with clear user notifications.
+### Details:
+Display actionable error messages and suggest corrective actions.
+
+## 12. Plan Saving, Export, and AI Assistant Integration [pending]
+### Dependencies: 9.6, 9.8
+### Description: Enable users to save, export, or share meal plans and interact with the AI Assistant for further customization or questions.
+### Details:
+Support plan export (PDF, CSV), persistent storage, and AI chat integration for meal plan advice.
 
