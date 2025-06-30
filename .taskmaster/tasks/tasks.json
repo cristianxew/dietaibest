@@ -1674,21 +1674,226 @@
       {
         "id": 16,
         "title": "Fix Google OAuth Sign-In Integration",
-        "description": "Resolve the redirect_uri_mismatch error in Google OAuth sign-in by configuring Google Cloud Console OAuth settings and ensuring proper user creation flow for Google-authenticated users.",
-        "details": "1. Diagnose the current redirect_uri_mismatch error by checking logs and authentication flow\n2. Access Google Cloud Console and navigate to the project's OAuth consent screen\n3. Verify and update the authorized JavaScript origins to match the application's domain(s)\n4. Configure authorized redirect URIs to include all valid callback endpoints (development, staging, production)\n5. Update environment variables with correct Google OAuth client ID and secret\n6. Modify the authentication flow in `pages/api/auth/[...nextauth].js` or equivalent to properly handle Google provider\n7. Implement user creation logic for first-time Google OAuth users:\n   - Check if user exists in database after successful Google authentication\n   - If not, create new user record with data from Google profile\n   - Map Google profile fields to user database schema\n   - Set appropriate default values for required fields not provided by Google\n8. Add error handling for OAuth failures with descriptive error messages\n9. Implement session management for Google-authenticated users\n10. Create proper sign-out flow that handles both local and Google sessions\n11. Add logging for OAuth process to facilitate debugging\n12. Update frontend components to properly handle Google authentication state",
-        "testStrategy": "1. Test Google OAuth sign-in flow in development environment with configured redirect URIs\n2. Verify redirect_uri_mismatch error is resolved by checking authentication logs\n3. Test sign-in with a Google account that has never been used with the application\n4. Confirm new user record is created correctly with Google profile data\n5. Test sign-in with a Google account that has previously authenticated\n6. Verify user session is properly maintained after Google authentication\n7. Test sign-out functionality for Google-authenticated users\n8. Verify error handling by simulating authentication failures\n9. Test authentication flow on all supported environments (dev/staging/prod)\n10. Verify Google OAuth integration works across different browsers\n11. Test authentication persistence across page refreshes\n12. Validate that user permissions are correctly assigned for Google-authenticated users",
-        "status": "pending",
+        "description": "Resolve the redirect_uri_mismatch error in Google OAuth sign-in by configuring Google Cloud Console OAuth settings to match the NextAuth callback URL and ensuring proper user creation flow for Google-authenticated users.",
+        "status": "done",
         "dependencies": [
           1,
           3
         ],
         "priority": "medium",
-        "subtasks": []
+        "details": "1. Diagnose the current redirect_uri_mismatch error by checking logs and authentication flow\n2. Access Google Cloud Console and navigate to the project's OAuth consent screen\n3. Verify and update the authorized JavaScript origins to match the application's domain(s)\n4. Configure authorized redirect URIs to include the correct NextAuth callback URL: http://localhost:3000/api/auth/callback/google\n5. Add production/staging URLs to Google Cloud Console for deployment environments\n6. Update environment variables with correct Google OAuth client ID and secret\n7. Verify the NextAuth configuration in src/app/api/auth/[...nextauth]/route.ts is properly set up\n8. Confirm NEXTAUTH_URL environment variable is set to http://localhost:3000 for development\n9. Validate the user creation flow in signIn callback:\n   - Check if user exists in database after successful Google authentication\n   - If not, create new user record with data from Google profile\n   - Map Google profile fields to user database schema\n   - Set appropriate default values for required fields not provided by Google\n10. Verify JWT and session handling configuration\n11. Add error handling for OAuth failures with descriptive error messages\n12. Create proper sign-out flow that handles both local and Google sessions\n13. Add logging for OAuth process to facilitate debugging\n14. Update frontend components to properly handle Google authentication state",
+        "testStrategy": "1. Test Google OAuth sign-in flow in development environment with the configured redirect URI: http://localhost:3000/api/auth/callback/google\n2. Verify redirect_uri_mismatch error is resolved by checking authentication logs\n3. Test sign-in with a Google account that has never been used with the application\n4. Confirm new user record is created correctly with Google profile data\n5. Test sign-in with a Google account that has previously authenticated\n6. Verify user session is properly maintained after Google authentication\n7. Test sign-out functionality for Google-authenticated users\n8. Verify error handling by simulating authentication failures\n9. Test authentication flow on all supported environments (dev/staging/prod) with their respective redirect URIs\n10. Verify Google OAuth integration works across different browsers\n11. Test authentication persistence across page refreshes\n12. Validate that user permissions are correctly assigned for Google-authenticated users",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Verify Google Cloud Console redirect URI configuration",
+            "description": "Check that Google Cloud Console has the correct redirect URI configured: http://localhost:3000/api/auth/callback/google",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Verify Google OAuth environment variables",
+            "description": "Ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are correctly set in the application",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Add production/staging redirect URIs to Google Cloud Console",
+            "description": "Configure additional authorized redirect URIs for production and staging environments in Google Cloud Console",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Test complete OAuth flow",
+            "description": "Perform end-to-end testing of the Google OAuth authentication flow to verify the fix resolves the redirect_uri_mismatch error",
+            "status": "done",
+            "dependencies": [],
+            "details": "",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "title": "Header Navigation System Implementation",
+        "description": "Create a comprehensive header navigation system for DietaiBest that integrates with authentication, internationalization, and routing architecture, providing different navigation options based on user authentication status.",
+        "details": "1. Create a responsive header component structure:\n   - Create `components/navigation/Header.tsx` as a server component\n   - Implement `components/navigation/MobileMenu.tsx` for small screens\n   - Build `components/navigation/UserDropdown.tsx` for authenticated users\n   - Develop `components/navigation/MainNav.tsx` for primary navigation links\n\n2. Implement authentication-aware navigation:\n   - Use existing `useAuth` hook to determine user authentication status\n   - Create conditional rendering logic for authenticated vs guest navigation options\n   - Implement user profile dropdown with avatar and account management options\n   - Add sign in/sign up CTAs for unauthenticated users\n\n3. Integrate with existing internationalization:\n   - Import and use the LanguageSwitcher component\n   - Ensure all navigation labels use next-intl translation keys\n   - Add translations for all navigation items in locale files\n\n4. Implement responsive design:\n   - Create mobile-first layout with hamburger menu for small screens\n   - Use ShadCN UI Sheet component for mobile navigation drawer\n   - Implement collapsible sections for nested navigation\n   - Ensure proper z-index management for dropdowns and overlays\n\n5. Build navigation structure:\n   - Add routes to Dashboard, Recipes, Meal Plans, Shopping Lists\n   - Implement NavigationMenu component from ShadCN UI\n   - Create hover states and active indicators for current route\n   - Add proper aria attributes for accessibility\n\n6. Modify layout structure:\n   - Update `app/[locale]/layout.tsx` to include the header component\n   - Ensure header is positioned correctly with proper z-index\n   - Implement sticky header behavior with smooth scroll effects\n\n7. Implement TypeScript integration:\n   - Create navigation item type definitions in `types/navigation.ts`\n   - Add proper typing for all component props\n   - Ensure type safety for authentication-dependent UI elements\n\n8. Ensure accessibility compliance:\n   - Add proper ARIA roles and attributes\n   - Implement keyboard navigation support\n   - Ensure focus management for dropdowns and mobile menu\n   - Test with screen readers for proper announcements",
+        "testStrategy": "1. Test responsive behavior:\n   - Verify header collapses to hamburger menu on mobile devices\n   - Test mobile menu opens and closes correctly\n   - Ensure dropdowns position correctly at all viewport sizes\n   - Verify z-index management prevents overlay issues\n\n2. Test authentication-aware navigation:\n   - Verify authenticated users see profile dropdown and appropriate navigation\n   - Confirm unauthenticated users see sign in/sign up buttons\n   - Test user dropdown opens and displays correct account options\n   - Verify navigation updates immediately after authentication state changes\n\n3. Test internationalization:\n   - Verify all navigation labels display in the selected language\n   - Test language switcher works correctly within the header\n   - Ensure RTL language support functions properly\n   - Verify translations are complete for all navigation items\n\n4. Test accessibility:\n   - Verify keyboard navigation works for all menu items\n   - Test screen reader announces navigation items correctly\n   - Ensure focus indicators are visible for keyboard users\n   - Verify ARIA attributes are correctly implemented\n\n5. Test integration with routing:\n   - Verify active state indicators show current route\n   - Test navigation links direct to correct routes\n   - Ensure route changes update header state appropriately\n   - Verify protected routes handle authentication correctly\n\n6. Cross-browser testing:\n   - Test in Chrome, Firefox, Safari, and Edge\n   - Verify mobile functionality on iOS and Android\n   - Ensure consistent appearance across browsers",
+        "status": "pending",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Header Component Structure",
+            "description": "Set up the basic structure for the Header component with placeholder content and proper TypeScript typing.",
+            "dependencies": [],
+            "details": "Create `components/navigation/Header.tsx` as a server component. Define the component structure with appropriate props interface. Include placeholder sections for logo, main navigation, language switcher, and authentication controls. Set up responsive container with proper styling using Tailwind CSS.",
+            "status": "pending",
+            "testStrategy": "Verify component renders without errors and has proper structure for child components."
+          },
+          {
+            "id": 2,
+            "title": "Implement MainNav Component",
+            "description": "Create the MainNav component for primary navigation links with proper routing integration.",
+            "dependencies": [
+              1
+            ],
+            "details": "Develop `components/navigation/MainNav.tsx` component. Create a navigation item type definition in `types/navigation.ts`. Implement NavigationMenu from ShadCN UI. Add routes to Dashboard, Recipes, Meal Plans, and Shopping Lists. Include active state indicators for current route. Ensure proper aria attributes for accessibility.",
+            "status": "pending",
+            "testStrategy": "Test navigation links with correct routing and active state indicators."
+          },
+          {
+            "id": 3,
+            "title": "Create UserDropdown Component",
+            "description": "Implement the dropdown menu for authenticated users with account management options.",
+            "dependencies": [
+              1
+            ],
+            "details": "Build `components/navigation/UserDropdown.tsx` component. Use ShadCN UI DropdownMenu component. Include user avatar display. Add menu items for profile, settings, and logout. Implement proper focus management. Ensure keyboard navigation support.",
+            "status": "pending",
+            "testStrategy": "Test dropdown opens/closes correctly and all menu items function properly."
+          },
+          {
+            "id": 4,
+            "title": "Develop MobileMenu Component",
+            "description": "Create a responsive mobile menu for small screen devices.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement `components/navigation/MobileMenu.tsx`. Use ShadCN UI Sheet component for slide-out drawer. Create hamburger menu toggle button. Implement collapsible sections for nested navigation. Ensure proper z-index management. Add smooth animations for opening/closing.",
+            "status": "pending",
+            "testStrategy": "Test mobile menu on various screen sizes and verify all navigation options are accessible."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Authentication Status",
+            "description": "Connect header navigation with authentication system to show different options based on user status.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Import and use the existing `useAuth` hook to determine user authentication status. Implement conditional rendering logic in Header component. Show UserDropdown for authenticated users. Display sign in/sign up buttons for unauthenticated users. Ensure proper type safety for authentication-dependent UI elements.",
+            "status": "pending",
+            "testStrategy": "Test both authenticated and unauthenticated states to verify correct UI elements are displayed."
+          },
+          {
+            "id": 6,
+            "title": "Add Internationalization Support",
+            "description": "Implement internationalization for all navigation text and labels.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Import and integrate the LanguageSwitcher component. Replace all hardcoded text with next-intl translation keys. Add translations for all navigation items in locale files (en.json, etc.). Ensure proper fallback for missing translations.",
+            "status": "pending",
+            "testStrategy": "Test language switching and verify all navigation text changes appropriately."
+          },
+          {
+            "id": 7,
+            "title": "Implement Responsive Design for Header",
+            "description": "Ensure the header adapts properly to different screen sizes with appropriate breakpoints.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Implement responsive layout using Tailwind CSS breakpoints. Show/hide appropriate components based on screen size. Create smooth transitions between desktop and mobile views. Test and adjust layout for common device sizes. Ensure no horizontal overflow on small screens.",
+            "status": "pending",
+            "testStrategy": "Test on multiple screen sizes and verify correct component visibility and layout."
+          },
+          {
+            "id": 8,
+            "title": "Add Keyboard Navigation Support",
+            "description": "Implement full keyboard navigation support for all header components.",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Add proper tabIndex attributes to all interactive elements. Implement keyboard shortcuts for common actions. Ensure focus trapping in dropdowns and mobile menu. Add visible focus indicators. Test tab order for logical navigation flow.",
+            "status": "pending",
+            "testStrategy": "Test complete navigation using only keyboard to verify all functions are accessible."
+          },
+          {
+            "id": 9,
+            "title": "Implement ARIA Attributes for Accessibility",
+            "description": "Add proper ARIA roles and attributes to ensure screen reader compatibility.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              8
+            ],
+            "details": "Add aria-label, aria-expanded, aria-controls attributes where appropriate. Implement aria-current for active navigation items. Add proper role attributes to navigation elements. Ensure screen reader announcements for dynamic content changes. Add aria-hidden to decorative elements.",
+            "status": "pending",
+            "testStrategy": "Test with screen readers to verify proper announcements and navigation."
+          },
+          {
+            "id": 10,
+            "title": "Integrate Header with Layout",
+            "description": "Update the main layout to include the header component with proper positioning.",
+            "dependencies": [
+              1,
+              7
+            ],
+            "details": "Update `app/[locale]/layout.tsx` to include the Header component. Implement sticky header behavior with smooth scroll effects. Ensure proper z-index management. Add appropriate spacing between header and main content. Handle potential layout shifts during navigation.",
+            "status": "pending",
+            "testStrategy": "Verify header appears correctly on all pages and maintains position during scrolling."
+          },
+          {
+            "id": 11,
+            "title": "Implement Visual Feedback and Hover States",
+            "description": "Add visual feedback for interactive elements including hover, focus, and active states.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              7
+            ],
+            "details": "Implement hover effects for navigation items using Tailwind CSS. Add transition animations for smooth state changes. Create active indicators for current route. Ensure sufficient color contrast for all states. Implement loading states for asynchronous actions.",
+            "status": "pending",
+            "testStrategy": "Test all interactive elements to verify proper visual feedback for all states."
+          },
+          {
+            "id": 12,
+            "title": "Conduct Final Integration Testing",
+            "description": "Perform comprehensive testing of the entire header navigation system.",
+            "dependencies": [
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11
+            ],
+            "details": "Test integration with authentication system. Verify internationalization works correctly. Test responsive behavior across device sizes. Validate accessibility compliance. Check performance for animations and transitions. Ensure consistent behavior across browsers. Document any edge cases or known limitations.",
+            "status": "pending",
+            "testStrategy": "Create a test matrix covering all features, states, and device sizes to ensure complete coverage."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-06-30T19:01:54.312Z",
+      "updated": "2025-06-30T21:47:41.696Z",
       "description": "Tasks for master context"
     }
   }
