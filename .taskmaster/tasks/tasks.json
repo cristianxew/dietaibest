@@ -231,7 +231,7 @@
           2,
           3
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -239,7 +239,7 @@
             "description": "Define and structure each step of the onboarding wizard, outlining the sequence and content for each form step.",
             "dependencies": [],
             "details": "Identify all required steps (e.g., user info, preferences, macro calculator, family members) and create a logical flow.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -250,7 +250,7 @@
               1
             ],
             "details": "Create reusable components for each step, ensuring consistency and modularity.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -261,7 +261,7 @@
               2
             ],
             "details": "Define synchronous and asynchronous validation for all user inputs, including edge cases.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -272,7 +272,7 @@
               2
             ],
             "details": "Integrate formulas and user input handling for macro calculations within the wizard.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -283,7 +283,7 @@
               2
             ],
             "details": "Create dynamic forms and logic to manage multiple family members' data.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -296,7 +296,7 @@
               5
             ],
             "details": "Handle API requests for user data, macro calculations, and family member management.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -307,7 +307,7 @@
               2
             ],
             "details": "Display a progress bar or stepper that updates as users advance through the wizard.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -318,7 +318,7 @@
               2
             ],
             "details": "Implement mechanisms to persist state across sessions and page reloads.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -330,7 +330,7 @@
               3
             ],
             "details": "Ensure navigation respects validation and state, and allows users to revisit previous steps.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -342,7 +342,7 @@
               9
             ],
             "details": "Show a confirmation message and handle post-onboarding transitions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -353,7 +353,7 @@
               2
             ],
             "details": "Use responsive layouts and test on multiple devices for optimal usability.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -372,7 +372,7 @@
               11
             ],
             "details": "Perform manual and automated tests to ensure a seamless onboarding experience.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1670,11 +1670,25 @@
             "testStrategy": "Run performance audits before and after optimizations, verify main chunk size, and ensure no regressions in user experience."
           }
         ]
+      },
+      {
+        "id": 16,
+        "title": "Fix Google OAuth Sign-In Integration",
+        "description": "Resolve the redirect_uri_mismatch error in Google OAuth sign-in by configuring Google Cloud Console OAuth settings and ensuring proper user creation flow for Google-authenticated users.",
+        "details": "1. Diagnose the current redirect_uri_mismatch error by checking logs and authentication flow\n2. Access Google Cloud Console and navigate to the project's OAuth consent screen\n3. Verify and update the authorized JavaScript origins to match the application's domain(s)\n4. Configure authorized redirect URIs to include all valid callback endpoints (development, staging, production)\n5. Update environment variables with correct Google OAuth client ID and secret\n6. Modify the authentication flow in `pages/api/auth/[...nextauth].js` or equivalent to properly handle Google provider\n7. Implement user creation logic for first-time Google OAuth users:\n   - Check if user exists in database after successful Google authentication\n   - If not, create new user record with data from Google profile\n   - Map Google profile fields to user database schema\n   - Set appropriate default values for required fields not provided by Google\n8. Add error handling for OAuth failures with descriptive error messages\n9. Implement session management for Google-authenticated users\n10. Create proper sign-out flow that handles both local and Google sessions\n11. Add logging for OAuth process to facilitate debugging\n12. Update frontend components to properly handle Google authentication state",
+        "testStrategy": "1. Test Google OAuth sign-in flow in development environment with configured redirect URIs\n2. Verify redirect_uri_mismatch error is resolved by checking authentication logs\n3. Test sign-in with a Google account that has never been used with the application\n4. Confirm new user record is created correctly with Google profile data\n5. Test sign-in with a Google account that has previously authenticated\n6. Verify user session is properly maintained after Google authentication\n7. Test sign-out functionality for Google-authenticated users\n8. Verify error handling by simulating authentication failures\n9. Test authentication flow on all supported environments (dev/staging/prod)\n10. Verify Google OAuth integration works across different browsers\n11. Test authentication persistence across page refreshes\n12. Validate that user permissions are correctly assigned for Google-authenticated users",
+        "status": "pending",
+        "dependencies": [
+          1,
+          3
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-06-28T21:06:47.296Z",
+      "updated": "2025-06-30T19:01:54.312Z",
       "description": "Tasks for master context"
     }
   }
