@@ -22,7 +22,7 @@
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -112,7 +112,7 @@
             "description": "Enable magic link authentication in Supabase, configure email templates, and handle confirmation routes in the app.",
             "dependencies": [],
             "details": "Set up magic link provider, customize email templates, and implement frontend logic for handling magic link callbacks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -121,7 +121,7 @@
             "description": "Create a secure backend endpoint to handle refresh token requests and issue new JWTs as needed.",
             "dependencies": [],
             "details": "Implement endpoint with proper validation, rate limiting, and security checks to prevent abuse.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -132,7 +132,7 @@
               5
             ],
             "details": "Develop middleware for Next.js API routes and pages, check token validity, and redirect or error on failure.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -144,7 +144,7 @@
               11
             ],
             "details": "Implement sign-out logic to clear tokens and session, create AuthGuard components/HOCs to restrict access to authenticated users.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -160,7 +160,7 @@
           1,
           2
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -168,7 +168,7 @@
             "description": "Install next-intl and configure it in next.config.js to support English, Polish, and Spanish languages.",
             "dependencies": [],
             "details": "Run 'npm install next-intl@3.0.0'. Update next.config.js to include the supported locales (EN, PL, ES) and set the default locale.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that the application builds successfully and recognizes all three locales in the configuration."
           },
           {
@@ -179,7 +179,7 @@
               1
             ],
             "details": "Create 'messages/en.json', 'messages/pl.json', and 'messages/es.json'. Move all UI strings into these files as translation keys.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Check that all UI text is sourced from the locale files and displays correctly for each language."
           },
           {
@@ -190,7 +190,7 @@
               1
             ],
             "details": "Configure 'middleware.ts' to detect the user's preferred language and store the selection in cookies for persistence.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test that the app automatically detects and remembers the user's language preference across sessions."
           },
           {
@@ -202,7 +202,7 @@
               3
             ],
             "details": "Build 'components/LanguageSwitcher.tsx' to let users select their preferred language, updating the locale and persisting the choice.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Switching languages updates the UI immediately and persists the selection after page reloads."
           },
           {
@@ -214,7 +214,7 @@
               4
             ],
             "details": "Use the custom 'useTranslation' hook and next-intl's formatting utilities to handle translations, dates, numbers, and currencies. Update error messages and notifications to use translation keys.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "All UI elements, notifications, and formatted values reflect the selected language and locale conventions."
           }
         ]
@@ -1674,7 +1674,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-06-28T19:53:35.022Z",
+      "updated": "2025-06-28T21:06:47.296Z",
       "description": "Tasks for master context"
     }
   }
