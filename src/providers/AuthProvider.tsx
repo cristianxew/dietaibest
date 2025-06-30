@@ -54,7 +54,7 @@ function AuthContextProvider({ children }: AuthProviderProps) {
 
   // Initialize token refresh with error handling
   const { refreshToken } = useTokenRefresh({
-    refreshThreshold: 5, // 5 minutes before expiry
+    refreshThreshold: 15, // 15 minutes before expiry (more conservative)
     onRefreshSuccess: () => {
       setError(null);
       console.log("Token refreshed successfully");

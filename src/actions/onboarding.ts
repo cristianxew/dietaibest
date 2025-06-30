@@ -94,15 +94,75 @@ export async function completeOnboarding(
     // Validate input
     const validatedData = onboardingSchema.parse(data);
 
-    // Create user profile
+    // Check if user already has a profile
+    const existingProfile = await prisma.userProfile.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (existingProfile) {
+      // Update existing profile instead of creating new one
+      const profile = await prisma.userProfile.update({
+        where: { userId: user.id },
+        data: {
+          // Demographics
+          dateOfBirth: new Date(validatedData.demographics.dateOfBirth),
+          gender: validatedData.demographics.gender,
+          heightCm: parseFloat(validatedData.demographics.heightCm.toString()),
+          weightKg: parseFloat(validatedData.demographics.weightKg.toString()),
+          activityLevel: validatedData.demographics.activityLevel,
+          // Goals
+          dietaryGoal: validatedData.goals.dietaryGoal,
+          dailyCalories: validatedData.goals.dailyCalories,
+          proteinGrams: validatedData.goals.proteinGrams,
+          carbsGrams: validatedData.goals.carbsGrams,
+          fatGrams: validatedData.goals.fatGrams,
+          // Preferences
+          dietaryType: validatedData.preferences.dietaryType,
+          allergies: validatedData.preferences.allergies,
+          cuisinePrefs: validatedData.preferences.cuisinePrefs,
+          // Mark as completed
+          onboardingCompleted: true,
+        },
+      });
+
+      // Handle family members separately for updates
+      if (validatedData.familyMembers.length > 0) {
+        // Delete existing family members
+        await prisma.familyMember.deleteMany({
+          where: { profileId: profile.id },
+        });
+
+        // Create new family members
+        await prisma.familyMember.createMany({
+          data: validatedData.familyMembers.map((member) => ({
+            profileId: profile.id,
+            name: member.name,
+            relationship: member.relationship,
+            dateOfBirth: new Date(member.dateOfBirth),
+            gender: member.gender,
+            heightCm: member.heightCm
+              ? parseFloat(member.heightCm.toString())
+              : null,
+            weightKg: member.weightKg
+              ? parseFloat(member.weightKg.toString())
+              : null,
+            dietaryNeeds: member.dietaryNeeds,
+          })),
+        });
+      }
+
+      return { data: { profileId: profile.id }, error: null };
+    }
+
+    // Create new user profile
     const profile = await prisma.userProfile.create({
       data: {
         userId: user.id,
         // Demographics
         dateOfBirth: new Date(validatedData.demographics.dateOfBirth),
         gender: validatedData.demographics.gender,
-        heightCm: validatedData.demographics.heightCm,
-        weightKg: validatedData.demographics.weightKg,
+        heightCm: parseFloat(validatedData.demographics.heightCm.toString()),
+        weightKg: parseFloat(validatedData.demographics.weightKg.toString()),
         activityLevel: validatedData.demographics.activityLevel,
         // Goals
         dietaryGoal: validatedData.goals.dietaryGoal,
@@ -116,24 +176,46 @@ export async function completeOnboarding(
         cuisinePrefs: validatedData.preferences.cuisinePrefs,
         // Mark as completed
         onboardingCompleted: true,
-        // Family members
-        familyMembers: {
-          create: validatedData.familyMembers.map((member) => ({
-            name: member.name,
-            relationship: member.relationship,
-            dateOfBirth: new Date(member.dateOfBirth),
-            gender: member.gender,
-            heightCm: member.heightCm,
-            weightKg: member.weightKg,
-            dietaryNeeds: member.dietaryNeeds,
-          })),
-        },
       },
     });
 
+    // Create family members separately to avoid nested transaction issues
+    if (validatedData.familyMembers.length > 0) {
+      await prisma.familyMember.createMany({
+        data: validatedData.familyMembers.map((member) => ({
+          profileId: profile.id,
+          name: member.name,
+          relationship: member.relationship,
+          dateOfBirth: new Date(member.dateOfBirth),
+          gender: member.gender,
+          heightCm: member.heightCm
+            ? parseFloat(member.heightCm.toString())
+            : null,
+          weightKg: member.weightKg
+            ? parseFloat(member.weightKg.toString())
+            : null,
+          dietaryNeeds: member.dietaryNeeds,
+        })),
+      });
+    }
+
     return { data: { profileId: profile.id }, error: null };
   } catch (error) {
-    console.error("Error completing onboarding:", error);
+    console.error("Error completing onboarding - Full error details:", error);
+
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
+
+    // Handle Prisma-specific errors
+    if (error && typeof error === "object" && "code" in error) {
+      const prismaError = error as { code?: string; meta?: unknown };
+      console.error("Prisma error code:", prismaError.code);
+      console.error("Prisma error meta:", prismaError.meta);
+    }
+
     return { data: null, error: "Failed to complete onboarding" };
   }
 }
