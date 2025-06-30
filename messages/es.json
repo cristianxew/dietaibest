@@ -158,6 +158,40 @@
             }
         }
     },
+    "onboarding": {
+        "title": "Bienvenido a DietAIBest",
+        "subtitle": "Personalicemos tu experiencia",
+        "steps": {
+            "demographics": {
+                "title": "Información Personal",
+                "fields": {
+                    "dateOfBirth": "Fecha de Nacimiento",
+                    "gender": "Género",
+                    "height": "Altura (cm)",
+                    "weight": "Peso (kg)",
+                    "activityLevel": "Nivel de Actividad"
+                }
+            },
+            "goals": {
+                "title": "Objetivos y Nutrición",
+                "dietaryGoal": "¿Cuál es tu objetivo?",
+                "macroPreview": "Tus objetivos diarios"
+            },
+            "preferences": {
+                "title": "Preferencias y Familia",
+                "dietaryTypes": "Preferencias dietéticas",
+                "allergies": "Alergias y restricciones",
+                "familyMembers": "Miembros de la familia"
+            }
+        },
+        "actions": {
+            "back": "Atrás",
+            "next": "Siguiente",
+            "skip": "Omitir",
+            "finish": "Completar Configuración",
+            "addFamily": "Agregar Miembro de la Familia"
+        }
+    },
     "meta": {
         "title": "Dietaibest - Planificación de comidas con IA",
         "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"

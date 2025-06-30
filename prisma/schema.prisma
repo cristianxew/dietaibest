@@ -1,23 +1,57 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String       @id @default(uuid())
+  email     String       @unique
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  profile   UserProfile?
+}
+
+model UserProfile {
+  id                  String         @id @default(uuid())
+  userId              String         @unique
+  dateOfBirth         DateTime
+  dailyCalories       Int
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  allergies           String[]
+  carbsGrams          Int
+  cuisinePrefs        String[]
+  dietaryGoal         String
+  dietaryType         String[]
+  fatGrams            Int
+  heightCm            Float
+  onboardingCompleted Boolean        @default(false)
+  proteinGrams        Int
+  weightKg            Float
+  gender              String
+  activityLevel       String
+  familyMembers       FamilyMember[]
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FamilyMember {
+  id           String      @id @default(uuid())
+  name         String
+  dateOfBirth  DateTime
+  relationship String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  dietaryNeeds String[]
+  heightCm     Float?
+  profileId    String
+  weightKg     Float?
+  gender       String
+  profile      UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }

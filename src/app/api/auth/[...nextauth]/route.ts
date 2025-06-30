@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { supabase } from "@/lib/supabase";
+import { prisma } from "@/lib/prisma";
 
 // This is the Next.js route handler for next-auth. It configures authentication providers and session handling.
 // Providers are configured using environment variables for security and flexibility.
@@ -51,6 +52,22 @@ const handler = NextAuth({
             return null;
           }
 
+          // Create or find user in database
+          try {
+            await prisma.user.upsert({
+              where: { email: user.email },
+              update: {
+                // Update any fields if needed
+              },
+              create: {
+                email: user.email,
+                password: "", // Empty password for OAuth users
+              },
+            });
+          } catch (dbError) {
+            console.error("Database user creation error:", dbError);
+          }
+
           return {
             id: user.id,
             email: user.email,
@@ -87,13 +104,21 @@ const handler = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user, account }) {
-      // Custom sign-in logic - sync user with Supabase if needed
+    async signIn({ user }) {
+      // Custom sign-in logic - sync user with database
       try {
-        if (account?.provider === "google" && user.email) {
-          // Here you can create/update user in Supabase
-          // For now, we'll just allow the sign-in
-          return true;
+        if (user.email) {
+          // Create or find user in database
+          await prisma.user.upsert({
+            where: { email: user.email },
+            update: {
+              // Update any fields if needed
+            },
+            create: {
+              email: user.email,
+              password: "", // Empty password for OAuth users
+            },
+          });
         }
         return true;
       } catch (error) {

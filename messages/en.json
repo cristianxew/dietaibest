@@ -158,6 +158,40 @@
             }
         }
     },
+    "onboarding": {
+        "title": "Welcome to DietAIBest",
+        "subtitle": "Let's personalize your experience",
+        "steps": {
+            "demographics": {
+                "title": "Personal Information",
+                "fields": {
+                    "dateOfBirth": "Date of Birth",
+                    "gender": "Gender",
+                    "height": "Height (cm)",
+                    "weight": "Weight (kg)",
+                    "activityLevel": "Activity Level"
+                }
+            },
+            "goals": {
+                "title": "Goals & Nutrition",
+                "dietaryGoal": "What's your goal?",
+                "macroPreview": "Your daily targets"
+            },
+            "preferences": {
+                "title": "Preferences & Family",
+                "dietaryTypes": "Dietary preferences",
+                "allergies": "Allergies & restrictions",
+                "familyMembers": "Family members"
+            }
+        },
+        "actions": {
+            "back": "Back",
+            "next": "Next",
+            "skip": "Skip",
+            "finish": "Complete Setup",
+            "addFamily": "Add Family Member"
+        }
+    },
     "meta": {
         "title": "Dietaibest - AI-Powered Meal Planning",
         "description": "Personalized meal planning and nutrition tracking with AI assistance"
