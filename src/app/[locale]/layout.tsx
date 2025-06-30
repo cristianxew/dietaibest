@@ -1,6 +1,6 @@
 import { getMessages } from "next-intl/server";
 import { ClientProviders } from "@/providers/ClientProviders";
-import { LanguageSwitcherCompact } from "@/components/LanguageSwitcher";
+import Header from "@/components/navigation/Header";
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -17,13 +17,18 @@ export default async function LocaleLayout({
   return (
     <ClientProviders messages={messages} locale={locale}>
       <div className="min-h-screen flex flex-col">
-        {/* Language switcher in top-right corner */}
-        <div className="absolute top-4 right-4 z-50">
-          <LanguageSwitcherCompact />
-        </div>
+        {/* Header Navigation */}
+        <Header />
 
-        {/* Main content */}
-        <main className="flex-1">{children}</main>
+        {/* Main content with proper spacing to account for sticky header */}
+        <main
+          id="main-content"
+          className="flex-1 relative"
+          tabIndex={-1}
+          aria-label="Main content"
+        >
+          {children}
+        </main>
       </div>
     </ClientProviders>
   );

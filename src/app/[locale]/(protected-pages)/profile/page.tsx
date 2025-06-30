@@ -1,0 +1,13 @@
+import { useTranslations } from "next-intl";
+
+export default function ProfilePage() {
+  const t = useTranslations("navigation.userMenu");
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        {t("viewProfile")}
+      </h1>
+    </div>
+  );
+}

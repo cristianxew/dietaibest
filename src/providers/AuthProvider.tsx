@@ -1,6 +1,5 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
 import {
   createContext,
   useContext,
@@ -39,13 +38,10 @@ interface AuthProviderProps {
 /**
  * Enhanced AuthProvider that provides comprehensive authentication state management
  * Includes automatic token refresh, error handling, and auth actions
+ * Note: SessionProvider is provided by ClientProviders, so we don't need it here
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  return (
-    <SessionProvider>
-      <AuthContextProvider>{children}</AuthContextProvider>
-    </SessionProvider>
-  );
+  return <AuthContextProvider>{children}</AuthContextProvider>;
 }
 
 function AuthContextProvider({ children }: AuthProviderProps) {
