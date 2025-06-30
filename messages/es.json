@@ -113,7 +113,39 @@
         "mealPlans": "Planes de comidas",
         "shopping": "Compras",
         "settings": "Configuración",
-        "profile": "Perfil"
+        "profile": "Perfil",
+        "userMenu": {
+            "myAccount": "Mi Cuenta",
+            "editProfile": "Editar Perfil",
+            "viewProfile": "Ver Perfil",
+            "accountSettings": "Configuración de Cuenta",
+            "signOut": "Cerrar Sesión"
+        },
+        "mobileMenu": {
+            "title": "Menú",
+            "language": "Idioma",
+            "openMenu": "Abrir menú",
+            "closeMenu": "Cerrar menú"
+        },
+        "accessibility": {
+            "skipToMain": "Saltar al contenido principal",
+            "skipToMainDescription": "Presiona Enter para saltar la navegación e ir directamente al área de contenido principal",
+            "mainNavigation": "Navegación principal",
+            "mainNavigationDescription": "Menú de navegación principal con atajos de teclado. Usa Alt+1 para Panel, Alt+2 para Recetas, Alt+3 para Planes de Comida, Alt+4 para Compras.",
+            "userControls": "Controles de usuario y configuración",
+            "loadingNavigation": "Cargando navegación principal",
+            "loadingAuthControls": "Cargando controles de autenticación",
+            "loadingLanguageSwitcher": "Cargando selector de idioma",
+            "keyboardShortcuts": "Atajos de teclado: Alt+M para alternar menú móvil, Alt+H para enfocar encabezado, Escape para cerrar menús. Usa Alt+1 a Alt+4 para navegación rápida.",
+            "currentPage": "Página actual",
+            "menuOpen": "Menú abierto",
+            "menuClosed": "Menú cerrado",
+            "navigatingTo": "Navegando a {page}",
+            "focusTrapped": "El foco está atrapado dentro del menú mientras esté abierto",
+            "screenReaderOnly": "Contenido solo para lector de pantalla",
+            "authenticatedUser": "Controles de usuario autenticado",
+            "authenticationOptions": "Opciones de autenticación"
+        }
     },
     "dashboard": {
         "welcome": "¡Bienvenido a Dietaibest!",
@@ -157,6 +189,48 @@
                 "description": "Crea planes semanales de comidas con asistencia de IA."
             }
         }
+    },
+    "recipes": {
+        "title": "Recetas",
+        "subtitle": "Descubre y gestiona tus recetas favoritas",
+        "comingSoon": "Próximamente",
+        "description": "Estamos trabajando arduamente para brindarte una experiencia increíble de recetas. Esta función incluirá:",
+        "features": {
+            "browse": "Navegar por miles de recetas saludables",
+            "save": "Guardar tus recetas favoritas",
+            "create": "Crear y compartir tus propias recetas",
+            "nutrition": "Cálculo automático de nutrición",
+            "categories": "Filtrar por preferencias dietéticas y categorías"
+        },
+        "backToDashboard": "Volver al Panel"
+    },
+    "mealPlans": {
+        "title": "Planes de Comidas",
+        "subtitle": "Planifica tus comidas con asistencia de IA",
+        "comingSoon": "Próximamente",
+        "description": "Prepárate para una planificación inteligente de comidas que se adapta a tu estilo de vida. Esta función incluirá:",
+        "features": {
+            "aiGenerated": "Planes de comidas generados por IA basados en tus preferencias",
+            "weeklyPlanning": "Planificación semanal y mensual de comidas",
+            "nutritionGoals": "Seguimiento automático de objetivos nutricionales",
+            "shoppingIntegration": "Generación integrada de lista de compras",
+            "customization": "Horarios de comidas completamente personalizables"
+        },
+        "backToDashboard": "Volver al Panel"
+    },
+    "shopping": {
+        "title": "Listas de Compras",
+        "subtitle": "Compras inteligentes hechas fáciles",
+        "comingSoon": "Próximamente",
+        "description": "Experiencia revolucionaria de compras impulsada por IA. Esta función incluirá:",
+        "features": {
+            "smartLists": "Listas de compras inteligentes de tus planes de comidas",
+            "priceComparison": "Comparación de precios entre tiendas",
+            "autoOrdering": "Pedidos automatizados de comestibles",
+            "nutritionLabels": "Información nutricional para todos los artículos",
+            "budgetTracking": "Seguimiento y optimización del presupuesto"
+        },
+        "backToDashboard": "Volver al Panel"
     },
     "onboarding": {
         "title": "Bienvenido a DietAIBest",

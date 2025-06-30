@@ -113,7 +113,39 @@
         "mealPlans": "Meal Plans",
         "shopping": "Shopping",
         "settings": "Settings",
-        "profile": "Profile"
+        "profile": "Profile",
+        "userMenu": {
+            "myAccount": "My Account",
+            "editProfile": "Edit Profile",
+            "viewProfile": "View Profile",
+            "accountSettings": "Account Settings",
+            "signOut": "Sign Out"
+        },
+        "mobileMenu": {
+            "title": "Menu",
+            "language": "Language",
+            "openMenu": "Open menu",
+            "closeMenu": "Close menu"
+        },
+        "accessibility": {
+            "skipToMain": "Skip to main content",
+            "skipToMainDescription": "Press Enter to skip navigation and go directly to the main content area",
+            "mainNavigation": "Main navigation",
+            "mainNavigationDescription": "Primary navigation menu with keyboard shortcuts. Use Alt+1 for Dashboard, Alt+2 for Recipes, Alt+3 for Meal Plans, Alt+4 for Shopping.",
+            "userControls": "User controls and settings",
+            "loadingNavigation": "Loading main navigation",
+            "loadingAuthControls": "Loading authentication controls",
+            "loadingLanguageSwitcher": "Loading language switcher",
+            "keyboardShortcuts": "Keyboard shortcuts: Alt+M to toggle mobile menu, Alt+H to focus header, Escape to close menus. Use Alt+1 through Alt+4 for quick navigation.",
+            "currentPage": "Current page",
+            "menuOpen": "Menu opened",
+            "menuClosed": "Menu closed",
+            "navigatingTo": "Navigating to {page}",
+            "focusTrapped": "Focus is trapped within the menu while open",
+            "screenReaderOnly": "Screen reader only content",
+            "authenticatedUser": "Authenticated user controls",
+            "authenticationOptions": "Authentication options"
+        }
     },
     "dashboard": {
         "welcome": "Welcome to Dietaibest!",
@@ -157,6 +189,48 @@
                 "description": "Create weekly meal plans with AI assistance."
             }
         }
+    },
+    "recipes": {
+        "title": "Recipes",
+        "subtitle": "Discover and manage your favorite recipes",
+        "comingSoon": "Coming Soon",
+        "description": "We're working hard to bring you an amazing recipe experience. This feature will include:",
+        "features": {
+            "browse": "Browse thousands of healthy recipes",
+            "save": "Save your favorite recipes",
+            "create": "Create and share your own recipes",
+            "nutrition": "Automatic nutrition calculation",
+            "categories": "Filter by dietary preferences and categories"
+        },
+        "backToDashboard": "Back to Dashboard"
+    },
+    "mealPlans": {
+        "title": "Meal Plans",
+        "subtitle": "Plan your meals with AI assistance",
+        "comingSoon": "Coming Soon",
+        "description": "Get ready for intelligent meal planning that adapts to your lifestyle. This feature will include:",
+        "features": {
+            "aiGenerated": "AI-generated meal plans based on your preferences",
+            "weeklyPlanning": "Weekly and monthly meal planning",
+            "nutritionGoals": "Automatic nutrition goal tracking",
+            "shoppingIntegration": "Integrated shopping list generation",
+            "customization": "Fully customizable meal schedules"
+        },
+        "backToDashboard": "Back to Dashboard"
+    },
+    "shopping": {
+        "title": "Shopping Lists",
+        "subtitle": "Smart grocery shopping made easy",
+        "comingSoon": "Coming Soon",
+        "description": "Revolutionary shopping experience powered by AI. This feature will include:",
+        "features": {
+            "smartLists": "Smart shopping lists from your meal plans",
+            "priceComparison": "Price comparison across stores",
+            "autoOrdering": "Automated grocery ordering",
+            "nutritionLabels": "Nutrition information for all items",
+            "budgetTracking": "Budget tracking and optimization"
+        },
+        "backToDashboard": "Back to Dashboard"
     },
     "onboarding": {
         "title": "Welcome to DietAIBest",
