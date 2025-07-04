@@ -1,0 +1,421 @@
+"use server";
+
+import { getServerSession } from "next-auth";
+import prisma from "@/lib/prisma";
+import {
+  recipeFormSchema,
+  recipeFilterSchema,
+  type RecipeFormData,
+  type RecipeFilter,
+} from "@/types/recipe";
+import { Prisma } from "@/generated/prisma";
+import { revalidatePath } from "next/cache";
+
+// Helper to get authenticated user
+async function getAuthenticatedUser() {
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized");
+  }
+
+  // Get user from database
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+}
+
+// Create a new recipe
+export async function createRecipe(data: RecipeFormData) {
+  try {
+    const user = await getAuthenticatedUser();
+    const validatedData = recipeFormSchema.parse(data);
+
+    const { categoryIds, ...recipeData } = validatedData;
+
+    const recipe = await prisma.recipe.create({
+      data: {
+        ...recipeData,
+        userId: user.id,
+        source: "manual",
+        categories: {
+          connect: categoryIds.map((id) => ({ id })),
+        },
+      },
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    revalidatePath("/recipes");
+    return { data: recipe, error: null };
+  } catch (error) {
+    console.error("Create recipe error:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to create recipe",
+    };
+  }
+}
+
+// Update an existing recipe
+export async function updateRecipe(id: string, data: RecipeFormData) {
+  try {
+    const user = await getAuthenticatedUser();
+    const validatedData = recipeFormSchema.parse(data);
+
+    // Check if user owns the recipe
+    const existingRecipe = await prisma.recipe.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!existingRecipe) {
+      return { data: null, error: "Recipe not found" };
+    }
+
+    if (existingRecipe.userId !== user.id) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    const { categoryIds, ...recipeData } = validatedData;
+
+    const recipe = await prisma.recipe.update({
+      where: { id },
+      data: {
+        ...recipeData,
+        categories: {
+          set: [], // Clear existing
+          connect: categoryIds.map((id) => ({ id })), // Add new
+        },
+      },
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath(`/recipes/${id}`);
+    return { data: recipe, error: null };
+  } catch (error) {
+    console.error("Update recipe error:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to update recipe",
+    };
+  }
+}
+
+// Delete a recipe
+export async function deleteRecipe(id: string) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Check if user owns the recipe
+    const existingRecipe = await prisma.recipe.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!existingRecipe) {
+      return { data: null, error: "Recipe not found" };
+    }
+
+    if (existingRecipe.userId !== user.id) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    await prisma.recipe.delete({
+      where: { id },
+    });
+
+    revalidatePath("/recipes");
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    console.error("Delete recipe error:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to delete recipe",
+    };
+  }
+}
+
+// Get recipes with filtering, sorting, and pagination
+export async function getRecipes(filter?: RecipeFilter) {
+  try {
+    const user = await getAuthenticatedUser();
+    const validatedFilter = recipeFilterSchema.parse(filter || {});
+
+    const {
+      search,
+      categoryId,
+      difficulty,
+      tags,
+      minCalories,
+      maxCalories,
+      favorites,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 12,
+    } = validatedFilter;
+
+    // Build where clause
+    const where: Prisma.RecipeWhereInput = {
+      userId: user.id,
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { tags: { hasSome: [search] } },
+        ],
+      }),
+      ...(categoryId && {
+        categories: { some: { id: categoryId } },
+      }),
+      ...(difficulty && { difficulty }),
+      ...(tags &&
+        tags.length > 0 && {
+          tags: { hasSome: tags },
+        }),
+      ...(minCalories && { calories: { gte: minCalories } }),
+      ...(maxCalories && { calories: { lte: maxCalories } }),
+      ...(favorites && {
+        favoritedBy: { some: { userId: user.id } },
+      }),
+    };
+
+    // Get total count
+    const totalCount = await prisma.recipe.count({ where });
+
+    // Get recipes with pagination
+    const recipes = await prisma.recipe.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    return {
+      data: {
+        recipes,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Get recipes error:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to get recipes",
+    };
+  }
+}
+
+// Get a single recipe by ID
+export async function getRecipe(id: string) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const recipe = await prisma.recipe.findUnique({
+      where: { id },
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!recipe) {
+      return { data: null, error: "Recipe not found" };
+    }
+
+    // Check if user can view this recipe
+    if (recipe.userId !== user.id && !recipe.isPublic) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    return { data: recipe, error: null };
+  } catch (error) {
+    console.error("Get recipe error:", error);
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to get recipe",
+    };
+  }
+}
+
+// Toggle favorite status
+export async function toggleFavorite(recipeId: string) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Check if already favorited
+    const existing = await prisma.userFavorite.findUnique({
+      where: {
+        userId_recipeId: {
+          userId: user.id,
+          recipeId,
+        },
+      },
+    });
+
+    if (existing) {
+      // Remove favorite
+      await prisma.userFavorite.delete({
+        where: { id: existing.id },
+      });
+      return { data: { favorited: false }, error: null };
+    } else {
+      // Add favorite
+      await prisma.userFavorite.create({
+        data: {
+          userId: user.id,
+          recipeId,
+        },
+      });
+      return { data: { favorited: true }, error: null };
+    }
+  } catch (error) {
+    console.error("Toggle favorite error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to toggle favorite",
+    };
+  }
+}
+
+// Get all categories
+export async function getCategories() {
+  try {
+    const categories = await prisma.recipeCategory.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    return { data: categories, error: null };
+  } catch (error) {
+    console.error("Get categories error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to get categories",
+    };
+  }
+}
+
+// Create default categories (run once)
+export async function createDefaultCategories() {
+  try {
+    const defaultCategories = [
+      {
+        name: "Breakfast",
+        slug: "breakfast",
+        description: "Morning meals",
+        iconName: "sunrise",
+      },
+      {
+        name: "Lunch",
+        slug: "lunch",
+        description: "Midday meals",
+        iconName: "sun",
+      },
+      {
+        name: "Dinner",
+        slug: "dinner",
+        description: "Evening meals",
+        iconName: "moon",
+      },
+      {
+        name: "Snacks",
+        slug: "snacks",
+        description: "Quick bites",
+        iconName: "cookie",
+      },
+      {
+        name: "Desserts",
+        slug: "desserts",
+        description: "Sweet treats",
+        iconName: "cake",
+      },
+      {
+        name: "Beverages",
+        slug: "beverages",
+        description: "Drinks and smoothies",
+        iconName: "coffee",
+      },
+      {
+        name: "Vegetarian",
+        slug: "vegetarian",
+        description: "Plant-based meals",
+        iconName: "leaf",
+      },
+      {
+        name: "Vegan",
+        slug: "vegan",
+        description: "No animal products",
+        iconName: "carrot",
+      },
+      {
+        name: "Gluten-Free",
+        slug: "gluten-free",
+        description: "No gluten ingredients",
+        iconName: "wheat-off",
+      },
+      {
+        name: "Low-Carb",
+        slug: "low-carb",
+        description: "Low carbohydrate meals",
+        iconName: "scale",
+      },
+    ];
+
+    const createdCategories = await Promise.all(
+      defaultCategories.map((category) =>
+        prisma.recipeCategory.upsert({
+          where: { slug: category.slug },
+          update: {},
+          create: category,
+        })
+      )
+    );
+
+    return { data: createdCategories, error: null };
+  } catch (error) {
+    console.error("Create default categories error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to create categories",
+    };
+  }
+}

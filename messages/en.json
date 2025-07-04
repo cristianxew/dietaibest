@@ -191,18 +191,50 @@
         }
     },
     "recipes": {
-        "title": "Recipes",
-        "subtitle": "Discover and manage your favorite recipes",
-        "comingSoon": "Coming Soon",
-        "description": "We're working hard to bring you an amazing recipe experience. This feature will include:",
+        "title": "My Recipes",
+        "description": "Create and manage your recipe collection",
+        "addRecipe": "Add Recipe",
+        "searchPlaceholder": "Search recipes...",
+        "allCategories": "All Categories",
+        "allDifficulties": "All Difficulties",
+        "allRecipes": "All Recipes",
+        "favorites": "Favorites",
+        "noRecipes": "No recipes found. Create your first recipe!",
+        "servings": "servings",
+        "cal": "cal",
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat",
+        "difficulty": {
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard"
+        },
+        "sortBy": "Sort by",
+        "sort": {
+            "newest": "Newest First",
+            "alphabetical": "Alphabetical",
+            "calories": "Calories"
+        },
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {{current}} of {{total}}",
+        "loadError": "Failed to load recipes",
+        "favoriteAdded": "Added to favorites",
+        "favoriteRemoved": "Removed from favorites",
+        "favoriteError": "Failed to update favorite",
+        "addFavorite": "Add to favorites",
+        "removeFavorite": "Remove from favorites",
+        "backToDashboard": "Back to Dashboard",
+        "subtitle": "Your personal recipe collection",
+        "comingSoon": "Coming Soon!",
         "features": {
             "browse": "Browse thousands of healthy recipes",
             "save": "Save your favorite recipes",
-            "create": "Create and share your own recipes",
+            "create": "Create your own custom recipes",
             "nutrition": "Automatic nutrition calculation",
-            "categories": "Filter by dietary preferences and categories"
-        },
-        "backToDashboard": "Back to Dashboard"
+            "categories": "Organize by meal type and dietary preferences"
+        }
     },
     "mealPlans": {
         "title": "Meal Plans",

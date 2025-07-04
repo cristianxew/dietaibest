@@ -191,18 +191,50 @@
         }
     },
     "recipes": {
-        "title": "Recetas",
-        "subtitle": "Descubre y gestiona tus recetas favoritas",
-        "comingSoon": "Próximamente",
-        "description": "Estamos trabajando arduamente para brindarte una experiencia increíble de recetas. Esta función incluirá:",
-        "features": {
-            "browse": "Navegar por miles de recetas saludables",
-            "save": "Guardar tus recetas favoritas",
-            "create": "Crear y compartir tus propias recetas",
-            "nutrition": "Cálculo automático de nutrición",
-            "categories": "Filtrar por preferencias dietéticas y categorías"
+        "title": "Mis Recetas",
+        "description": "Crea y gestiona tu colección de recetas",
+        "addRecipe": "Agregar Receta",
+        "searchPlaceholder": "Buscar recetas...",
+        "allCategories": "Todas las Categorías",
+        "allDifficulties": "Todas las Dificultades",
+        "allRecipes": "Todas las Recetas",
+        "favorites": "Favoritos",
+        "noRecipes": "No se encontraron recetas. ¡Crea tu primera receta!",
+        "servings": "porciones",
+        "cal": "cal",
+        "protein": "Proteína",
+        "carbs": "Carbohidratos",
+        "fat": "Grasa",
+        "difficulty": {
+            "easy": "Fácil",
+            "medium": "Media",
+            "hard": "Difícil"
         },
-        "backToDashboard": "Volver al Panel"
+        "sortBy": "Ordenar por",
+        "sort": {
+            "newest": "Más Recientes",
+            "alphabetical": "Alfabético",
+            "calories": "Calorías"
+        },
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "pageOf": "Página {{current}} de {{total}}",
+        "loadError": "Error al cargar recetas",
+        "favoriteAdded": "Agregado a favoritos",
+        "favoriteRemoved": "Eliminado de favoritos",
+        "favoriteError": "Error al actualizar favorito",
+        "addFavorite": "Agregar a favoritos",
+        "removeFavorite": "Quitar de favoritos",
+        "backToDashboard": "Volver al Panel",
+        "subtitle": "Tu colección personal de recetas",
+        "comingSoon": "¡Próximamente!",
+        "features": {
+            "browse": "Explora miles de recetas saludables",
+            "save": "Guarda tus recetas favoritas",
+            "create": "Crea tus propias recetas personalizadas",
+            "nutrition": "Cálculo automático de nutrición",
+            "categories": "Organiza por tipo de comida y preferencias dietéticas"
+        }
     },
     "mealPlans": {
         "title": "Planes de Comidas",

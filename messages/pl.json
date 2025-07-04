@@ -191,18 +191,50 @@
         }
     },
     "recipes": {
-        "title": "Przepisy",
-        "subtitle": "Odkryj i zarządzaj swoimi ulubionymi przepisami",
-        "comingSoon": "Wkrótce",
-        "description": "Ciężko pracujemy, aby zapewnić Ci niesamowite doświadczenie z przepisami. Ta funkcja będzie obejmować:",
-        "features": {
-            "browse": "Przeglądanie tysięcy zdrowych przepisów",
-            "save": "Zapisywanie ulubionych przepisów",
-            "create": "Tworzenie i udostępnianie własnych przepisów",
-            "nutrition": "Automatyczne obliczanie wartości odżywczych",
-            "categories": "Filtrowanie według preferencji dietetycznych i kategorii"
+        "title": "Moje Przepisy",
+        "description": "Twórz i zarządzaj swoją kolekcją przepisów",
+        "addRecipe": "Dodaj Przepis",
+        "searchPlaceholder": "Szukaj przepisów...",
+        "allCategories": "Wszystkie Kategorie",
+        "allDifficulties": "Wszystkie Poziomy Trudności",
+        "allRecipes": "Wszystkie Przepisy",
+        "favorites": "Ulubione",
+        "noRecipes": "Nie znaleziono przepisów. Stwórz swój pierwszy przepis!",
+        "servings": "porcji",
+        "cal": "kcal",
+        "protein": "Białko",
+        "carbs": "Węglowodany",
+        "fat": "Tłuszcz",
+        "difficulty": {
+            "easy": "Łatwy",
+            "medium": "Średni",
+            "hard": "Trudny"
         },
-        "backToDashboard": "Powrót do Pulpitu"
+        "sortBy": "Sortuj według",
+        "sort": {
+            "newest": "Najnowsze",
+            "alphabetical": "Alfabetycznie",
+            "calories": "Kalorie"
+        },
+        "previous": "Poprzednia",
+        "next": "Następna",
+        "pageOf": "Strona {{current}} z {{total}}",
+        "loadError": "Błąd ładowania przepisów",
+        "favoriteAdded": "Dodano do ulubionych",
+        "favoriteRemoved": "Usunięto z ulubionych",
+        "favoriteError": "Błąd aktualizacji ulubionych",
+        "addFavorite": "Dodaj do ulubionych",
+        "removeFavorite": "Usuń z ulubionych",
+        "backToDashboard": "Powrót do Pulpitu",
+        "subtitle": "Twoja osobista kolekcja przepisów",
+        "comingSoon": "Już Wkrótce!",
+        "features": {
+            "browse": "Przeglądaj tysiące zdrowych przepisów",
+            "save": "Zapisuj ulubione przepisy",
+            "create": "Twórz własne spersonalizowane przepisy",
+            "nutrition": "Automatyczne obliczanie wartości odżywczych",
+            "categories": "Organizuj według typu posiłku i preferencji dietetycznych"
+        }
     },
     "mealPlans": {
         "title": "Plany Posiłków",
