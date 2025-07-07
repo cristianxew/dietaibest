@@ -153,8 +153,6 @@ export default async function RecipeDetailPage({
                 <div className="relative w-full h-96 overflow-hidden">
                   <Image
                     src={recipe.imageUrl}
-                    // src={null}
-
                     alt={recipe.title}
                     fill
                     className="object-cover"

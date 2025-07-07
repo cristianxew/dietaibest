@@ -32,8 +32,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, TestTube2 } from "lucide-react";
 import type { RecipeCategory } from "@/generated/prisma";
+import { getMockRecipeData } from "@/lib/recipe-mocks";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData & { id: string };
@@ -47,7 +48,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  const form = useForm<RecipeFormData>({
+  const form = useForm({
     resolver: zodResolver(recipeFormSchema),
     defaultValues: recipe || {
       title: "",
@@ -87,7 +88,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     remove: removeInstruction,
   } = useFieldArray({
     control: form.control,
-    name: "instructions",
+    name: "instructions" as never,
   });
 
   // Load categories
@@ -135,8 +136,14 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     }
   };
 
+  const handleFillMockData = () => {
+    const mockData = getMockRecipeData();
+    form.reset(mockData);
+    toast.info("Form filled with mock data and a valid category!");
+  };
+
   const handleAddTag = (tag: string) => {
-    const currentTags = form.getValues("tags");
+    const currentTags = form.getValues("tags") || [];
     if (tag && !currentTags.includes(tag)) {
       form.setValue("tags", [...currentTags, tag]);
     }
@@ -146,7 +153,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
     const currentTags = form.getValues("tags");
     form.setValue(
       "tags",
-      currentTags.filter((tag) => tag !== tagToRemove)
+      currentTags?.filter((tag) => tag !== tagToRemove)
     );
   };
 
@@ -391,7 +398,7 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {form.watch("tags").map((tag) => (
+                    {(form.watch("tags") || []).map((tag) => (
                       <Badge
                         key={tag}
                         variant="secondary"
@@ -743,10 +750,20 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
         </Tabs>
 
         <div className="flex justify-end gap-4">
+          {process.env.NODE_ENV === "development" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFillMockData}
+            >
+              <TestTube2 className="mr-2 h-4 w-4" />
+              Fill with Mock Data
+            </Button>
+          )}
           <Button
-            type="submit"
+            type="button"
             variant="outline"
-            // onClick={() => router.push(`/${locale}/recipes`)}
+            onClick={() => router.push(`/${locale}/recipes`)}
             disabled={isSubmitting}
           >
             Cancel

@@ -82,6 +82,7 @@ export function RecipesList() {
     startTransition(() => {
       fetchRecipes();
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     searchTerm,
     selectedCategory,
