@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { RecipesList } from "./_components/RecipesList";
+import { RecipesList } from "../../../../components/recipes/RecipesList";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
