@@ -1,27 +1,31 @@
 ---
 description: Dietaibest development workflow
-globs: 
+globs:
 alwaysApply: false
 ---
+
 # Development Workflow & Project Intelligence
 
 ## Feature Development Lifecycle
 
 ### Phase 1: Planning & Research
+
 1. **Read Memory Bank**: Start with [memory-bank/](mdc:memory-bank) files review
 2. **Task Analysis**: Check current task status and dependencies
-3. **API Research**: Review external service documentation
+3. **API Research**: Review external service documentation if applicable
 4. **Design Seed**: Create UI mockup if needed (use existing design system)
 5. **Update Active Context**: Document planned approach in [activeContext.md](mdc:memory-bank/activeContext.md)
 
 ### Phase 2: Implementation
+
 1. **Database First**: Update [prisma/schema.prisma](mdc:prisma/schema.prisma) if needed
 2. **Server Actions**: Implement business logic with authentication
 3. **UI Components**: Build with Shadcn UI, mobile-first responsive
-4. **Error Handling**: Consistent API responses and toast notifications  
+4. **Error Handling**: Consistent API responses and toast notifications
 5. **Testing**: Manual testing of happy path + error scenarios
 
 ### Phase 3: Integration & Documentation
+
 1. **Task Status**: Update to 'done' when complete
 2. **Progress Update**: Document in [progress.md](mdc:memory-bank/progress.md)
 3. **Memory Bank**: Update if new patterns emerged
@@ -30,6 +34,7 @@ alwaysApply: false
 ## Critical Project Intelligence
 
 ### Never Break Existing Patterns
+
 - **DO NOT** modify Shadcn UI components directly
 - **DO NOT** create custom types when Prisma types exist
 - **DO NOT** use npm/yarn (Bun exclusive)
@@ -37,12 +42,14 @@ alwaysApply: false
 - **DO NOT** create mock data without explicit request
 
 ### Architecture Evolution
+
 - Started as comprehensive meal planning app
 - Evolved to integrate professional APIs (Edamam, Browser-Use)
 - Focus shifted from custom AI to service integration
 - Complexity reduction through external service usage
 
 ### Key Technical Decisions
+
 1. **Edamam Dual API**: Recipe Search + Meal Planner APIs
 2. **Browser-Use Cloud**: Automated grocery shopping via AI agents
 3. **Server-First**: Minimal client state, maximum server actions
@@ -52,12 +59,14 @@ alwaysApply: false
 ## Debugging & Troubleshooting
 
 ### Common Issues
+
 - **Hydration Errors**: Check server/client component boundaries
 - **Auth Failures**: Verify middleware.ts and server action auth checks
 - **API Rate Limits**: Implement proper caching and user messaging
 - **Prisma Errors**: Check schema sync and generated client updates
 
 ### Diagnostic Commands
+
 ```bash
 # Check Prisma sync
 bun prisma generate
@@ -73,21 +82,27 @@ cd .taskmaster && ls -la
 ## Team Communication Patterns
 
 ### Status Updates Format
+
 ```markdown
 ## Completed ✅
+
 - Feature X: Implementation details
 - API Integration Y: What was learned
 
 ## Current Focus 🚧
+
 - Feature Z: Current blocker/progress
 
 ## Next Steps 📋
+
 - Dependency: What's needed first
 - Timeline: Expected completion
 ```
 
 ### Decision Documentation
+
 When making architectural decisions:
+
 1. **Document in systemPatterns.md** for reusable patterns
 2. **Update techContext.md** for technology choices
 3. **Record in activeContext.md** for immediate context
@@ -96,6 +111,7 @@ When making architectural decisions:
 ## Quality Standards
 
 ### Code Review Checklist
+
 - [ ] Authentication check on all server actions
 - [ ] Consistent error handling with toast notifications
 - [ ] Mobile-responsive design tested
@@ -104,6 +120,7 @@ When making architectural decisions:
 - [ ] TypeScript types derived from Prisma schema
 
 ### Performance Considerations
+
 - **Image Optimization**: Use Next.js Image component
 - **Bundle Size**: Dynamic imports for heavy components
 - **Database**: Minimize N+1 queries with Prisma includes
@@ -113,6 +130,7 @@ When making architectural decisions:
 ## Deployment Considerations
 
 ### Environment Variables Required
+
 ```
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
@@ -136,6 +154,7 @@ NEXTAUTH_SECRET=
 ```
 
 ### Pre-deployment Checklist
+
 - [ ] Prisma migrations applied
 - [ ] Environment variables configured
 - [ ] API rate limits configured
