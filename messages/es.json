@@ -214,7 +214,8 @@
         "sort": {
             "newest": "Más Recientes",
             "alphabetical": "Alfabético",
-            "calories": "Calorías"
+            "calories": "Calorías",
+            "prepTime": "Tiempo de Prep"
         },
         "previous": "Anterior",
         "next": "Siguiente",

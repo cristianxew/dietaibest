@@ -30,9 +30,9 @@ export function RecipesList() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [showFavorites, setShowFavorites] = useState(false);
-  const [sortBy, setSortBy] = useState<"createdAt" | "title" | "calories">(
-    "createdAt"
-  );
+  const [sortBy, setSortBy] = useState<
+    "createdAt" | "title" | "calories" | "prepTime"
+  >("createdAt");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isPending, startTransition] = useTransition();
@@ -172,7 +172,7 @@ export function RecipesList() {
           <Select
             value={sortBy}
             onValueChange={(v) =>
-              setSortBy(v as "createdAt" | "title" | "calories")
+              setSortBy(v as "createdAt" | "title" | "calories" | "prepTime")
             }
           >
             <SelectTrigger className="w-[180px]">
@@ -182,6 +182,7 @@ export function RecipesList() {
               <SelectItem value="createdAt">{t("sort.newest")}</SelectItem>
               <SelectItem value="title">{t("sort.alphabetical")}</SelectItem>
               <SelectItem value="calories">{t("sort.calories")}</SelectItem>
+              <SelectItem value="prepTime">{t("sort.prepTime")}</SelectItem>
             </SelectContent>
           </Select>
 
