@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Recipe, RecipeCategory, UserFavorite } from "@/generated/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -195,7 +195,51 @@ export function RecipesList() {
               <TabsTrigger value="favorites">{t("favorites")}</TabsTrigger>
             </TabsList>
           </Tabs>
+
+          {/* Clear filters button */}
+          {(searchTerm ||
+            selectedCategory !== "all" ||
+            selectedDifficulty !== "all" ||
+            showFavorites) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("all");
+                setSelectedDifficulty("all");
+                setShowFavorites(false);
+                setPage(1);
+              }}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          )}
         </div>
+
+        {/* Results summary */}
+        {!loading && (
+          <div className="text-sm text-muted-foreground">
+            {totalPages > 0 ? (
+              <>
+                Showing {recipes.length} of{" "}
+                {recipes.length + (totalPages - 1) * 12} recipes
+                {showFavorites && " in favorites"}
+                {selectedCategory !== "all" &&
+                  categories.find((c) => c.id === selectedCategory) &&
+                  ` in ${
+                    categories.find((c) => c.id === selectedCategory)?.name
+                  }`}
+                {selectedDifficulty !== "all" &&
+                  ` with ${selectedDifficulty} difficulty`}
+              </>
+            ) : (
+              "No recipes found"
+            )}
+          </div>
+        )}
       </div>
 
       {/* Recipe grid */}

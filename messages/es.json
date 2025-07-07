@@ -243,6 +243,12 @@
             "create": "Crea tus propias recetas personalizadas",
             "nutrition": "Cálculo automático de nutrición",
             "categories": "Organiza por tipo de comida y preferencias dietéticas"
+        },
+        "stats": {
+            "title": "Estadísticas de Recetas",
+            "total": "Total",
+            "byCategory": "Por Categoría",
+            "noRecipesInCategories": "Aún no hay recetas en categorías. ¡Comienza agregando algunas recetas!"
         }
     },
     "mealPlans": {

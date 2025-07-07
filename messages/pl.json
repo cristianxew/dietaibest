@@ -243,6 +243,12 @@
             "create": "Twórz własne spersonalizowane przepisy",
             "nutrition": "Automatyczne obliczanie wartości odżywczych",
             "categories": "Organizuj według typu posiłku i preferencji dietetycznych"
+        },
+        "stats": {
+            "title": "Statystyki Przepisów",
+            "total": "Łącznie",
+            "byCategory": "Według Kategorii",
+            "noRecipesInCategories": "Nie ma jeszcze przepisów w kategoriach. Zacznij od dodania kilku przepisów!"
         }
     },
     "mealPlans": {

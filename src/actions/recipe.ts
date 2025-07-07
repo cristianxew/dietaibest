@@ -333,6 +333,63 @@ export async function getCategories() {
   }
 }
 
+// Get recipe statistics
+export async function getRecipeStats() {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const [totalRecipes, favoriteRecipes, categoryStats] = await Promise.all([
+      // Total recipes
+      prisma.recipe.count({
+        where: { userId: user.id },
+      }),
+      // Favorite recipes count
+      prisma.userFavorite.count({
+        where: { userId: user.id },
+      }),
+      // Recipes per category
+      prisma.recipeCategory.findMany({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          iconName: true,
+          _count: {
+            select: {
+              recipes: {
+                where: { userId: user.id },
+              },
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    return {
+      data: {
+        totalRecipes,
+        favoriteRecipes,
+        categoryStats: categoryStats.map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          iconName: cat.iconName,
+          recipeCount: cat._count.recipes,
+        })),
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Get recipe stats error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to get recipe stats",
+    };
+  }
+}
+
 // Create default categories (run once)
 export async function createDefaultCategories() {
   try {

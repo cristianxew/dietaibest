@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, Clock, Utensils, Flame } from "lucide-react";
+import { CategoryIcon } from "./CategoryIcon";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -100,8 +101,12 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 <Badge
                   key={category.id}
                   variant="secondary"
-                  className="text-xs"
+                  className="text-xs flex items-center gap-1"
                 >
+                  <CategoryIcon
+                    iconName={category.iconName || undefined}
+                    className="h-3 w-3"
+                  />
                   {category.name}
                 </Badge>
               ))}

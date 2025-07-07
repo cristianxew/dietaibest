@@ -243,6 +243,12 @@
             "create": "Create your own custom recipes",
             "nutrition": "Automatic nutrition calculation",
             "categories": "Organize by meal type and dietary preferences"
+        },
+        "stats": {
+            "title": "Recipe Statistics",
+            "total": "Total",
+            "byCategory": "By Category",
+            "noRecipesInCategories": "No recipes in categories yet. Start by adding some recipes!"
         }
     },
     "mealPlans": {
