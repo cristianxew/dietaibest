@@ -8,10 +8,11 @@ import { RecipeForm } from "../../../../../../components/recipes/RecipeForm";
 import type { RecipeFormData } from "@/types/recipe";
 
 export async function generateMetadata({
-  params: { locale, id },
+  params,
 }: {
-  params: { locale: string; id: string };
+  params: Promise<{ locale: string; id: string }>;
 }) {
+  const { locale, id } = await params;
   const { data: recipe } = await getRecipe(id);
   const t = await getTranslations({ locale, namespace: "recipes" });
 
@@ -27,10 +28,11 @@ export async function generateMetadata({
 }
 
 export default async function EditRecipePage({
-  params: { locale, id },
+  params,
 }: {
-  params: { locale: string; id: string };
+  params: Promise<{ locale: string; id: string }>;
 }) {
+  const { locale, id } = await params;
   const t = await getTranslations({ locale, namespace: "recipes" });
   const { data: recipe, error } = await getRecipe(id);
 

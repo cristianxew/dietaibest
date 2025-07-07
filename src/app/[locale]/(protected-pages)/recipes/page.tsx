@@ -1,14 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { RecipesList } from "../../../../components/recipes/RecipesList";
+import { RecipeStats } from "../../../../components/recipes/RecipeStats";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
 export async function generateMetadata({
-  params: { locale },
+  params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "recipes" });
 
   return {
@@ -18,10 +20,11 @@ export async function generateMetadata({
 }
 
 export default async function RecipesPage({
-  params: { locale },
+  params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "recipes" });
 
   return (
@@ -39,7 +42,14 @@ export default async function RecipesPage({
         </Button>
       </div>
 
-      <RecipesList />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          <RecipesList />
+        </div>
+        <div className="lg:col-span-1">
+          <RecipeStats />
+        </div>
+      </div>
     </div>
   );
 }

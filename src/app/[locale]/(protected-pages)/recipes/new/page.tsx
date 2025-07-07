@@ -5,10 +5,11 @@ import Link from "next/link";
 import { RecipeForm } from "../../../../../components/recipes/RecipeForm";
 
 export async function generateMetadata({
-  params: { locale },
+  params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "recipes" });
 
   return {
@@ -17,10 +18,11 @@ export async function generateMetadata({
 }
 
 export default async function NewRecipePage({
-  params: { locale },
+  params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "recipes" });
 
   return (
