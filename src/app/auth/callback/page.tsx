@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { supabase } from "@/lib/supabase";
@@ -18,7 +18,7 @@ import { CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 
 type AuthState = "loading" | "success" | "error" | "expired" | "invalid";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authState, setAuthState] = useState<AuthState>("loading");
@@ -200,56 +200,63 @@ export default function AuthCallbackPage() {
             <p className="text-sm text-muted-foreground mb-4">{message}</p>
             <div className="space-y-3">
               <Button asChild className="w-full">
-                <Link href="/sign-in">Back to Sign In</Link>
+                <Link href="/sign-in">Try Again</Link>
               </Button>
-              {retryAttempts < 2 && (
-                <Button
-                  variant="outline"
-                  onClick={handleRetry}
-                  className="w-full"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Retry ({2 - retryAttempts} attempts left)
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={handleRetry}
+                className="w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
             </div>
           </>
         );
 
       default:
-        return (
-          <p className="text-sm text-muted-foreground">
-            Processing authentication...
-          </p>
-        );
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle>
-            {authState === "success"
-              ? "Authentication Complete"
-              : "Magic Link Authentication"}
-          </CardTitle>
-          <CardDescription>
-            {authState === "success"
-              ? "You have been successfully signed in."
-              : "Please wait while we verify your magic link."}
-          </CardDescription>
+          <CardTitle>Authentication</CardTitle>
+          <CardDescription>Completing your sign-in process...</CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           {renderContent()}
-
-          {authState === "loading" && (
-            <div className="text-xs text-muted-foreground mt-4">
-              This usually takes just a few seconds...
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle>Authentication</CardTitle>
+              <CardDescription>Loading...</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="flex justify-center mb-4">
+                <RefreshCw className="h-8 w-8 animate-spin text-blue-500" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Preparing authentication...
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

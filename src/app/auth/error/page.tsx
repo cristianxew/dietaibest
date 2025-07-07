@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
@@ -47,38 +48,54 @@ export default function AuthErrorPage() {
   };
 
   return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="text-red-600 dark:text-red-400">
+          Authentication Error
+        </CardTitle>
+        <CardDescription>
+          Something went wrong during the sign-in process.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+          {getErrorMessage(error)}
+        </div>
+
+        <div className="flex flex-col space-y-2">
+          <Button asChild>
+            <Link href="/sign-in">Try Again</Link>
+          </Button>
+
+          <Button variant="outline" asChild>
+            <Link href="/">Return Home</Link>
+          </Button>
+        </div>
+
+        {error && (
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Error code: {error}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AuthErrorPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-red-600 dark:text-red-400">
-            Authentication Error
-          </CardTitle>
-          <CardDescription>
-            Something went wrong during the sign-in process.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
-            {getErrorMessage(error)}
-          </div>
-
-          <div className="flex flex-col space-y-2">
-            <Button asChild>
-              <Link href="/sign-in">Try Again</Link>
-            </Button>
-
-            <Button variant="outline" asChild>
-              <Link href="/">Return Home</Link>
-            </Button>
-          </div>
-
-          {error && (
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Error code: {error}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Suspense
+        fallback={
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Loading...</CardTitle>
+            </CardHeader>
+          </Card>
+        }
+      >
+        <AuthErrorContent />
+      </Suspense>
     </div>
   );
 }
