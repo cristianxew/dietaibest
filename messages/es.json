@@ -270,10 +270,35 @@
         "importFromPdfDescription": "Sube un archivo PDF que contenga recetas y extraeremos el contenido",
         "pdfImportComingSoon": "La importación de PDF estará disponible pronto...",
         "supportedWebsites": "Los sitios web compatibles incluyen AllRecipes, Food Network, Serious Eats y muchos más",
-        "importSuccess": "¡Receta importada exitosamente!",
-        "importError": "Error al importar la receta desde la URL",
+        "importSuccess": "¡Receta importada con éxito!",
+        "importError": "Error al importar receta desde URL",
         "unexpectedError": "Ocurrió un error inesperado al importar la receta",
-        "image": "Imagen"
+        "image": "Imagen",
+        "imageUpload": {
+            "dragAndDrop": "Arrastra y suelta una imagen aquí",
+            "clickToUpload": "o haz clic para seleccionar un archivo",
+            "supportedFormats": "Formatos compatibles",
+            "maxSize": "Tamaño máximo",
+            "maxDimensions": "Dimensiones máximas",
+            "complete": "completo",
+            "uploadAnother": "Subir Otra",
+            "tryAgain": "Intentar de Nuevo",
+            "extractionSuccess": "¡Receta extraída exitosamente de la imagen!",
+            "status": {
+                "validating": "Validando imagen...",
+                "uploading": "Subiendo imagen...",
+                "extractingText": "Extrayendo texto de receta...",
+                "finalizing": "Finalizando extracción...",
+                "success": "¡Extracción completa!"
+            },
+            "errors": {
+                "invalidFormat": "Formato de archivo inválido. Formatos compatibles: {{formats}}",
+                "fileTooLarge": "Archivo demasiado grande. Tamaño máximo: {{maxSize}}MB",
+                "dimensionsTooLarge": "Dimensiones de imagen demasiado grandes. Máximo: {{maxWidth}}x{{maxHeight}}px",
+                "validationFailed": "Error en validación de archivo",
+                "processingFailed": "Error al procesar imagen"
+            }
+        }
     },
     "mealPlans": {
         "title": "Planes de Comidas",

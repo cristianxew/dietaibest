@@ -269,11 +269,36 @@
         "importFromPdf": "Importuj z PDF",
         "importFromPdfDescription": "Prześlij plik PDF zawierający przepisy, a my wyodrębnimy treść",
         "pdfImportComingSoon": "Import z PDF wkrótce dostępny...",
-        "supportedWebsites": "Obsługiwane strony internetowe to m.in. AllRecipes, Food Network, Serious Eats i wiele innych",
+        "supportedWebsites": "Obsługiwane strony internetowe to AllRecipes, Food Network, Serious Eats i wiele innych",
         "importSuccess": "Przepis został pomyślnie zaimportowany!",
         "importError": "Nie udało się zaimportować przepisu z adresu URL",
         "unexpectedError": "Wystąpił nieoczekiwany błąd podczas importowania przepisu",
-        "image": "Zdjęcie"
+        "image": "Obraz",
+        "imageUpload": {
+            "dragAndDrop": "Przeciągnij i upuść obraz tutaj",
+            "clickToUpload": "lub kliknij, aby wybrać plik",
+            "supportedFormats": "Obsługiwane formaty",
+            "maxSize": "Maksymalny rozmiar",
+            "maxDimensions": "Maksymalne wymiary",
+            "complete": "ukończone",
+            "uploadAnother": "Prześlij Kolejny",
+            "tryAgain": "Spróbuj Ponownie",
+            "extractionSuccess": "Przepis został pomyślnie wyodrębniony z obrazu!",
+            "status": {
+                "validating": "Walidacja obrazu...",
+                "uploading": "Przesyłanie obrazu...",
+                "extractingText": "Wyodrębnianie tekstu przepisu...",
+                "finalizing": "Finalizowanie wyodrębniania...",
+                "success": "Wyodrębnianie zakończone!"
+            },
+            "errors": {
+                "invalidFormat": "Nieprawidłowy format pliku. Obsługiwane formaty: {{formats}}",
+                "fileTooLarge": "Plik zbyt duży. Maksymalny rozmiar: {{maxSize}}MB",
+                "dimensionsTooLarge": "Wymiary obrazu zbyt duże. Maksymalne: {{maxWidth}}x{{maxHeight}}px",
+                "validationFailed": "Walidacja pliku nie powiodła się",
+                "processingFailed": "Nie udało się przetworzyć obrazu"
+            }
+        }
     },
     "mealPlans": {
         "title": "Plany Posiłków",

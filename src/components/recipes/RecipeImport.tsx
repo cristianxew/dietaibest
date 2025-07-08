@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,20 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
-import {
-  Link2,
-  Image,
-  FileText,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Form,
   FormControl,
@@ -35,6 +24,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ArrowRight,
+  Link2,
+  Image,
+  FileText,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { ImageUpload } from "./ImageUpload";
 
 // URL validation schema
 const urlSchema = z.object({
@@ -82,6 +83,7 @@ export function RecipeImport({
     "idle" | "processing" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("url");
 
   const form = useForm<UrlFormData>({
     resolver: zodResolver(urlSchema),
@@ -90,6 +92,7 @@ export function RecipeImport({
     },
   });
 
+  // Handle URL import (existing functionality)
   const handleUrlSubmit = async (data: UrlFormData) => {
     setIsProcessing(true);
     setImportStatus("processing");
@@ -159,6 +162,51 @@ export function RecipeImport({
     }
   };
 
+  // Handle image upload completion
+  const handleImageUploaded = (imageData: {
+    file: File;
+    preview: string;
+    extractedData?: {
+      title: string;
+      description?: string;
+      ingredients: Array<{
+        name: string;
+        amount: number;
+        unit: string;
+      }>;
+      instructions: string[];
+      prepTime?: number;
+      cookTime?: number;
+      servings?: number;
+    };
+  }) => {
+    if (imageData.extractedData) {
+      setImportStatus("success");
+
+      // Transform the extracted data to match the expected format
+      const extractedData: ImportedRecipeData = {
+        title: imageData.extractedData.title,
+        description: imageData.extractedData.description,
+        ingredients: imageData.extractedData.ingredients,
+        instructions: imageData.extractedData.instructions,
+        prepTime: imageData.extractedData.prepTime,
+        cookTime: imageData.extractedData.cookTime,
+        servings: imageData.extractedData.servings,
+      };
+
+      // Call the completion handler after a short delay for better UX
+      setTimeout(() => {
+        onImportComplete?.(extractedData);
+      }, 1000);
+    }
+  };
+
+  // Handle image upload error
+  const handleImageUploadError = (error: string) => {
+    setImportStatus("error");
+    setErrorMessage(error);
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -166,17 +214,13 @@ export function RecipeImport({
         <p className="text-muted-foreground">{t("importDescription")}</p>
       </div>
 
-      <Tabs defaultValue="url" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="url" className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
             URL
           </TabsTrigger>
-          <TabsTrigger
-            value="image"
-            disabled
-            className="flex items-center gap-2"
-          >
+          <TabsTrigger value="image" className="flex items-center gap-2">
             <Image className="h-4 w-4" />
             {t("image")}
           </TabsTrigger>
@@ -221,43 +265,28 @@ export function RecipeImport({
                   />
 
                   {/* Status display */}
-                  {importStatus !== "idle" && (
-                    <Alert
-                      variant={
-                        importStatus === "error" ? "destructive" : "default"
-                      }
-                      className={
-                        importStatus === "success"
-                          ? "border-green-500 bg-green-50 dark:bg-green-950"
-                          : importStatus === "processing"
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950"
-                          : ""
-                      }
-                    >
-                      <div className="flex items-center gap-2">
-                        {importStatus === "processing" && (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <AlertDescription>
-                              {t("extractingRecipe")}
-                            </AlertDescription>
-                          </>
-                        )}
-                        {importStatus === "success" && (
-                          <>
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            <AlertDescription className="text-green-600">
-                              {t("recipeImportedSuccessfully")}
-                            </AlertDescription>
-                          </>
-                        )}
-                        {importStatus === "error" && (
-                          <>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{errorMessage}</AlertDescription>
-                          </>
-                        )}
-                      </div>
+                  {importStatus === "processing" && (
+                    <Alert>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <AlertDescription>
+                        {t("extractingRecipe")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {importStatus === "success" && (
+                    <Alert className="border-green-500 bg-green-50">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-700">
+                        {t("recipeImportedSuccessfully")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {importStatus === "error" && errorMessage && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{errorMessage}</AlertDescription>
                     </Alert>
                   )}
 
@@ -314,11 +343,35 @@ export function RecipeImport({
                 {t("importFromImageDescription")}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Image className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("imageImportComingSoon")}</p>
+            <CardContent className="space-y-4">
+              <ImageUpload
+                onImageUploaded={handleImageUploaded}
+                onUploadError={handleImageUploadError}
+                maxFileSize={10} // 10MB
+                maxWidth={4000}
+                maxHeight={4000}
+                disabled={isProcessing}
+              />
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    {t("or")}
+                  </span>
+                </div>
               </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onSkipImport}
+                disabled={isProcessing}
+              >
+                {t("createRecipeManually")}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

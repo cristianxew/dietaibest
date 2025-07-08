@@ -273,7 +273,32 @@
         "importSuccess": "Recipe imported successfully!",
         "importError": "Failed to import recipe from URL",
         "unexpectedError": "An unexpected error occurred while importing the recipe",
-        "image": "Image"
+        "image": "Image",
+        "imageUpload": {
+            "dragAndDrop": "Drag and drop an image here",
+            "clickToUpload": "or click to select a file",
+            "supportedFormats": "Supported formats",
+            "maxSize": "Max size",
+            "maxDimensions": "Max dimensions",
+            "complete": "complete",
+            "uploadAnother": "Upload Another",
+            "tryAgain": "Try Again",
+            "extractionSuccess": "Recipe extracted successfully from image!",
+            "status": {
+                "validating": "Validating image...",
+                "uploading": "Uploading image...",
+                "extractingText": "Extracting recipe text...",
+                "finalizing": "Finalizing extraction...",
+                "success": "Extraction complete!"
+            },
+            "errors": {
+                "invalidFormat": "Invalid file format. Supported formats: {{formats}}",
+                "fileTooLarge": "File too large. Maximum size: {{maxSize}}MB",
+                "dimensionsTooLarge": "Image dimensions too large. Maximum: {{maxWidth}}x{{maxHeight}}px",
+                "validationFailed": "File validation failed",
+                "processingFailed": "Failed to process image"
+            }
+        }
     },
     "mealPlans": {
         "title": "Meal Plans",
