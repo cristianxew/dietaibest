@@ -1,36 +1,154 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dietaibest - AI-Powered Meal Planning & Nutrition Management
 
-## Getting Started
+A comprehensive Next.js application that leverages professional AI services to automate the entire meal planning workflow - from recipe storage and nutritional analysis to automated grocery shopping.
 
-First, run the development server:
+## 🎯 What It Does
+
+**Dietaibest** transforms meal planning from a time-consuming manual process into an automated, intelligent workflow:
+
+- **Smart Recipe Management**: Store recipes via manual entry, URL import, or AI-powered OCR from images/PDFs
+- **Professional Nutrition Analysis**: Powered by Edamam's 28-nutrient analysis engine for accurate macro tracking
+- **AI Meal Plan Generation**: Automated weekly meal plans that balance calories and macronutrients to your goals
+- **One-Click Shopping**: Browser-Use AI agents automatically fill grocery carts with your meal plan ingredients
+- **Multi-Language Support**: Full localization for English, Polish, and Spanish markets
+
+## 🏗️ Architecture Overview
+
+### **services**
+
+Rather than building everything from scratch, Dietaibest integrates best-in-class professional APIs:
+
+- **[Edamam APIs](https://developer.edamam.com/)**: Recipe analysis + meal plan generation
+- **[Browser-Use Cloud](https://browseruse.ai/)**: AI-powered grocery shopping automation
+- **[Supabase](https://supabase.com/)**: PostgreSQL database + authentication + real-time
+- **[Stripe](https://stripe.com/)**: Billing and subscription management
+
+### **Core Technical Stack**
+
+**Frontend Framework**
+
+- **Next.js 15** (App Router) with TypeScript 5
+- **Bun** package manager (exclusive - no npm/yarn)
+- **Server Actions** for all business logic and CRUD operations
+
+**UI & Design System**
+
+- **ShadCN UI** + **Tailwind CSS** for consistent, accessible components
+- **Framer Motion** for drag-and-drop interactions
+- **Mobile-first responsive design** with WCAG 2.1 AA compliance
+
+**Database & Authentication**
+
+- **Supabase PostgreSQL** with row-level security
+- **Prisma ORM** (single source of truth for all TypeScript types)
+- **Next-auth** + **Supabase Auth** for JWT-based authentication
+
+**External Integrations**
+
+- **Edamam Recipe Search**: Nutritional analysis for user recipes
+- **Edamam Meal Planner**: AI-generated balanced meal plans
+- **Browser-Use Cloud**: Automated grocery cart filling
+- **Real-time updates** via Supabase subscriptions
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Bun** (required - this project uses Bun exclusively)
+- **Node.js 18+**
+- **PostgreSQL** (via Supabase)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+# Clone the repository
+git clone <repository-url>
+cd dietaibest
+
+# Install dependencies (Bun only)
+bun install
+
+# Set up environment variables
+cp .env.example
+# Configure your API keys (see Environment Variables section)
+
+# Initialize database
+bun run db:push    # Push Prisma schema changes to Supabase PostgreSQL
+bun run db:seed    # Populate database with default categories and sample data
+
+# Start development server
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-## Learn More
+# Edamam APIs
+EDAMAM_APP_ID=your_edamam_app_id
+EDAMAM_APP_KEY=your_edamam_app_key
 
-To learn more about Next.js, take a look at the following resources:
+# Browser-Use Cloud
+BROWSER_USE_API_KEY=your_browser_use_key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Authentication
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Stripe (optional)
+STRIPE_PUBLISHABLE_KEY=your_stripe_public_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+```
 
-## Deploy on Vercel
+## 📁 Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/                    # Next.js 15 App Router
+│   ├── [locale]/          # Internationalized routes (EN/PL/ES)
+│   │   ├── (auth)/        # Authentication pages
+│   │   ├── (protected-pages)/  # Authenticated user routes
+│   │   └── (public-pages)/     # Public marketing pages
+│   └── api/               # API routes & server actions
+├── components/            # React components
+│   ├── ui/               # ShadCN UI components (never modify)
+│   ├── forms/            # Reusable form components
+│   └── [feature]/        # Feature-specific components
+├── lib/                  # Utilities & external API clients
+├── types/                # TypeScript type definitions
+└── actions/              # Server actions for business logic
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+memory-bank/              # Project intelligence & documentation
+└── .taskmaster/          # Claude Task Master project management
+```
+
+## 🤝 Contributing
+
+1. Review project context in `memory-bank/` directory
+2. Use Claude Task Master for task selection and complexity analysis
+3. Follow established patterns in `src/` structure
+4. Ensure all server actions include authentication checks
+5. Maintain TypeScript strict mode compliance
+
+## 📚 Learn More
+
+- **[Next.js Documentation](https://nextjs.org/docs)** - Framework features and API
+- **[ShadCN UI](https://ui.shadcn.com/)** - Component system and theming
+- **[Supabase Docs](https://supabase.com/docs)** - Database and authentication
+- **[Edamam API](https://developer.edamam.com/)** - Nutrition and meal planning APIs
+
+## 🚀 Deploy
+
+The easiest way to deploy is via **[Vercel](https://vercel.com/new)**:
+
+1. Connect your GitHub repository
+2. Configure environment variables
+3. Deploy with automatic CI/CD
+
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for other platforms.
