@@ -618,7 +618,7 @@
               7
             ],
             "details": "Check file integrity and queue for OCR extraction.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1964,7 +1964,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-07-08T11:58:03.724Z",
+      "updated": "2025-07-08T20:06:28.955Z",
       "description": "Tasks for master context"
     }
   }

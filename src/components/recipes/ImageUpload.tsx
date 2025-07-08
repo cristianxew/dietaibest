@@ -156,8 +156,10 @@ export function ImageUpload({
     return { isValid: true };
   };
 
-  // Simulate upload progress and OCR processing
-  const simulateUploadProgress = async (): Promise<void> => {
+  // Upload image to backend and process with OCR
+  const uploadImageAndProcess = async (
+    file: File
+  ): Promise<ExtractedRecipeData | null> => {
     // Phase 1: Upload (0-30%)
     setUploadState((prev) => ({
       ...prev,
@@ -166,38 +168,84 @@ export function ImageUpload({
       message: t("status.uploading"),
     }));
 
-    for (let i = 0; i <= 30; i += 5) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      setUploadState((prev) => ({ ...prev, progress: i }));
+    // Create form data
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      // Simulate upload progress
+      for (let i = 0; i <= 30; i += 5) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        setUploadState((prev) => ({ ...prev, progress: i }));
+      }
+
+      // Phase 2: Processing with OCR (30-90%)
+      setUploadState((prev) => ({
+        ...prev,
+        status: "processing",
+        message: t("status.extractingText"),
+        progress: 30,
+      }));
+
+      // Call backend API
+      const response = await fetch("/api/recipes/import/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Simulate processing progress
+      for (let i = 40; i <= 90; i += 10) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        setUploadState((prev) => ({ ...prev, progress: i }));
+      }
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to process image");
+      }
+
+      // Phase 3: Finalizing (90-100%)
+      setUploadState((prev) => ({
+        ...prev,
+        message: t("status.finalizing"),
+        progress: 90,
+      }));
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setUploadState((prev) => ({ ...prev, progress: 100 }));
+
+      // Success
+      setUploadState((prev) => ({
+        ...prev,
+        status: "success",
+        message: t("status.success"),
+      }));
+
+      // Show warnings if any
+      if (result.warnings && result.warnings.length > 0) {
+        result.warnings.forEach((warning: string) => {
+          toast.warning(warning);
+        });
+      }
+
+      // Return extracted data if available
+      if (result.data && result.data.title) {
+        return {
+          title: result.data.title,
+          description: result.data.description,
+          ingredients: result.data.ingredients || [],
+          instructions: result.data.instructions || [],
+          prepTime: result.data.prepTime,
+          cookTime: result.data.cookTime,
+          servings: result.data.servings,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      throw error;
     }
-
-    // Phase 2: Processing with OCR (30-90%)
-    setUploadState((prev) => ({
-      ...prev,
-      status: "processing",
-      message: t("status.extractingText"),
-    }));
-
-    for (let i = 30; i <= 90; i += 10) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      setUploadState((prev) => ({ ...prev, progress: i }));
-    }
-
-    // Phase 3: Finalizing (90-100%)
-    setUploadState((prev) => ({
-      ...prev,
-      message: t("status.finalizing"),
-    }));
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setUploadState((prev) => ({ ...prev, progress: 100 }));
-
-    // Success
-    setUploadState((prev) => ({
-      ...prev,
-      status: "success",
-      message: t("status.success"),
-    }));
   };
 
   // Handle file processing
@@ -229,37 +277,23 @@ export function ImageUpload({
       const preview = URL.createObjectURL(file);
       setUploadState((prev) => ({ ...prev, preview }));
 
-      // Simulate the upload and processing
-      await simulateUploadProgress();
-
-      // Mock extracted data (in real implementation, this would come from OCR API)
-      const mockExtractedData: ExtractedRecipeData = {
-        title: "Extracted Recipe from Image",
-        description: "Recipe extracted using OCR technology",
-        ingredients: [
-          { name: "Flour", amount: 2, unit: "cups" },
-          { name: "Eggs", amount: 3, unit: "whole" },
-          { name: "Milk", amount: 1, unit: "cup" },
-        ],
-        instructions: [
-          "Mix dry ingredients in a large bowl",
-          "Beat eggs and milk in separate bowl",
-          "Combine wet and dry ingredients",
-          "Cook according to recipe instructions",
-        ],
-        prepTime: 15,
-        cookTime: 25,
-        servings: 4,
-      };
+      // Upload and process the image
+      const extractedData = await uploadImageAndProcess(file);
 
       // Notify parent component
       onImageUploaded?.({
         file,
         preview,
-        extractedData: mockExtractedData,
+        extractedData: extractedData || undefined,
       });
 
-      toast.success(t("status.success"));
+      if (extractedData) {
+        toast.success(t("extractionSuccess"));
+      } else {
+        toast.warning(
+          "Image uploaded but could not extract recipe data automatically"
+        );
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : t("errors.processingFailed");
