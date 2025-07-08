@@ -96,42 +96,57 @@ export function RecipeImport({
     setErrorMessage("");
 
     try {
-      // TODO: Replace with actual API call to backend endpoint (Task 6.4)
-      // For now, simulate the API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Call the backend API endpoint to import the recipe
+      const response = await fetch("/api/recipes/import/url", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url: data.url }),
+      });
 
-      // Simulate success/error randomly for demonstration
-      const isSuccess = Math.random() > 0.3;
+      const result = await response.json();
 
-      if (isSuccess) {
+      if (!response.ok) {
+        setImportStatus("error");
+        setErrorMessage(
+          result.error ||
+            "Unable to extract recipe from this URL. The website might not be supported or the page doesn't contain a valid recipe."
+        );
+        toast.error(t("importError"));
+        return;
+      }
+
+      if (result.success && result.data) {
         setImportStatus("success");
         toast.success(t("importSuccess"));
 
-        // Simulate extracted recipe data
-        const mockExtractedData: ImportedRecipeData = {
-          title: "Imported Recipe from " + new URL(data.url).hostname,
-          description: "This recipe was imported from an external website",
-          ingredients: [
-            { name: "Imported ingredient 1", amount: 1, unit: "cup" },
-            { name: "Imported ingredient 2", amount: 2, unit: "tbsp" },
-          ],
-          instructions: [
-            "Step 1 from imported recipe",
-            "Step 2 from imported recipe",
-          ],
-          prepTime: 15,
-          cookTime: 30,
-          servings: 4,
+        // Show any warnings if present
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.forEach((warning: string) => {
+            toast.warning(warning);
+          });
+        }
+
+        // Transform the API response to match the expected format
+        const extractedData: ImportedRecipeData = {
+          title: result.data.title,
+          description: result.data.description,
+          ingredients: result.data.ingredients,
+          instructions: result.data.instructions,
+          prepTime: result.data.prepTime,
+          cookTime: result.data.cookTime,
+          servings: result.data.servings,
         };
 
-        // Call the completion handler after a short delay
+        // Call the completion handler after a short delay for better UX
         setTimeout(() => {
-          onImportComplete?.(mockExtractedData);
+          onImportComplete?.(extractedData);
         }, 1000);
       } else {
         setImportStatus("error");
         setErrorMessage(
-          "Unable to extract recipe from this URL. The website might not be supported or the page doesn&apos;t contain a valid recipe."
+          "Unexpected response format from server. Please try again."
         );
         toast.error(t("importError"));
       }

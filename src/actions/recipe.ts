@@ -31,7 +31,10 @@ async function getAuthenticatedUser() {
 }
 
 // Create a new recipe
-export async function createRecipe(data: RecipeFormData) {
+export async function createRecipe(
+  data: RecipeFormData,
+  source: "manual" | "url" | "imported" | "generated" = "manual"
+) {
   try {
     const user = await getAuthenticatedUser();
     const validatedData = recipeFormSchema.parse(data);
@@ -42,7 +45,7 @@ export async function createRecipe(data: RecipeFormData) {
       data: {
         ...recipeData,
         userId: user.id,
-        source: "manual",
+        source,
         categories: {
           connect: categoryIds.map((id) => ({ id })),
         },
@@ -62,6 +65,62 @@ export async function createRecipe(data: RecipeFormData) {
     return {
       data: null,
       error: error instanceof Error ? error.message : "Failed to create recipe",
+    };
+  }
+}
+
+// Create a recipe from imported data
+export async function createImportedRecipe(
+  data: RecipeFormData,
+  importMetadata?: {
+    sourceUrl?: string;
+    importedFrom?: string;
+  }
+) {
+  try {
+    const user = await getAuthenticatedUser();
+    const validatedData = recipeFormSchema.parse(data);
+
+    const { categoryIds, ...recipeData } = validatedData;
+
+    // Add import-related tags
+    const tags = [...(recipeData.tags || [])];
+    if (importMetadata?.importedFrom) {
+      tags.push(`imported-from-${importMetadata.importedFrom}`);
+    }
+    if (!tags.includes("imported")) {
+      tags.push("imported");
+    }
+
+    const recipe = await prisma.recipe.create({
+      data: {
+        ...recipeData,
+        tags,
+        userId: user.id,
+        source: "url",
+        sourceUrl: importMetadata?.sourceUrl,
+        categories: {
+          connect: categoryIds.map((id) => ({ id })),
+        },
+      },
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    revalidatePath("/recipes");
+    return { data: recipe, error: null };
+  } catch (error) {
+    console.error("Create imported recipe error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create imported recipe",
     };
   }
 }

@@ -575,8 +575,8 @@
             "dependencies": [
               3
             ],
-            "details": "Check URL reachability and security before processing.",
-            "status": "pending",
+            "details": "Check URL reachability and security before processing.\n<info added on 2025-07-08T10:38:41.694Z>\n**Backend API Endpoint Created:**\n- Created `/src/app/api/recipes/import/url/route.ts` with comprehensive URL validation and security checks\n- Implemented POST endpoint that validates URLs, checks reachability, and performs security validation to prevent SSRF attacks\n- Added support for 20+ popular recipe websites with domain-specific mock data\n- Includes proper error handling, timeout management, and structured response format\n\n**Security Features Implemented:**\n- URL protocol validation (only HTTP/HTTPS allowed)\n- SSRF protection blocking localhost and private IP ranges (10.x.x.x, 172.16-31.x.x, 192.168.x.x)\n- 10-second timeout for URL reachability checks\n- User authentication verification before processing requests\n\n**Frontend Integration:**\n- Updated RecipeImport component to use the real API endpoint instead of mock simulation\n- Replaced mock data with actual fetch calls to `/api/recipes/import/url`\n- Added proper error handling and user feedback for import success/failures\n- Implemented warning display for unsupported websites\n\n**Database Integration:**\n- Enhanced recipe actions to support imported recipes with source tracking\n- Added `createImportedRecipe` function that automatically tags imported recipes\n- Implemented proper source URL tracking and metadata storage\n- Added import-specific tags for better recipe organization\n\n**Key Features:**\n- Comprehensive URL validation with security checks\n- Support for 20+ popular recipe websites\n- Mock data generation for demonstration (ready for real scraping integration)\n- Proper authentication and user session management\n- Error handling with user-friendly messages\n- TypeScript type safety throughout the implementation\n</info added on 2025-07-08T10:38:41.694Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1964,7 +1964,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-07-08T10:21:29.470Z",
+      "updated": "2025-07-08T10:34:15.729Z",
       "description": "Tasks for master context"
     }
   }
