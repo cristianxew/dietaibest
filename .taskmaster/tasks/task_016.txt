@@ -1,0 +1,65 @@
+# Task ID: 16
+# Title: Fix Google OAuth Sign-In Integration
+# Status: done
+# Dependencies: 1, 3
+# Priority: medium
+# Description: Resolve the redirect_uri_mismatch error in Google OAuth sign-in by configuring Google Cloud Console OAuth settings to match the NextAuth callback URL and ensuring proper user creation flow for Google-authenticated users.
+# Details:
+1. Diagnose the current redirect_uri_mismatch error by checking logs and authentication flow
+2. Access Google Cloud Console and navigate to the project's OAuth consent screen
+3. Verify and update the authorized JavaScript origins to match the application's domain(s)
+4. Configure authorized redirect URIs to include the correct NextAuth callback URL: http://localhost:3000/api/auth/callback/google
+5. Add production/staging URLs to Google Cloud Console for deployment environments
+6. Update environment variables with correct Google OAuth client ID and secret
+7. Verify the NextAuth configuration in src/app/api/auth/[...nextauth]/route.ts is properly set up
+8. Confirm NEXTAUTH_URL environment variable is set to http://localhost:3000 for development
+9. Validate the user creation flow in signIn callback:
+   - Check if user exists in database after successful Google authentication
+   - If not, create new user record with data from Google profile
+   - Map Google profile fields to user database schema
+   - Set appropriate default values for required fields not provided by Google
+10. Verify JWT and session handling configuration
+11. Add error handling for OAuth failures with descriptive error messages
+12. Create proper sign-out flow that handles both local and Google sessions
+13. Add logging for OAuth process to facilitate debugging
+14. Update frontend components to properly handle Google authentication state
+
+# Test Strategy:
+1. Test Google OAuth sign-in flow in development environment with the configured redirect URI: http://localhost:3000/api/auth/callback/google
+2. Verify redirect_uri_mismatch error is resolved by checking authentication logs
+3. Test sign-in with a Google account that has never been used with the application
+4. Confirm new user record is created correctly with Google profile data
+5. Test sign-in with a Google account that has previously authenticated
+6. Verify user session is properly maintained after Google authentication
+7. Test sign-out functionality for Google-authenticated users
+8. Verify error handling by simulating authentication failures
+9. Test authentication flow on all supported environments (dev/staging/prod) with their respective redirect URIs
+10. Verify Google OAuth integration works across different browsers
+11. Test authentication persistence across page refreshes
+12. Validate that user permissions are correctly assigned for Google-authenticated users
+
+# Subtasks:
+## 1. Verify Google Cloud Console redirect URI configuration [done]
+### Dependencies: None
+### Description: Check that Google Cloud Console has the correct redirect URI configured: http://localhost:3000/api/auth/callback/google
+### Details:
+
+
+## 2. Verify Google OAuth environment variables [done]
+### Dependencies: None
+### Description: Ensure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables are correctly set in the application
+### Details:
+
+
+## 3. Add production/staging redirect URIs to Google Cloud Console [done]
+### Dependencies: None
+### Description: Configure additional authorized redirect URIs for production and staging environments in Google Cloud Console
+### Details:
+
+
+## 4. Test complete OAuth flow [done]
+### Dependencies: None
+### Description: Perform end-to-end testing of the Google OAuth authentication flow to verify the fix resolves the redirect_uri_mismatch error
+### Details:
+
+

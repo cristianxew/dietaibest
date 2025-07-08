@@ -539,136 +539,196 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Design Unified Import Interface",
-            "description": "Create a unified frontend interface that allows users to select and submit documents via URL, image upload, or PDF upload.",
+            "title": "Design URL Input Frontend",
+            "description": "Create the user interface for URL input, including input fields and submission controls.",
             "dependencies": [],
-            "details": "Ensure the interface is intuitive and supports all input methods with clear instructions.",
+            "details": "Ensure clear labeling and intuitive placement for URL entry.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
-            "title": "Implement URL Input Method",
-            "description": "Develop the frontend and backend logic to accept document URLs and validate their accessibility.",
+            "title": "Implement URL Input Validation (Frontend)",
+            "description": "Validate URL format and provide immediate feedback for invalid entries.",
             "dependencies": [
               1
             ],
-            "details": "Support common document formats and handle invalid or unreachable URLs gracefully.",
+            "details": "Use regex or built-in browser validation; display error messages for malformed URLs.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
-            "title": "Implement Image Input Method",
-            "description": "Enable users to upload image files (JPG, PNG, etc.) for extraction.",
+            "title": "Handle URL Submission and Feedback (Frontend)",
+            "description": "Manage submission state, loading indicators, and user notifications for URL processing.",
             "dependencies": [
-              1
+              2
             ],
-            "details": "Include file size/type validation and preview functionality.",
+            "details": "Show progress, success, or error messages based on backend response.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
-            "title": "Implement PDF Input Method",
-            "description": "Allow users to upload PDF documents for extraction.",
+            "title": "Develop URL Input Backend Endpoint",
+            "description": "Create backend API to receive and validate URLs, triggering extraction pipeline.",
             "dependencies": [
-              1
+              3
             ],
-            "details": "Support multi-page PDFs and validate file integrity.",
+            "details": "Check URL reachability and security before processing.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
-            "title": "Backend Extraction Pipeline",
-            "description": "Develop backend services to process input documents using OCR, scraping, or PDF parsing as appropriate.",
-            "dependencies": [
-              2,
-              3,
-              4
-            ],
-            "details": "Integrate with third-party extraction APIs or custom models for structured data extraction.",
+            "title": "Design Image Input Frontend",
+            "description": "Build UI for image upload, including drag-and-drop and file picker options.",
+            "dependencies": [],
+            "details": "Support common image formats and provide clear upload instructions.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
-            "title": "Extraction Status and Progress UI",
-            "description": "Build a frontend component to display real-time extraction status and progress to users.",
+            "title": "Implement Image Validation and Feedback (Frontend)",
+            "description": "Validate image type, size, and dimensions; provide user feedback for errors.",
             "dependencies": [
               5
             ],
-            "details": "Show progress bars, estimated time, and handle asynchronous updates.",
+            "details": "Display error messages for unsupported formats or oversized files.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 7,
-            "title": "Editable Extraction Results UI",
-            "description": "Create an interface for users to review and edit extracted data before finalizing.",
-            "dependencies": [],
-            "details": "Allow inline editing, field validation, and highlight low-confidence extractions.",
+            "title": "Handle Image Submission and Status (Frontend)",
+            "description": "Manage upload progress, display status updates, and notify users of results.",
+            "dependencies": [
+              6
+            ],
+            "details": "Show upload progress bar and final extraction status.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 8,
-            "title": "Error and Retry Handling",
-            "description": "Implement robust error detection, user-friendly error messages, and retry mechanisms for failed extractions.",
+            "title": "Develop Image Input Backend Endpoint",
+            "description": "Create backend API to receive, validate, and store uploaded images for processing.",
             "dependencies": [
-              5
+              7
             ],
-            "details": "Cover network issues, extraction failures, and unsupported formats.",
+            "details": "Check file integrity and queue for OCR extraction.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 9,
-            "title": "Extraction Result Validation",
-            "description": "Validate extracted data for completeness, accuracy, and required fields before allowing submission.",
+            "title": "Design PDF Input Frontend",
+            "description": "Build UI for PDF upload, supporting drag-and-drop and file selection.",
             "dependencies": [],
-            "details": "Use confidence scores and business rules to flag questionable data.",
+            "details": "Provide clear instructions and accept only PDF files.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 10,
-            "title": "Notification System",
-            "description": "Develop a notification system to inform users of extraction completion, errors, or required actions.",
+            "title": "Implement PDF Validation and Feedback (Frontend)",
+            "description": "Validate PDF file type, size, and page count; provide user feedback for errors.",
             "dependencies": [
-              6,
-              8
+              9
             ],
-            "details": "Support in-app notifications and optional email alerts.",
+            "details": "Display errors for corrupted or oversized PDFs.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 11,
-            "title": "Integrate All Input Methods into Unified Workflow",
-            "description": "Ensure all input methods (URL, image, PDF) flow through the same backend and UI processes for consistency.",
+            "title": "Handle PDF Submission and Status (Frontend)",
+            "description": "Manage upload progress, display extraction status, and notify users of results.",
             "dependencies": [
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
               10
             ],
-            "details": "Test end-to-end flows for each input type and resolve integration issues.",
+            "details": "Show progress bar and extraction completion notifications.",
             "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 12,
-            "title": "Comprehensive Testing and QA",
-            "description": "Perform thorough testing of all modules, including edge cases, error handling, and user experience.",
-            "dependencies": [],
-            "details": "Include unit, integration, and user acceptance testing for all supported document types and flows.",
+            "title": "Develop PDF Input Backend Endpoint",
+            "description": "Create backend API to receive, validate, and store uploaded PDFs for processing.",
+            "dependencies": [
+              11
+            ],
+            "details": "Check PDF integrity and queue for parsing.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 13,
+            "title": "Implement Extraction Pipeline: OCR Module",
+            "description": "Develop OCR processing for images and scanned PDFs, extracting text and layout.",
+            "dependencies": [
+              8,
+              12
+            ],
+            "details": "Integrate with OCR libraries or cloud services; handle multi-page documents.\n<info added on 2025-07-08T09:52:46.813Z>\nDevelop a custom OCR solution using OpenAI's GPT-4o Vision API for recipe extraction from images and PDFs. Implement image preprocessing pipeline including contrast enhancement, noise reduction, and resolution optimization to improve OCR accuracy. Create specialized prompt engineering templates for structured recipe extraction, focusing on ingredients, measurements, instructions, and metadata. Implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.\n\nBuild robust error handling for various failure modes including poor image quality, API timeouts, and malformed responses. Implement rate limiting and batch processing to manage API quotas and optimize throughput. Utilize GPT-4o for primary extraction as it demonstrates superior accuracy for complex recipe layouts compared to GPT-4o-mini, despite higher per-token costs.\n\nDevelop cost optimization strategies including image downsampling where appropriate, caching of results, and selective processing of document pages. Create monitoring dashboard to track API usage, success rates, and extraction quality metrics. Ensure the solution handles multi-page documents by intelligently stitching content across pages.\n</info added on 2025-07-08T09:52:46.813Z>",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 14,
+            "title": "Implement Extraction Pipeline: Web Scraping Module",
+            "description": "Develop scraping logic for extracting content from provided URLs.",
+            "dependencies": [
+              4
+            ],
+            "details": "Handle dynamic content, pagination, and anti-bot measures.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 15,
+            "title": "Implement Extraction Pipeline: PDF Parsing Module",
+            "description": "Develop PDF parsing logic for extracting structured text, tables, and images.",
+            "dependencies": [
+              12
+            ],
+            "details": "Support both native and scanned PDFs; handle complex layouts.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 16,
+            "title": "Integration Testing Across Input Methods and Extraction Pipeline",
+            "description": "Test end-to-end flows for URL, image, and PDF inputs through the entire extraction pipeline.",
+            "dependencies": [
+              13,
+              14,
+              15
+            ],
+            "details": "Verify correct data extraction, error handling, and user feedback for all scenarios.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 17,
+            "title": "Edge Case and Error Handling Enhancements",
+            "description": "Identify and handle edge cases such as corrupted files, unsupported formats, and network failures.",
+            "dependencies": [
+              16
+            ],
+            "details": "Implement robust error reporting and fallback mechanisms.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 18,
+            "title": "User Experience Enhancements: Accessibility and Localization",
+            "description": "Improve accessibility (WCAG compliance) and add localization support for multiple languages.",
+            "dependencies": [
+              17
+            ],
+            "details": "Ensure screen reader compatibility, keyboard navigation, and translatable UI text.",
             "status": "pending",
             "testStrategy": ""
           }

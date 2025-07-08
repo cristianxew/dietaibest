@@ -1,6 +1,6 @@
 # Task ID: 3
 # Title: Multi-language Support
-# Status: pending
+# Status: done
 # Dependencies: 1, 2
 # Priority: medium
 # Description: Implement internationalization (i18n) with next-intl to support English, Polish, and Spanish languages. Create language switcher and ensure all UI strings are translatable.
@@ -27,31 +27,31 @@
 7. Test fallback behavior for missing translations
 
 # Subtasks:
-## 1. Configure next-intl and Supported Locales [pending]
+## 1. Configure next-intl and Supported Locales [done]
 ### Dependencies: None
 ### Description: Install next-intl and configure it in next.config.js to support English, Polish, and Spanish languages.
 ### Details:
 Run 'npm install next-intl@3.0.0'. Update next.config.js to include the supported locales (EN, PL, ES) and set the default locale.
 
-## 2. Set Up Locale Files and Translation Keys [pending]
+## 2. Set Up Locale Files and Translation Keys [done]
 ### Dependencies: 3.1
 ### Description: Create locale-specific JSON files for each language and extract all UI strings into translation keys.
 ### Details:
 Create 'messages/en.json', 'messages/pl.json', and 'messages/es.json'. Move all UI strings into these files as translation keys.
 
-## 3. Implement Language Detection and Persistence [pending]
+## 3. Implement Language Detection and Persistence [done]
 ### Dependencies: 3.1
 ### Description: Set up middleware for automatic language detection and implement locale persistence using cookies.
 ### Details:
 Configure 'middleware.ts' to detect the user's preferred language and store the selection in cookies for persistence.
 
-## 4. Develop Language Switcher Component [pending]
+## 4. Develop Language Switcher Component [done]
 ### Dependencies: 3.2, 3.3
 ### Description: Create a language switcher UI component to allow users to change languages manually.
 ### Details:
 Build 'components/LanguageSwitcher.tsx' to let users select their preferred language, updating the locale and persisting the choice.
 
-## 5. Integrate Translations and Locale Formatting Throughout App [pending]
+## 5. Integrate Translations and Locale Formatting Throughout App [done]
 ### Dependencies: 3.2, 3.4
 ### Description: Ensure all UI components, dynamic content, and formatting use translation keys and locale-specific formats.
 ### Details:

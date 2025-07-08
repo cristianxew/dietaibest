@@ -29,75 +29,118 @@
 8. Verify toast notifications for success/error states
 
 # Subtasks:
-## 1. Design Unified Import Interface [pending]
+## 1. Design URL Input Frontend [pending]
 ### Dependencies: None
-### Description: Create a unified frontend interface that allows users to select and submit documents via URL, image upload, or PDF upload.
+### Description: Create the user interface for URL input, including input fields and submission controls.
 ### Details:
-Ensure the interface is intuitive and supports all input methods with clear instructions.
+Ensure clear labeling and intuitive placement for URL entry.
 
-## 2. Implement URL Input Method [pending]
+## 2. Implement URL Input Validation (Frontend) [pending]
 ### Dependencies: 6.1
-### Description: Develop the frontend and backend logic to accept document URLs and validate their accessibility.
+### Description: Validate URL format and provide immediate feedback for invalid entries.
 ### Details:
-Support common document formats and handle invalid or unreachable URLs gracefully.
+Use regex or built-in browser validation; display error messages for malformed URLs.
 
-## 3. Implement Image Input Method [pending]
-### Dependencies: 6.1
-### Description: Enable users to upload image files (JPG, PNG, etc.) for extraction.
+## 3. Handle URL Submission and Feedback (Frontend) [pending]
+### Dependencies: 6.2
+### Description: Manage submission state, loading indicators, and user notifications for URL processing.
 ### Details:
-Include file size/type validation and preview functionality.
+Show progress, success, or error messages based on backend response.
 
-## 4. Implement PDF Input Method [pending]
-### Dependencies: 6.1
-### Description: Allow users to upload PDF documents for extraction.
+## 4. Develop URL Input Backend Endpoint [pending]
+### Dependencies: 6.3
+### Description: Create backend API to receive and validate URLs, triggering extraction pipeline.
 ### Details:
-Support multi-page PDFs and validate file integrity.
+Check URL reachability and security before processing.
 
-## 5. Backend Extraction Pipeline [pending]
-### Dependencies: 6.2, 6.3, 6.4
-### Description: Develop backend services to process input documents using OCR, scraping, or PDF parsing as appropriate.
+## 5. Design Image Input Frontend [pending]
+### Dependencies: None
+### Description: Build UI for image upload, including drag-and-drop and file picker options.
 ### Details:
-Integrate with third-party extraction APIs or custom models for structured data extraction.
+Support common image formats and provide clear upload instructions.
 
-## 6. Extraction Status and Progress UI [pending]
+## 6. Implement Image Validation and Feedback (Frontend) [pending]
 ### Dependencies: 6.5
-### Description: Build a frontend component to display real-time extraction status and progress to users.
+### Description: Validate image type, size, and dimensions; provide user feedback for errors.
 ### Details:
-Show progress bars, estimated time, and handle asynchronous updates.
+Display error messages for unsupported formats or oversized files.
 
-## 7. Editable Extraction Results UI [pending]
+## 7. Handle Image Submission and Status (Frontend) [pending]
+### Dependencies: 6.6
+### Description: Manage upload progress, display status updates, and notify users of results.
+### Details:
+Show upload progress bar and final extraction status.
+
+## 8. Develop Image Input Backend Endpoint [pending]
+### Dependencies: 6.7
+### Description: Create backend API to receive, validate, and store uploaded images for processing.
+### Details:
+Check file integrity and queue for OCR extraction.
+
+## 9. Design PDF Input Frontend [pending]
 ### Dependencies: None
-### Description: Create an interface for users to review and edit extracted data before finalizing.
+### Description: Build UI for PDF upload, supporting drag-and-drop and file selection.
 ### Details:
-Allow inline editing, field validation, and highlight low-confidence extractions.
+Provide clear instructions and accept only PDF files.
 
-## 8. Error and Retry Handling [pending]
-### Dependencies: 6.5
-### Description: Implement robust error detection, user-friendly error messages, and retry mechanisms for failed extractions.
+## 10. Implement PDF Validation and Feedback (Frontend) [pending]
+### Dependencies: 6.9
+### Description: Validate PDF file type, size, and page count; provide user feedback for errors.
 ### Details:
-Cover network issues, extraction failures, and unsupported formats.
+Display errors for corrupted or oversized PDFs.
 
-## 9. Extraction Result Validation [pending]
-### Dependencies: None
-### Description: Validate extracted data for completeness, accuracy, and required fields before allowing submission.
+## 11. Handle PDF Submission and Status (Frontend) [pending]
+### Dependencies: 6.10
+### Description: Manage upload progress, display extraction status, and notify users of results.
 ### Details:
-Use confidence scores and business rules to flag questionable data.
+Show progress bar and extraction completion notifications.
 
-## 10. Notification System [pending]
-### Dependencies: 6.6, 6.8
-### Description: Develop a notification system to inform users of extraction completion, errors, or required actions.
+## 12. Develop PDF Input Backend Endpoint [pending]
+### Dependencies: 6.11
+### Description: Create backend API to receive, validate, and store uploaded PDFs for processing.
 ### Details:
-Support in-app notifications and optional email alerts.
+Check PDF integrity and queue for parsing.
 
-## 11. Integrate All Input Methods into Unified Workflow [pending]
-### Dependencies: 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10
-### Description: Ensure all input methods (URL, image, PDF) flow through the same backend and UI processes for consistency.
+## 13. Implement Extraction Pipeline: OCR Module [pending]
+### Dependencies: 6.8, 6.12
+### Description: Develop OCR processing for images and scanned PDFs, extracting text and layout.
 ### Details:
-Test end-to-end flows for each input type and resolve integration issues.
+Integrate with OCR libraries or cloud services; handle multi-page documents.
+<info added on 2025-07-08T09:52:46.813Z>
+Develop a custom OCR solution using OpenAI's GPT-4o Vision API for recipe extraction from images and PDFs. Implement image preprocessing pipeline including contrast enhancement, noise reduction, and resolution optimization to improve OCR accuracy. Create specialized prompt engineering templates for structured recipe extraction, focusing on ingredients, measurements, instructions, and metadata. Implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.
 
-## 12. Comprehensive Testing and QA [pending]
-### Dependencies: None
-### Description: Perform thorough testing of all modules, including edge cases, error handling, and user experience.
+Build robust error handling for various failure modes including poor image quality, API timeouts, and malformed responses. Implement rate limiting and batch processing to manage API quotas and optimize throughput. Utilize GPT-4o for primary extraction as it demonstrates superior accuracy for complex recipe layouts compared to GPT-4o-mini, despite higher per-token costs.
+
+Develop cost optimization strategies including image downsampling where appropriate, caching of results, and selective processing of document pages. Create monitoring dashboard to track API usage, success rates, and extraction quality metrics. Ensure the solution handles multi-page documents by intelligently stitching content across pages.
+</info added on 2025-07-08T09:52:46.813Z>
+
+## 14. Implement Extraction Pipeline: Web Scraping Module [pending]
+### Dependencies: 6.4
+### Description: Develop scraping logic for extracting content from provided URLs.
 ### Details:
-Include unit, integration, and user acceptance testing for all supported document types and flows.
+Handle dynamic content, pagination, and anti-bot measures.
+
+## 15. Implement Extraction Pipeline: PDF Parsing Module [pending]
+### Dependencies: 6.12
+### Description: Develop PDF parsing logic for extracting structured text, tables, and images.
+### Details:
+Support both native and scanned PDFs; handle complex layouts.
+
+## 16. Integration Testing Across Input Methods and Extraction Pipeline [pending]
+### Dependencies: 6.13, 6.14, 6.15
+### Description: Test end-to-end flows for URL, image, and PDF inputs through the entire extraction pipeline.
+### Details:
+Verify correct data extraction, error handling, and user feedback for all scenarios.
+
+## 17. Edge Case and Error Handling Enhancements [pending]
+### Dependencies: 6.16
+### Description: Identify and handle edge cases such as corrupted files, unsupported formats, and network failures.
+### Details:
+Implement robust error reporting and fallback mechanisms.
+
+## 18. User Experience Enhancements: Accessibility and Localization [pending]
+### Dependencies: 6.17
+### Description: Improve accessibility (WCAG compliance) and add localization support for multiple languages.
+### Details:
+Ensure screen reader compatibility, keyboard navigation, and translatable UI text.
 
