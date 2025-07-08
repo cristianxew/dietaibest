@@ -219,6 +219,8 @@
         },
         "previous": "Anterior",
         "next": "Siguiente",
+        "previousPage": "Ir a la página anterior",
+        "nextPage": "Ir a la página siguiente",
         "pageOf": "Página {{current}} de {{total}}",
         "loadError": "Error al cargar recetas",
         "favoriteAdded": "Agregado a favoritos",

@@ -219,6 +219,8 @@
         },
         "previous": "Poprzednia",
         "next": "Następna",
+        "previousPage": "Przejdź do poprzedniej strony",
+        "nextPage": "Przejdź do następnej strony",
         "pageOf": "Strona {{current}} z {{total}}",
         "loadError": "Błąd ładowania przepisów",
         "favoriteAdded": "Dodano do ulubionych",

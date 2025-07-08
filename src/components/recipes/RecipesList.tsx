@@ -261,6 +261,7 @@ export function RecipesList() {
             <div className="flex justify-center gap-2 mt-8">
               <Button
                 variant="outline"
+                aria-label={t("previousPage")}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || isPending}
               >
@@ -271,6 +272,7 @@ export function RecipesList() {
               </span>
               <Button
                 variant="outline"
+                aria-label={t("nextPage")}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages || isPending}
               >

@@ -219,6 +219,8 @@
         },
         "previous": "Previous",
         "next": "Next",
+        "previousPage": "Go to previous page",
+        "nextPage": "Go to next page",
         "pageOf": "Page {{current}} of {{total}}",
         "loadError": "Failed to load recipes",
         "favoriteAdded": "Added to favorites",
