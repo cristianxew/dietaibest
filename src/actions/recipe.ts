@@ -390,6 +390,95 @@ export async function getRecipeStats() {
   }
 }
 
+// Get recipe search suggestions
+export async function getRecipeSearchSuggestions(query: string) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    if (!query || query.length < 2) {
+      return { data: [], error: null };
+    }
+
+    // Get recipes that match the query for titles and descriptions
+    const recipes = await prisma.recipe.findMany({
+      where: {
+        userId: user.id,
+        OR: [
+          {
+            title: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      select: {
+        title: true,
+        tags: true,
+      },
+      take: 20,
+    });
+
+    // Extract unique titles that match
+    const titles = recipes
+      .filter((r) => r.title.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 5)
+      .map((r) => ({
+        type: "title" as const,
+        value: r.title,
+      }));
+
+    // Extract and deduplicate tags
+    const allTags = recipes.flatMap((r) => r.tags);
+    const uniqueTags = Array.from(new Set(allTags))
+      .filter((tag) => tag.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 5)
+      .map((tag) => ({
+        type: "tag" as const,
+        value: tag,
+      }));
+
+    // Also search in categories
+    const categories = await prisma.recipeCategory.findMany({
+      where: {
+        name: {
+          contains: query,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        name: true,
+      },
+      take: 3,
+    });
+
+    const categorySuggestions = categories.map((c) => ({
+      type: "category" as const,
+      value: c.name,
+    }));
+
+    // Combine all suggestions
+    const suggestions = [...titles, ...uniqueTags, ...categorySuggestions];
+
+    return { data: suggestions, error: null };
+  } catch (error) {
+    console.error("Get search suggestions error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get search suggestions",
+    };
+  }
+}
+
 // Create default categories (run once)
 export async function createDefaultCategories() {
   try {
