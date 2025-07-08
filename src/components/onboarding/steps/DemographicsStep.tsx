@@ -46,8 +46,7 @@ const formSchema = z.object({
     .refine(
       (date) => {
         const age = calculateAge(date);
-        // TODO
-        return age >= 1 && age <= 120;
+        return age >= 13 && age <= 120;
       },
       {
         message: "Age must be between 13 and 120 years",
