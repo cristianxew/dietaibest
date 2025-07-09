@@ -269,6 +269,32 @@
         "importFromPdf": "Importuj z PDF",
         "importFromPdfDescription": "Prześlij plik PDF zawierający przepisy, a my wyodrębnimy treść",
         "pdfImportComingSoon": "Import z PDF wkrótce dostępny...",
+        "pdfUpload": {
+            "dragAndDrop": "Przeciągnij i upuść swój plik PDF tutaj",
+            "clickToUpload": "Kliknij, aby wybrać plik PDF",
+            "supportedFormats": "Obsługiwane formaty",
+            "maxSize": "Maksymalny rozmiar",
+            "maxPages": "Maksymalna liczba stron",
+            "status": {
+                "validating": "Sprawdzanie pliku PDF...",
+                "uploading": "Przesyłanie PDF...",
+                "extractingText": "Przetwarzanie PDF i wyodrębnianie danych przepisu...",
+                "analyzingContent": "Analizowanie treści przepisu...",
+                "complete": "Przetwarzanie zakończone"
+            },
+            "errors": {
+                "invalidFormat": "Nieprawidłowy format pliku. Proszę przesłać plik PDF.",
+                "fileTooLarge": "Plik za duży. Maksymalny rozmiar: {maxSize}MB",
+                "tooManyPages": "PDF ma za dużo stron. Maksimum: {maxPages} stron",
+                "validationFailed": "Sprawdzenie pliku nie powiodło się",
+                "processingFailed": "Nie udało się przetworzyć pliku PDF",
+                "extractionFailed": "Nie można wyodrębnić danych przepisu z PDF"
+            },
+            "extractionSuccess": "Dane przepisu zostały pomyślnie wyodrębnione z PDF!",
+            "uploadAnother": "Prześlij Inny PDF",
+            "tryAgain": "Spróbuj Ponownie",
+            "complete": "ukończono"
+        },
         "supportedWebsites": "Obsługiwane strony internetowe to AllRecipes, Food Network, Serious Eats i wiele innych",
         "importSuccess": "Przepis został pomyślnie zaimportowany!",
         "importError": "Nie udało się zaimportować przepisu z adresu URL",

@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "./ImageUpload";
+import { PDFUpload } from "./PDFUpload";
 
 // URL validation schema
 const urlSchema = z.object({
@@ -207,6 +208,50 @@ export function RecipeImport({
     setErrorMessage(error);
   };
 
+  // Handle PDF upload completion
+  const handlePDFUploaded = (pdfData: {
+    file: File;
+    extractedData?: {
+      title: string;
+      description?: string;
+      ingredients: Array<{
+        name: string;
+        amount: number;
+        unit: string;
+      }>;
+      instructions: string[];
+      prepTime?: number;
+      cookTime?: number;
+      servings?: number;
+    };
+  }) => {
+    if (pdfData.extractedData) {
+      setImportStatus("success");
+
+      // Transform the extracted data to match the expected format
+      const extractedData: ImportedRecipeData = {
+        title: pdfData.extractedData.title,
+        description: pdfData.extractedData.description,
+        ingredients: pdfData.extractedData.ingredients,
+        instructions: pdfData.extractedData.instructions,
+        prepTime: pdfData.extractedData.prepTime,
+        cookTime: pdfData.extractedData.cookTime,
+        servings: pdfData.extractedData.servings,
+      };
+
+      // Call the completion handler after a short delay for better UX
+      setTimeout(() => {
+        onImportComplete?.(extractedData);
+      }, 1000);
+    }
+  };
+
+  // Handle PDF upload error
+  const handlePDFUploadError = (error: string) => {
+    setImportStatus("error");
+    setErrorMessage(error);
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -224,7 +269,7 @@ export function RecipeImport({
             <Image className="h-4 w-4" />
             {t("image")}
           </TabsTrigger>
-          <TabsTrigger value="pdf" disabled className="flex items-center gap-2">
+          <TabsTrigger value="pdf" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             PDF
           </TabsTrigger>
@@ -382,11 +427,34 @@ export function RecipeImport({
               <CardTitle>{t("importFromPdf")}</CardTitle>
               <CardDescription>{t("importFromPdfDescription")}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("pdfImportComingSoon")}</p>
+            <CardContent className="space-y-4">
+              <PDFUpload
+                onPDFUploaded={handlePDFUploaded}
+                onUploadError={handlePDFUploadError}
+                maxFileSize={20} // 20MB
+                maxPages={15} // Document AI limit
+                disabled={isProcessing}
+              />
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    {t("or")}
+                  </span>
+                </div>
               </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onSkipImport}
+                disabled={isProcessing}
+              >
+                {t("createRecipeManually")}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

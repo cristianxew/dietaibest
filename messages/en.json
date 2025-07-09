@@ -269,6 +269,32 @@
         "importFromPdf": "Import from PDF",
         "importFromPdfDescription": "Upload a PDF file containing recipes and we'll extract the content",
         "pdfImportComingSoon": "PDF import coming soon...",
+        "pdfUpload": {
+            "dragAndDrop": "Drag and drop your PDF file here",
+            "clickToUpload": "Click to select a PDF file",
+            "supportedFormats": "Supported formats",
+            "maxSize": "Max size",
+            "maxPages": "Max pages",
+            "status": {
+                "validating": "Validating PDF file...",
+                "uploading": "Uploading PDF...",
+                "extractingText": "Processing PDF and extracting recipe data...",
+                "analyzingContent": "Analyzing recipe content...",
+                "complete": "Processing complete"
+            },
+            "errors": {
+                "invalidFormat": "Invalid file format. Please upload a PDF file.",
+                "fileTooLarge": "File too large. Maximum size: {maxSize}MB",
+                "tooManyPages": "PDF has too many pages. Maximum: {maxPages} pages",
+                "validationFailed": "File validation failed",
+                "processingFailed": "Failed to process PDF file",
+                "extractionFailed": "Could not extract recipe data from PDF"
+            },
+            "extractionSuccess": "Recipe data extracted successfully from PDF!",
+            "uploadAnother": "Upload Another PDF",
+            "tryAgain": "Try Again",
+            "complete": "complete"
+        },
         "supportedWebsites": "Supported websites include AllRecipes, Food Network, Serious Eats, and many more",
         "importSuccess": "Recipe imported successfully!",
         "importError": "Failed to import recipe from URL",

@@ -269,6 +269,32 @@
         "importFromPdf": "Importar desde PDF",
         "importFromPdfDescription": "Sube un archivo PDF que contenga recetas y extraeremos el contenido",
         "pdfImportComingSoon": "La importación de PDF estará disponible pronto...",
+        "pdfUpload": {
+            "dragAndDrop": "Arrastra y suelta tu archivo PDF aquí",
+            "clickToUpload": "Haz clic para seleccionar un archivo PDF",
+            "supportedFormats": "Formatos compatibles",
+            "maxSize": "Tamaño máximo",
+            "maxPages": "Páginas máximas",
+            "status": {
+                "validating": "Validando archivo PDF...",
+                "uploading": "Subiendo PDF...",
+                "extractingText": "Procesando PDF y extrayendo datos de receta...",
+                "analyzingContent": "Analizando contenido de receta...",
+                "complete": "Procesamiento completo"
+            },
+            "errors": {
+                "invalidFormat": "Formato de archivo inválido. Por favor sube un archivo PDF.",
+                "fileTooLarge": "Archivo demasiado grande. Tamaño máximo: {maxSize}MB",
+                "tooManyPages": "El PDF tiene demasiadas páginas. Máximo: {maxPages} páginas",
+                "validationFailed": "La validación del archivo falló",
+                "processingFailed": "Error al procesar el archivo PDF",
+                "extractionFailed": "No se pudo extraer datos de receta del PDF"
+            },
+            "extractionSuccess": "¡Datos de receta extraídos exitosamente del PDF!",
+            "uploadAnother": "Subir Otro PDF",
+            "tryAgain": "Intentar de Nuevo",
+            "complete": "completo"
+        },
         "supportedWebsites": "Los sitios web compatibles incluyen AllRecipes, Food Network, Serious Eats y muchos más",
         "importSuccess": "¡Receta importada con éxito!",
         "importError": "Error al importar receta desde URL",
