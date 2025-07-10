@@ -67,6 +67,15 @@ interface ImportedRecipeData {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
+  difficulty?: string;
+  cuisine?: string;
+  tags?: string[];
+  nutritionalInfo?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  };
 }
 
 interface RecipeImportProps {
@@ -141,7 +150,13 @@ export function RecipeImport({
           prepTime: result.data.prepTime,
           cookTime: result.data.cookTime,
           servings: result.data.servings,
+          difficulty: result.data.difficulty,
+          cuisine: result.data.cuisine,
+          tags: result.data.tags,
+          nutritionalInfo: result.data.nutritionalInfo,
         };
+
+        console.log("URL extraction completed:", extractedData);
 
         // Call the completion handler after a short delay for better UX
         setTimeout(() => {
@@ -179,6 +194,15 @@ export function RecipeImport({
       prepTime?: number;
       cookTime?: number;
       servings?: number;
+      difficulty?: string;
+      cuisine?: string;
+      tags?: string[];
+      nutritionalInfo?: {
+        calories?: number;
+        protein?: number;
+        carbs?: number;
+        fat?: number;
+      };
     };
   }) => {
     if (imageData.extractedData) {
@@ -193,7 +217,13 @@ export function RecipeImport({
         prepTime: imageData.extractedData.prepTime,
         cookTime: imageData.extractedData.cookTime,
         servings: imageData.extractedData.servings,
+        difficulty: imageData.extractedData.difficulty,
+        cuisine: imageData.extractedData.cuisine,
+        tags: imageData.extractedData.tags,
+        nutritionalInfo: imageData.extractedData.nutritionalInfo,
       };
+
+      console.log("Image extraction completed:", extractedData);
 
       // Call the completion handler after a short delay for better UX
       setTimeout(() => {
@@ -223,6 +253,15 @@ export function RecipeImport({
       prepTime?: number;
       cookTime?: number;
       servings?: number;
+      difficulty?: string;
+      cuisine?: string;
+      tags?: string[];
+      nutritionalInfo?: {
+        calories?: number;
+        protein?: number;
+        carbs?: number;
+        fat?: number;
+      };
     };
   }) => {
     if (pdfData.extractedData) {
@@ -237,7 +276,13 @@ export function RecipeImport({
         prepTime: pdfData.extractedData.prepTime,
         cookTime: pdfData.extractedData.cookTime,
         servings: pdfData.extractedData.servings,
+        difficulty: pdfData.extractedData.difficulty,
+        cuisine: pdfData.extractedData.cuisine,
+        tags: pdfData.extractedData.tags,
+        nutritionalInfo: pdfData.extractedData.nutritionalInfo,
       };
+
+      console.log("PDF extraction completed:", extractedData);
 
       // Call the completion handler after a short delay for better UX
       setTimeout(() => {

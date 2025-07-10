@@ -37,11 +37,12 @@ import type { RecipeCategory } from "@/generated/prisma";
 import { getMockRecipeData } from "@/lib/recipe-mocks";
 
 interface RecipeFormProps {
-  recipe?: RecipeFormData & { id: string };
+  recipe?: RecipeFormData;
   mode: "create" | "edit";
+  recipeId?: string;
 }
 
-export function RecipeForm({ recipe, mode }: RecipeFormProps) {
+export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   const router = useRouter();
   const locale = useLocale();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,9 +118,9 @@ export function RecipeForm({ recipe, mode }: RecipeFormProps) {
           toast.success("Recipe created successfully!");
           router.push(`/${locale}/recipes/${createdRecipe.id}`);
         }
-      } else if (recipe?.id) {
+      } else if (mode === "edit" && recipeId) {
         const { data: updatedRecipe, error } = await updateRecipe(
-          recipe.id,
+          recipeId,
           data
         );
         if (error) {

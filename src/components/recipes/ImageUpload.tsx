@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import NextImage from "next/image";
 
 interface ExtractedRecipeData {
   title: string;
@@ -29,6 +30,15 @@ interface ExtractedRecipeData {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
+  difficulty?: string;
+  cuisine?: string;
+  tags?: string[];
+  nutritionalInfo?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  };
 }
 
 interface ImageUploadProps {
@@ -91,221 +101,272 @@ export function ImageUpload({
   };
 
   // Validate file size
-  const validateFileSize = (file: File): boolean => {
-    const maxSizeBytes = maxFileSize * 1024 * 1024;
-    return file.size <= maxSizeBytes;
-  };
+  const validateFileSize = useCallback(
+    (file: File): boolean => {
+      const maxSizeBytes = maxFileSize * 1024 * 1024;
+      return file.size <= maxSizeBytes;
+    },
+    [maxFileSize]
+  );
 
   // Validate image dimensions
-  const validateImageDimensions = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
+  const validateImageDimensions = useCallback(
+    (file: File): Promise<boolean> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
 
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const isValid = img.width <= maxWidth && img.height <= maxHeight;
-        resolve(isValid);
-      };
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const isValid = img.width <= maxWidth && img.height <= maxHeight;
+          resolve(isValid);
+        };
 
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(false);
-      };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve(false);
+        };
 
-      img.src = url;
-    });
-  };
+        img.src = url;
+      });
+    },
+    [maxWidth, maxHeight]
+  );
 
   // Comprehensive file validation
-  const validateFile = async (
-    file: File
-  ): Promise<{ isValid: boolean; error?: string }> => {
-    // Check file type
-    if (!validateFileType(file)) {
-      return {
-        isValid: false,
-        error: t("errors.invalidFormat", {
-          formats: SUPPORTED_FORMATS.map((f) =>
-            f.split("/")[1].toUpperCase()
-          ).join(", "),
-        }),
-      };
-    }
-
-    // Check file size
-    if (!validateFileSize(file)) {
-      return {
-        isValid: false,
-        error: t("errors.fileTooLarge", { maxSize: maxFileSize }),
-      };
-    }
-
-    // Check image dimensions
-    const isDimensionsValid = await validateImageDimensions(file);
-    if (!isDimensionsValid) {
-      return {
-        isValid: false,
-        error: t("errors.dimensionsTooLarge", {
-          maxWidth,
-          maxHeight,
-        }),
-      };
-    }
-
-    return { isValid: true };
-  };
-
-  // Upload image to backend and process with OCR
-  const uploadImageAndProcess = async (
-    file: File
-  ): Promise<ExtractedRecipeData | null> => {
-    // Phase 1: Upload (0-30%)
-    setUploadState((prev) => ({
-      ...prev,
-      status: "uploading",
-      progress: 0,
-      message: t("status.uploading"),
-    }));
-
-    // Create form data
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      // Simulate upload progress
-      for (let i = 0; i <= 30; i += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setUploadState((prev) => ({ ...prev, progress: i }));
-      }
-
-      // Phase 2: Processing with OCR (30-90%)
-      setUploadState((prev) => ({
-        ...prev,
-        status: "processing",
-        message: t("status.extractingText"),
-        progress: 30,
-      }));
-
-      // Call backend API
-      const response = await fetch("/api/recipes/import/image", {
-        method: "POST",
-        body: formData,
-      });
-
-      // Simulate processing progress
-      for (let i = 40; i <= 90; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setUploadState((prev) => ({ ...prev, progress: i }));
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to process image");
-      }
-
-      // Phase 3: Finalizing (90-100%)
-      setUploadState((prev) => ({
-        ...prev,
-        message: t("status.finalizing"),
-        progress: 90,
-      }));
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setUploadState((prev) => ({ ...prev, progress: 100 }));
-
-      // Success
-      setUploadState((prev) => ({
-        ...prev,
-        status: "success",
-        message: t("status.success"),
-      }));
-
-      // Show warnings if any
-      if (result.warnings && result.warnings.length > 0) {
-        result.warnings.forEach((warning: string) => {
-          toast.warning(warning);
-        });
-      }
-
-      // Return extracted data if available
-      if (result.data && result.data.title) {
+  const validateFile = useCallback(
+    async (file: File): Promise<{ isValid: boolean; error?: string }> => {
+      // Check file type
+      if (!validateFileType(file)) {
         return {
-          title: result.data.title,
-          description: result.data.description,
-          ingredients: result.data.ingredients || [],
-          instructions: result.data.instructions || [],
-          prepTime: result.data.prepTime,
-          cookTime: result.data.cookTime,
-          servings: result.data.servings,
+          isValid: false,
+          error: t("errors.invalidFormat", {
+            formats: SUPPORTED_FORMATS.map((f) =>
+              f.split("/")[1].toUpperCase()
+            ).join(", "),
+          }),
         };
       }
 
-      return null;
-    } catch (error) {
-      throw error;
-    }
-  };
+      // Check file size
+      if (!validateFileSize(file)) {
+        return {
+          isValid: false,
+          error: t("errors.fileTooLarge", { maxSize: maxFileSize }),
+        };
+      }
+
+      // Check image dimensions
+      const isDimensionsValid = await validateImageDimensions(file);
+      if (!isDimensionsValid) {
+        return {
+          isValid: false,
+          error: t("errors.dimensionsTooLarge", {
+            maxWidth,
+            maxHeight,
+          }),
+        };
+      }
+
+      return { isValid: true };
+    },
+    [
+      validateFileSize,
+      validateImageDimensions,
+      t,
+      maxFileSize,
+      maxWidth,
+      maxHeight,
+    ]
+  );
+
+  // Upload image to backend and process with OCR
+  const uploadImageAndProcess = useCallback(
+    async (file: File): Promise<ExtractedRecipeData | null> => {
+      // Phase 1: Upload (0-30%)
+      setUploadState((prev) => ({
+        ...prev,
+        status: "uploading",
+        progress: 0,
+        message: t("status.uploading"),
+      }));
+
+      // Create form data
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        // Simulate upload progress
+        for (let i = 0; i <= 30; i += 5) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          setUploadState((prev) => ({ ...prev, progress: i }));
+        }
+
+        // Phase 2: Processing with OCR (30-90%)
+        setUploadState((prev) => ({
+          ...prev,
+          status: "processing",
+          message: t("status.extractingText"),
+          progress: 30,
+        }));
+
+        // Call backend API
+        const response = await fetch("/api/recipes/import/document", {
+          method: "POST",
+          body: formData,
+        });
+
+        // Simulate processing progress
+        for (let i = 40; i <= 90; i += 10) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          setUploadState((prev) => ({ ...prev, progress: i }));
+        }
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to process image");
+        }
+
+        // Phase 3: Finalizing (90-100%)
+        setUploadState((prev) => ({
+          ...prev,
+          message: t("status.finalizing"),
+          progress: 90,
+        }));
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setUploadState((prev) => ({ ...prev, progress: 100 }));
+
+        // Success
+        setUploadState((prev) => ({
+          ...prev,
+          status: "success",
+          message: t("status.success"),
+        }));
+
+        // Show warnings if any
+        if (result.warnings && result.warnings.length > 0) {
+          result.warnings.forEach((warning: string) => {
+            toast.warning(warning);
+          });
+        }
+
+        // Return extracted data if available
+        if (result.data && result.data.title) {
+          return {
+            title: result.data.title,
+            description: result.data.description,
+            ingredients: result.data.ingredients || [],
+            instructions: result.data.instructions || [],
+            prepTime: result.data.prepTime,
+            cookTime: result.data.cookTime,
+            servings: result.data.servings,
+            difficulty: result.data.difficulty,
+            cuisine: result.data.cuisine,
+            tags: result.data.tags,
+            nutritionalInfo: result.data.nutritionalInfo,
+          };
+        }
+
+        return null;
+      } catch (error) {
+        throw error;
+      }
+    },
+    [t]
+  );
 
   // Handle file processing
-  const processFile = async (file: File) => {
-    if (disabled) return;
+  const processFile = useCallback(
+    async (file: File) => {
+      if (disabled) return;
 
-    setUploadState({
-      status: "validating",
-      progress: 0,
-      message: t("status.validating"),
-      file,
-    });
+      setUploadState({
+        status: "validating",
+        progress: 0,
+        message: t("status.validating"),
+        file,
+      });
 
-    try {
-      // Validate the file
-      const validation = await validateFile(file);
-      if (!validation.isValid) {
+      try {
+        // Validate the file
+        const validation = await validateFile(file);
+        if (!validation.isValid) {
+          setUploadState({
+            status: "error",
+            progress: 0,
+            message: validation.error || t("errors.validationFailed"),
+          });
+          onUploadError?.(validation.error || t("errors.validationFailed"));
+          toast.error(validation.error || t("errors.validationFailed"));
+          return;
+        }
+
+        // Create preview
+        const preview = URL.createObjectURL(file);
+        setUploadState((prev) => ({ ...prev, preview }));
+
+        // Upload and process the image
+        const extractedData = await uploadImageAndProcess(file);
+
+        // Notify parent component
+        onImageUploaded?.({
+          file,
+          preview,
+          extractedData: extractedData || undefined,
+        });
+
+        if (extractedData) {
+          // Show detailed extraction summary
+          const extractedFields = [];
+          if (extractedData.ingredients.length > 0)
+            extractedFields.push(
+              `${extractedData.ingredients.length} ingredients`
+            );
+          if (extractedData.instructions.length > 0)
+            extractedFields.push(`${extractedData.instructions.length} steps`);
+          if (extractedData.nutritionalInfo)
+            extractedFields.push("nutrition info");
+          if (extractedData.difficulty)
+            extractedFields.push(`difficulty: ${extractedData.difficulty}`);
+          if (extractedData.cuisine)
+            extractedFields.push(`cuisine: ${extractedData.cuisine}`);
+          if (extractedData.tags && extractedData.tags.length > 0)
+            extractedFields.push(`${extractedData.tags.length} tags`);
+
+          const message =
+            extractedFields.length > 0
+              ? `Recipe extracted with ${extractedFields.join(", ")}`
+              : "Recipe extracted successfully";
+
+          toast.success(message);
+        } else {
+          toast.warning(
+            "Image uploaded but could not extract recipe data automatically"
+          );
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : t("errors.processingFailed");
         setUploadState({
           status: "error",
           progress: 0,
-          message: validation.error || t("errors.validationFailed"),
+          message: errorMessage,
         });
-        onUploadError?.(validation.error || t("errors.validationFailed"));
-        toast.error(validation.error || t("errors.validationFailed"));
-        return;
+        onUploadError?.(errorMessage);
+        toast.error(errorMessage);
       }
-
-      // Create preview
-      const preview = URL.createObjectURL(file);
-      setUploadState((prev) => ({ ...prev, preview }));
-
-      // Upload and process the image
-      const extractedData = await uploadImageAndProcess(file);
-
-      // Notify parent component
-      onImageUploaded?.({
-        file,
-        preview,
-        extractedData: extractedData || undefined,
-      });
-
-      if (extractedData) {
-        toast.success(t("extractionSuccess"));
-      } else {
-        toast.warning(
-          "Image uploaded but could not extract recipe data automatically"
-        );
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : t("errors.processingFailed");
-      setUploadState({
-        status: "error",
-        progress: 0,
-        message: errorMessage,
-      });
-      onUploadError?.(errorMessage);
-      toast.error(errorMessage);
-    }
-  };
+    },
+    [
+      disabled,
+      t,
+      validateFile,
+      uploadImageAndProcess,
+      onImageUploaded,
+      onUploadError,
+    ]
+  );
 
   // Handle drag and drop events
   const handleDragOver = useCallback(
@@ -335,16 +396,19 @@ export function ImageUpload({
         processFile(files[0]);
       }
     },
-    [disabled]
+    [disabled, processFile]
   );
 
   // Handle file input change
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      processFile(files[0]);
-    }
-  };
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        processFile(files[0]);
+      }
+    },
+    [processFile]
+  );
 
   // Open file picker
   const openFilePicker = () => {
@@ -415,7 +479,9 @@ export function ImageUpload({
             {uploadState.preview ? (
               // Image preview
               <div className="relative">
-                <img
+                <NextImage
+                  width={200}
+                  height={200}
                   src={uploadState.preview}
                   alt="Preview"
                   className="max-w-full max-h-48 rounded-lg object-contain"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -22,6 +22,15 @@ interface ImportedRecipeData {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
+  difficulty?: string;
+  cuisine?: string;
+  tags?: string[];
+  nutritionalInfo?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  };
 }
 
 // Since we need to use client components for the import flow, we'll make this a client component
@@ -30,14 +39,13 @@ export default function NewRecipePage() {
   const t = useTranslations("recipes");
   const locale = useLocale();
   const [showImport, setShowImport] = useState(true);
-  const [importedData, setImportedData] = useState<
-    (RecipeFormData & { id: string }) | undefined
-  >(undefined);
+  const [importedData, setImportedData] = useState<RecipeFormData | undefined>(
+    undefined
+  );
 
-  const handleImportComplete = (recipeData: ImportedRecipeData) => {
+  const handleImportComplete = useCallback((recipeData: ImportedRecipeData) => {
     // Transform imported data to match RecipeFormData structure
-    const transformedData: RecipeFormData & { id: string } = {
-      id: "temp-import", // Temporary ID for imported recipes
+    const transformedData: RecipeFormData = {
       title: recipeData.title,
       description: recipeData.description || "",
       ingredients: recipeData.ingredients,
@@ -45,28 +53,36 @@ export default function NewRecipePage() {
       prepTime: recipeData.prepTime,
       cookTime: recipeData.cookTime,
       servings: recipeData.servings || 1,
+      // Map difficulty from extracted text to form enum
+      difficulty: recipeData.difficulty?.toLowerCase() as
+        | "easy"
+        | "medium"
+        | "hard"
+        | undefined,
       // Set default values for required fields
       imageUrl: "",
-      difficulty: undefined,
-      tags: [],
+      tags: recipeData.tags || [],
       categoryIds: [],
       isPublic: false,
-      calories: undefined,
-      protein: undefined,
-      carbs: undefined,
-      fat: undefined,
+      // Map nutritional information
+      calories: recipeData.nutritionalInfo?.calories,
+      protein: recipeData.nutritionalInfo?.protein,
+      carbs: recipeData.nutritionalInfo?.carbs,
+      fat: recipeData.nutritionalInfo?.fat,
       fiber: undefined,
       sugar: undefined,
       sodium: undefined,
     };
 
+    console.log("Transformed recipe data for form:", transformedData);
+
     setImportedData(transformedData);
     setShowImport(false);
-  };
+  }, []);
 
-  const handleSkipImport = () => {
+  const handleSkipImport = useCallback(() => {
     setShowImport(false);
-  };
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -80,19 +96,18 @@ export default function NewRecipePage() {
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {showImport ? (
+        <div style={{ display: showImport ? "block" : "none" }}>
           <RecipeImport
             onImportComplete={handleImportComplete}
             onSkipImport={handleSkipImport}
           />
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold tracking-tight mb-8">
-              {t("addRecipe")}
-            </h1>
-            <RecipeForm mode="create" recipe={importedData} />
-          </>
-        )}
+        </div>
+        <div style={{ display: showImport ? "none" : "block" }}>
+          <h1 className="text-3xl font-bold tracking-tight mb-8">
+            {t("addRecipe")}
+          </h1>
+          <RecipeForm mode="create" recipe={importedData} />
+        </div>
       </div>
     </div>
   );

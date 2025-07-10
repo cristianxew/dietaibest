@@ -29,6 +29,15 @@ interface ExtractedRecipeData {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
+  difficulty?: string;
+  cuisine?: string;
+  tags?: string[];
+  nutritionalInfo?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  };
 }
 
 interface PDFUploadProps {
@@ -82,196 +91,243 @@ export function PDFUpload({
   };
 
   // Validate file size
-  const validateFileSize = (file: File): boolean => {
-    const maxSizeBytes = maxFileSize * 1024 * 1024;
-    return file.size <= maxSizeBytes;
-  };
+  // Validate file size
+  const validateFileSize = useCallback(
+    (file: File): boolean => {
+      const maxSizeBytes = maxFileSize * 1024 * 1024;
+      return file.size <= maxSizeBytes;
+    },
+    [maxFileSize]
+  );
 
   // Validate PDF page count (estimate based on file size)
-  const validatePDFPages = async (file: File): Promise<boolean> => {
-    // This is a rough estimation - actual page count would require PDF parsing
-    // For now, we'll use file size as a proxy (average 50KB per page)
-    const estimatedPages = Math.ceil(file.size / (50 * 1024));
-    return estimatedPages <= maxPages;
-  };
+  const validatePDFPages = useCallback(
+    async (file: File): Promise<boolean> => {
+      // This is a rough estimation - actual page count would require PDF parsing
+      // For now, we'll use file size as a proxy (average 50KB per page)
+      const estimatedPages = Math.ceil(file.size / (50 * 1024));
+      return estimatedPages <= maxPages;
+    },
+    [maxPages]
+  );
 
   // Comprehensive file validation
-  const validateFile = async (
-    file: File
-  ): Promise<{ isValid: boolean; error?: string }> => {
-    // Check file type
-    if (!validateFileType(file)) {
-      return {
-        isValid: false,
-        error: t("errors.invalidFormat"),
-      };
-    }
-
-    // Check file size
-    if (!validateFileSize(file)) {
-      return {
-        isValid: false,
-        error: t("errors.fileTooLarge", { maxSize: maxFileSize }),
-      };
-    }
-
-    // Check estimated page count
-    const isPagesValid = await validatePDFPages(file);
-    if (!isPagesValid) {
-      return {
-        isValid: false,
-        error: t("errors.tooManyPages", { maxPages }),
-      };
-    }
-
-    return { isValid: true };
-  };
-
-  // Upload PDF to backend and process with Document AI
-  const uploadPDFAndProcess = async (
-    file: File
-  ): Promise<ExtractedRecipeData | null> => {
-    // Phase 1: Upload (0-30%)
-    setUploadState((prev) => ({
-      ...prev,
-      status: "uploading",
-      progress: 0,
-      message: t("status.uploading"),
-    }));
-
-    // Create form data
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      // Simulate upload progress
-      for (let i = 0; i <= 30; i += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setUploadState((prev) => ({ ...prev, progress: i }));
-      }
-
-      // Phase 2: Processing with Document AI (30-80%)
-      setUploadState((prev) => ({
-        ...prev,
-        status: "processing",
-        message: t("status.extractingText"),
-        progress: 30,
-      }));
-
-      // Call backend API
-      const response = await fetch("/api/recipes/import/document", {
-        method: "POST",
-        body: formData,
-      });
-
-      // Simulate processing progress
-      for (let i = 40; i <= 70; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        setUploadState((prev) => ({ ...prev, progress: i }));
-      }
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to process PDF");
-      }
-
-      // Phase 3: Analyzing content (80-95%)
-      setUploadState((prev) => ({
-        ...prev,
-        status: "analyzing",
-        message: t("status.analyzingContent"),
-        progress: 80,
-      }));
-
-      for (let i = 85; i <= 95; i += 5) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setUploadState((prev) => ({ ...prev, progress: i }));
-      }
-
-      // Phase 4: Complete (95-100%)
-      setUploadState((prev) => ({
-        ...prev,
-        status: "success",
-        message: t("status.complete"),
-        progress: 100,
-      }));
-
-      // Return extracted data if available
-      if (result.success && result.data) {
+  const validateFile = useCallback(
+    async (file: File): Promise<{ isValid: boolean; error?: string }> => {
+      // Check file type
+      if (!validateFileType(file)) {
         return {
-          title: result.data.title,
-          description: result.data.description,
-          ingredients: result.data.ingredients,
-          instructions: result.data.instructions,
-          prepTime: result.data.prepTime,
-          cookTime: result.data.cookTime,
-          servings: result.data.servings,
+          isValid: false,
+          error: t("errors.invalidFormat"),
         };
       }
 
-      return null;
-    } catch (error) {
-      console.error("PDF processing error:", error);
-      throw new Error(
-        error instanceof Error ? error.message : t("errors.processingFailed")
-      );
-    }
-  };
+      // Check file size
+      if (!validateFileSize(file)) {
+        return {
+          isValid: false,
+          error: t("errors.fileTooLarge", { maxSize: maxFileSize }),
+        };
+      }
+
+      // Check estimated page count
+      const isPagesValid = await validatePDFPages(file);
+      if (!isPagesValid) {
+        return {
+          isValid: false,
+          error: t("errors.tooManyPages", { maxPages }),
+        };
+      }
+
+      return { isValid: true };
+    },
+    [validateFileSize, validatePDFPages, t, maxFileSize, maxPages]
+  );
+
+  // Upload PDF to backend and process with Document AI
+  const uploadPDFAndProcess = useCallback(
+    async (file: File): Promise<ExtractedRecipeData | null> => {
+      // Phase 1: Upload (0-30%)
+      setUploadState((prev) => ({
+        ...prev,
+        status: "uploading",
+        progress: 0,
+        message: t("status.uploading"),
+      }));
+
+      // Create form data
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        // Simulate upload progress
+        for (let i = 0; i <= 30; i += 5) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          setUploadState((prev) => ({ ...prev, progress: i }));
+        }
+
+        // Phase 2: Processing with Document AI (30-80%)
+        setUploadState((prev) => ({
+          ...prev,
+          status: "processing",
+          message: t("status.extractingText"),
+          progress: 30,
+        }));
+
+        // Call backend API
+        const response = await fetch("/api/recipes/import/document", {
+          method: "POST",
+          body: formData,
+        });
+
+        // Simulate processing progress
+        for (let i = 40; i <= 70; i += 10) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          setUploadState((prev) => ({ ...prev, progress: i }));
+        }
+
+        const result = await response.json();
+
+        console.log("result", result);
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to process PDF");
+        }
+
+        // Phase 3: Analyzing content (80-95%)
+        setUploadState((prev) => ({
+          ...prev,
+          status: "analyzing",
+          message: t("status.analyzingContent"),
+          progress: 80,
+        }));
+
+        for (let i = 85; i <= 95; i += 5) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          setUploadState((prev) => ({ ...prev, progress: i }));
+        }
+
+        // Phase 4: Complete (95-100%)
+        setUploadState((prev) => ({
+          ...prev,
+          status: "success",
+          message: t("status.complete"),
+          progress: 100,
+        }));
+
+        // Return extracted data if available
+        if (result.success && result.data) {
+          return {
+            title: result.data.title,
+            description: result.data.description,
+            ingredients: result.data.ingredients,
+            instructions: result.data.instructions,
+            prepTime: result.data.prepTime,
+            cookTime: result.data.cookTime,
+            servings: result.data.servings,
+            difficulty: result.data.difficulty,
+            cuisine: result.data.cuisine,
+            tags: result.data.tags,
+            nutritionalInfo: result.data.nutritionalInfo,
+          };
+        }
+
+        return null;
+      } catch (error) {
+        console.error("PDF processing error:", error);
+        throw new Error(
+          error instanceof Error ? error.message : t("errors.processingFailed")
+        );
+      }
+    },
+    [t]
+  );
 
   // Handle file processing
-  const processFile = async (file: File) => {
-    if (disabled) return;
+  const processFile = useCallback(
+    async (file: File) => {
+      if (disabled) return;
 
-    setUploadState({
-      status: "validating",
-      progress: 0,
-      message: t("status.validating"),
-      file,
-    });
+      setUploadState({
+        status: "validating",
+        progress: 0,
+        message: t("status.validating"),
+        file,
+      });
 
-    try {
-      // Validate the file
-      const validation = await validateFile(file);
-      if (!validation.isValid) {
+      try {
+        // Validate the file
+        const validation = await validateFile(file);
+        if (!validation.isValid) {
+          setUploadState({
+            status: "error",
+            progress: 0,
+            message: validation.error || t("errors.validationFailed"),
+          });
+          onUploadError?.(validation.error || t("errors.validationFailed"));
+          toast.error(validation.error || t("errors.validationFailed"));
+          return;
+        }
+
+        // Upload and process the PDF
+        const extractedData = await uploadPDFAndProcess(file);
+
+        // Notify parent component
+        onPDFUploaded?.({
+          file,
+          extractedData: extractedData || undefined,
+        });
+
+        if (extractedData) {
+          // Show detailed extraction summary
+          const extractedFields = [];
+          if (extractedData.ingredients.length > 0)
+            extractedFields.push(
+              `${extractedData.ingredients.length} ingredients`
+            );
+          if (extractedData.instructions.length > 0)
+            extractedFields.push(`${extractedData.instructions.length} steps`);
+          if (extractedData.nutritionalInfo)
+            extractedFields.push("nutrition info");
+          if (extractedData.difficulty)
+            extractedFields.push(`difficulty: ${extractedData.difficulty}`);
+          if (extractedData.cuisine)
+            extractedFields.push(`cuisine: ${extractedData.cuisine}`);
+          if (extractedData.tags && extractedData.tags.length > 0)
+            extractedFields.push(`${extractedData.tags.length} tags`);
+
+          const message =
+            extractedFields.length > 0
+              ? `Recipe extracted with ${extractedFields.join(", ")}`
+              : "Recipe extracted successfully";
+
+          toast.success(message);
+        } else {
+          toast.warning(
+            "PDF uploaded but could not extract recipe data automatically"
+          );
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : t("errors.processingFailed");
         setUploadState({
           status: "error",
           progress: 0,
-          message: validation.error || t("errors.validationFailed"),
+          message: errorMessage,
         });
-        onUploadError?.(validation.error || t("errors.validationFailed"));
-        toast.error(validation.error || t("errors.validationFailed"));
-        return;
+        onUploadError?.(errorMessage);
+        toast.error(errorMessage);
       }
-
-      // Upload and process the PDF
-      const extractedData = await uploadPDFAndProcess(file);
-
-      // Notify parent component
-      onPDFUploaded?.({
-        file,
-        extractedData: extractedData || undefined,
-      });
-
-      if (extractedData) {
-        toast.success(t("extractionSuccess"));
-      } else {
-        toast.warning(
-          "PDF uploaded but could not extract recipe data automatically"
-        );
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : t("errors.processingFailed");
-      setUploadState({
-        status: "error",
-        progress: 0,
-        message: errorMessage,
-      });
-      onUploadError?.(errorMessage);
-      toast.error(errorMessage);
-    }
-  };
+    },
+    [
+      disabled,
+      onPDFUploaded,
+      onUploadError,
+      t,
+      uploadPDFAndProcess,
+      validateFile,
+    ]
+  );
 
   // Handle drag and drop events
   const handleDragOver = useCallback(
@@ -301,7 +357,7 @@ export function PDFUpload({
         processFile(files[0]);
       }
     },
-    [disabled]
+    [disabled, processFile]
   );
 
   // Handle file input change
