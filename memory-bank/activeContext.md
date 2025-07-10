@@ -1,117 +1,206 @@
 # Active Development Context
 
-## Current Task: Recipe Storage and Management (Task 5)
+## Current Session Focus
 
-**Status**: COMPLETED ✅  
-**Priority**: High
+### Task 6.13: Document AI OCR Module - ENHANCED ✅
 
-### Recently Completed Subtasks:
+**Latest Enhancement Completed**:
+Enhanced Document AI response parsing to handle comprehensive recipe data extraction with full frontend integration.
 
-#### ✅ Task 5.6 - Recipe Detail Component (COMPLETED)
+**Key Improvements**:
 
-- Created comprehensive recipe detail page at `/recipes/[id]/page.tsx`
-- Built supporting components:
-  - `RecipeDeleteButton.tsx` - Recipe deletion with confirmation
-  - `RecipeFavoriteButton.tsx` - Toggle favorites with optimistic updates
-  - `MacroDisplay.tsx` - Nutritional information display
-  - `IngredientsList.tsx` - Recipe ingredients display
-  - `InstructionsList.tsx` - Cooking instructions display
-- Added comprehensive translation keys for all languages (EN/ES/PL)
-- Initialized recipe categories in database
+1. **Enhanced Entity Parsing**:
 
-#### ✅ Task 5.7 - Create Recipe Forms for CRUD Operations (COMPLETED)
+   - **Properties Support**: Now handles entities with properties arrays (as seen in r.md example)
+   - **Multiple Entity Types**: Supports ingredients, instructions, categories, nutritional information with properties
+   - **Comprehensive Field Extraction**: Title, description, ingredients, instructions, timing, difficulty, cuisine, tags, nutritional info
 
-- Created comprehensive `RecipeForm.tsx` component with:
-  - Multi-tab interface (Basic Info, Ingredients & Steps, Nutrition)
-  - Dynamic ingredient management with add/remove functionality
-  - Dynamic instruction management with numbered steps
-  - Category selection with checkbox interface
-  - Tag management system with add/remove
-  - Form validation using react-hook-form and Zod
-  - Support for both create and edit modes
-- Implemented new recipe page using RecipeForm
-- Created edit recipe page at `/recipes/[id]/edit/page.tsx`
-- Added comprehensive translation keys for form fields
-- Form successfully handles complex nested data structures (ingredients array, instructions array)
+2. **Advanced Nutritional Information**:
 
-#### ✅ Task 5.8 - Implement Recipe Categorization (COMPLETED)
+   - **Direct Entity Extraction**: Handles calories, protein, carbs, fat from specific entities
+   - **Property-Based Extraction**: Parses nutrition entities with properties using regex patterns
+   - **Multiple Pattern Support**: Recognizes various formats (calories, kcal, cal, etc.)
 
-- Enhanced category system functionality with visual icons
-- Added category filtering to recipe lists
-- Implemented category statistics display
+3. **Category and Tag Management**:
 
-#### ✅ Task 5.9 - Add Favorites Feature (COMPLETED)
+   - **Categories as Tags**: Automatically converts Document AI categories to recipe tags
+   - **Cuisine Integration**: Extracted cuisine becomes both a field and a tag
+   - **Difficulty Mapping**: Difficulty level extraction with proper form enum mapping
+   - **Smart Tag Generation**: Includes source type, import method, and extracted metadata
 
-- Implemented user favorites functionality with optimistic UI
-- Added favorites filtering to recipe lists
-- Created favorites management interface
+4. **Frontend Integration**:
+   - **Complete Interface Updates**: All components now handle enhanced extraction data
+   - **Detailed User Feedback**: Shows extraction summary with counts and field details
+   - **Proper Form Mapping**: Transforms Document AI data to RecipeFormData structure
+   - **Nutritional Field Population**: Automatically populates calories, protein, carbs, fat
 
-#### ✅ Task 5.10 - Implement Filtering and Sorting (COMPLETED)
+**Technical Implementation**:
 
-- Added recipe filtering by categories, difficulty, tags
-- Implemented sorting by date, popularity, title, calories, prep time
-- Created filter/sort controls UI with clear filters functionality
+```typescript
+// Enhanced entity extraction with properties support
+for (const entity of ingredientEntities) {
+  if (entity.mentionText?.trim()) {
+    ingredients.push(parseIngredientText(entity.mentionText));
+  } else if (entity.properties && entity.properties.length > 0) {
+    for (const prop of entity.properties) {
+      if (prop.mentionText?.trim()) {
+        ingredients.push(parseIngredientText(prop.mentionText));
+      }
+    }
+  }
+}
 
-#### ✅ Task 5.11 - Add Pagination Support (COMPLETED)
+// Comprehensive nutritional information extraction
+const nutritionFields = [
+  { key: "calories", patterns: ["calories", "kcal", "cal"] },
+  { key: "protein", patterns: ["protein"] },
+  { key: "carbs", patterns: ["carbs", "carbohydrates", "carbohydrate"] },
+  { key: "fat", patterns: ["fat", "fats"] },
+];
 
-- Enhanced pagination with page number buttons and ellipsis display
-- Added First/Last page navigation and items per page selector
-- Implemented "Go to page" input for large datasets
-- Optimized state management and TypeScript typing
+// Category to tag conversion with comprehensive tagging
+const tags = ["imported", "document-ai"];
+tags.push(...extractedCategories);
+if (cuisine) tags.push(cuisine.toLowerCase());
+if (difficulty) tags.push(difficulty.toLowerCase());
+```
 
-#### ✅ Task 5.12 - Implement Recipe Search Functionality (COMPLETED)
+## Environment Variables Required
 
-- Created debounced search with custom hook (300ms delay)
-- Implemented real-time search suggestions dropdown
-- Added recent searches with localStorage persistence
-- Created search suggestions API with title, tag, and category matching
-- Enhanced UX with loading states and keyboard navigation
+```env
+GOOGLE_CLOUD_API_KEY=path/to/service-account-key.json
+GOOGLE_CLOUD_PROJECT_ID=your-project-id
+DOCUMENT_AI_CUSTOM_PROCESSOR_ID=your-processor-id
+DOCUMENT_AI_LOCATION=us # or eu
+```
 
-## Technical Notes
+## Recent Changes
 
-### Current Architecture Status:
+### Backend Enhancements
 
-- ✅ Recipe schema and types defined (`src/types/recipe.ts`)
-- ✅ Recipe server actions implemented (`src/actions/recipe.ts`)
-- ✅ Recipe detail view fully functional
-- ✅ Recipe CRUD forms completed with validation
-- ✅ Recipe categories initialized in database
-- ✅ Recipe listing with advanced filtering and sorting
-- ✅ Pagination system with comprehensive controls
-- ✅ Search functionality with suggestions and history
-- ✅ Complete recipe management system operational
+1. **Enhanced parseDocumentAIResponse Function**:
 
-### Key Implementation Details:
+   - Properties array support for entities without direct mentionText
+   - Multiple pattern matching for nutritional information
+   - Comprehensive tag generation from categories, cuisine, difficulty
+   - Improved instruction parsing with multi-step support
 
-- Using react-hook-form with Zod validation for form management
-- Implemented type assertions to handle complex TypeScript inference issues
-- Form supports both create and edit modes with proper data loading
-- All components follow mobile-first responsive design
-- Comprehensive internationalization support
-- Debounced search for optimal performance
-- LocalStorage integration for user preferences
+2. **TypeScript Improvements**:
+   - Fixed type safety for entity property handling
+   - Proper string type guarantees for description field
+   - Enhanced DocumentEntity interface with properties support
 
-### Task 5 Completion Summary:
+### Frontend Enhancements
 
-**ALL SUBTASKS COMPLETED** - The Recipe Storage and Management module is now fully functional with:
+1. **RecipeImport Component**:
 
-1. **Database & Schema** ✅ - Complete Prisma schema with all relationships
-2. **CRUD Operations** ✅ - Full create, read, update, delete functionality
-3. **UI Components** ✅ - RecipeCard, RecipesList, RecipeDetail, RecipeForm
-4. **Categorization** ✅ - Visual category system with filtering
-5. **Favorites** ✅ - User favorites with optimistic updates
-6. **Filtering & Sorting** ✅ - Multi-criteria filtering with various sort options
-7. **Pagination** ✅ - Advanced pagination with customizable display
-8. **Search** ✅ - Debounced search with suggestions and history
-9. **Performance** ✅ - Optimized queries, loading states, and user experience
-10. **Accessibility** ✅ - ARIA labels, keyboard navigation, screen reader support
+   - Updated ImportedRecipeData interface with all new fields
+   - Enhanced extraction logging for debugging
+   - Comprehensive data transformation for all import methods
 
-## Next Development Focus:
+2. **Upload Components (Image & PDF)**:
 
-With Recipe Storage and Management complete, ready to move to:
+   - Extended ExtractedRecipeData interfaces
+   - Detailed extraction success messages showing field counts
+   - Enhanced data mapping to include all Document AI fields
 
-1. **Task 6**: Recipe Import and OCR - URL scraping, image OCR, PDF processing
-2. **Task 7**: Edamam API Integration - Nutritional calculation and meal planning
-3. **Task 8**: Meal Plan Calendar Interface - Drag-and-drop calendar system
+3. **New Recipe Page**:
+   - Smart difficulty mapping from text to form enum
+   - Automatic nutritional information population
+   - Comprehensive tag pre-population from extraction
 
-## Ready for: Next major feature implementation
+## Sample Document AI Response Handling
+
+Based on the r.md example, the system now properly handles:
+
+- **Categories**: "DINNERS", "LUNCHES", "PASTA SALADS" → converted to tags
+- **Ingredients with Properties**: Empty mentionText entities with populated properties arrays
+- **Multi-step Instructions**: Complex instruction entities with proper step parsing
+- **Nutritional Information**: Structured nutrition entities with property-based extraction
+- **Timing Information**: Multiple timing entity patterns (prep_time, preparationTime, etc.)
+
+## Next Steps
+
+### Immediate Testing
+
+1. **Enhanced Extraction Validation**:
+
+   - Test with various recipe documents (images and PDFs)
+   - Verify all entity types are properly extracted
+   - Validate nutritional information accuracy
+
+2. **Form Integration Testing**:
+
+   - Ensure all extracted fields properly populate in RecipeForm
+   - Test difficulty enum mapping edge cases
+   - Verify tag and category integration
+
+3. **User Experience Validation**:
+   - Test extraction feedback messages
+   - Verify extraction summary accuracy
+   - Ensure error handling for partial extractions
+
+### Future Enhancements
+
+1. **Category Auto-mapping**:
+
+   - Map extracted cuisine/tags to existing recipe categories
+   - Pre-select relevant categories based on extraction
+
+2. **Confidence-based UI**:
+
+   - Show extraction confidence scores to users
+   - Highlight low-confidence fields for review
+
+3. **Batch Processing**:
+   - Support for multiple document uploads
+   - Bulk recipe import with extracted data review
+
+## Development Notes
+
+### Architecture Decisions
+
+1. **Comprehensive Field Extraction**: Prioritized complete data extraction over speed
+2. **Properties Fallback**: Always check entity properties when mentionText is empty
+3. **Smart Tag Generation**: Automatic tagging from multiple sources for better categorization
+4. **Type Safety**: Enhanced TypeScript coverage for complex entity structures
+
+### Performance Considerations
+
+- Entity parsing performance maintained despite enhanced complexity
+- Frontend transformation optimized for large datasets
+- Extraction feedback generated efficiently without UI blocking
+
+## Testing Checklist
+
+- [x] Enhanced Document AI response parsing
+- [x] Frontend interface updates
+- [x] Form field population
+- [x] TypeScript compilation
+- [ ] Upload JPEG recipe image with nutritional info
+- [ ] Upload PDF cookbook with categories
+- [ ] Test difficulty mapping edge cases
+- [ ] Verify tag generation accuracy
+- [ ] Test partial extraction scenarios
+- [ ] Validate nutritional information accuracy
+
+## Recent Technical Decisions
+
+1. **Properties-First Approach**:
+
+   - Always check entity properties when mentionText is empty
+   - Maintains compatibility with various Document AI processor configurations
+
+2. **Comprehensive Tag Strategy**:
+
+   - Multiple tag sources (categories, cuisine, difficulty, source type)
+   - Unique tag filtering to prevent duplicates
+
+3. **Enhanced User Feedback**:
+
+   - Detailed extraction summaries instead of generic success messages
+   - Field-specific feedback for better user understanding
+
+4. **Type-Safe Transformations**:
+   - Explicit type checking for difficulty enum mapping
+   - Safe handling of optional nutritional information fields
