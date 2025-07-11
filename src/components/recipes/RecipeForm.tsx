@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Loader2, TestTube2 } from "lucide-react";
 import type { RecipeCategory } from "@/generated/prisma";
 import { getMockRecipeData } from "@/lib/recipe-mocks";
+import { RecipeEnhancer, QuickQualityIndicator } from "./RecipeEnhancer";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData;
@@ -106,6 +107,17 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     loadCategories();
   }, []);
 
+  // Populate form when recipe data is provided (for imports or edits)
+  useEffect(() => {
+    if (recipe) {
+      console.log("Populating form with recipe data:", recipe);
+      form.reset(recipe);
+      toast.success(
+        "Recipe data imported successfully! Review and edit as needed."
+      );
+    }
+  }, [recipe, form]);
+
   const onSubmit = async (data: RecipeFormData) => {
     setIsSubmitting(true);
 
@@ -162,10 +174,11 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Tabs defaultValue="basics" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basics">Basic Info</TabsTrigger>
             <TabsTrigger value="ingredients">Ingredients & Steps</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+            <TabsTrigger value="ai-assistant">AI Assistant</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basics" className="space-y-6">
@@ -186,6 +199,17 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                {/* Real-time quality indicator */}
+                <QuickQualityIndicator
+                  recipe={{
+                    ...form.getValues(),
+                    servings: form.getValues().servings || 1,
+                    tags: form.getValues().tags || [],
+                    categoryIds: form.getValues().categoryIds || [],
+                    isPublic: form.getValues().isPublic || false,
+                  }}
                 />
 
                 <FormField
@@ -747,6 +771,25 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="ai-assistant" className="space-y-6">
+            <RecipeEnhancer
+              recipe={{
+                ...form.getValues(),
+                servings: form.getValues().servings || 1,
+                tags: form.getValues().tags || [],
+                categoryIds: form.getValues().categoryIds || [],
+                isPublic: form.getValues().isPublic || false,
+              }}
+              onEnhancementApplied={(enhancedRecipe) => {
+                form.reset(enhancedRecipe);
+                toast.success(
+                  "AI enhancements applied! Review the updated form."
+                );
+              }}
+              autoAnalyze={true}
+            />
           </TabsContent>
         </Tabs>
 

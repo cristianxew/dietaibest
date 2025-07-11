@@ -1,6 +1,19 @@
+console.log(
+  "[Recipe Import] Route file loaded - /api/recipes/import/url/route.ts"
+);
+
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
+import { getBrowserUseClient, BrowserUseError } from "@/lib/browser-use";
+import {
+  generateTaskId,
+  createTask,
+  updateTaskProgress,
+  isTaskCancelled,
+} from "@/lib/progress-tracker";
+
+import { TaskStatus as BrowserUseTaskStatus } from "@/lib/browser-use";
 
 // URL validation schema
 const urlImportSchema = z.object({
@@ -86,9 +99,10 @@ function isSupportedDomain(url: string): boolean {
   }
 }
 
-// Simple extraction function (to be enhanced with actual scraping logic)
-async function extractRecipeFromUrl(url: string) {
-  // Check URL reachability with a timeout
+/**
+ * Validate URL reachability with timeout
+ */
+async function validateUrlReachability(url: string): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
@@ -106,125 +120,73 @@ async function extractRecipeFromUrl(url: string) {
     if (!response.ok) {
       throw new Error(`URL returned status ${response.status}`);
     }
-
-    // For now, return mock data with domain-specific variations
-    // In a real implementation, this would scrape the actual recipe data
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname.replace("www.", "");
-
-    // Simulate different recipe structures based on domain
-    interface MockRecipeData {
-      title: string;
-      description: string;
-      prepTime: number;
-      cookTime: number;
-      servings: number;
-      difficulty: string;
-      ingredients: Array<{
-        name: string;
-        amount: number;
-        unit: string;
-      }>;
-      instructions: string[];
-      tags: string[];
-      calories: number;
-      protein: number;
-      carbs: number;
-      fat: number;
-    }
-
-    const mockRecipes: Record<string, MockRecipeData> = {
-      "allrecipes.com": {
-        title: "Classic Chicken Parmesan",
-        description:
-          "A crispy breaded chicken breast topped with marinara sauce and melted mozzarella cheese",
-        prepTime: 20,
-        cookTime: 30,
-        servings: 4,
-        difficulty: "medium",
-        ingredients: [
-          { name: "Chicken breasts", amount: 4, unit: "pieces" },
-          { name: "Breadcrumbs", amount: 1, unit: "cup" },
-          { name: "Parmesan cheese", amount: 0.5, unit: "cup" },
-          { name: "Eggs", amount: 2, unit: "whole" },
-          { name: "Marinara sauce", amount: 2, unit: "cups" },
-          { name: "Mozzarella cheese", amount: 1, unit: "cup" },
-          { name: "Olive oil", amount: 0.25, unit: "cup" },
-        ],
-        instructions: [
-          "Pound chicken breasts to even thickness",
-          "Set up breading station with flour, beaten eggs, and breadcrumb mixture",
-          "Coat chicken in flour, then egg, then breadcrumbs",
-          "Heat olive oil in a large skillet over medium-high heat",
-          "Cook chicken until golden brown on both sides",
-          "Transfer to baking dish and top with marinara and mozzarella",
-          "Bake at 375°F for 20 minutes until cheese is melted and bubbly",
-        ],
-        tags: ["italian", "chicken", "cheese", "comfort food"],
-        calories: 420,
-        protein: 38,
-        carbs: 22,
-        fat: 18,
-      },
-      default: {
-        title: `Imported Recipe from ${domain}`,
-        description: "A delicious recipe imported from the web",
-        prepTime: 15,
-        cookTime: 30,
-        servings: 4,
-        difficulty: "medium",
-        ingredients: [
-          { name: "Main ingredient", amount: 1, unit: "lb" },
-          { name: "Secondary ingredient", amount: 2, unit: "cups" },
-          { name: "Seasoning", amount: 1, unit: "tbsp" },
-          { name: "Liquid", amount: 1, unit: "cup" },
-        ],
-        instructions: [
-          "Prepare all ingredients",
-          "Combine ingredients according to recipe",
-          "Cook until done",
-          "Serve and enjoy",
-        ],
-        tags: ["imported"],
-        calories: 350,
-        protein: 25,
-        carbs: 30,
-        fat: 15,
-      },
-    };
-
-    // Select appropriate mock data based on domain
-    const recipeData = domain.includes("allrecipes.com")
-      ? mockRecipes["allrecipes.com"]
-      : mockRecipes["default"];
-
-    // Add source URL and metadata
-    return {
-      ...recipeData,
-      sourceUrl: url,
-      importedFrom: domain,
-      importedAt: new Date().toISOString(),
-    };
   } catch (error) {
     clearTimeout(timeout);
 
     if (error instanceof Error) {
       if (error.name === "AbortError") {
-        throw new Error("URL request timed out");
+        throw new Error(
+          "URL request timed out - the website might be slow or unavailable"
+        );
       }
-      throw error;
+      throw new Error(`Cannot access URL: ${error.message}`);
     }
-    throw new Error("Failed to fetch URL");
+    throw new Error("Failed to validate URL accessibility");
   }
 }
 
+/**
+ * Build an intelligent prompt for recipe extraction
+ */
+function buildRecipeExtractionPrompt(url: string): string {
+  return `Navigate to ${url} and extract complete recipe information. 
+
+IMPORTANT: Handle any pop-ups, cookie banners, or registration walls automatically.
+
+Extract the following data in JSON format:
+{
+  "title": "Recipe title",
+  "description": "Brief description", 
+  "prepTime": minutes_as_number,
+  "cookTime": minutes_as_number,
+  "servings": number_of_servings,
+  "difficulty": "easy|medium|hard",
+  "ingredients": [
+    {
+      "name": "ingredient name",
+      "amount": number,
+      "unit": "measurement unit"
+    }
+  ],
+  "instructions": ["step 1", "step 2", ...],
+  "tags": ["category", "cuisine", ...],
+  "calories": optional_number,
+  "protein": optional_number_in_grams,
+  "carbs": optional_number_in_grams, 
+  "fat": optional_number_in_grams
+}
+
+Requirements:
+- Navigate past any registration walls or pop-ups
+- Handle dynamic content loading
+- Extract from recipe cards, structured data, or recipe text
+- If multiple recipes on page, extract the main/featured recipe
+- Return only valid JSON, no additional text
+- If recipe not found, return {"error": "No recipe found on this page"}`;
+}
+
 export async function POST(request: NextRequest) {
+  console.log("[Recipe Import] POST request received");
+
   try {
     // Check authentication
     const session = await getServerSession();
     if (!session?.user?.email) {
+      console.log("[Recipe Import] Unauthorized request");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    console.log(`[Recipe Import] Authenticated user: ${session.user.email}`);
 
     // Parse and validate request body
     const body = await request.json();
@@ -242,32 +204,200 @@ export async function POST(request: NextRequest) {
     // Check if domain is supported (warning, not error)
     const isSupported = isSupportedDomain(url);
 
-    try {
-      // Extract recipe data
-      const recipeData = await extractRecipeFromUrl(url);
+    // Generate unique task ID for progress tracking
+    const taskId = generateTaskId();
+    const userId = session.user.email;
 
+    console.log(
+      `[Recipe Import] Generated taskId: ${taskId} for user: ${userId}`
+    );
+
+    try {
+      // Create task for progress tracking
+      console.log(`[Recipe Import] Creating task: ${taskId}`);
+      createTask(taskId, userId, "Initializing recipe extraction...");
+      console.log(`[Recipe Import] Task created successfully: ${taskId}`);
+
+      // Start extraction asynchronously
+      (async () => {
+        try {
+          // Validate URL
+          updateTaskProgress(taskId, 5, "Validating URL accessibility...");
+          await validateUrlReachability(url);
+
+          // Initialize client
+          updateTaskProgress(taskId, 10, "Initializing Browser Use API...");
+          const browserUseClient = getBrowserUseClient();
+
+          // Build prompt
+          const taskPrompt = buildRecipeExtractionPrompt(url);
+
+          // Start Browser Use task
+          updateTaskProgress(taskId, 15, "Starting extraction task...");
+          const taskResponse = await browserUseClient.startTask({
+            task: taskPrompt,
+            save_browser_data: false,
+          });
+
+          const browserTaskId = taskResponse.id;
+
+          updateTaskProgress(
+            taskId,
+            20,
+            "Task started. Monitoring progress..."
+          );
+
+          // Poll status
+          let attempts = 0;
+          const maxAttempts = 90; // Up to ~3 minutes with backoff
+          let delay = 2000; // Start with 2s delay
+
+          while (attempts < maxAttempts) {
+            if (isTaskCancelled(taskId)) {
+              updateTaskProgress(taskId, 0, "Cancelling task...", "cancelled");
+              await browserUseClient.stopTask(browserTaskId);
+              updateTaskProgress(
+                taskId,
+                0,
+                "Task cancelled by user",
+                "cancelled"
+              );
+              return;
+            }
+
+            attempts++;
+            let taskDetails: BrowserUseTaskStatus;
+
+            try {
+              // Use getTask to get full details including output/result
+              taskDetails = await browserUseClient.getTask(browserTaskId);
+            } catch (error) {
+              if (error instanceof BrowserUseError && error.status === 404) {
+                // Task not yet available - continue polling
+                const progress = Math.min(95, (attempts / maxAttempts) * 100);
+                updateTaskProgress(
+                  taskId,
+                  progress,
+                  "Waiting for task to become available..."
+                );
+                await new Promise((resolve) => setTimeout(resolve, delay));
+                delay = Math.min(delay * 1.2, 10000);
+                continue;
+              }
+              throw error;
+            }
+
+            const progress = Math.min(95, (attempts / maxAttempts) * 100);
+            updateTaskProgress(
+              taskId,
+              progress,
+              `Status: ${taskDetails.status}${
+                taskDetails.message ? " - " + taskDetails.message : ""
+              }`
+            );
+
+            if (
+              taskDetails.status === "completed" ||
+              taskDetails.status === "finished"
+            ) {
+              updateTaskProgress(taskId, 95, "Fetching final results...");
+
+              // We already have the full task details from getTask above
+              const result = taskDetails.output || taskDetails.result;
+
+              if (!result) {
+                updateTaskProgress(
+                  taskId,
+                  0,
+                  "Task completed but no recipe data was extracted",
+                  "failed"
+                );
+                return;
+              }
+
+              try {
+                // Parse the recipe data
+                const recipeData = await browserUseClient.parseRecipeData(
+                  result,
+                  url
+                );
+
+                updateTaskProgress(
+                  taskId,
+                  100,
+                  "Recipe extraction completed successfully",
+                  "completed",
+                  recipeData
+                );
+                return;
+              } catch (parseError) {
+                console.error(
+                  "[Recipe Import] Failed to parse recipe data:",
+                  parseError
+                );
+                updateTaskProgress(
+                  taskId,
+                  0,
+                  parseError instanceof Error
+                    ? parseError.message
+                    : "Failed to parse recipe data",
+                  "failed"
+                );
+                return;
+              }
+            }
+
+            if (taskDetails.status === "failed") {
+              updateTaskProgress(
+                taskId,
+                0,
+                taskDetails.error || "Extraction failed",
+                "failed"
+              );
+              return;
+            }
+
+            // Wait before next poll
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            delay = Math.min(delay * 1.2, 10000);
+          }
+
+          updateTaskProgress(taskId, 0, "Extraction timed out", "failed");
+        } catch (error) {
+          console.error("[Recipe Import] Extraction error:", error);
+          const errorMsg =
+            error instanceof Error ? error.message : "Unknown error";
+          updateTaskProgress(taskId, 0, `Error: ${errorMsg}`, "failed");
+        }
+      })();
+
+      // Return task ID immediately for client-side tracking
       return NextResponse.json({
-        success: true,
-        data: recipeData,
+        taskId,
+        message: "Recipe extraction started. Check progress for updates.",
         warnings: isSupported
           ? []
           : [
               "This website might not be fully supported. Extraction results may vary.",
             ],
       });
-    } catch (extractError) {
-      console.error("Recipe extraction error:", extractError);
+    } catch (error) {
+      console.error("Recipe import error:", error);
+
+      // Mark task as failed
+      updateTaskProgress(taskId, 0, "Initialization failed", "failed");
 
       return NextResponse.json(
         {
           error:
-            extractError instanceof Error
-              ? extractError.message
-              : "Failed to extract recipe from URL",
+            error instanceof Error
+              ? error.message
+              : "Failed to start recipe extraction",
           details:
-            "The website might not be accessible or doesn't contain a valid recipe format.",
+            "Unable to initialize the extraction process. Please try again.",
+          taskId,
         },
-        { status: 422 }
+        { status: 500 }
       );
     }
   } catch (error) {

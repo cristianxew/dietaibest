@@ -44,6 +44,8 @@ export default function NewRecipePage() {
   );
 
   const handleImportComplete = useCallback((recipeData: ImportedRecipeData) => {
+    console.log("Raw imported recipe data:", recipeData);
+
     // Transform imported data to match RecipeFormData structure
     const transformedData: RecipeFormData = {
       title: recipeData.title,
@@ -53,7 +55,7 @@ export default function NewRecipePage() {
       prepTime: recipeData.prepTime,
       cookTime: recipeData.cookTime,
       servings: recipeData.servings || 1,
-      // Map difficulty from extracted text to form enum
+      // Map difficulty from extracted text to form enum, with fallback
       difficulty: recipeData.difficulty?.toLowerCase() as
         | "easy"
         | "medium"
@@ -61,14 +63,19 @@ export default function NewRecipePage() {
         | undefined,
       // Set default values for required fields
       imageUrl: "",
-      tags: recipeData.tags || [],
+      // Combine tags and cuisine into tags array
+      tags: [
+        ...(recipeData.tags || []),
+        ...(recipeData.cuisine ? [recipeData.cuisine] : []),
+      ].filter(Boolean), // Remove any empty values
       categoryIds: [],
       isPublic: false,
-      // Map nutritional information
+      // Map nutritional information with all available fields
       calories: recipeData.nutritionalInfo?.calories,
       protein: recipeData.nutritionalInfo?.protein,
       carbs: recipeData.nutritionalInfo?.carbs,
       fat: recipeData.nutritionalInfo?.fat,
+      // These fields might not be extracted but are part of the form schema
       fiber: undefined,
       sugar: undefined,
       sodium: undefined,

@@ -1,0 +1,711 @@
+/**
+ * Browser Use API Client
+ *
+ * This client integrates with Browser Use Cloud API to enable AI-powered
+ * web scraping for recipe extraction from complex websites.
+ *
+ * Features:
+ * - AI-powered navigation and anti-bot handling
+ * - Dynamic content extraction from JavaScript-heavy sites
+ * - Real-time task progress tracking
+ * - Rate limiting and usage monitoring
+ * - Comprehensive error handling with fallback strategies
+ */
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
+
+export interface BrowserUseConfig {
+  apiKey: string;
+  baseUrl?: string;
+  timeout?: number;
+  retryAttempts?: number;
+  rateLimitPerMinute?: number;
+}
+
+export interface RecipeExtractionRequest {
+  url: string;
+  options?: {
+    waitForNetworkIdle?: boolean;
+    handleAntiBot?: boolean;
+    extractStructuredData?: boolean;
+    timeout?: number;
+  };
+}
+
+export interface BrowserUseTaskRequest {
+  task: string;
+  save_browser_data?: boolean;
+  llm_model?: string;
+}
+
+export interface BrowserUseTaskResponse {
+  id: string;
+}
+
+export interface TaskStatus {
+  id: string;
+  status:
+    | "pending"
+    | "running"
+    | "completed"
+    | "finished"
+    | "failed"
+    | "cancelled";
+  progress?: number;
+  message?: string;
+  result?: unknown;
+  output?: unknown;
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface ExtractedRecipeData {
+  title: string;
+  description: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  difficulty: "easy" | "medium" | "hard";
+  imageUrl: string;
+  ingredients: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+  }>;
+  instructions: string[];
+  tags: string[];
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  sourceUrl: string;
+  extractedAt: string;
+  confidence: number; // 0-1 confidence score for extraction quality
+}
+
+export class BrowserUseError extends Error {
+  public code: string;
+  public status?: number;
+  public details?: unknown;
+
+  constructor(
+    code: string,
+    message: string,
+    status?: number,
+    details?: unknown
+  ) {
+    super(message);
+    this.name = "BrowserUseError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
+  }
+}
+
+// ============================================================================
+// Rate Limiting & Usage Tracking
+// ============================================================================
+
+interface RateLimitTracker {
+  requests: number[];
+  lastReset: number;
+}
+
+class RateLimiter {
+  private trackers = new Map<string, RateLimitTracker>();
+  private windowMs = 60 * 1000; // 1 minute window
+
+  async checkLimit(key: string, limit: number): Promise<boolean> {
+    const now = Date.now();
+    const tracker = this.trackers.get(key) || { requests: [], lastReset: now };
+
+    // Remove requests outside the window
+    tracker.requests = tracker.requests.filter(
+      (timestamp) => now - timestamp < this.windowMs
+    );
+
+    if (tracker.requests.length >= limit) {
+      return false; // Rate limit exceeded
+    }
+
+    tracker.requests.push(now);
+    this.trackers.set(key, tracker);
+    return true;
+  }
+
+  getUsage(key: string): { current: number; limit: number; resetAt: number } {
+    const tracker = this.trackers.get(key) || {
+      requests: [],
+      lastReset: Date.now(),
+    };
+    const now = Date.now();
+    const validRequests = tracker.requests.filter(
+      (timestamp) => now - timestamp < this.windowMs
+    );
+
+    return {
+      current: validRequests.length,
+      limit: 20, // Default limit
+      resetAt: now + this.windowMs,
+    };
+  }
+}
+
+// ============================================================================
+// Browser Use API Client
+// ============================================================================
+
+export class BrowserUseClient {
+  private config: Required<BrowserUseConfig>;
+  private rateLimiter: RateLimiter;
+
+  constructor(config: BrowserUseConfig) {
+    this.config = {
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl || "https://api.browser-use.com/api/v1",
+      timeout: config.timeout || 120000, // 2 minutes default
+      retryAttempts: config.retryAttempts || 3,
+      rateLimitPerMinute: config.rateLimitPerMinute || 20,
+    };
+
+    this.rateLimiter = new RateLimiter();
+
+    if (!this.config.apiKey) {
+      throw new Error("Browser Use API key is required");
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Core API Methods
+  // --------------------------------------------------------------------------
+
+  /**
+   * Start a new Browser Use task for recipe extraction
+   */
+  async startTask(
+    request: BrowserUseTaskRequest
+  ): Promise<BrowserUseTaskResponse> {
+    // Check rate limit
+    const canProceed = await this.rateLimiter.checkLimit(
+      "browser-use-api",
+      this.config.rateLimitPerMinute
+    );
+
+    if (!canProceed) {
+      throw this.createError(
+        "RATE_LIMIT_EXCEEDED",
+        "API rate limit exceeded",
+        429
+      );
+    }
+
+    const response = await this.makeRequest<BrowserUseTaskResponse>(
+      "/run-task",
+      {
+        method: "POST",
+        body: JSON.stringify(request),
+      }
+    );
+    console.log("response", response);
+
+    return response;
+  }
+
+  /**
+   * Get task status and results
+   */
+  async getTaskStatus(taskId: string): Promise<TaskStatus> {
+    const response = await this.makeRequest<TaskStatus>(
+      `/task/${taskId}/status`,
+      {
+        method: "GET",
+      }
+    );
+
+    return response;
+  }
+
+  /**
+   * Get full task details, including results
+   */
+  async getTask(taskId: string): Promise<TaskStatus> {
+    const response = await this.makeRequest<TaskStatus>(`/task/${taskId}`, {
+      method: "GET",
+    });
+
+    return response;
+  }
+
+  /**
+   * Stop a running task
+   */
+  async stopTask(taskId: string): Promise<void> {
+    await this.makeRequest(`/stop-task`, {
+      method: "PUT",
+      body: JSON.stringify({ task_id: taskId }),
+    });
+  }
+
+  /**
+   * Get current API usage statistics
+   */
+  getUsageStats() {
+    return this.rateLimiter.getUsage("browser-use-api");
+  }
+
+  // --------------------------------------------------------------------------
+  // Recipe Extraction Methods
+  // --------------------------------------------------------------------------
+
+  /**
+   * Extract recipe data from a URL using AI-powered browser automation
+   */
+  async extractRecipeFromUrl(
+    request: RecipeExtractionRequest
+  ): Promise<ExtractedRecipeData> {
+    const taskPrompt = this.buildRecipeExtractionPrompt(
+      request.url,
+      request.options
+    );
+
+    // Start the extraction task
+    const taskResponse = await this.startTask({
+      task: taskPrompt,
+      save_browser_data: false, // Don't save cookies for recipe extraction
+    });
+
+    // Poll for completion
+    const result = await this.pollTaskCompletion(taskResponse.id);
+
+    // Parse and validate the extracted data
+    return this.parseRecipeData(result, request.url);
+  }
+
+  /**
+   * Build an intelligent prompt for recipe extraction
+   */
+  private buildRecipeExtractionPrompt(
+    url: string,
+    options?: RecipeExtractionRequest["options"]
+  ): string {
+    const basePrompt = `Navigate to ${url} and extract complete recipe information. 
+
+IMPORTANT: Handle any pop-ups, cookie banners, or registration walls automatically.
+
+Extract the following data in JSON format:
+{
+  "title": "Recipe title",
+  "description": "Brief description", 
+  "prepTime": minutes_as_number,
+  "cookTime": minutes_as_number,
+  "servings": number_of_servings,
+  "difficulty": "easy|medium|hard",
+  "imageUrl": "recipe main image url",
+  "ingredients": [
+    {
+      "name": "ingredient name",
+      "amount": number,
+      "unit": "measurement unit"
+    }
+  ],
+  "instructions": ["step 1", "step 2", ...],
+  "tags": ["category", "cuisine", ...],
+  "calories": optional_number,
+  "protein": optional_number_in_grams,
+  "carbs": optional_number_in_grams, 
+  "fat": optional_number_in_grams
+}
+
+Requirements:
+- Navigate past any registration walls or pop-ups
+- Handle dynamic content loading
+- Extract from recipe cards, structured data, or recipe text
+- If multiple recipes on page, extract the main/featured recipe
+- Return only valid JSON, no additional text
+- If recipe not found, return {"error": "No recipe found on this page"}`;
+
+    if (options?.waitForNetworkIdle) {
+      return (
+        basePrompt +
+        "\n\nWait for all network activity to complete before extracting."
+      );
+    }
+
+    return basePrompt;
+  }
+
+  /**
+   * Poll task until completion with exponential backoff and 404 handling
+   */
+  private async pollTaskCompletion(
+    taskId: string,
+    maxAttempts: number = 60
+  ): Promise<unknown> {
+    let attempts = 0;
+    let delay = 2000; // Start with 2 second delay
+
+    // Initial delay to allow task to initialize
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    while (attempts < maxAttempts) {
+      attempts++;
+
+      try {
+        const taskDetails = await this.getTask(taskId);
+
+        if (
+          taskDetails.status === "completed" ||
+          taskDetails.status === "finished"
+        ) {
+          console.log(`[BrowserUse] Task ${taskId} completed successfully`);
+
+          // Browser Use API returns results in 'output' field, not 'result'
+          const resultData = taskDetails.output || taskDetails.result;
+          return resultData;
+        }
+
+        if (taskDetails.status === "failed") {
+          throw this.createError(
+            "TASK_FAILED",
+            taskDetails.error || "Task failed without error message",
+            500,
+            { taskId, status: taskDetails }
+          );
+        }
+
+        if (taskDetails.status === "cancelled") {
+          throw this.createError("TASK_CANCELLED", "Task was cancelled", 400, {
+            taskId,
+          });
+        }
+
+        // Task is still running, wait before next poll
+        console.log(
+          `[BrowserUse] Task ${taskId} status: ${taskDetails.status}, attempt ${attempts}`
+        );
+      } catch (error) {
+        if (error instanceof BrowserUseError && error.status === 404) {
+          console.warn(
+            `[BrowserUse] Task ${taskId} not found (404). Attempt: ${attempts}/${maxAttempts}. Will continue polling.`
+          );
+          // If we've been trying for over 3 minutes, then fail.
+          if (attempts > 18) {
+            throw this.createError(
+              "TASK_UNAVAILABLE",
+              "Task could not be found after multiple attempts. It may have failed to create.",
+              404,
+              { taskId, attempts }
+            );
+          }
+          // Otherwise, just continue the loop and wait for the next poll.
+        } else {
+          // Re-throw other errors (API errors, network issues, etc.)
+          throw error;
+        }
+      }
+
+      // Wait before next poll (exponential backoff, max 10 seconds)
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.min(delay, 10000))
+      );
+      delay = Math.min(delay * 1.2, 10000);
+    }
+
+    throw this.createError(
+      "TASK_TIMEOUT",
+      "Task polling timed out after maximum attempts. " +
+        "The task may have completed successfully but took longer than expected. " +
+        "Please check your Browser Use dashboard for the actual task status.",
+      408,
+      { taskId, attempts: maxAttempts }
+    );
+  }
+
+  /**
+   * Parse and validate extracted recipe data
+   */
+  public parseRecipeData(
+    result: unknown,
+    sourceUrl: string
+  ): ExtractedRecipeData {
+    try {
+      // Handle case where result is a string (JSON response)
+      const data = typeof result === "string" ? JSON.parse(result) : result;
+
+      if (data.error) {
+        throw this.createError("EXTRACTION_FAILED", data.error, 422);
+      }
+
+      // Validate required fields
+      const required = ["title", "ingredients", "instructions"];
+      for (const field of required) {
+        if (!data[field]) {
+          throw this.createError(
+            "INVALID_DATA",
+            `Missing required field: ${field}`,
+            422
+          );
+        }
+      }
+
+      // Calculate confidence score based on data completeness
+      const confidence = this.calculateConfidence(data);
+
+      return {
+        title: String(data.title).trim(),
+        description: String(data.description || "").trim(),
+        prepTime: Number(data.prepTime) || 0,
+        cookTime: Number(data.cookTime) || 0,
+        servings: Number(data.servings) || 4,
+        difficulty: this.validateDifficulty(data.difficulty),
+        ingredients: this.validateIngredients(data.ingredients),
+        instructions: this.validateInstructions(data.instructions),
+        imageUrl: data.imageUrl || "",
+        tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+        calories: data.calories ? Number(data.calories) : undefined,
+        protein: data.protein ? Number(data.protein) : undefined,
+        carbs: data.carbs ? Number(data.carbs) : undefined,
+        fat: data.fat ? Number(data.fat) : undefined,
+        sourceUrl,
+        extractedAt: new Date().toISOString(),
+        confidence,
+      };
+    } catch (error) {
+      if (error instanceof BrowserUseError) {
+        throw error;
+      }
+
+      throw this.createError(
+        "PARSE_ERROR",
+        "Failed to parse extracted recipe data",
+        422,
+        {
+          originalError: error instanceof Error ? error.message : String(error),
+          result,
+        }
+      );
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Validation & Utility Methods
+  // --------------------------------------------------------------------------
+
+  private validateDifficulty(difficulty: unknown): "easy" | "medium" | "hard" {
+    const normalized = String(difficulty).toLowerCase();
+    if (["easy", "medium", "hard"].includes(normalized)) {
+      return normalized as "easy" | "medium" | "hard";
+    }
+    return "medium"; // Default fallback
+  }
+
+  private validateIngredients(
+    ingredients: ExtractedRecipeData["ingredients"]
+  ): ExtractedRecipeData["ingredients"] {
+    if (!Array.isArray(ingredients)) {
+      throw this.createError(
+        "INVALID_DATA",
+        "Ingredients must be an array",
+        422
+      );
+    }
+
+    return ingredients.map((ing, index) => {
+      if (typeof ing === "string") {
+        // Parse simple string format "2 cups flour"
+        return this.parseIngredientString(ing);
+      }
+
+      return {
+        name: String(ing.name || `Ingredient ${index + 1}`).trim(),
+        amount: Number(ing.amount) || 1,
+        unit: String(ing.unit || "unit").trim(),
+      };
+    });
+  }
+
+  private parseIngredientString(ingredient: string): {
+    name: string;
+    amount: number;
+    unit: string;
+  } {
+    // Simple regex to extract "amount unit name" pattern
+    const match = ingredient.match(/^(\d+(?:\.\d+)?)\s*(\w+)\s+(.+)$/);
+
+    if (match) {
+      return {
+        amount: parseFloat(match[1]),
+        unit: match[2],
+        name: match[3].trim(),
+      };
+    }
+
+    // Fallback for unparseable ingredients
+    return {
+      name: ingredient.trim(),
+      amount: 1,
+      unit: "unit",
+    };
+  }
+
+  private validateInstructions(instructions: unknown[]): string[] {
+    if (!Array.isArray(instructions)) {
+      throw this.createError(
+        "INVALID_DATA",
+        "Instructions must be an array",
+        422
+      );
+    }
+
+    return instructions
+      .map(String)
+      .map((step) => step.trim())
+      .filter((step) => step.length > 0);
+  }
+
+  private calculateConfidence(data: Record<string, unknown>): number {
+    let score = 0;
+    let maxScore = 0;
+
+    // Required fields (40% of score)
+    const requiredFields = ["title", "ingredients", "instructions"];
+    requiredFields.forEach((field) => {
+      maxScore += 40 / requiredFields.length;
+      if (
+        data[field] &&
+        (Array.isArray(data[field])
+          ? data[field].length > 0
+          : String(data[field]).trim())
+      ) {
+        score += 40 / requiredFields.length;
+      }
+    });
+
+    // Optional but valuable fields (60% of score)
+    const optionalFields = [
+      { field: "description", weight: 10 },
+      { field: "prepTime", weight: 10 },
+      { field: "cookTime", weight: 10 },
+      { field: "servings", weight: 5 },
+      { field: "difficulty", weight: 5 },
+      { field: "calories", weight: 10 },
+      { field: "protein", weight: 5 },
+      { field: "carbs", weight: 5 },
+    ];
+
+    optionalFields.forEach(({ field, weight }) => {
+      maxScore += weight;
+      if (data[field] && String(data[field]).trim()) {
+        score += weight;
+      }
+    });
+
+    return Math.round((score / maxScore) * 100) / 100; // Round to 2 decimal places
+  }
+
+  // --------------------------------------------------------------------------
+  // HTTP Client & Error Handling
+  // --------------------------------------------------------------------------
+
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestInit
+  ): Promise<T> {
+    const url = `${this.config.baseUrl}${endpoint}`;
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= this.config.retryAttempts; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          this.config.timeout
+        );
+
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            Authorization: `Bearer ${this.config.apiKey}`,
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw this.createError(
+            "API_ERROR",
+            errorData.message || `HTTP ${response.status}`,
+            response.status,
+            errorData
+          );
+        }
+
+        return (await response.json()) as T;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        if (attempt === this.config.retryAttempts) {
+          break;
+        }
+
+        // Exponential backoff between retries
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError!;
+  }
+
+  private createError(
+    code: string,
+    message: string,
+    status?: number,
+    details?: unknown
+  ): BrowserUseError {
+    return new BrowserUseError(code, message, status, details);
+  }
+}
+
+// ============================================================================
+// Exports & Factory Function
+// ============================================================================
+
+/**
+ * Create a configured Browser Use client instance
+ */
+export function createBrowserUseClient(
+  config?: Partial<BrowserUseConfig>
+): BrowserUseClient {
+  const apiKey = config?.apiKey || process.env.BROWSER_USE_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "Browser Use API key is required. Set BROWSER_USE_API_KEY environment variable."
+    );
+  }
+
+  return new BrowserUseClient({
+    apiKey,
+    ...config,
+  });
+}
+
+/**
+ * Default client instance (singleton)
+ */
+let defaultClient: BrowserUseClient | null = null;
+
+export function getBrowserUseClient(): BrowserUseClient {
+  if (!defaultClient) {
+    defaultClient = createBrowserUseClient();
+  }
+  return defaultClient;
+}

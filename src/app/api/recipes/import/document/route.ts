@@ -287,9 +287,9 @@ function parseDocumentAIResponse(
     );
     description = descMatch
       ? descMatch[1].trim()
-      : `Recipe extracted from ${
+      : `No description found. Recipe extracted from ${
           mimeType === "application/pdf" ? "PDF" : "image"
-        } using Google Cloud Document AI`;
+        }`;
   }
 
   // Extract ingredients - handle both mentionText and properties
