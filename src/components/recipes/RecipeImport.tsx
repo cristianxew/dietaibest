@@ -36,7 +36,6 @@ import {
 import { toast } from "sonner";
 import { ImageUpload } from "./ImageUpload";
 import { PDFUpload } from "./PDFUpload";
-import { ProgressTracker } from "./ProgressTracker";
 
 // URL validation schema
 const urlSchema = z.object({
@@ -70,16 +69,11 @@ interface ImportedRecipeData {
   difficulty?: string;
   cuisine?: string;
   tags?: string[];
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
   calories?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
+  imageUrl?: string;
 }
 
 interface RecipeImportProps {
@@ -93,12 +87,10 @@ export function RecipeImport({
 }: RecipeImportProps) {
   const t = useTranslations("recipes");
   const [importStatus, setImportStatus] = useState<
-    "idle" | "processing" | "success" | "error"
+    "idle" | "importing" | "success" | "error"
   >("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState("url");
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
 
   const form = useForm<UrlFormData>({
     resolver: zodResolver(urlSchema),
@@ -107,19 +99,16 @@ export function RecipeImport({
     },
   });
 
-  // Handle URL import (existing functionality)
   const handleUrlSubmit = async (data: UrlFormData) => {
     if (!data.url.trim()) {
-      toast.error("URL Required, Please enter a URL to import a recipe.");
+      toast.error("URL Required: Please enter a URL to import a recipe.");
       return;
     }
-    setIsLoading(true);
-    setImportStatus("processing");
+
+    setImportStatus("importing");
     setErrorMessage("");
-    setCurrentTaskId(null);
 
     try {
-      // Call the backend API endpoint to import the recipe
       const response = await fetch("/api/recipes/import/url", {
         method: "POST",
         headers: {
@@ -131,28 +120,32 @@ export function RecipeImport({
       const result = await response.json();
 
       if (!response.ok) {
-        setImportStatus("error");
-        const errorMsg =
+        throw new Error(
           result.error ||
-          "Unable to extract recipe from this URL. The website might not be supported or the page doesn't contain a valid recipe.";
-        setErrorMessage(errorMsg);
-        toast.error(errorMsg);
-        setCurrentTaskId(null);
-        setIsLoading(false);
-        return;
+            "Unable to extract recipe from this URL. The website might not be supported or the page doesn't contain a valid recipe."
+        );
       }
-      console.log("result", result);
 
-      if (result.taskId) {
-        setImportStatus("processing");
-        setCurrentTaskId(result.taskId);
-        // ProgressTracker will now take over
-      } else if (result.success && result.data) {
-        // Handle immediate success (e.g., from cache or fallback)
-        handleImportSuccess(result.data, result.warnings);
-      } else {
-        throw new Error("Invalid response from server");
-      }
+      // Transform the result to match our interface
+      const transformedData: ImportedRecipeData = {
+        title: result.title || "Imported Recipe",
+        description: result.description || "",
+        ingredients: result.ingredients || [],
+        instructions: result.instructions || [],
+        prepTime: result.prepTime,
+        cookTime: result.cookTime,
+        servings: result.servings || 4,
+        difficulty: result.difficulty,
+        cuisine: result.cuisine,
+        tags: result.tags || [],
+        calories: result.calories,
+        protein: result.protein,
+        carbs: result.carbs,
+        fat: result.fat,
+        imageUrl: result.imageUrl,
+      };
+
+      handleImportSuccess(transformedData);
     } catch (error) {
       const errorMsg =
         error instanceof Error
@@ -161,33 +154,19 @@ export function RecipeImport({
       setImportStatus("error");
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
-      setCurrentTaskId(null);
-    } finally {
-      // Don't set isProcessing to false here, ProgressTracker handles it
     }
   };
 
-  const handleImportSuccess = (
-    data: ImportedRecipeData,
-    warnings?: string[]
-  ) => {
+  const handleImportSuccess = (data: ImportedRecipeData) => {
     setImportStatus("success");
     toast.success(t("importSuccess"));
-
-    if (warnings && warnings.length > 0) {
-      warnings.forEach((warning: string) => {
-        toast.warning(warning);
-      });
-    }
-
     onImportComplete?.(data);
+
+    // Reset form after success
     setTimeout(() => {
-      // Reset state after completion
-      setCurrentTaskId(null);
-      setIsLoading(false);
       form.reset();
       setImportStatus("idle");
-    }, 3000);
+    }, 2000);
   };
 
   // Handle image upload completion
@@ -218,10 +197,7 @@ export function RecipeImport({
     };
   }) => {
     if (imageData.extractedData) {
-      setImportStatus("success");
-
-      // Transform the extracted data to match the expected format
-      const extractedData: ImportedRecipeData = {
+      const transformedData: ImportedRecipeData = {
         title: imageData.extractedData.title,
         description: imageData.extractedData.description,
         ingredients: imageData.extractedData.ingredients,
@@ -232,22 +208,14 @@ export function RecipeImport({
         difficulty: imageData.extractedData.difficulty,
         cuisine: imageData.extractedData.cuisine,
         tags: imageData.extractedData.tags,
-        nutritionalInfo: imageData.extractedData.nutritionalInfo,
+        calories: imageData.extractedData.nutritionalInfo?.calories,
+        protein: imageData.extractedData.nutritionalInfo?.protein,
+        carbs: imageData.extractedData.nutritionalInfo?.carbs,
+        fat: imageData.extractedData.nutritionalInfo?.fat,
       };
 
-      console.log("Image extraction completed:", extractedData);
-
-      // Call the completion handler after a short delay for better UX
-      setTimeout(() => {
-        onImportComplete?.(extractedData);
-      }, 1000);
+      handleImportSuccess(transformedData);
     }
-  };
-
-  // Handle image upload error
-  const handleImageUploadError = (error: string) => {
-    setImportStatus("error");
-    setErrorMessage(error);
   };
 
   // Handle PDF upload completion
@@ -277,71 +245,35 @@ export function RecipeImport({
     };
   }) => {
     if (pdfData.extractedData) {
-      setImportStatus("success");
-      handleImportSuccess(pdfData.extractedData);
+      const transformedData: ImportedRecipeData = {
+        title: pdfData.extractedData.title,
+        description: pdfData.extractedData.description,
+        ingredients: pdfData.extractedData.ingredients,
+        instructions: pdfData.extractedData.instructions,
+        prepTime: pdfData.extractedData.prepTime,
+        cookTime: pdfData.extractedData.cookTime,
+        servings: pdfData.extractedData.servings,
+        difficulty: pdfData.extractedData.difficulty,
+        cuisine: pdfData.extractedData.cuisine,
+        tags: pdfData.extractedData.tags,
+        calories: pdfData.extractedData.nutritionalInfo?.calories,
+        protein: pdfData.extractedData.nutritionalInfo?.protein,
+        carbs: pdfData.extractedData.nutritionalInfo?.carbs,
+        fat: pdfData.extractedData.nutritionalInfo?.fat,
+      };
+
+      handleImportSuccess(transformedData);
     }
   };
 
-  // Handle PDF upload error
-  const handlePDFUploadError = (error: string) => {
+  // Handle upload errors
+  const handleUploadError = (error: string) => {
     setImportStatus("error");
     setErrorMessage(error);
+    toast.error(error);
   };
 
-  // Handle progress tracker completion
-  const handleProgressComplete = (
-    success: boolean,
-    data?: {
-      result?: ImportedRecipeData;
-      message?: string;
-      warnings?: string[];
-    }
-  ) => {
-    setCurrentTaskId(null);
-    setIsLoading(false);
-
-    if (success && data && data.result) {
-      // The actual recipe data is in the `result` property from the task
-      const recipe = data.result;
-      const transformedData: ImportedRecipeData = {
-        title: recipe.title || "Imported Recipe",
-        description: recipe.description || "",
-        prepTime: recipe.prepTime || 0,
-        cookTime: recipe.cookTime || 0,
-        servings: recipe.servings || 4,
-        difficulty: recipe.difficulty || "medium",
-        ingredients: recipe.ingredients || [],
-        instructions: recipe.instructions || [],
-        tags: recipe.tags || [],
-        nutritionalInfo: {
-          calories: recipe.calories,
-          protein: recipe.protein,
-          carbs: recipe.carbs,
-          fat: recipe.fat,
-        },
-      };
-      handleImportSuccess(transformedData, data.warnings);
-    } else {
-      setImportStatus("error");
-      const errorMsg = data?.message || "Failed to extract recipe from URL.";
-      setErrorMessage(errorMsg);
-      toast.error("Extraction Failed", {
-        description: errorMsg,
-      });
-    }
-  };
-
-  // Handle progress tracker cancellation
-  const handleProgressCancel = () => {
-    setCurrentTaskId(null);
-    setIsLoading(false);
-    setImportStatus("idle");
-    form.reset();
-
-    toast.info("Extraction Cancelled", {
-      description: "Recipe extraction was cancelled by the user.",
-    });
-  };
+  const isLoading = importStatus === "importing";
 
   return (
     <div className="space-y-6">
@@ -373,74 +305,52 @@ export function RecipeImport({
               <CardDescription>{t("importFromUrlDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!currentTaskId ? (
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(handleUrlSubmit)}
-                    className="space-y-4"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("recipeUrl")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://example.com/recipe/..."
-                              {...field}
-                              disabled={isLoading || importStatus === "success"}
-                              className={
-                                form.formState.errors.url
-                                  ? "border-red-500"
-                                  : ""
-                              }
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            {t("enterRecipeUrl")}
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Status display */}
-                    {importStatus === "error" && errorMessage && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{errorMessage}</AlertDescription>
-                      </Alert>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleUrlSubmit)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("recipeUrl")}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/recipe/..."
+                            {...field}
+                            disabled={isLoading}
+                          />
+                        </FormControl>
+                        <FormDescription>{t("enterRecipeUrl")}</FormDescription>
+                        <FormMessage />
+                      </FormItem>
                     )}
+                  />
 
-                    <div className="flex gap-3">
-                      <Button
-                        type="submit"
-                        disabled={isLoading || importStatus === "success"}
-                        className="flex-1"
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t("importing")}
-                          </>
-                        ) : (
-                          <>
-                            {t("importRecipeButton")}
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              ) : (
-                <ProgressTracker
-                  taskId={currentTaskId}
-                  onComplete={handleProgressComplete}
-                  onCancel={handleProgressCancel}
-                />
-              )}
+                  {importStatus === "error" && errorMessage && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{errorMessage}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button type="submit" disabled={isLoading} className="w-full">
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("importing")}
+                      </>
+                    ) : (
+                      <>
+                        {t("importRecipeButton")}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -476,8 +386,8 @@ export function RecipeImport({
             <CardContent className="space-y-4">
               <ImageUpload
                 onImageUploaded={handleImageUploaded}
-                onUploadError={handleImageUploadError}
-                maxFileSize={10} // 10MB
+                onUploadError={handleUploadError}
+                maxFileSize={10}
                 maxWidth={4000}
                 maxHeight={4000}
                 disabled={isLoading}
@@ -515,9 +425,9 @@ export function RecipeImport({
             <CardContent className="space-y-4">
               <PDFUpload
                 onPDFUploaded={handlePDFUploaded}
-                onUploadError={handlePDFUploadError}
-                maxFileSize={20} // 20MB
-                maxPages={15} // Document AI limit
+                onUploadError={handleUploadError}
+                maxFileSize={20}
+                maxPages={15}
                 disabled={isLoading}
               />
 

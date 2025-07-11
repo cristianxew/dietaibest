@@ -1,15 +1,7 @@
 /**
- * Browser Use API Client
+ * Browser Use API Client for Recipe Extraction
  *
- * This client integrates with Browser Use Cloud API to enable AI-powered
- * web scraping for recipe extraction from complex websites.
- *
- * Features:
- * - AI-powered navigation and anti-bot handling
- * - Dynamic content extraction from JavaScript-heavy sites
- * - Real-time task progress tracking
- * - Rate limiting and usage monitoring
- * - Comprehensive error handling with fallback strategies
+ * Simple client for extracting recipe data from URLs using Browser Use Cloud API.
  */
 
 // ============================================================================
@@ -21,7 +13,6 @@ export interface BrowserUseConfig {
   baseUrl?: string;
   timeout?: number;
   retryAttempts?: number;
-  rateLimitPerMinute?: number;
 }
 
 export interface RecipeExtractionRequest {
@@ -83,7 +74,7 @@ export interface ExtractedRecipeData {
   fat?: number;
   sourceUrl: string;
   extractedAt: string;
-  confidence: number; // 0-1 confidence score for extraction quality
+  confidence: number;
 }
 
 export class BrowserUseError extends Error {
@@ -106,61 +97,11 @@ export class BrowserUseError extends Error {
 }
 
 // ============================================================================
-// Rate Limiting & Usage Tracking
-// ============================================================================
-
-interface RateLimitTracker {
-  requests: number[];
-  lastReset: number;
-}
-
-class RateLimiter {
-  private trackers = new Map<string, RateLimitTracker>();
-  private windowMs = 60 * 1000; // 1 minute window
-
-  async checkLimit(key: string, limit: number): Promise<boolean> {
-    const now = Date.now();
-    const tracker = this.trackers.get(key) || { requests: [], lastReset: now };
-
-    // Remove requests outside the window
-    tracker.requests = tracker.requests.filter(
-      (timestamp) => now - timestamp < this.windowMs
-    );
-
-    if (tracker.requests.length >= limit) {
-      return false; // Rate limit exceeded
-    }
-
-    tracker.requests.push(now);
-    this.trackers.set(key, tracker);
-    return true;
-  }
-
-  getUsage(key: string): { current: number; limit: number; resetAt: number } {
-    const tracker = this.trackers.get(key) || {
-      requests: [],
-      lastReset: Date.now(),
-    };
-    const now = Date.now();
-    const validRequests = tracker.requests.filter(
-      (timestamp) => now - timestamp < this.windowMs
-    );
-
-    return {
-      current: validRequests.length,
-      limit: 20, // Default limit
-      resetAt: now + this.windowMs,
-    };
-  }
-}
-
-// ============================================================================
 // Browser Use API Client
 // ============================================================================
 
 export class BrowserUseClient {
   private config: Required<BrowserUseConfig>;
-  private rateLimiter: RateLimiter;
 
   constructor(config: BrowserUseConfig) {
     this.config = {
@@ -168,10 +109,7 @@ export class BrowserUseClient {
       baseUrl: config.baseUrl || "https://api.browser-use.com/api/v1",
       timeout: config.timeout || 120000, // 2 minutes default
       retryAttempts: config.retryAttempts || 3,
-      rateLimitPerMinute: config.rateLimitPerMinute || 20,
     };
-
-    this.rateLimiter = new RateLimiter();
 
     if (!this.config.apiKey) {
       throw new Error("Browser Use API key is required");
@@ -188,40 +126,11 @@ export class BrowserUseClient {
   async startTask(
     request: BrowserUseTaskRequest
   ): Promise<BrowserUseTaskResponse> {
-    // Check rate limit
-    const canProceed = await this.rateLimiter.checkLimit(
-      "browser-use-api",
-      this.config.rateLimitPerMinute
-    );
-
-    if (!canProceed) {
-      throw this.createError(
-        "RATE_LIMIT_EXCEEDED",
-        "API rate limit exceeded",
-        429
-      );
-    }
-
     const response = await this.makeRequest<BrowserUseTaskResponse>(
       "/run-task",
       {
         method: "POST",
         body: JSON.stringify(request),
-      }
-    );
-    console.log("response", response);
-
-    return response;
-  }
-
-  /**
-   * Get task status and results
-   */
-  async getTaskStatus(taskId: string): Promise<TaskStatus> {
-    const response = await this.makeRequest<TaskStatus>(
-      `/task/${taskId}/status`,
-      {
-        method: "GET",
       }
     );
 
@@ -237,23 +146,6 @@ export class BrowserUseClient {
     });
 
     return response;
-  }
-
-  /**
-   * Stop a running task
-   */
-  async stopTask(taskId: string): Promise<void> {
-    await this.makeRequest(`/stop-task`, {
-      method: "PUT",
-      body: JSON.stringify({ task_id: taskId }),
-    });
-  }
-
-  /**
-   * Get current API usage statistics
-   */
-  getUsageStats() {
-    return this.rateLimiter.getUsage("browser-use-api");
   }
 
   // --------------------------------------------------------------------------
@@ -274,7 +166,7 @@ export class BrowserUseClient {
     // Start the extraction task
     const taskResponse = await this.startTask({
       task: taskPrompt,
-      save_browser_data: false, // Don't save cookies for recipe extraction
+      save_browser_data: false,
     });
 
     // Poll for completion

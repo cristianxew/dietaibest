@@ -28,7 +28,6 @@ const PROTECTED_API_ROUTES = [
   "/api/recipes",
   "/api/shopping-lists",
   "/api/profiles",
-  "/api/progress",
 ];
 
 const PUBLIC_API_ROUTES = ["/api/auth", "/api/health"];

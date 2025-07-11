@@ -22,19 +22,16 @@ interface ImportedRecipeData {
   prepTime?: number;
   cookTime?: number;
   servings?: number;
+  imageUrl?: string;
   difficulty?: string;
   cuisine?: string;
   tags?: string[];
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
 }
 
-// Since we need to use client components for the import flow, we'll make this a client component
-// and use useTranslations instead of getTranslations
 export default function NewRecipePage() {
   const t = useTranslations("recipes");
   const locale = useLocale();
@@ -44,8 +41,6 @@ export default function NewRecipePage() {
   );
 
   const handleImportComplete = useCallback((recipeData: ImportedRecipeData) => {
-    console.log("Raw imported recipe data:", recipeData);
-
     // Transform imported data to match RecipeFormData structure
     const transformedData: RecipeFormData = {
       title: recipeData.title,
@@ -55,33 +50,26 @@ export default function NewRecipePage() {
       prepTime: recipeData.prepTime,
       cookTime: recipeData.cookTime,
       servings: recipeData.servings || 1,
-      // Map difficulty from extracted text to form enum, with fallback
       difficulty: recipeData.difficulty?.toLowerCase() as
         | "easy"
         | "medium"
         | "hard"
         | undefined,
-      // Set default values for required fields
-      imageUrl: "",
-      // Combine tags and cuisine into tags array
+      imageUrl: recipeData.imageUrl || "",
       tags: [
         ...(recipeData.tags || []),
         ...(recipeData.cuisine ? [recipeData.cuisine] : []),
-      ].filter(Boolean), // Remove any empty values
+      ].filter(Boolean),
       categoryIds: [],
       isPublic: false,
-      // Map nutritional information with all available fields
-      calories: recipeData.nutritionalInfo?.calories,
-      protein: recipeData.nutritionalInfo?.protein,
-      carbs: recipeData.nutritionalInfo?.carbs,
-      fat: recipeData.nutritionalInfo?.fat,
-      // These fields might not be extracted but are part of the form schema
+      calories: recipeData.calories,
+      protein: recipeData.protein,
+      carbs: recipeData.carbs,
+      fat: recipeData.fat,
       fiber: undefined,
       sugar: undefined,
       sodium: undefined,
     };
-
-    console.log("Transformed recipe data for form:", transformedData);
 
     setImportedData(transformedData);
     setShowImport(false);
@@ -103,18 +91,19 @@ export default function NewRecipePage() {
       </div>
 
       <div className="max-w-4xl mx-auto">
-        <div style={{ display: showImport ? "block" : "none" }}>
+        {showImport ? (
           <RecipeImport
             onImportComplete={handleImportComplete}
             onSkipImport={handleSkipImport}
           />
-        </div>
-        <div style={{ display: showImport ? "none" : "block" }}>
-          <h1 className="text-3xl font-bold tracking-tight mb-8">
-            {t("addRecipe")}
-          </h1>
-          <RecipeForm mode="create" recipe={importedData} />
-        </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-8">
+              {t("addRecipe")}
+            </h1>
+            <RecipeForm mode="create" recipe={importedData} />
+          </div>
+        )}
       </div>
     </div>
   );
