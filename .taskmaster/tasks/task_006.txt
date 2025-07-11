@@ -110,19 +110,19 @@ Show upload progress bar and final extraction status.
 ### Details:
 Check file integrity and queue for OCR extraction.
 
-## 9. Design PDF Input Frontend [pending]
+## 9. Design PDF Input Frontend [done]
 ### Dependencies: None
 ### Description: Build UI for PDF upload, supporting drag-and-drop and file selection.
 ### Details:
 Provide clear instructions and accept only PDF files.
 
-## 10. Implement PDF Validation and Feedback (Frontend) [pending]
+## 10. Implement PDF Validation and Feedback (Frontend) [done]
 ### Dependencies: 6.9
 ### Description: Validate PDF file type, size, and page count; provide user feedback for errors.
 ### Details:
 Display errors for corrupted or oversized PDFs.
 
-## 11. Handle PDF Submission and Status (Frontend) [pending]
+## 11. Handle PDF Submission and Status (Frontend) [done]
 ### Dependencies: 6.10
 ### Description: Manage upload progress, display extraction status, and notify users of results.
 ### Details:
@@ -148,10 +148,18 @@ Extend the existing `/api/recipes/import/image` endpoint to create a unified doc
 10. Add appropriate tests for PDF submission scenarios
 </info added on 2025-07-09T09:42:02.036Z>
 
-## 13. Implement Extraction Pipeline: OCR Module [pending]
+## 13. Implement Extraction Pipeline: OCR Module [in-progress]
 ### Dependencies: 6.8, 6.12
 ### Description: Develop OCR processing for images and scanned PDFs, extracting text and layout.
 ### Details:
+Integrate with OCR libraries or cloud services; handle multi-page documents.
+<info added on 2025-07-08T09:52:46.813Z>
+Develop a custom OCR solution using OpenAI's GPT-4o Vision API for recipe extraction from images and PDFs. Implement image preprocessing pipeline including contrast enhancement, noise reduction, and resolution optimization to improve OCR accuracy. Create specialized prompt engineering templates for structured recipe extraction, focusing on ingredients, measurements, instructions, and metadata. Implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.
+
+Build robust error handling for various failure modes including poor image quality, API timeouts, and malformed responses. Implement rate limiting and batch processing to manage API quotas and optimize throughput. Utilize GPT-4o for primary extraction as it demonstrates superior accuracy for complex recipe layouts compared to GPT-4o-mini, despite higher per-token costs.
+
+Develop cost optimization strategies including image downsampling where appropriate, caching of results, and selective processing of document pages. Create monitoring dashboard to track API usage, success rates, and extraction quality metrics. Ensure the solution handles multi-page documents by intelligently stitching content across pages.
+</info added on 2025-07-08T09:52:46.813Z>
 <info added on 2025-07-09T09:41:40.441Z>
 Develop a custom OCR solution using Google Cloud Document AI for recipe extraction from images and PDFs. Document AI is superior for recipe extraction due to its purpose-built structured document understanding, native handling of both images and PDFs, built-in entity extraction for ingredients/instructions, multi-language support (EN/ES/PL), custom processor training capabilities, and cost-effectiveness for production usage.
 
@@ -199,4 +207,10 @@ Implement robust error reporting and fallback mechanisms.
 ### Description: Improve accessibility (WCAG compliance) and add localization support for multiple languages.
 ### Details:
 Ensure screen reader compatibility, keyboard navigation, and translatable UI text.
+
+## 19. Implement Extracted Data to Recipe Form Population [pending]
+### Dependencies: 6.13
+### Description: Process the data extracted from Document AI API and automatically populate all relevant fields in the recipe form (title, ingredients, instructions, servings, cooking time, etc.) to allow users to review, edit, and save the imported recipe to their collection.
+### Details:
+
 

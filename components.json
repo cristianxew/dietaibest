@@ -1,6 +1,6 @@
 {
-  "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
+  "$schema": "https://tweakcn.com/r/themes/soft-pop.json",
+  "style": "soft-pop",
   "rsc": true,
   "tsx": true,
   "tailwind": {

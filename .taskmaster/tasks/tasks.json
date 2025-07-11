@@ -672,7 +672,7 @@
               12
             ],
             "details": "Integrate with OCR libraries or cloud services; handle multi-page documents.\n<info added on 2025-07-08T09:52:46.813Z>\nDevelop a custom OCR solution using OpenAI's GPT-4o Vision API for recipe extraction from images and PDFs. Implement image preprocessing pipeline including contrast enhancement, noise reduction, and resolution optimization to improve OCR accuracy. Create specialized prompt engineering templates for structured recipe extraction, focusing on ingredients, measurements, instructions, and metadata. Implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.\n\nBuild robust error handling for various failure modes including poor image quality, API timeouts, and malformed responses. Implement rate limiting and batch processing to manage API quotas and optimize throughput. Utilize GPT-4o for primary extraction as it demonstrates superior accuracy for complex recipe layouts compared to GPT-4o-mini, despite higher per-token costs.\n\nDevelop cost optimization strategies including image downsampling where appropriate, caching of results, and selective processing of document pages. Create monitoring dashboard to track API usage, success rates, and extraction quality metrics. Ensure the solution handles multi-page documents by intelligently stitching content across pages.\n</info added on 2025-07-08T09:52:46.813Z>\n<info added on 2025-07-09T09:41:40.441Z>\nDevelop a custom OCR solution using Google Cloud Document AI for recipe extraction from images and PDFs. Document AI is superior for recipe extraction due to its purpose-built structured document understanding, native handling of both images and PDFs, built-in entity extraction for ingredients/instructions, multi-language support (EN/ES/PL), custom processor training capabilities, and cost-effectiveness for production usage.\n\nImplementation plan:\n1. Set up Google Cloud project with Document AI API enabled\n2. Configure Form Parser processor for general recipe extraction\n3. Implement custom Recipe Parser processor for specialized recipe entity extraction\n4. Build document preprocessing pipeline (format conversion, image optimization)\n5. Create structured extraction logic to parse Document AI responses into recipe components\n6. Implement multi-language extraction with language detection\n7. Add custom processor training workflow to improve accuracy over time\n8. Build cost optimization with request batching and result caching\n9. Implement comprehensive error handling with fallback mechanisms\n10. Create monitoring dashboard for extraction quality and API usage metrics\n\nThis approach follows the successful Chefkoch case study pattern and provides a robust, scalable solution for both image and PDF recipe extraction. The system will handle multi-page documents by intelligently processing content across pages and implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.\n</info added on 2025-07-09T09:41:40.441Z>",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -682,7 +682,7 @@
             "dependencies": [
               4
             ],
-            "details": "Handle dynamic content, pagination, and anti-bot measures.",
+            "details": "Handle dynamic content, pagination, and anti-bot measures.\n<info added on 2025-07-10T14:03:23.603Z>\nImplement URL scraping using Browser Use API to handle dynamic content, pagination, and anti-bot measures. Replace the mock data approach in the existing `/src/app/api/recipes/import/url/route.ts` endpoint with a Browser Use API client. Configure the client with proper authentication using BROWSER_USE_API_KEY and implement a comprehensive recipe extraction workflow that leverages AI agents to navigate complex recipe websites. The implementation should extract structured recipe data (ingredients, instructions, nutrition, metadata) from JavaScript-heavy sites, handle pop-ups and registration walls, and support dynamic loading. Maintain the current mock system as a fallback strategy for API failures and implement real-time status updates during the scraping process. Ensure all technical integration preserves existing validation, security checks, and frontend compatibility while adding proper logging and retry logic.\n</info added on 2025-07-10T14:03:23.603Z>",
             "status": "pending",
             "testStrategy": ""
           },
@@ -731,6 +731,17 @@
             "details": "Ensure screen reader compatibility, keyboard navigation, and translatable UI text.",
             "status": "pending",
             "testStrategy": ""
+          },
+          {
+            "id": 19,
+            "title": "Implement Extracted Data to Recipe Form Population",
+            "description": "Process the data extracted from Document AI API and automatically populate all relevant fields in the recipe form (title, ingredients, instructions, servings, cooking time, etc.) to allow users to review, edit, and save the imported recipe to their collection.",
+            "details": "",
+            "status": "done",
+            "dependencies": [
+              "6.13"
+            ],
+            "parentTaskId": 6
           }
         ]
       },
@@ -1514,9 +1525,7 @@
         "id": 14,
         "title": "Accessibility Implementation",
         "description": "Ensure WCAG 2.1 AA compliance with proper ARIA attributes, keyboard navigation, focus management, and screen reader support.",
-        "details": "1. Audit all components for accessibility issues\n2. Implement proper ARIA attributes on interactive elements\n3. Create focus management system\n4. Build skip-to-main link\n5. Implement keyboard navigation for all interactive components\n6. Create high-contrast mode toggle\n7. Build live regions for status updates\n8. Implement proper heading hierarchy\n9. Create accessible form labels and error messages\n10. Build focus rings for keyboard navigation\n11. Implement proper alt text for images\n12. Create screen reader announcements for dynamic content",
-        "testStrategy": "1. Run Axe/Lighthouse accessibility audits\n2. Test keyboard navigation through all interfaces\n3. Verify screen reader announces content correctly\n4. Test focus management system\n5. Verify skip-to-main link works\n6. Test high-contrast mode toggle\n7. Verify live regions announce updates\n8. Test form validation error announcements",
-        "priority": "high",
+        "status": "pending",
         "dependencies": [
           1,
           2,
@@ -1527,135 +1536,150 @@
           10,
           12
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "1. Audit all components for accessibility issues\n2. Implement proper ARIA attributes on interactive elements\n3. Create focus management system\n4. Build skip-to-main link\n5. Implement keyboard navigation for all interactive components\n6. Create high-contrast mode toggle\n7. Build live regions for status updates\n8. Implement proper heading hierarchy\n9. Create accessible form labels and error messages\n10. Build focus rings for keyboard navigation\n11. Implement proper alt text for images\n12. Create screen reader announcements for dynamic content",
+        "testStrategy": "1. Run Axe/Lighthouse accessibility audits\n2. Test keyboard navigation through all interfaces\n3. Verify screen reader announces content correctly\n4. Test focus management system\n5. Verify skip-to-main link works\n6. Test high-contrast mode toggle\n7. Verify live regions announce updates\n8. Test form validation error announcements",
         "subtasks": [
           {
             "id": 1,
             "title": "Conduct Accessibility Audit",
             "description": "Perform a comprehensive audit of the application to identify existing accessibility barriers and prioritize remediation based on WCAG 2.1 AA standards.",
+            "status": "pending",
             "dependencies": [],
             "details": "Use automated tools and manual testing, including assistive technology, to document issues related to navigation, labeling, contrast, and dynamic content.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 2,
             "title": "Implement ARIA Roles and Attributes",
             "description": "Add appropriate ARIA roles, states, and properties to enhance semantic meaning and support assistive technologies.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Ensure all interactive elements and dynamic regions are properly described for screen readers and other AT.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 3,
             "title": "Enhance Keyboard Navigation",
             "description": "Ensure all interactive elements are accessible and operable via keyboard alone, with a logical tab order.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Test navigation using only the keyboard and address any focus traps or inaccessible controls.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 4,
             "title": "Manage Focus States",
             "description": "Implement and maintain visible focus indicators and logical focus management for all interactive elements.",
+            "status": "pending",
             "dependencies": [
               3
             ],
             "details": "Ensure focus is programmatically set after dynamic updates and that users never lose track of their position.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 5,
             "title": "Add Skip Links",
             "description": "Provide skip navigation links to allow users to bypass repetitive content and quickly access main sections.",
+            "status": "pending",
             "dependencies": [
               3
             ],
             "details": "Ensure skip links are visible on focus and function correctly with keyboard navigation.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 6,
             "title": "Implement High-Contrast Mode Support",
             "description": "Ensure the application supports high-contrast mode and meets minimum color contrast requirements.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Test with system high-contrast settings and verify all content remains readable and usable.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 7,
             "title": "Configure Live Regions",
             "description": "Use ARIA live regions to announce dynamic content changes to assistive technologies.",
+            "status": "pending",
             "dependencies": [
               2
             ],
             "details": "Mark notifications, alerts, and other dynamic updates with appropriate ARIA live attributes.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 8,
             "title": "Establish Heading Hierarchy",
             "description": "Structure content with a logical and semantic heading hierarchy for improved navigation by screen readers.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Ensure headings are not skipped and reflect the document structure accurately.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 9,
             "title": "Label All Form Elements",
             "description": "Ensure every form field has a clear, programmatically associated label for screen reader users.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Use <label> elements or ARIA labeling techniques as appropriate.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 10,
             "title": "Ensure Visible Focus Rings",
             "description": "Guarantee that focus rings are visible and meet contrast requirements for all interactive elements.",
+            "status": "pending",
             "dependencies": [
               4
             ],
             "details": "Test across browsers and platforms to confirm consistent focus visibility.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 11,
             "title": "Provide Descriptive Alt Text",
             "description": "Add meaningful alt text to all informative images and mark decorative images appropriately.",
+            "status": "pending",
             "dependencies": [
               1
             ],
             "details": "Review all images and ensure alt attributes are present and contextually accurate.",
-            "status": "pending",
             "testStrategy": ""
           },
           {
             "id": 12,
             "title": "Implement Screen Reader Announcements",
             "description": "Ensure important updates and changes are announced to screen reader users using ARIA and live regions.",
+            "status": "pending",
             "dependencies": [],
             "details": "Test with multiple screen readers to verify announcements are timely and clear.",
-            "status": "pending",
             "testStrategy": ""
+          },
+          {
+            "id": 13,
+            "title": "Ensure Browser Use API Integration is Accessible",
+            "description": "Make sure the Browser Use API integration for URL scraping meets accessibility requirements.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              7,
+              12
+            ],
+            "details": "1. Ensure loading states during Browser Use API calls are properly announced to screen readers\n2. Implement accessible error messages for failed scraping attempts\n3. Add proper ARIA attributes to progress indicators during scraping\n4. Ensure keyboard focus is managed appropriately during the scraping process\n5. Test the entire URL scraping workflow with screen readers and keyboard navigation",
+            "testStrategy": "1. Test the URL scraping process with screen readers to verify announcements\n2. Verify keyboard navigation works during the scraping process\n3. Ensure error states are properly communicated to assistive technologies\n4. Test focus management during and after scraping operations"
           }
         ]
       },
@@ -1964,7 +1988,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-07-09T20:56:41.771Z",
+      "updated": "2025-07-10T13:39:54.852Z",
       "description": "Tasks for master context"
     }
   }
