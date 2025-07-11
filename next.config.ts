@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       new URL("https://www.allrecipes.com/**"),
       new URL("https://images.unsplash.com/**"),
+      new URL("https://www.simplyrecipes.com/**"),
     ],
   },
   /* config options here */
