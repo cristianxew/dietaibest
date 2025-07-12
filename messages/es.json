@@ -324,6 +324,30 @@
                 "validationFailed": "Error en validación de archivo",
                 "processingFailed": "Error al procesar imagen"
             }
+        },
+        "urlUpload": {
+            "recipeUrl": "URL de la Receta",
+            "enterRecipeUrl": "Ingresa la URL completa de la receta que deseas importar",
+            "importButton": "Importar Receta",
+            "importAnother": "Importar Otra Receta",
+            "tryAgain": "Intentar de Nuevo",
+            "complete": "completo",
+            "extractionSuccess": "¡Receta extraída exitosamente desde URL!",
+            "status": {
+                "ready": "Listo para importar",
+                "validating": "Validando URL...",
+                "fetching": "Obteniendo datos de receta...",
+                "extractingRecipe": "Extrayendo información de receta...",
+                "analyzingContent": "Analizando contenido de receta...",
+                "complete": "Procesamiento completo"
+            },
+            "errors": {
+                "urlRequired": "URL es requerida",
+                "invalidUrl": "Por favor ingresa una URL válida",
+                "invalidProtocol": "La URL debe comenzar con http:// o https://",
+                "validationFailed": "Error en validación de URL",
+                "processingFailed": "Error al procesar URL"
+            }
         }
     },
     "mealPlans": {

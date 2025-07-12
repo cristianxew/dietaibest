@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Loader2, TestTube2 } from "lucide-react";
 import type { RecipeCategory } from "@/generated/prisma";
 import { getMockRecipeData } from "@/lib/recipe-mocks";
-import { RecipeEnhancer, QuickQualityIndicator } from "./RecipeEnhancer";
+// import { RecipeEnhancer, QuickQualityIndicator } from "./RecipeEnhancer";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData;
@@ -178,7 +178,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
             <TabsTrigger value="basics">Basic Info</TabsTrigger>
             <TabsTrigger value="ingredients">Ingredients & Steps</TabsTrigger>
             <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
-            <TabsTrigger value="ai-assistant">AI Assistant</TabsTrigger>
+            {/* <TabsTrigger value="ai-assistant">AI Assistant</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="basics" className="space-y-6">
@@ -202,7 +202,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                 />
 
                 {/* Real-time quality indicator */}
-                <QuickQualityIndicator
+                {/* <QuickQualityIndicator
                   recipe={{
                     ...form.getValues(),
                     servings: form.getValues().servings || 1,
@@ -210,7 +210,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                     categoryIds: form.getValues().categoryIds || [],
                     isPublic: form.getValues().isPublic || false,
                   }}
-                />
+                /> */}
 
                 <FormField
                   control={form.control}
@@ -773,7 +773,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="ai-assistant" className="space-y-6">
+          {/* <TabsContent value="ai-assistant" className="space-y-6">
             <RecipeEnhancer
               recipe={{
                 ...form.getValues(),
@@ -790,7 +790,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
               }}
               autoAnalyze={true}
             />
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
 
         <div className="flex justify-end gap-4">

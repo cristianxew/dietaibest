@@ -324,6 +324,30 @@
                 "validationFailed": "Walidacja pliku nie powiodła się",
                 "processingFailed": "Nie udało się przetworzyć obrazu"
             }
+        },
+        "urlUpload": {
+            "recipeUrl": "URL Przepisu",
+            "enterRecipeUrl": "Wprowadź pełny adres URL przepisu, który chcesz zaimportować",
+            "importButton": "Importuj Przepis",
+            "importAnother": "Importuj Kolejny Przepis",
+            "tryAgain": "Spróbuj Ponownie",
+            "complete": "ukończone",
+            "extractionSuccess": "Przepis został pomyślnie wyodrębniony z URL!",
+            "status": {
+                "ready": "Gotowy do importu",
+                "validating": "Walidacja URL...",
+                "fetching": "Pobieranie danych przepisu...",
+                "extractingRecipe": "Wyodrębnianie informacji o przepisie...",
+                "analyzingContent": "Analizowanie treści przepisu...",
+                "complete": "Przetwarzanie zakończone"
+            },
+            "errors": {
+                "urlRequired": "URL jest wymagany",
+                "invalidUrl": "Proszę wprowadzić prawidłowy URL",
+                "invalidProtocol": "URL musi zaczynać się od http:// lub https://",
+                "validationFailed": "Walidacja URL nie powiodła się",
+                "processingFailed": "Nie udało się przetworzyć URL"
+            }
         }
     },
     "mealPlans": {

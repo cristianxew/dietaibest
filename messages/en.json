@@ -324,6 +324,30 @@
                 "validationFailed": "File validation failed",
                 "processingFailed": "Failed to process image"
             }
+        },
+        "urlUpload": {
+            "recipeUrl": "Recipe URL",
+            "enterRecipeUrl": "Enter the full URL of the recipe you want to import",
+            "importButton": "Import Recipe",
+            "importAnother": "Import Another Recipe",
+            "tryAgain": "Try Again",
+            "complete": "complete",
+            "extractionSuccess": "Recipe extracted successfully from URL!",
+            "status": {
+                "ready": "Ready to import",
+                "validating": "Validating URL...",
+                "fetching": "Fetching recipe data...",
+                "extractingRecipe": "Extracting recipe information...",
+                "analyzingContent": "Analyzing recipe content...",
+                "complete": "Processing complete"
+            },
+            "errors": {
+                "urlRequired": "URL is required",
+                "invalidUrl": "Please enter a valid URL",
+                "invalidProtocol": "URL must start with http:// or https://",
+                "validationFailed": "URL validation failed",
+                "processingFailed": "Failed to process URL"
+            }
         }
     },
     "mealPlans": {

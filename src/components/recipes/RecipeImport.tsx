@@ -2,10 +2,6 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,46 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  ArrowRight,
-  Link2,
-  Image,
-  FileText,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link2, Image, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ImageUpload } from "./ImageUpload";
 import { PDFUpload } from "./PDFUpload";
-
-// URL validation schema
-const urlSchema = z.object({
-  url: z
-    .string()
-    .url("Please enter a valid URL")
-    .refine((url) => {
-      try {
-        const urlObj = new URL(url);
-        return urlObj.protocol === "http:" || urlObj.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "URL must start with http:// or https://"),
-});
-
-type UrlFormData = z.infer<typeof urlSchema>;
+import { URLUpload } from "./URLUpload";
 
 interface ImportedRecipeData {
   title: string;
@@ -86,87 +49,21 @@ export function RecipeImport({
   onSkipImport,
 }: RecipeImportProps) {
   const t = useTranslations("recipes");
-  const [importStatus, setImportStatus] = useState<
-    "idle" | "importing" | "success" | "error"
-  >("idle");
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const [activeTab, setActiveTab] = useState("url");
 
-  const form = useForm<UrlFormData>({
-    resolver: zodResolver(urlSchema),
-    defaultValues: {
-      url: "",
-    },
-  });
-
-  const handleUrlSubmit = async (data: UrlFormData) => {
-    if (!data.url.trim()) {
-      toast.error("URL Required: Please enter a URL to import a recipe.");
-      return;
-    }
-
-    setImportStatus("importing");
-    setErrorMessage("");
-
-    try {
-      const response = await fetch("/api/recipes/import/url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: data.url }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          result.error ||
-            "Unable to extract recipe from this URL. The website might not be supported or the page doesn't contain a valid recipe."
-        );
-      }
-
-      // Transform the result to match our interface
-      const transformedData: ImportedRecipeData = {
-        title: result.title || "Imported Recipe",
-        description: result.description || "",
-        ingredients: result.ingredients || [],
-        instructions: result.instructions || [],
-        prepTime: result.prepTime,
-        cookTime: result.cookTime,
-        servings: result.servings || 4,
-        difficulty: result.difficulty,
-        cuisine: result.cuisine,
-        tags: result.tags || [],
-        calories: result.calories,
-        protein: result.protein,
-        carbs: result.carbs,
-        fat: result.fat,
-        imageUrl: result.imageUrl,
-      };
-
-      handleImportSuccess(transformedData);
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred. Please try again.";
-      setImportStatus("error");
-      setErrorMessage(errorMsg);
-      toast.error(errorMsg);
-    }
-  };
-
   const handleImportSuccess = (data: ImportedRecipeData) => {
-    setImportStatus("success");
     toast.success(t("importSuccess"));
     onImportComplete?.(data);
+  };
 
-    // Reset form after success
-    setTimeout(() => {
-      form.reset();
-      setImportStatus("idle");
-    }, 2000);
+  // Handle URL upload completion
+  const handleURLUploaded = (urlData: {
+    url: string;
+    extractedData?: ImportedRecipeData;
+  }) => {
+    if (urlData.extractedData) {
+      handleImportSuccess(urlData.extractedData);
+    }
   };
 
   // Handle image upload completion
@@ -268,12 +165,8 @@ export function RecipeImport({
 
   // Handle upload errors
   const handleUploadError = (error: string) => {
-    setImportStatus("error");
-    setErrorMessage(error);
     toast.error(error);
   };
-
-  const isLoading = importStatus === "importing";
 
   return (
     <div className="space-y-6">
@@ -305,52 +198,10 @@ export function RecipeImport({
               <CardDescription>{t("importFromUrlDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleUrlSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("recipeUrl")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com/recipe/..."
-                            {...field}
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <FormDescription>{t("enterRecipeUrl")}</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {importStatus === "error" && errorMessage && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{errorMessage}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button type="submit" disabled={isLoading} className="w-full">
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t("importing")}
-                      </>
-                    ) : (
-                      <>
-                        {t("importRecipeButton")}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
+              <URLUpload
+                onURLUploaded={handleURLUploaded}
+                onUploadError={handleUploadError}
+              />
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -367,7 +218,6 @@ export function RecipeImport({
                 variant="outline"
                 className="w-full"
                 onClick={onSkipImport}
-                disabled={isLoading}
               >
                 {t("createRecipeManually")}
               </Button>
@@ -390,7 +240,6 @@ export function RecipeImport({
                 maxFileSize={10}
                 maxWidth={4000}
                 maxHeight={4000}
-                disabled={isLoading}
               />
 
               <div className="relative">
@@ -408,7 +257,6 @@ export function RecipeImport({
                 variant="outline"
                 className="w-full"
                 onClick={onSkipImport}
-                disabled={isLoading}
               >
                 {t("createRecipeManually")}
               </Button>
@@ -428,7 +276,6 @@ export function RecipeImport({
                 onUploadError={handleUploadError}
                 maxFileSize={20}
                 maxPages={15}
-                disabled={isLoading}
               />
 
               <div className="relative">
@@ -446,7 +293,6 @@ export function RecipeImport({
                 variant="outline"
                 className="w-full"
                 onClick={onSkipImport}
-                disabled={isLoading}
               >
                 {t("createRecipeManually")}
               </Button>
