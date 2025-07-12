@@ -21,6 +21,8 @@
 /build
 /src/generated
 /temp
+/test-results
+/playwright-report
 
 # misc
 .DS_Store

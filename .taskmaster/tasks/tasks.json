@@ -683,7 +683,7 @@
               4
             ],
             "details": "Handle dynamic content, pagination, and anti-bot measures.\n<info added on 2025-07-10T14:03:23.603Z>\nImplement URL scraping using Browser Use API to handle dynamic content, pagination, and anti-bot measures. Replace the mock data approach in the existing `/src/app/api/recipes/import/url/route.ts` endpoint with a Browser Use API client. Configure the client with proper authentication using BROWSER_USE_API_KEY and implement a comprehensive recipe extraction workflow that leverages AI agents to navigate complex recipe websites. The implementation should extract structured recipe data (ingredients, instructions, nutrition, metadata) from JavaScript-heavy sites, handle pop-ups and registration walls, and support dynamic loading. Maintain the current mock system as a fallback strategy for API failures and implement real-time status updates during the scraping process. Ensure all technical integration preserves existing validation, security checks, and frontend compatibility while adding proper logging and retry logic.\n</info added on 2025-07-10T14:03:23.603Z>",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -694,7 +694,7 @@
               12
             ],
             "details": "Support both native and scanned PDFs; handle complex layouts.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -707,7 +707,7 @@
               15
             ],
             "details": "Verify correct data extraction, error handling, and user feedback for all scenarios.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1988,7 +1988,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-07-10T13:39:54.852Z",
+      "updated": "2025-07-12T16:16:41.863Z",
       "description": "Tasks for master context"
     }
   }

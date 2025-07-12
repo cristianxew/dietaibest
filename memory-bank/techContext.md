@@ -67,6 +67,15 @@
 - **Cursor Rules**: 5 comprehensive rule files for development consistency
 - **Memory Bank**: 6 documentation files for project context and progress
 
+### Testing Framework
+
+- **Vitest**: Fast unit test framework with Jest-compatible API
+- **React Testing Library**: Component testing with user-centric approach
+- **Playwright**: Cross-browser end-to-end testing (Chromium, Firefox, WebKit)
+- **JSdom**: DOM environment for unit tests
+- **Coverage Reporting**: Built-in coverage with text, JSON, and HTML output
+- **Test Structure**: Organized in `tests/unit/`, `tests/integration/`, and `e2e/` directories
+
 ## Technical Constraints
 
 ### Development Standards
