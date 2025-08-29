@@ -20,6 +20,7 @@ const PROTECTED_ROUTES = [
   "/meal-plans",
   "/recipes",
   "/shopping-lists",
+  "/nutrition",
 ];
 
 const PROTECTED_API_ROUTES = [
@@ -28,6 +29,7 @@ const PROTECTED_API_ROUTES = [
   "/api/recipes",
   "/api/shopping-lists",
   "/api/profiles",
+  "/api/nutrition",
 ];
 
 const PUBLIC_API_ROUTES = ["/api/auth", "/api/health"];

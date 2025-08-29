@@ -7,6 +7,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RecipeFormData, recipeFormSchema } from "@/types/recipe";
 import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
+import { useNutritionAnalysis } from "@/hooks/use-nutrition-analysis";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,10 +32,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Plus, Trash2, Loader2, TestTube2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Loader2,
+  TestTube2,
+  AlertCircle,
+  Sparkles,
+} from "lucide-react";
 import type { RecipeCategory } from "@/generated/prisma";
 import { getMockRecipeData } from "@/lib/recipe-mocks";
+import { NutritionFactsDisplay } from "./NutritionFactsDisplay";
+import { DietBadges } from "./DietBadges";
+import { AllergenWarnings } from "./AllergenWarnings";
 // import { RecipeEnhancer, QuickQualityIndicator } from "./RecipeEnhancer";
 
 interface RecipeFormProps {
@@ -49,6 +62,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [manualNutritionMode, setManualNutritionMode] = useState(true); // Changed default to true
 
   const form = useForm({
     resolver: zodResolver(recipeFormSchema),
@@ -93,6 +107,86 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     name: "instructions" as never,
   });
 
+  // Watch ingredients and servings for nutrition analysis
+  const watchedIngredients = form.watch("ingredients");
+  const watchedServings = form.watch("servings");
+
+  // Use nutrition analysis hook without automatic triggering
+  const {
+    analyze: analyzeNutrition,
+    isLoading: nutritionLoading,
+    data: nutritionData,
+    error: nutritionError,
+  } = useNutritionAnalysis({
+    servings: watchedServings || 1,
+    onSuccess: (result) => {
+      // Only update form with nutrition values if we get nutrition data
+      if (result.nutrition) {
+        const nutrients = result.nutrition.perServing;
+
+        // Find and set main macronutrients
+        const findNutrientValue = (name: string) => {
+          const nutrient = nutrients.find((n) =>
+            n.nutrient.name.toLowerCase().includes(name.toLowerCase())
+          );
+          return nutrient ? nutrient.value : undefined;
+        };
+
+        form.setValue(
+          "calories",
+          findNutrientValue("calories") || findNutrientValue("energy")
+        );
+        form.setValue("protein", findNutrientValue("protein"));
+        form.setValue("carbs", findNutrientValue("carbohydrate"));
+        form.setValue("fat", findNutrientValue("fat"));
+        form.setValue("fiber", findNutrientValue("fiber"));
+        form.setValue("sugar", findNutrientValue("sugar"));
+        form.setValue("sodium", findNutrientValue("sodium"));
+
+        toast.success("Nutrition analysis complete!");
+      }
+    },
+  });
+
+  // Manual analysis trigger functions
+  const handleAnalyzeNutritionOnly = () => {
+    if (watchedIngredients && Array.isArray(watchedIngredients)) {
+      const validIngredients = watchedIngredients.filter(
+        (ing) =>
+          ing && typeof ing === "object" && ing.name && ing.amount && ing.unit
+      );
+
+      if (validIngredients.length > 0) {
+        analyzeNutrition(validIngredients, {
+          includeNutrition: true,
+          includeDiets: false,
+          includeAllergens: false,
+        });
+      } else {
+        toast.error("Please add some ingredients before analyzing nutrition");
+      }
+    }
+  };
+
+  const handleAnalyzeWithDietCompatibility = () => {
+    if (watchedIngredients && Array.isArray(watchedIngredients)) {
+      const validIngredients = watchedIngredients.filter(
+        (ing) =>
+          ing && typeof ing === "object" && ing.name && ing.amount && ing.unit
+      );
+
+      if (validIngredients.length > 0) {
+        analyzeNutrition(validIngredients, {
+          includeNutrition: true,
+          includeDiets: true,
+          includeAllergens: true,
+        });
+      } else {
+        toast.error("Please add some ingredients before analyzing");
+      }
+    }
+  };
+
   // Load categories
   useEffect(() => {
     async function loadCategories() {
@@ -112,6 +206,10 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     if (recipe) {
       console.log("Populating form with recipe data:", recipe);
       form.reset(recipe);
+      // If imported recipe has nutrition data, switch to manual mode to preserve it
+      if (recipe.calories || recipe.protein || recipe.carbs || recipe.fat) {
+        setManualNutritionMode(true);
+      }
       toast.success(
         "Recipe data imported successfully! Review and edit as needed."
       );
@@ -177,7 +275,12 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="basics">Basic Info</TabsTrigger>
             <TabsTrigger value="ingredients">Ingredients & Steps</TabsTrigger>
-            <TabsTrigger value="nutrition">Nutrition</TabsTrigger>
+            <TabsTrigger value="nutrition">
+              Nutrition{" "}
+              {nutritionLoading && (
+                <Loader2 className="ml-1 h-3 w-3 animate-spin" />
+              )}
+            </TabsTrigger>
             {/* <TabsTrigger value="ai-assistant">AI Assistant</TabsTrigger> */}
           </TabsList>
 
@@ -586,191 +689,410 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
           </TabsContent>
 
           <TabsContent value="nutrition" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Nutritional Information</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Optional: Add nutritional values per serving
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="calories"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Calories</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="250"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="protein"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Protein (g)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="20"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="carbs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbohydrates (g)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="30"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="fat"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fat (g)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="10"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="fiber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fiber (g)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="5"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="sugar"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sugar (g)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="8"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="sodium"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sodium (mg)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="300"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? parseFloat(e.target.value)
-                                  : undefined
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Manual Nutrition Entry Section - Now shown by default */}
+            {manualNutritionMode && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Manual Nutritional Information</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setManualNutritionMode(false)}
+                      >
+                        Switch to Automatic Analysis
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Enter nutritional values per serving manually, or use
+                    automatic analysis buttons below
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="calories"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Calories</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="250"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="protein"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Protein (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="20"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="carbs"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carbohydrates (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="30"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="fat"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fat (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="10"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="fiber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fiber (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="5"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sugar"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sugar (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.1"
+                              placeholder="8"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="sodium"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sodium (mg)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="300"
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Automatic Analysis Buttons */}
+                  <div className="flex flex-col gap-3 pt-4 border-t">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">
+                        Automatic Analysis Options
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAnalyzeNutritionOnly}
+                        disabled={nutritionLoading}
+                        className="flex-1"
+                      >
+                        {nutritionLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <TestTube2 className="mr-2 h-4 w-4" />
+                        )}
+                        Analyze Nutrition Only
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAnalyzeWithDietCompatibility}
+                        disabled={nutritionLoading}
+                        className="flex-1"
+                      >
+                        {nutritionLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        Full Analysis + Diet Info
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Automatic analysis will update the nutrition fields above
+                      based on your ingredients.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Automatic Nutrition Analysis Section */}
+            {!manualNutritionMode && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">
+                      Automatic Nutrition Analysis
+                    </h3>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setManualNutritionMode(true)}
+                  >
+                    Switch to Manual Entry
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    onClick={handleAnalyzeNutritionOnly}
+                    disabled={nutritionLoading}
+                  >
+                    {nutritionLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <TestTube2 className="mr-2 h-4 w-4" />
+                    )}
+                    Analyze Nutrition Only
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAnalyzeWithDietCompatibility}
+                    disabled={nutritionLoading}
+                  >
+                    {nutritionLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-2 h-4 w-4" />
+                    )}
+                    Full Analysis + Diet Info
+                  </Button>
+                </div>
+
+                {nutritionError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {nutritionError}. You can switch to manual entry mode.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {nutritionLoading && (
+                  <div className="space-y-4">
+                    <Skeleton className="h-[400px] w-full" />
+                    <div className="flex gap-4">
+                      <Skeleton className="h-[200px] w-full" />
+                      <Skeleton className="h-[200px] w-full" />
+                    </div>
+                  </div>
+                )}
+
+                {!nutritionLoading &&
+                  !nutritionData &&
+                  watchedIngredients.length > 0 && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Click one of the analysis buttons above to analyze the
+                        nutrition based on your ingredients.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+              </>
+            )}
+
+            {/* Analysis Results Display - shown in both modes */}
+            {nutritionData && !nutritionLoading && (
+              <div className="space-y-6">
+                {/* Nutrition Facts Display */}
+                {nutritionData.nutrition && (
+                  <NutritionFactsDisplay
+                    nutrients={nutritionData.nutrition.perServing}
+                    servings={nutritionData.nutrition.servings}
+                    confidence={nutritionData.confidence}
+                    showAllNutrients={false}
+                  />
+                )}
+
+                {/* Diet Compatibility */}
+                {nutritionData.dietCompatibility && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        Diet Compatibility
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <DietBadges
+                        classifications={
+                          nutritionData.dietCompatibility.classifications
+                        }
+                        primaryDiets={
+                          nutritionData.dietCompatibility.primaryDiets
+                        }
+                        partialDiets={
+                          nutritionData.dietCompatibility.partialDiets
+                        }
+                        showAll={false}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Allergen Warnings */}
+                {nutritionData.allergens && (
+                  <AllergenWarnings
+                    allergens={nutritionData.allergens.detectedAllergens}
+                    riskLevel={nutritionData.allergens.riskLevel}
+                    recommendedLabels={
+                      nutritionData.allergens.recommendedLabels
+                    }
+                    compact={false}
+                  />
+                )}
+
+                {/* Analysis Metadata */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Analysis Details</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm space-y-1">
+                      <p>
+                        Matched {nutritionData.matchedIngredients} of{" "}
+                        {nutritionData.totalIngredients} ingredients
+                      </p>
+                      <p>Overall confidence: {nutritionData.confidence}%</p>
+                      {nutritionData.warnings.length > 0 && (
+                        <div className="mt-2">
+                          <p className="font-medium">Warnings:</p>
+                          <ul className="list-disc list-inside text-muted-foreground">
+                            {nutritionData.warnings.map((warning, idx) => (
+                              <li key={idx}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </TabsContent>
 
           {/* <TabsContent value="ai-assistant" className="space-y-6">

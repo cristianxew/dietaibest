@@ -238,12 +238,24 @@ Requirements:
   ): Promise<unknown> {
     let attempts = 0;
     let delay = 2000; // Start with 2 second delay
+    const startTime = Date.now();
+    const maxWaitTime = 10 * 60 * 1000; // 10 minutes maximum wait time
 
     // Initial delay to allow task to initialize
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     while (attempts < maxAttempts) {
       attempts++;
+
+      // Check if we've exceeded maximum wait time
+      if (Date.now() - startTime > maxWaitTime) {
+        throw this.createError(
+          "TASK_TIMEOUT",
+          "Task polling exceeded maximum wait time of 10 minutes",
+          408,
+          { taskId, attempts, timeElapsed: Date.now() - startTime }
+        );
+      }
 
       try {
         const taskDetails = await this.getTask(taskId);
@@ -276,26 +288,47 @@ Requirements:
 
         // Task is still running, wait before next poll
         console.log(
-          `[BrowserUse] Task ${taskId} status: ${taskDetails.status}, attempt ${attempts}`
+          `[BrowserUse] Task ${taskId} status: ${taskDetails.status}, attempt ${attempts}/${maxAttempts}`
         );
       } catch (error) {
         if (error instanceof BrowserUseError && error.status === 404) {
           console.warn(
             `[BrowserUse] Task ${taskId} not found (404). Attempt: ${attempts}/${maxAttempts}. Will continue polling.`
           );
-          // If we've been trying for over 3 minutes, then fail.
-          if (attempts > 18) {
+          // If we've been trying for over 3 minutes OR exceeded 18 attempts, fail
+          if (attempts > 18 || Date.now() - startTime > 3 * 60 * 1000) {
             throw this.createError(
               "TASK_UNAVAILABLE",
               "Task could not be found after multiple attempts. It may have failed to create.",
               404,
-              { taskId, attempts }
+              { taskId, attempts, timeElapsed: Date.now() - startTime }
             );
           }
           // Otherwise, just continue the loop and wait for the next poll.
-        } else {
-          // Re-throw other errors (API errors, network issues, etc.)
+        } else if (error instanceof BrowserUseError) {
+          // Re-throw BrowserUse errors immediately - don't continue polling
           throw error;
+        } else {
+          // For network errors, continue polling but log the error
+          console.warn(
+            `[BrowserUse] Network error polling task ${taskId}:`,
+            error
+          );
+
+          // If we've had too many network errors, fail
+          if (attempts > maxAttempts / 2) {
+            throw this.createError(
+              "NETWORK_ERROR",
+              "Too many network errors while polling task",
+              500,
+              {
+                taskId,
+                attempts,
+                lastError:
+                  error instanceof Error ? error.message : String(error),
+              }
+            );
+          }
         }
       }
 
@@ -306,13 +339,14 @@ Requirements:
       delay = Math.min(delay * 1.2, 10000);
     }
 
+    // If we exit the loop without returning, we've exceeded max attempts
     throw this.createError(
       "TASK_TIMEOUT",
       "Task polling timed out after maximum attempts. " +
         "The task may have completed successfully but took longer than expected. " +
         "Please check your Browser Use dashboard for the actual task status.",
       408,
-      { taskId, attempts: maxAttempts }
+      { taskId, attempts: maxAttempts, timeElapsed: Date.now() - startTime }
     );
   }
 

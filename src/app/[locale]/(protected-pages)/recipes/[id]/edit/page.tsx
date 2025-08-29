@@ -82,7 +82,7 @@ export default async function EditRecipePage({
           {t("editRecipe")}
         </h1>
 
-        <RecipeForm mode="edit" recipe={formData} />
+        <RecipeForm mode="edit" recipe={formData} recipeId={id} />
       </div>
     </div>
   );

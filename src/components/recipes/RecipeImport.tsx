@@ -36,6 +36,9 @@ interface ImportedRecipeData {
   protein?: number;
   carbs?: number;
   fat?: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
   imageUrl?: string;
 }
 
@@ -51,22 +54,18 @@ export function RecipeImport({
   const t = useTranslations("recipes");
   const [activeTab, setActiveTab] = useState("url");
 
-  const handleImportSuccess = (data: ImportedRecipeData) => {
-    toast.success(t("importSuccess"));
-    onImportComplete?.(data);
-  };
-
-  // Handle URL upload completion
+  // Handle URL upload completion - pass data through without analysis
   const handleURLUploaded = (urlData: {
     url: string;
     extractedData?: ImportedRecipeData;
   }) => {
     if (urlData.extractedData) {
-      handleImportSuccess(urlData.extractedData);
+      toast.success("Recipe imported successfully");
+      onImportComplete?.(urlData.extractedData);
     }
   };
 
-  // Handle image upload completion
+  // Handle image upload completion - pass data through without analysis
   const handleImageUploaded = (imageData: {
     file: File;
     preview: string;
@@ -111,11 +110,12 @@ export function RecipeImport({
         fat: imageData.extractedData.nutritionalInfo?.fat,
       };
 
-      handleImportSuccess(transformedData);
+      toast.success("Recipe imported successfully");
+      onImportComplete?.(transformedData);
     }
   };
 
-  // Handle PDF upload completion
+  // Handle PDF upload completion - pass data through without analysis
   const handlePDFUploaded = (pdfData: {
     file: File;
     extractedData?: {
@@ -159,153 +159,73 @@ export function RecipeImport({
         fat: pdfData.extractedData.nutritionalInfo?.fat,
       };
 
-      handleImportSuccess(transformedData);
+      toast.success("Recipe imported successfully");
+      onImportComplete?.(transformedData);
     }
   };
 
-  // Handle upload errors
-  const handleUploadError = (error: string) => {
+  const handleError = (error: string) => {
     toast.error(error);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">{t("importRecipe")}</h2>
-        <p className="text-muted-foreground">{t("importDescription")}</p>
-      </div>
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="url" className="flex items-center gap-2">
+              <Link2 className="h-4 w-4" />
+              URL
+            </TabsTrigger>
+            <TabsTrigger value="image" className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              {t("image")}
+            </TabsTrigger>
+            <TabsTrigger value="pdf" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              PDF
+            </TabsTrigger>
+          </TabsList>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="url" className="flex items-center gap-2">
-            <Link2 className="h-4 w-4" />
-            URL
-          </TabsTrigger>
-          <TabsTrigger value="image" className="flex items-center gap-2">
-            <Image className="h-4 w-4" />
-            {t("image")}
-          </TabsTrigger>
-          <TabsTrigger value="pdf" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            PDF
-          </TabsTrigger>
-        </TabsList>
+          <TabsContent value="url" className="mt-6">
+            <URLUpload
+              onURLUploaded={handleURLUploaded}
+              onUploadError={handleError}
+            />
+          </TabsContent>
 
-        <TabsContent value="url">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("importFromUrl")}</CardTitle>
-              <CardDescription>{t("importFromUrlDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <URLUpload
-                onURLUploaded={handleURLUploaded}
-                onUploadError={handleUploadError}
-              />
+          <TabsContent value="image" className="mt-6">
+            <ImageUpload
+              onImageUploaded={handleImageUploaded}
+              onUploadError={handleError}
+            />
+          </TabsContent>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    {t("or")}
-                  </span>
-                </div>
+          <TabsContent value="pdf" className="mt-6">
+            <PDFUpload
+              onPDFUploaded={handlePDFUploaded}
+              onUploadError={handleError}
+            />
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onSkipImport}
-              >
-                {t("createRecipeManually")}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="image">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("importFromImage")}</CardTitle>
-              <CardDescription>
-                {t("importFromImageDescription")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ImageUpload
-                onImageUploaded={handleImageUploaded}
-                onUploadError={handleUploadError}
-                maxFileSize={10}
-                maxWidth={4000}
-                maxHeight={4000}
-              />
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    {t("or")}
-                  </span>
-                </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  {t("or")}
+                </span>
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onSkipImport}
-              >
-                {t("createRecipeManually")}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pdf">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("importFromPdf")}</CardTitle>
-              <CardDescription>{t("importFromPdfDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <PDFUpload
-                onPDFUploaded={handlePDFUploaded}
-                onUploadError={handleUploadError}
-                maxFileSize={20}
-                maxPages={15}
-              />
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    {t("or")}
-                  </span>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onSkipImport}
-              >
-                {t("createRecipeManually")}
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground">
-          {t("supportedWebsites")}
-        </p>
-      </div>
-    </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+      <Button variant="outline" className="w-full mt-4" onClick={onSkipImport}>
+        {t("createRecipeManually")}
+      </Button>
+    </Card>
   );
 }

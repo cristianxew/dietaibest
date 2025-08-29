@@ -350,6 +350,15 @@
             }
         }
     },
+    "recipeImport": {
+        "title": "Importar Receta",
+        "description": "Importa recetas desde sitios web, imágenes o archivos PDF",
+        "methods": {
+            "url": "URL",
+            "image": "Imagen",
+            "pdf": "PDF"
+        }
+    },
     "mealPlans": {
         "title": "Planes de Comidas",
         "subtitle": "Planifica tus comidas con asistencia de IA",

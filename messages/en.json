@@ -350,6 +350,15 @@
             }
         }
     },
+    "recipeImport": {
+        "title": "Import Recipe",
+        "description": "Import recipes from websites, images, or PDF files",
+        "methods": {
+            "url": "URL",
+            "image": "Image",
+            "pdf": "PDF"
+        }
+    },
     "mealPlans": {
         "title": "Meal Plans",
         "subtitle": "Plan your meals with AI assistance",

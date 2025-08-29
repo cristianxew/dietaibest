@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -74,7 +74,6 @@ interface URLUploadProps {
     extractedData?: ExtractedRecipeData;
   }) => void;
   onUploadError?: (error: string) => void;
-  disabled?: boolean;
 }
 
 interface UploadState {
@@ -91,17 +90,21 @@ interface UploadState {
   url?: string;
 }
 
-export function URLUpload({
-  onURLUploaded,
-  onUploadError,
-  disabled = false,
-}: URLUploadProps) {
+export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
   const t = useTranslations("recipes.urlUpload");
   const [uploadState, setUploadState] = useState<UploadState>({
     status: "idle",
     progress: 0,
     message: "",
   });
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const form = useForm<UrlFormData>({
     resolver: zodResolver(urlSchema),
@@ -109,6 +112,16 @@ export function URLUpload({
       url: "",
     },
   });
+
+  // Safe state update function to prevent updates on unmounted components
+  const safeSetUploadState = useCallback(
+    (updater: (prev: UploadState) => UploadState) => {
+      if (isMountedRef.current) {
+        setUploadState(updater);
+      }
+    },
+    [] // No dependencies needed since isMountedRef.current is stable
+  );
 
   // Validate URL format
   const validateURL = useCallback(
@@ -136,14 +149,14 @@ export function URLUpload({
         };
       }
     },
-    [t]
+    [t] // Only depend on t
   );
 
   // Fetch and process URL
   const fetchURLAndProcess = useCallback(
     async (url: string): Promise<ExtractedRecipeData | null> => {
       // Phase 1: Fetching (0-30%)
-      setUploadState((prev) => ({
+      safeSetUploadState((prev) => ({
         ...prev,
         status: "fetching",
         progress: 0,
@@ -154,11 +167,11 @@ export function URLUpload({
         // Simulate fetching progress
         for (let i = 0; i <= 30; i += 5) {
           await new Promise((resolve) => setTimeout(resolve, 100));
-          setUploadState((prev) => ({ ...prev, progress: i }));
+          safeSetUploadState((prev) => ({ ...prev, progress: i }));
         }
 
         // Phase 2: Processing (30-70%)
-        setUploadState((prev) => ({
+        safeSetUploadState((prev) => ({
           ...prev,
           status: "processing",
           message: t("status.extractingRecipe"),
@@ -177,7 +190,7 @@ export function URLUpload({
         // Simulate processing progress
         for (let i = 40; i <= 70; i += 10) {
           await new Promise((resolve) => setTimeout(resolve, 300));
-          setUploadState((prev) => ({ ...prev, progress: i }));
+          safeSetUploadState((prev) => ({ ...prev, progress: i }));
         }
 
         const result = await response.json();
@@ -190,7 +203,7 @@ export function URLUpload({
         }
 
         // Phase 3: Analyzing (70-95%)
-        setUploadState((prev) => ({
+        safeSetUploadState((prev) => ({
           ...prev,
           status: "analyzing",
           message: t("status.analyzingContent"),
@@ -199,11 +212,11 @@ export function URLUpload({
 
         for (let i = 75; i <= 95; i += 5) {
           await new Promise((resolve) => setTimeout(resolve, 200));
-          setUploadState((prev) => ({ ...prev, progress: i }));
+          safeSetUploadState((prev) => ({ ...prev, progress: i }));
         }
 
         // Phase 4: Complete (95-100%)
-        setUploadState((prev) => ({
+        safeSetUploadState((prev) => ({
           ...prev,
           status: "success",
           message: t("status.complete"),
@@ -239,30 +252,30 @@ export function URLUpload({
         );
       }
     },
-    [t]
+    [t, safeSetUploadState] // Minimal dependencies
   );
 
   // Handle URL processing
   const processURL = useCallback(
     async (url: string) => {
-      if (disabled) return;
-
-      setUploadState({
+      safeSetUploadState((prev) => ({
+        ...prev,
         status: "validating",
         progress: 0,
         message: t("status.validating"),
         url,
-      });
+      }));
 
       try {
         // Validate the URL
         const validation = validateURL(url);
         if (!validation.isValid) {
-          setUploadState({
+          safeSetUploadState((prev) => ({
+            ...prev,
             status: "error",
             progress: 0,
             message: validation.error || t("errors.validationFailed"),
-          });
+          }));
           onUploadError?.(validation.error || t("errors.validationFailed"));
           toast.error(validation.error || t("errors.validationFailed"));
           return;
@@ -308,22 +321,33 @@ export function URLUpload({
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : t("errors.processingFailed");
-        setUploadState({
+        safeSetUploadState((prev) => ({
+          ...prev,
           status: "error",
           progress: 0,
           message: errorMessage,
-        });
+        }));
         onUploadError?.(errorMessage);
         toast.error(errorMessage);
       }
     },
-    [disabled, validateURL, fetchURLAndProcess, onURLUploaded, onUploadError, t]
+    [
+      t,
+      safeSetUploadState,
+      validateURL,
+      fetchURLAndProcess,
+      onURLUploaded,
+      onUploadError,
+    ] // Keep necessary dependencies
   );
 
-  // Handle form submission
-  const handleSubmit = async (data: UrlFormData) => {
-    await processURL(data.url);
-  };
+  // Handle form submission - wrap in useCallback to prevent recreation
+  const handleSubmit = useCallback(
+    async (data: UrlFormData) => {
+      await processURL(data.url);
+    },
+    [processURL]
+  );
 
   // Reset upload state
   const resetUpload = () => {
@@ -385,7 +409,7 @@ export function URLUpload({
                       <Input
                         placeholder="https://example.com/recipe/..."
                         {...field}
-                        disabled={isLoading || disabled}
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormDescription>{t("enterRecipeUrl")}</FormDescription>
@@ -420,11 +444,7 @@ export function URLUpload({
               )}
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isLoading || disabled}
-                className="w-full"
-              >
+              <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

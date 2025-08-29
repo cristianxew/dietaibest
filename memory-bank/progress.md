@@ -54,12 +54,22 @@
 ### Testing Infrastructure
 
 - [x] **✅ Comprehensive Testing Framework Setup**
+
   - [x] **Vitest Configuration**: Fast unit testing with React Testing Library integration
   - [x] **Playwright E2E Testing**: Cross-browser testing with automated dev server startup
   - [x] **Test Structure**: Organized directories for unit, integration, and E2E tests
   - [x] **Sample Test Suite**: Button and MacroDisplay unit tests, recipe import and auth E2E tests
   - [x] **Testing Scripts**: Complete npm scripts for all testing scenarios (watch, coverage, UI, debug)
   - [x] **Documentation**: Comprehensive TESTING.md guide with setup instructions and best practices
+
+- [x] **✅ Recipe Import Integration Testing (Task 6.16)**
+  - [x] **End-to-End Test Suite**: Complete E2E testing for all import methods (URL, Image, PDF)
+  - [x] **Cross-Method Integration**: Tests ensuring consistent data formats across all import methods
+  - [x] **API Integration Testing**: Comprehensive testing of backend endpoints with various inputs
+  - [x] **Error Handling Coverage**: Testing of edge cases, timeouts, validation errors, and API failures
+  - [x] **Progress Tracking Tests**: Real-time progress updates and cancellation functionality verification
+  - [x] **Performance Testing**: Concurrent operations and load testing capabilities
+  - [x] **Security Testing**: URL validation, SSRF protection, and file upload security verification
 
 ## 🚧 In Development
 
@@ -212,3 +222,7 @@ With Browser Use integration complete, the project has:
 ---
 
 **🚀 Current Status**: Browser Use integration fully complete with real-time progress tracking. The recipe import system now provides professional-grade AI-powered extraction with live user feedback, setting the foundation for advanced meal planning features.
+
+### Task 18.10
+
+- Done: On-demand nutrition analysis (manual by default), diet compatibility optional.

@@ -6,9 +6,12 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      new URL("https://www.allrecipes.com/**"),
-      new URL("https://images.unsplash.com/**"),
-      new URL("https://www.simplyrecipes.com/**"),
+      {
+        protocol: "https",
+        hostname: "**",
+        port: "",
+        pathname: "**",
+      },
     ],
   },
   /* config options here */

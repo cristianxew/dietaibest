@@ -350,6 +350,15 @@
             }
         }
     },
+    "recipeImport": {
+        "title": "Importuj Przepis",
+        "description": "Importuj przepisy z witryn internetowych, obrazów lub plików PDF",
+        "methods": {
+            "url": "URL",
+            "image": "Obraz",
+            "pdf": "PDF"
+        }
+    },
     "mealPlans": {
         "title": "Plany Posiłków",
         "subtitle": "Planuj swoje posiłki z pomocą AI",

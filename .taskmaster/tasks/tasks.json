@@ -748,68 +748,81 @@
       {
         "id": 7,
         "title": "Edamam API Integration",
-        "description": "Integrate with both Edamam Recipe Search API and Meal Planner API. Use the Recipe Search API for automatic nutritional calculation of user-created recipes, and the Meal Planner API for generating complete meal plans. Implement caching and error handling for both API request types.",
+        "description": "Integrate with the Edamam Nutrition Analysis API to provide accurate macro and micronutrient information for user-created and imported recipes. The API uses Natural Language Processing to analyze full recipe text and ingredient lists, returning detailed nutritional information including 28+ nutrients, diet labels, health labels, and allergen information. Implement caching and error handling for API requests.",
         "status": "pending",
         "dependencies": [
           1,
           5
         ],
         "priority": "medium",
-        "details": "1. Set up Edamam API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs\n2. Create environment variables for shared API keys\n3. Implement ingredient parsing and normalization for Recipe Search API\n4. Build nutritional calculation service using Recipe Search API for user recipes\n5. Build meal plan generation service using Meal Planner API\n6. Create caching mechanism for both API response types\n7. Implement retry logic for failed API requests\n8. Build macro calculation utility that processes Recipe Search API responses\n9. Create fallback mechanism for when either API is unavailable\n10. Implement rate limiting handling for both APIs\n11. Add detailed error logging for both API integrations\n12. Create utility for converting between measurement units\n13. Implement batch processing for multiple ingredients and meal plan requests",
-        "testStrategy": "1. Test both API clients with mock responses\n2. Verify nutritional calculation accuracy for user recipes via Recipe Search API\n3. Verify meal plan generation via Meal Planner API\n4. Test caching mechanism reduces API calls for both endpoints\n5. Verify retry logic handles temporary failures for both APIs\n6. Test rate limit handling for both APIs\n7. Verify fallback mechanism works when either API is down\n8. Test unit conversion utility\n9. Verify batch processing handles multiple ingredients and meal plan requests correctly",
+        "details": "1. Set up Edamam Nutrition Analysis API client in `lib/edamam.ts`\n2. Create environment variables for API keys\n3. Implement recipe text and ingredient list parsing for Nutrition Analysis API\n4. Build nutritional calculation service using Nutrition Analysis API for user recipes\n5. Create utility to extract and store diet labels (balanced, high-fiber, high-protein, low-carb, etc.)\n6. Create utility to extract and store health labels (vegan, gluten-free, dairy-free, etc.)\n7. Implement allergen information extraction and storage\n8. Create caching mechanism for API responses\n9. Implement retry logic for failed API requests\n10. Build macro and micronutrient calculation utility that processes Nutrition Analysis API responses\n11. Create fallback mechanism for when API is unavailable\n12. Implement rate limiting handling\n13. Add detailed error logging for API integration\n14. Create utility for converting between measurement units\n15. Integrate nutritional analysis into recipe creation and import workflows",
+        "testStrategy": "1. Test API client with mock responses\n2. Verify nutritional calculation accuracy for user recipes via Nutrition Analysis API\n3. Test extraction of diet labels, health labels, and allergen information\n4. Test caching mechanism reduces API calls\n5. Verify retry logic handles temporary failures\n6. Test rate limit handling\n7. Verify fallback mechanism works when API is down\n8. Test unit conversion utility\n9. Verify integration with recipe creation workflow\n10. Test integration with recipe import workflow\n11. Verify all 28+ nutrients are correctly extracted and stored",
         "subtasks": [
           {
             "id": 1,
             "title": "Configure Edamam API Client and Environment",
-            "description": "Set up the Edamam API clients in the codebase for both Recipe Search and Meal Planner APIs, and configure environment variables for shared API credentials.",
+            "description": "Set up the Edamam Nutrition Analysis API client in the codebase and configure environment variables for API credentials.",
             "status": "pending",
             "dependencies": [],
-            "details": "Implement API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs. Ensure API keys are securely managed using environment variables.",
-            "testStrategy": "Verify that both clients can successfully authenticate and make basic requests to their respective Edamam APIs using test credentials."
+            "details": "Implement API client in `lib/edamam.ts` for the Nutrition Analysis API. Ensure API keys are securely managed using environment variables.",
+            "testStrategy": "Verify that the client can successfully authenticate and make basic requests to the Edamam Nutrition Analysis API using test credentials."
           },
           {
             "id": 2,
-            "title": "Implement Ingredient Parsing and Normalization",
-            "description": "Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam Recipe Search API requirements.",
+            "title": "Implement Recipe Text and Ingredient List Parsing",
+            "description": "Develop utilities to parse and normalize recipe text and ingredient lists for compatibility with Edamam Nutrition Analysis API requirements.",
             "status": "pending",
             "dependencies": [
               1
             ],
-            "details": "Create functions to standardize ingredient formats and units, ensuring accurate Recipe Search API queries.",
-            "testStrategy": "Test with a variety of ingredient strings to confirm correct normalization and compatibility with Edamam Recipe Search API."
+            "details": "Create functions to standardize recipe formats and ingredient lists, ensuring accurate Nutrition Analysis API queries. Support both structured ingredient lists and full recipe text analysis.",
+            "testStrategy": "Test with a variety of recipe formats and ingredient strings to confirm correct parsing and compatibility with Edamam Nutrition Analysis API."
           },
           {
             "id": 3,
-            "title": "Develop Nutritional Calculation and Meal Plan Services",
-            "description": "Build services that send parsed ingredients to the Recipe Search API for nutritional analysis and use the Meal Planner API for automated meal plan generation.",
+            "title": "Develop Nutritional Analysis Service",
+            "description": "Build a service that sends parsed recipe text and ingredient lists to the Nutrition Analysis API and processes the returned nutritional data.",
             "status": "pending",
             "dependencies": [
               2
             ],
-            "details": "Implement API calls for nutritional analysis of user recipes via Recipe Search API and for generating meal plans via Meal Planner API. Extract macro and micronutrient information from Recipe Search API responses and structure meal plan data from Meal Planner API.",
-            "testStrategy": "Validate that the services return accurate nutritional data for sample recipes and generate valid meal plans, handling API response variations."
+            "details": "Implement API calls for nutritional analysis of user recipes via Nutrition Analysis API. Extract macro and micronutrient information, diet labels, health labels, and allergen information from API responses. Create data structures to store this information with recipes.",
+            "testStrategy": "Validate that the service returns accurate nutritional data for sample recipes, including all 28+ nutrients, diet labels, health labels, and allergen information."
           },
           {
             "id": 4,
             "title": "Implement Caching and Rate Limiting Handling",
-            "description": "Add caching for both Recipe Search and Meal Planner API responses and logic to handle Edamam API rate limits efficiently.",
+            "description": "Add caching for Nutrition Analysis API responses and logic to handle Edamam API rate limits efficiently.",
             "status": "pending",
             "dependencies": [
               3
             ],
-            "details": "Store frequently requested nutritional and meal plan data and implement mechanisms to respect API rate limits, reducing redundant calls.",
-            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded for both APIs."
+            "details": "Store frequently requested nutritional data and implement mechanisms to respect API rate limits, reducing redundant calls. Ensure cache invalidation when recipes are updated.",
+            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded."
           },
           {
             "id": 5,
             "title": "Add Robust Error Handling and Fallback Mechanisms",
-            "description": "Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of either Edamam API.",
+            "description": "Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of the Edamam Nutrition Analysis API.",
             "status": "pending",
             "dependencies": [
               4
             ],
-            "details": "Ensure the system gracefully handles errors from both APIs, logs issues for debugging, and provides fallback responses when needed.",
-            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended for both APIs."
+            "details": "Ensure the system gracefully handles errors from the API, logs issues for debugging, and provides fallback responses when needed.",
+            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended."
+          },
+          {
+            "id": 6,
+            "title": "Integrate with Recipe Creation and Import Workflows",
+            "description": "Connect the nutritional analysis service with the recipe creation and import workflows to automatically calculate and store nutritional data.",
+            "status": "pending",
+            "dependencies": [
+              3,
+              4,
+              5
+            ],
+            "details": "Modify recipe creation and import processes to trigger nutritional analysis when recipes are created or imported. Store the resulting nutritional data, diet labels, health labels, and allergen information with the recipe in the database.",
+            "testStrategy": "Test the complete workflow of creating and importing recipes to verify nutritional data is automatically calculated and stored correctly."
           }
         ]
       },
@@ -1984,11 +1997,179 @@
             "parentTaskId": 17
           }
         ]
+      },
+      {
+        "id": 18,
+        "title": "Custom Nutrition Analysis System",
+        "description": "Develop an in-house nutrition analysis system that processes recipe ingredients to calculate macro/micronutrients, diet labels, health labels, and allergen information without relying on third-party APIs.",
+        "details": "1. Create a nutrition database schema in Supabase:\n   - Design tables for ingredients, nutrients, allergens, and diet classifications\n   - Implement relationships between ingredients and their nutritional profiles\n   - Set up indexing for efficient querying\n\n2. Develop ingredient parsing module:\n   - Create `utils/ingredientParser.ts` to extract ingredient names, quantities, and units\n   - Implement natural language processing for handling various input formats\n   - Build fuzzy matching algorithm to map user inputs to database ingredients\n   - Handle ingredient substitutions and equivalents\n\n3. Build nutrition calculation engine:\n   - Implement `services/nutritionCalculator.ts` for computing nutritional totals\n   - Create algorithms for scaling nutrients based on ingredient quantities\n   - Handle unit conversions (metric/imperial) with precision\n   - Implement portion size calculations\n\n4. Develop diet and health label classification system:\n   - Create rule-based engine for determining diet compatibility (keto, vegan, etc.)\n   - Implement threshold-based classification for health labels\n   - Build allergen detection based on ingredient composition and cross-contamination risks\n\n5. Create nutrition database population utilities:\n   - Develop data import scripts for USDA food database\n   - Implement data validation and normalization\n   - Create admin interface for manual data entry and corrections\n\n6. Build API endpoints for nutrition analysis:\n   - Implement `/api/nutrition/analyze` for processing ingredient lists\n   - Create `/api/nutrition/ingredient-lookup` for single ingredient information\n   - Develop `/api/nutrition/diet-check` for diet compatibility verification\n\n7. Integrate with recipe workflows:\n   - Update recipe creation/editing forms to use the new nutrition system\n   - Implement real-time nutrition calculation during recipe editing\n   - Create nutrition fact display components with customizable formats\n\n8. Implement caching mechanism:\n   - Design efficient caching strategy for frequently accessed nutritional data\n   - Implement cache invalidation for database updates\n\n9. Create comprehensive error handling:\n   - Develop fallback mechanisms for unrecognized ingredients\n   - Implement confidence scoring for nutritional estimates\n   - Build user feedback system for improving ingredient recognition",
+        "testStrategy": "1. Unit test ingredient parsing:\n   - Test parser with various ingredient formats (e.g., \"1 cup flour\", \"2 tbsp olive oil\")\n   - Verify quantity and unit extraction accuracy\n   - Test fuzzy matching with misspelled ingredients\n   - Validate handling of fractions and decimals\n\n2. Test nutrition calculation accuracy:\n   - Compare calculated values against known reference values for common recipes\n   - Verify scaling works correctly with different portion sizes\n   - Test edge cases with very small or large quantities\n   - Validate unit conversion precision\n\n3. Verify diet and health label classification:\n   - Test classification against pre-categorized recipes\n   - Verify allergen detection identifies all potential allergens\n   - Test edge cases where recipes are borderline for specific diet classifications\n   - Validate health label thresholds with nutritionist-approved test cases\n\n4. Performance testing:\n   - Benchmark analysis speed for recipes with varying complexity\n   - Test system under load with concurrent requests\n   - Verify caching improves performance for repeated analyses\n   - Measure database query efficiency\n\n5. Integration testing:\n   - Verify nutrition data appears correctly in recipe creation workflow\n   - Test real-time updates during ingredient editing\n   - Validate nutrition fact displays render correctly\n   - Test integration with meal planning and shopping list features\n\n6. Usability testing:\n   - Gather feedback on nutrition display clarity\n   - Test user understanding of diet and health labels\n   - Verify error messages are helpful when ingredients aren't recognized\n\n7. Database integrity testing:\n   - Verify data import scripts maintain data accuracy\n   - Test database updates propagate correctly to the application\n   - Validate referential integrity between related tables",
+        "status": "in-progress",
+        "dependencies": [
+          1,
+          2,
+          5
+        ],
+        "priority": "medium",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design Nutrition Database Schema",
+            "description": "Create a comprehensive database schema in Supabase for storing nutritional information including ingredients, nutrients, allergens, and diet classifications.",
+            "dependencies": [],
+            "details": "1. Design tables for basic ingredients with columns for name, description, food group, and source\n2. Create nutrients table with columns for nutrient name, unit, daily value, and nutrient category (macro/micro)\n3. Design ingredient_nutrients junction table linking ingredients to their nutritional values\n4. Create allergens table and ingredient_allergens junction table\n5. Design diet_types table (vegan, keto, etc.) and diet_ingredient_compatibility table\n6. Implement proper foreign key relationships and constraints\n7. Set up appropriate indexing for efficient querying\n8. Document the schema with entity relationship diagrams",
+            "status": "done",
+            "testStrategy": "Verify database schema with test queries for common use cases. Test foreign key constraints with invalid data. Benchmark query performance with sample data to validate indexing strategy."
+          },
+          {
+            "id": 2,
+            "title": "Develop Ingredient Parser Module",
+            "description": "Create a module that can parse ingredient strings from recipes to extract ingredient names, quantities, and units using natural language processing techniques.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create `utils/ingredientParser.ts` module\n2. Implement regex patterns to extract quantities, units, and ingredient names\n3. Build parser functions to handle various input formats (e.g., '1 cup flour', '2 tbsp olive oil')\n4. Implement fraction and decimal handling for quantities\n5. Create unit normalization functions to standardize units (e.g., tbsp to tablespoon)\n6. Develop preprocessing functions to clean and normalize input text\n7. Add support for handling preparation methods (e.g., 'chopped', 'diced')\n8. Implement error handling for unparseable ingredients",
+            "status": "done",
+            "testStrategy": "Unit test with various ingredient formats including fractions, decimals, and different unit notations. Test with edge cases like missing quantities or units. Verify parsing accuracy against a test dataset of common recipe ingredients."
+          },
+          {
+            "id": 3,
+            "title": "Implement Fuzzy Matching Algorithm",
+            "description": "Build a fuzzy matching system to map user-entered ingredients to standardized ingredients in the nutrition database.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "1. Create `utils/fuzzyMatcher.ts` module\n2. Implement Levenshtein distance algorithm for string similarity\n3. Build ingredient name normalization functions (removing plurals, common variations)\n4. Create scoring system to rank potential matches\n5. Implement threshold-based matching to determine confidence level\n6. Build caching mechanism for frequently matched ingredients\n7. Create fallback mechanism for unrecognized ingredients\n8. Develop ingredient substitution suggestions based on similarity",
+            "status": "done",
+            "testStrategy": "Test with misspelled ingredients, plural forms, and common abbreviations. Verify match accuracy against a test dataset. Benchmark performance with large ingredient lists. Test threshold sensitivity with edge cases."
+          },
+          {
+            "id": 4,
+            "title": "Build Nutrition Calculation Engine",
+            "description": "Develop the core calculation engine that computes nutritional totals based on ingredients, quantities, and portion sizes.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "1. Create `services/nutritionCalculator.ts` module\n2. Implement functions to fetch nutritional data for ingredients from database\n3. Build algorithms for scaling nutrients based on ingredient quantities\n4. Develop unit conversion system for metric/imperial measurements\n5. Implement portion size calculations and serving size adjustments\n6. Create functions to aggregate nutrients across all ingredients\n7. Implement precision handling for small nutrient quantities\n8. Add calculation of percentage daily values based on standard references",
+            "status": "done",
+            "testStrategy": "Unit test nutrient calculations with known ingredient values. Verify scaling accuracy with different quantities. Test unit conversions between metric and imperial. Validate aggregation logic with multi-ingredient recipes."
+          },
+          {
+            "id": 5,
+            "title": "Develop Diet Classification System",
+            "description": "Create a rule-based engine for determining diet compatibility (keto, vegan, etc.) based on ingredient composition and nutritional profiles.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "1. Create `services/dietClassifier.ts` module\n2. Define rule sets for common diets (vegan, vegetarian, keto, paleo, etc.)\n3. Implement ingredient-based classification (e.g., vegan if no animal products)\n4. Build macronutrient ratio-based classification (e.g., keto if high fat, low carb)\n5. Create confidence scoring for diet classifications\n6. Implement threshold-based classification system\n7. Develop explanation generation for classification results\n8. Add support for custom diet definitions",
+            "status": "done",
+            "testStrategy": "Test classification with recipes of known diet types. Verify edge cases near threshold boundaries. Test with ingredients that have special diet considerations. Validate explanation generation for different classification scenarios."
+          },
+          {
+            "id": 6,
+            "title": "Implement Allergen Detection System",
+            "description": "Build a system to identify potential allergens in recipes based on ingredient composition and cross-contamination risks.",
+            "dependencies": [
+              1,
+              3,
+              4
+            ],
+            "details": "1. Create `services/allergenDetector.ts` module\n2. Implement direct allergen detection from ingredient database\n3. Build derived allergen detection (ingredients that contain allergens)\n4. Create cross-contamination risk assessment\n5. Implement confidence scoring for allergen detection\n6. Develop allergen grouping for related allergens\n7. Create user-friendly allergen reporting format\n8. Add severity classification for different allergen types",
+            "status": "done",
+            "testStrategy": "Test with recipes containing known allergens. Verify detection of derived allergens. Test cross-contamination risk assessment with various ingredient combinations. Validate reporting format with different allergen scenarios."
+          },
+          {
+            "id": 7,
+            "title": "Create Database Population Utilities",
+            "description": "Develop utilities to populate and maintain the nutrition database with data from USDA and other reliable sources.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Create `scripts/importNutritionData.ts` for data import\n2. Implement USDA food database import functionality\n3. Build data validation and normalization routines\n4. Create data transformation utilities to match database schema\n5. Implement incremental update capability\n6. Develop data deduplication mechanisms\n7. Create logging and error reporting for import process\n8. Build admin interface components for manual data entry and corrections",
+            "status": "done",
+            "testStrategy": "Test data import with sample USDA datasets. Verify data validation catches malformed entries. Test incremental updates with changed data. Validate deduplication with overlapping data sources."
+          },
+          {
+            "id": 8,
+            "title": "Build API Endpoints for Nutrition Analysis",
+            "description": "Implement server-side API endpoints to handle nutrition analysis requests and provide nutritional information.",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "1. Create `/api/nutrition/analyze` endpoint for processing ingredient lists\n2. Implement `/api/nutrition/ingredient-lookup` for single ingredient information\n3. Develop `/api/nutrition/diet-check` for diet compatibility verification\n4. Build `/api/nutrition/allergen-check` for allergen detection\n5. Implement request validation and sanitization\n6. Create response formatting with consistent structure\n7. Add error handling and appropriate status codes\n8. Implement rate limiting for API endpoints",
+            "status": "done",
+            "testStrategy": "Test endpoints with valid and invalid requests. Verify response structure matches expected format. Test error handling with malformed requests. Benchmark endpoint performance with various payload sizes."
+          },
+          {
+            "id": 9,
+            "title": "Implement Caching Mechanism",
+            "description": "Design and implement an efficient caching strategy for frequently accessed nutritional data to improve performance.",
+            "dependencies": [
+              4,
+              8
+            ],
+            "details": "1. Create `services/nutritionCache.ts` module\n2. Implement in-memory LRU cache for frequent lookups\n3. Build database-level caching for analyzed recipes\n4. Create cache key generation based on ingredient lists\n5. Implement cache invalidation strategy for database updates\n6. Add cache statistics tracking for monitoring\n7. Develop cache warming for common ingredients\n8. Create configurable cache settings (size, TTL)",
+            "status": "done",
+            "testStrategy": "Benchmark performance with and without caching. Test cache hit rates with repeated queries. Verify cache invalidation works correctly when data changes. Test cache behavior under high concurrency."
+          },
+          {
+            "id": 10,
+            "title": "Integrate with Recipe Workflows",
+            "description": "Update recipe creation and editing workflows to use the new nutrition analysis system for real-time nutritional information.",
+            "dependencies": [
+              4,
+              8,
+              9
+            ],
+            "details": "1. Update recipe creation/editing forms to use nutrition analysis\n2. Implement real-time nutrition calculation during recipe editing\n3. Create nutrition fact display components with customizable formats\n4. Build ingredient suggestion system based on nutritional goals\n5. Implement portion size adjustment with nutritional updates\n6. Add diet compatibility indicators during recipe creation\n7. Create allergen warnings in recipe workflow\n8. Implement nutritional comparison with similar recipes",
+            "status": "done",
+            "testStrategy": "Test integration with recipe forms. Verify real-time updates when ingredients change. Test display components with various nutritional profiles. Validate suggestion system provides relevant options."
+          },
+          {
+            "id": 11,
+            "title": "Develop Comprehensive Error Handling",
+            "description": "Create robust error handling mechanisms for the nutrition analysis system to handle edge cases and provide useful feedback.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              8
+            ],
+            "details": "1. Implement fallback mechanisms for unrecognized ingredients\n2. Create confidence scoring for nutritional estimates\n3. Build user feedback system for improving ingredient recognition\n4. Implement graceful degradation for partial analysis failures\n5. Create detailed error logging for system improvement\n6. Develop user-friendly error messages\n7. Implement suggestion system for error resolution\n8. Create admin notification for systematic errors",
+            "status": "pending",
+            "testStrategy": "Test with deliberately malformed inputs. Verify fallback mechanisms provide reasonable results. Test user feedback collection. Validate error messages are user-friendly and actionable."
+          },
+          {
+            "id": 12,
+            "title": "Create Comprehensive Testing Suite",
+            "description": "Develop a comprehensive testing strategy including unit tests, integration tests, and end-to-end tests for the nutrition analysis system.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              10,
+              11
+            ],
+            "details": "1. Create unit tests for core modules (parser, matcher, calculator)\n2. Implement integration tests for API endpoints\n3. Build test fixtures with known nutritional values\n4. Create performance benchmarks for critical paths\n5. Implement regression tests for bug fixes\n6. Develop end-to-end tests for recipe workflows\n7. Create automated test pipeline in CI/CD\n8. Build test coverage reporting and monitoring",
+            "status": "pending",
+            "testStrategy": "Run tests automatically in CI/CD pipeline. Maintain high test coverage for critical components. Use realistic test fixtures derived from actual recipes. Benchmark performance against established baselines."
+          }
+        ]
       }
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-07-12T16:16:41.863Z",
+      "updated": "2025-08-29T20:29:43.303Z",
       "description": "Tasks for master context"
     }
   }

@@ -30,6 +30,9 @@ interface ImportedRecipeData {
   protein?: number;
   carbs?: number;
   fat?: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
 }
 
 export default function NewRecipePage() {
@@ -66,9 +69,9 @@ export default function NewRecipePage() {
       protein: recipeData.protein,
       carbs: recipeData.carbs,
       fat: recipeData.fat,
-      fiber: undefined,
-      sugar: undefined,
-      sodium: undefined,
+      fiber: recipeData.fiber,
+      sugar: recipeData.sugar,
+      sodium: recipeData.sodium,
     };
 
     setImportedData(transformedData);
