@@ -248,7 +248,7 @@ async function fetchIngredientNutrition(
 
   // Fallback to USDA API if no data found
   if (!nutrition || nutrition.length === 0) {
-    const usdaData = await fetchUSDAIngredientNutrition(ingredientName);
+    const usdaData = await fetchUSDAIngredientNutrition(ingredientId, ingredientName);
     nutrition = usdaData;
   }
 

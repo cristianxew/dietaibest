@@ -7,6 +7,7 @@ const USDA_API_BASE_URL = "https://api.nal.usda.gov/fdc/v1";
  * Returns an array compatible with IngredientNutrient & Nutrient shapes.
  */
 export async function fetchUSDAIngredientNutrition(
+  ingredientId: string,
   ingredientName: string
 ): Promise<(IngredientNutrient & { nutrient: Nutrient })[]> {
   const apiKey = process.env.USDA_API_KEY;
@@ -42,18 +43,39 @@ export async function fetchUSDAIngredientNutrition(
     const detailData = await detailRes.json();
     const nutrients = detailData.foodNutrients || [];
 
-    return nutrients.map((n: any) => ({
-      value: n.amount ?? n.value ?? 0,
-      confidence: 0.8,
-      nutrient: {
-        id: String(n.nutrient?.id ?? n.nutrientId ?? n.nutrientNumber ?? ""),
-        name: n.nutrient?.name ?? n.nutrientName ?? "Unknown",
-        unit: (n.nutrient?.unitName ?? n.unitName ?? "").toLowerCase(),
-        nutrientCategory: n.nutrient?.nutrientCategory || "USDA",
-        dailyValue: null,
-        displayOrder: 0,
-      },
-    })) as (IngredientNutrient & { nutrient: Nutrient })[];
+    return nutrients.map((n: any, index: number) => {
+      const rawNutrientId =
+        n.nutrient?.id ?? n.nutrientId ?? n.nutrientNumber ?? null;
+      const nameFallback = n.nutrient?.name ?? n.nutrientName ?? "unknown";
+      const safeNutrientIdBase =
+        rawNutrientId !== null && rawNutrientId !== undefined
+          ? String(rawNutrientId)
+          : `usda:${String(nameFallback).toLowerCase().replace(/\s+/g, "_")}`;
+      const safeNutrientId =
+        safeNutrientIdBase.trim() !== ""
+          ? safeNutrientIdBase
+          : `usda:${String(nameFallback)
+              .toLowerCase()
+              .replace(/\s+/g, "_") || "unknown"}`;
+
+      const ingredientNutrientId = `usda:${ingredientId}:${safeNutrientId}`;
+
+      return {
+        id: ingredientNutrientId,
+        ingredientId,
+        nutrientId: safeNutrientId,
+        value: n.amount ?? n.value ?? 0,
+        confidence: 0.8,
+        nutrient: {
+          id: safeNutrientId,
+          name: nameFallback ?? "Unknown",
+          unit: (n.nutrient?.unitName ?? n.unitName ?? "").toLowerCase(),
+          nutrientCategory: n.nutrient?.nutrientCategory || "USDA",
+          dailyValue: null,
+          displayOrder: 0,
+        },
+      } as IngredientNutrient & { nutrient: Nutrient };
+    });
   } catch (error) {
     console.warn("USDA nutrition lookup error", error);
     return [];
