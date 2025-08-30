@@ -302,6 +302,7 @@ export async function GET(
       // Get nutrition per 100g
       const nutritionPer100g = await getIngredientNutrition(
         bestMatch.ingredient.id,
+        bestMatch.ingredient.name,
         100
       );
 
@@ -328,6 +329,7 @@ export async function GET(
       if (quantityInGrams) {
         nutritionForQuantity = await getIngredientNutrition(
           bestMatch.ingredient.id,
+          bestMatch.ingredient.name,
           quantityInGrams
         );
       }

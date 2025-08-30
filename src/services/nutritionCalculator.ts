@@ -25,6 +25,7 @@ import {
   getCachedRecipeNutrition,
   cacheRecipeNutrition,
 } from "@/services/nutritionCache";
+import { fetchUSDAIngredientNutrition } from "@/services/usda";
 
 // Unit conversion constants
 const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
@@ -222,7 +223,8 @@ function convertToGrams(
  * Fetch nutritional data for an ingredient from the database with caching
  */
 async function fetchIngredientNutrition(
-  ingredientId: string
+  ingredientId: string,
+  ingredientName: string
 ): Promise<(IngredientNutrient & { nutrient: Nutrient })[]> {
   // Check cache first
   const cachedNutrition = await getCachedIngredientNutrition(ingredientId);
@@ -230,16 +232,30 @@ async function fetchIngredientNutrition(
     return cachedNutrition;
   }
 
-  // If not in cache, fetch from database
-  const nutrition = await prisma.ingredientNutrient.findMany({
-    where: { ingredientId },
-    include: {
-      nutrient: true,
-    },
-  });
+  let nutrition: (IngredientNutrient & { nutrient: Nutrient })[] = [];
 
-  // Cache the result
-  await cacheIngredientNutrition(ingredientId, nutrition);
+  try {
+    // Try database lookup first
+    nutrition = await prisma.ingredientNutrient.findMany({
+      where: { ingredientId },
+      include: {
+        nutrient: true,
+      },
+    });
+  } catch (error) {
+    console.warn("Database nutrition lookup failed, falling back to USDA", error);
+  }
+
+  // Fallback to USDA API if no data found
+  if (!nutrition || nutrition.length === 0) {
+    const usdaData = await fetchUSDAIngredientNutrition(ingredientName);
+    nutrition = usdaData;
+  }
+
+  // Cache the result if we have data
+  if (nutrition && nutrition.length > 0) {
+    await cacheIngredientNutrition(ingredientId, nutrition);
+  }
 
   return nutrition;
 }
@@ -299,7 +315,10 @@ async function calculateIngredientNutrition(
   }
 
   // Fetch nutritional data
-  const ingredientNutrients = await fetchIngredientNutrition(ingredient.id);
+  const ingredientNutrients = await fetchIngredientNutrition(
+    ingredient.id,
+    ingredient.name
+  );
 
   // Calculate scaled nutrient values
   const nutrients: NutrientValue[] = ingredientNutrients.map((ingNutrient) => {
@@ -461,9 +480,13 @@ export async function calculateRecipeNutrition(
  */
 export async function getIngredientNutrition(
   ingredientId: string,
+  ingredientName: string,
   quantityInGrams: number = 100
 ): Promise<NutrientValue[]> {
-  const ingredientNutrients = await fetchIngredientNutrition(ingredientId);
+  const ingredientNutrients = await fetchIngredientNutrition(
+    ingredientId,
+    ingredientName
+  );
 
   return ingredientNutrients.map((ingNutrient) => {
     const scaleFactor = quantityInGrams / 100;

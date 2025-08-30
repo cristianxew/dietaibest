@@ -94,6 +94,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 EDAMAM_APP_ID=your_edamam_app_id
 EDAMAM_APP_KEY=your_edamam_app_key
 
+# USDA FoodData Central
+USDA_API_KEY=your_usda_api_key
+
 # Browser-Use Cloud
 BROWSER_USE_API_KEY=your_browser_use_key
 
