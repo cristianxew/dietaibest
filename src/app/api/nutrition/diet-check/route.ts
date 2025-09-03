@@ -16,8 +16,9 @@ import { z } from "zod";
 import { parseIngredients } from "@/utils/ingredientParser";
 import { classifyRecipeDiets } from "@/services/dietClassifier";
 import {
-  calculateRecipeNutrition,
-  NutrientValue,
+  calculateNutrition,
+  parseIngredientString,
+  type NutrientResult,
 } from "@/services/nutritionCalculator";
 
 // Rate limiting store
@@ -197,29 +198,56 @@ export async function POST(
       `🥗 Checking ${ingredients.length} ingredients against ${diets.length} diets`
     );
 
-    // Parse ingredients
-    const parsedIngredients = parseIngredients(ingredients);
+    // Parse ingredients for diet classification (needs detailed parsing)
+    const parsedIngredientsForDiet = parseIngredients(ingredients);
+
+    // Parse ingredients for nutrition calculation (simpler format)
+    const parsedIngredientsForNutrition = ingredients
+      .map(parseIngredientString)
+      .filter(
+        (ing): ing is NonNullable<ReturnType<typeof parseIngredientString>> =>
+          ing !== null
+      );
 
     // Initialize response data
     const warnings: string[] = [];
+
+    // If no ingredients could be parsed for nutrition, add warning
+    if (parsedIngredientsForNutrition.length === 0 && ingredients.length > 0) {
+      warnings.push("Could not parse ingredients for nutrition analysis");
+    }
 
     // Calculate nutrition if needed
     let nutritionResult;
     if (options.includeNutrition || options.includeMacroAnalysis) {
       console.log("🧮 Calculating nutrition for diet analysis...");
-      nutritionResult = await calculateRecipeNutrition(parsedIngredients, {
-        servings,
-        includePercentDV: true,
-        fuzzyMatchThreshold: options.strictMode ? 0.8 : 0.6,
-      });
 
-      warnings.push(...nutritionResult.warnings);
+      if (parsedIngredientsForNutrition.length > 0) {
+        const calcResult = await calculateNutrition(
+          parsedIngredientsForNutrition,
+          {
+            servings,
+            preferUSDA: !options.strictMode,
+            includeConfidence: true,
+          }
+        );
+
+        // Convert to format expected by dietClassifier
+        nutritionResult = {
+          totalNutrients: calcResult.totalNutrients,
+          perServing: calcResult.perServing,
+          servings: calcResult.servings,
+          warnings: calcResult.metadata.warnings,
+        };
+
+        warnings.push(...calcResult.metadata.warnings);
+      }
     }
 
     // Perform diet classification
     console.log("🔍 Analyzing diet compatibility...");
     const dietAnalysis = await classifyRecipeDiets(
-      parsedIngredients,
+      parsedIngredientsForDiet,
       nutritionResult,
       { strictMode: options.strictMode }
     );
@@ -259,13 +287,15 @@ export async function POST(
       // Find key nutrients
       const findNutrient = (name: string) =>
         nutritionResult.perServing.find(
-          (n: NutrientValue) => n.nutrient.name === name
+          (n: NutrientResult) =>
+            n.nutrient.name.toLowerCase() === name.toLowerCase() ||
+            n.nutrient.name.toLowerCase().includes(name.toLowerCase())
         )?.value || 0;
 
-      const calories = findNutrient("Energy");
+      const calories = findNutrient("Energy") || findNutrient("Calories");
       const protein = findNutrient("Protein");
-      const carbs = findNutrient("Carbohydrates");
-      const fat = findNutrient("Total Fat");
+      const carbs = findNutrient("Carbohydrates") || findNutrient("Carbs");
+      const fat = findNutrient("Total Fat") || findNutrient("Fat");
 
       responseData.nutritionSummary = {
         totalCalories: calories * servings,

@@ -44,17 +44,16 @@ alwaysApply: false
 ### Architecture Evolution
 
 - Started as comprehensive meal planning app
-- Evolved to integrate professional APIs (Edamam, Browser-Use)
+- Evolved to integrate professional APIs (Browser-Use)
 - Focus shifted from custom AI to service integration
 - Complexity reduction through external service usage
 
 ### Key Technical Decisions
 
-1. **Edamam Dual API**: Recipe Search + Meal Planner APIs
-2. **Browser-Use Cloud**: Automated grocery shopping via AI agents
-3. **Server-First**: Minimal client state, maximum server actions
-4. **Real-time Macros**: Automatic nutrition recalculation
-5. **Progressive Enhancement**: Core features work without JavaScript
+1. **Browser-Use Cloud**: Automated grocery shopping via AI agents
+2. **Server-First**: Minimal client state, maximum server actions
+3. **Real-time Macros**: Automatic nutrition recalculation
+4. **Progressive Enhancement**: Core features work without JavaScript
 
 ## Debugging & Troubleshooting
 

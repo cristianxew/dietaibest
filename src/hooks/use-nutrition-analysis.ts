@@ -3,31 +3,32 @@
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
+interface NutrientData {
+  nutrient: {
+    id: string;
+    name: string;
+    nutrientCategory: string;
+  };
+  value: number;
+  unit: string;
+  percentDailyValue?: number;
+  confidence: number;
+}
+
 interface NutritionData {
-  totalNutrients: Array<{
-    nutrient: {
-      id: string;
-      name: string;
-      nutrientCategory: string;
-    };
-    value: number;
-    unit: string;
-    percentDailyValue?: number;
-    confidence: number;
-  }>;
-  perServing: Array<{
-    nutrient: {
-      id: string;
-      name: string;
-      nutrientCategory: string;
-    };
-    value: number;
-    unit: string;
-    percentDailyValue?: number;
-    confidence: number;
-  }>;
+  totalNutrients: NutrientData[];
+  perServing: NutrientData[];
   servings: number;
   overallConfidence: number;
+  summary: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+  };
 }
 
 interface DietCompatibilityData {
@@ -75,6 +76,11 @@ interface AnalysisResult {
   totalIngredients: number;
   confidence: number;
   warnings: string[];
+  sources?: {
+    local: number;
+    usda: number;
+    cached: number;
+  };
 }
 
 interface UseNutritionAnalysisOptions {
@@ -82,6 +88,7 @@ interface UseNutritionAnalysisOptions {
   includeNutrition?: boolean;
   includeDiets?: boolean;
   includeAllergens?: boolean;
+  preferUSDA?: boolean;
   onSuccess?: (result: AnalysisResult) => void;
   onError?: (error: string) => void;
 }
@@ -94,6 +101,7 @@ export function useNutritionAnalysis(
     (
       window as typeof window & {
         clearNutritionRateLimit?: () => Promise<void>;
+        getNutritionStats?: () => Promise<void>;
       }
     ).clearNutritionRateLimit = async () => {
       try {
@@ -103,13 +111,28 @@ export function useNutritionAnalysis(
         console.error("Failed to clear rate limit:", error);
       }
     };
+
+    (
+      window as typeof window & { getNutritionStats?: () => Promise<void> }
+    ).getNutritionStats = async () => {
+      try {
+        const response = await fetch("/api/nutrition/analyze", {
+          method: "GET",
+        });
+        const data = await response.json();
+        console.log("Nutrition Stats:", data);
+      } catch (error) {
+        console.error("Failed to get stats:", error);
+      }
+    };
   }
 
   const {
     servings = 1,
     includeNutrition = true,
-    includeDiets = false, // Changed default to false
-    includeAllergens = false, // Changed default to false
+    includeDiets = false,
+    includeAllergens = false,
+    preferUSDA = false,
     onSuccess,
     onError,
   } = options;
@@ -129,6 +152,7 @@ export function useNutritionAnalysis(
         includeNutrition?: boolean;
         includeDiets?: boolean;
         includeAllergens?: boolean;
+        preferUSDA?: boolean;
       }
     ) => {
       // Use provided options or fall back to hook options
@@ -136,6 +160,7 @@ export function useNutritionAnalysis(
         includeNutrition: analysisOptions?.includeNutrition ?? includeNutrition,
         includeDiets: analysisOptions?.includeDiets ?? includeDiets,
         includeAllergens: analysisOptions?.includeAllergens ?? includeAllergens,
+        preferUSDA: analysisOptions?.preferUSDA ?? preferUSDA,
       };
 
       // Circuit breaker: stop requests if too many failures
@@ -211,6 +236,7 @@ export function useNutritionAnalysis(
               includeAllergens: finalOptions.includeAllergens,
               includeConfidence: true,
               strictMode: false,
+              preferUSDA: finalOptions.preferUSDA,
             },
           }),
           signal: abortControllerRef.current.signal,
@@ -253,16 +279,41 @@ export function useNutritionAnalysis(
             totalIngredients: result.data.metadata.totalIngredients,
             confidence: result.data.metadata.confidence,
             warnings: result.data.metadata.warnings || [],
+            sources: result.data.metadata.sources,
           };
 
           setData(analysisResult);
           onSuccess?.(analysisResult);
 
+          // Show source information in development
+          if (
+            process.env.NODE_ENV === "development" &&
+            analysisResult.sources
+          ) {
+            console.log("Nutrition data sources:", analysisResult.sources);
+          }
+
           // Show warnings if any
           if (analysisResult.warnings.length > 0) {
-            toast.warning(
-              `Analysis completed with warnings: ${analysisResult.warnings[0]}`
-            );
+            const warningMessage = analysisResult.warnings[0];
+            // Only show the first warning as a toast to avoid spam
+            if (analysisResult.warnings.length > 1) {
+              toast.warning(
+                `${warningMessage} (+${
+                  analysisResult.warnings.length - 1
+                } more)`
+              );
+            } else {
+              toast.warning(warningMessage);
+            }
+          }
+
+          // Show data source summary if interesting
+          if (analysisResult.sources) {
+            const { usda } = analysisResult.sources;
+            if (usda > 0) {
+              toast.info(`Retrieved ${usda} ingredient(s) from USDA database`);
+            }
           }
         }
       } catch (err) {
@@ -291,9 +342,221 @@ export function useNutritionAnalysis(
       includeNutrition,
       includeDiets,
       includeAllergens,
+      preferUSDA,
       onSuccess,
       onError,
     ]
+  );
+
+  // Analyze with diet compatibility
+  const analyzeWithDiets = useCallback(
+    async (
+      ingredients: Array<{ name: string; amount: number; unit: string }>,
+      diets: string[]
+    ) => {
+      if (!diets || diets.length === 0) {
+        toast.error("Please specify diet types to check");
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Format ingredients
+        const ingredientStrings = ingredients
+          .filter((ing) => ing && ing.name && ing.name.trim() !== "")
+          .map((ing) => {
+            const parts = [];
+            if (ing.amount) parts.push(ing.amount);
+            if (ing.unit) parts.push(ing.unit);
+            parts.push(ing.name);
+            return parts.join(" ");
+          });
+
+        const response = await fetch("/api/nutrition/diet-check", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ingredients: ingredientStrings,
+            diets,
+            servings,
+            options: {
+              includeNutrition: true,
+              includeModifications: true,
+              includeMacroAnalysis: true,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.error || "Failed to check diet compatibility"
+          );
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          // Transform diet check results to our format
+          const dietCompatibility: DietCompatibilityData = {
+            classifications: result.data.results.map(
+              (r: {
+                dietType: string;
+                isCompatible: boolean;
+                confidence: number;
+                reasons: string[];
+                modifications?: string[];
+              }) => ({
+                dietTypeName: r.dietType,
+                isCompatible: r.isCompatible,
+                confidence: r.confidence,
+                reasons: r.reasons,
+                modifications: r.modifications,
+              })
+            ),
+            primaryDiets: result.data.results
+              .filter(
+                (r: { isCompatible: boolean; confidence: number }) =>
+                  r.isCompatible && r.confidence >= 0.8
+              )
+              .map((r: { dietType: string }) => r.dietType),
+            partialDiets: result.data.results
+              .filter(
+                (r: { isCompatible: boolean; confidence: number }) =>
+                  r.isCompatible && r.confidence < 0.8
+              )
+              .map((r: { dietType: string }) => r.dietType),
+            macroAnalysis: result.data.macroAnalysis || {
+              carbPercentage: 0,
+              proteinPercentage: 0,
+              fatPercentage: 0,
+              isKetogenic: false,
+              isHighProtein: false,
+              isLowFat: false,
+              isBalanced: false,
+            },
+          };
+
+          const analysisResult: AnalysisResult = {
+            dietCompatibility,
+            matchedIngredients: ingredients.length,
+            totalIngredients: ingredients.length,
+            confidence: 100,
+            warnings: result.data.metadata.warnings || [],
+          };
+
+          setData(analysisResult);
+          onSuccess?.(analysisResult);
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to check diet compatibility";
+        setError(errorMessage);
+        onError?.(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [servings, onSuccess, onError]
+  );
+
+  // Check for allergens
+  const checkAllergens = useCallback(
+    async (
+      ingredients: Array<{ name: string; amount: number; unit: string }>,
+      userAllergens?: string[]
+    ) => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Format ingredients
+        const ingredientStrings = ingredients
+          .filter((ing) => ing && ing.name && ing.name.trim() !== "")
+          .map((ing) => {
+            const parts = [];
+            if (ing.amount) parts.push(ing.amount);
+            if (ing.unit) parts.push(ing.unit);
+            parts.push(ing.name);
+            return parts.join(" ");
+          });
+
+        const response = await fetch("/api/nutrition/allergen-check", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ingredients: ingredientStrings,
+            userAllergens,
+            options: {
+              includeCrossContamination: true,
+              sensitivityLevel: "standard",
+              includeSubstitutions: true,
+              groupByCategory: true,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to check allergens");
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          const allergenData: AllergenData = {
+            detectedAllergens: result.data.detectedAllergens,
+            riskLevel: result.data.riskAssessment.overallRisk,
+            recommendedLabels: result.data.riskAssessment.recommendedLabels,
+          };
+
+          const analysisResult: AnalysisResult = {
+            allergens: allergenData,
+            matchedIngredients: ingredients.length,
+            totalIngredients: ingredients.length,
+            confidence: result.data.metadata.overallConfidence,
+            warnings: result.data.metadata.warnings || [],
+          };
+
+          setData(analysisResult);
+          onSuccess?.(analysisResult);
+
+          // Show user-specific warnings if any
+          if (result.data.userSpecificWarnings?.length > 0) {
+            result.data.userSpecificWarnings.forEach(
+              (warning: {
+                message: string;
+                urgency: "high" | "medium" | "low";
+              }) => {
+                if (warning.urgency === "high") {
+                  toast.error(warning.message);
+                } else {
+                  toast.warning(warning.message);
+                }
+              }
+            );
+          }
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to check allergens";
+        setError(errorMessage);
+        onError?.(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onSuccess, onError]
   );
 
   // Cleanup on unmount
@@ -305,6 +568,8 @@ export function useNutritionAnalysis(
 
   return {
     analyze: analyzeNutrition,
+    analyzeWithDiets,
+    checkAllergens,
     isLoading,
     data,
     error,

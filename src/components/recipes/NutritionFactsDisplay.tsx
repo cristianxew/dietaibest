@@ -31,6 +31,11 @@ interface NutritionFactsDisplayProps {
   confidence?: number;
   className?: string;
   showAllNutrients?: boolean;
+  sources?: {
+    local: number;
+    usda: number;
+    cached: number;
+  };
 }
 
 export function NutritionFactsDisplay({
@@ -39,6 +44,7 @@ export function NutritionFactsDisplay({
   confidence = 0,
   className,
   showAllNutrients = false,
+  sources,
 }: NutritionFactsDisplayProps) {
   // Group nutrients by category
   const groupedNutrients = nutrients.reduce((acc, nutrient) => {
@@ -50,18 +56,28 @@ export function NutritionFactsDisplay({
     return acc;
   }, {} as Record<string, NutrientData[]>);
 
-  // Find key macronutrients
-  const findNutrient = (name: string) =>
-    nutrients.find((n) => n.nutrient.name.toLowerCase() === name.toLowerCase());
+  // Find key macronutrients - flexible matching for different naming conventions
+  const findNutrient = (names: string[]) => {
+    for (const name of names) {
+      const nutrient = nutrients.find((n) => {
+        const nutrientName = n.nutrient.name.toLowerCase();
+        return (
+          nutrientName === name.toLowerCase() ||
+          nutrientName.includes(name.toLowerCase())
+        );
+      });
+      if (nutrient) return nutrient;
+    }
+    return undefined;
+  };
 
-  const calories = findNutrient("calories") || findNutrient("energy");
-  const protein = findNutrient("protein");
-  const carbs =
-    findNutrient("total carbohydrates") || findNutrient("carbohydrates");
-  const fat = findNutrient("total fat") || findNutrient("fat");
-  const fiber = findNutrient("dietary fiber") || findNutrient("fiber");
-  const sugar = findNutrient("sugars") || findNutrient("sugar");
-  const sodium = findNutrient("sodium");
+  const calories = findNutrient(["energy", "calories", "kcal"]);
+  const protein = findNutrient(["protein"]);
+  const carbs = findNutrient(["carbohydrates", "total carbohydrates", "carbs"]);
+  const fat = findNutrient(["total fat", "fat", "total lipid"]);
+  const fiber = findNutrient(["dietary fiber", "fiber", "total dietary fiber"]);
+  const sugar = findNutrient(["sugars", "sugar", "total sugars"]);
+  const sodium = findNutrient(["sodium"]);
 
   const getConfidenceBadge = (confidence: number) => {
     if (confidence >= 80) return "default";
@@ -74,20 +90,50 @@ export function NutritionFactsDisplay({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold">Nutrition Facts</CardTitle>
-          {confidence > 0 && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant={getConfidenceBadge(confidence)}>
-                    {confidence.toFixed(0)}% confidence
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Analysis confidence based on ingredient matching</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          <div className="flex items-center gap-2">
+            {sources && (sources.usda > 0 || sources.local > 0) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs">
+                      {sources.usda > 0 && sources.local > 0
+                        ? "Mixed Sources"
+                        : sources.usda > 0
+                        ? "USDA Data"
+                        : "Local Data"}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="text-sm space-y-1">
+                      {sources.local > 0 && (
+                        <p>Local database: {sources.local} ingredients</p>
+                      )}
+                      {sources.usda > 0 && (
+                        <p>USDA database: {sources.usda} ingredients</p>
+                      )}
+                      {sources.cached > 0 && (
+                        <p>Cached: {sources.cached} ingredients</p>
+                      )}
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {confidence > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant={getConfidenceBadge(confidence)}>
+                      {confidence.toFixed(0)}% confidence
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Analysis confidence based on ingredient matching</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           Per serving · {servings} {servings === 1 ? "serving" : "servings"}{" "}

@@ -121,35 +121,38 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     servings: watchedServings || 1,
     onSuccess: (result) => {
       // Only update form with nutrition values if we get nutrition data
-      if (result.nutrition) {
-        const nutrients = result.nutrition.perServing;
+      if (result.nutrition?.summary) {
+        const { summary } = result.nutrition;
 
-        // Find and set main macronutrients
-        const findNutrientValue = (name: string) => {
-          const nutrient = nutrients.find((n) =>
-            n.nutrient.name.toLowerCase().includes(name.toLowerCase())
+        // Update form with summarized nutrition values
+        form.setValue("calories", summary.calories);
+        form.setValue("protein", summary.protein);
+        form.setValue("carbs", summary.carbs);
+        form.setValue("fat", summary.fat);
+        form.setValue("fiber", summary.fiber);
+        form.setValue("sugar", summary.sugar);
+        form.setValue("sodium", summary.sodium);
+
+        // Show source information
+        if (result.sources) {
+          const { local, usda, cached } = result.sources;
+          const sourceInfo = [];
+          if (local > 0) sourceInfo.push(`${local} local`);
+          if (usda > 0) sourceInfo.push(`${usda} USDA`);
+          if (cached > 0) sourceInfo.push(`${cached} cached`);
+
+          toast.success(
+            `Nutrition analysis complete! (Sources: ${sourceInfo.join(", ")})`
           );
-          return nutrient ? nutrient.value : undefined;
-        };
-
-        form.setValue(
-          "calories",
-          findNutrientValue("calories") || findNutrientValue("energy")
-        );
-        form.setValue("protein", findNutrientValue("protein"));
-        form.setValue("carbs", findNutrientValue("carbohydrate"));
-        form.setValue("fat", findNutrientValue("fat"));
-        form.setValue("fiber", findNutrientValue("fiber"));
-        form.setValue("sugar", findNutrientValue("sugar"));
-        form.setValue("sodium", findNutrientValue("sodium"));
-
-        toast.success("Nutrition analysis complete!");
+        } else {
+          toast.success("Nutrition analysis complete!");
+        }
       }
     },
   });
 
   // Manual analysis trigger functions
-  const handleAnalyzeNutritionOnly = () => {
+  const handleAnalyzeNutritionOnly = (preferUSDA = false) => {
     if (watchedIngredients && Array.isArray(watchedIngredients)) {
       const validIngredients = watchedIngredients.filter(
         (ing) =>
@@ -161,6 +164,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
           includeNutrition: true,
           includeDiets: false,
           includeAllergens: false,
+          preferUSDA,
         });
       } else {
         toast.error("Please add some ingredients before analyzing nutrition");
@@ -180,6 +184,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
           includeNutrition: true,
           includeDiets: true,
           includeAllergens: true,
+          preferUSDA: false, // Use local data first for diet analysis
         });
       } else {
         toast.error("Please add some ingredients before analyzing");
@@ -896,27 +901,39 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                         Automatic Analysis Options
                       </span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={handleAnalyzeNutritionOnly}
+                        onClick={() => handleAnalyzeNutritionOnly(false)}
                         disabled={nutritionLoading}
-                        className="flex-1"
                       >
                         {nutritionLoading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <TestTube2 className="mr-2 h-4 w-4" />
                         )}
-                        Analyze Nutrition Only
+                        Quick Analysis
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleAnalyzeNutritionOnly(true)}
+                        disabled={nutritionLoading}
+                      >
+                        {nutritionLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <TestTube2 className="mr-2 h-4 w-4" />
+                        )}
+                        USDA Analysis
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         onClick={handleAnalyzeWithDietCompatibility}
                         disabled={nutritionLoading}
-                        className="flex-1"
+                        className="col-span-2"
                       >
                         {nutritionLoading ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -926,10 +943,13 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                         Full Analysis + Diet Info
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Automatic analysis will update the nutrition fields above
-                      based on your ingredients.
-                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>• Quick: Uses local database (faster)</p>
+                      <p>
+                        • USDA: Queries USDA FoodData Central (more accurate)
+                      </p>
+                      <p>• Full: Includes diet compatibility & allergens</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -955,10 +975,10 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                   </Button>
                 </div>
 
-                <div className="flex gap-2 mb-4">
+                <div className="grid grid-cols-2 gap-2 mb-4">
                   <Button
                     type="button"
-                    onClick={handleAnalyzeNutritionOnly}
+                    onClick={() => handleAnalyzeNutritionOnly(false)}
                     disabled={nutritionLoading}
                   >
                     {nutritionLoading ? (
@@ -966,13 +986,26 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                     ) : (
                       <TestTube2 className="mr-2 h-4 w-4" />
                     )}
-                    Analyze Nutrition Only
+                    Quick Analysis
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleAnalyzeNutritionOnly(true)}
+                    disabled={nutritionLoading}
+                  >
+                    {nutritionLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <TestTube2 className="mr-2 h-4 w-4" />
+                    )}
+                    USDA Analysis
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleAnalyzeWithDietCompatibility}
                     disabled={nutritionLoading}
+                    className="col-span-2"
                   >
                     {nutritionLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1026,6 +1059,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
                     servings={nutritionData.nutrition.servings}
                     confidence={nutritionData.confidence}
                     showAllNutrients={false}
+                    sources={nutritionData.sources}
                   />
                 )}
 
