@@ -1,13 +1,23 @@
 /**
- * Nutrition Data Provider
+ * Nutrition Data Provider - Enhanced with Database Persistence
  *
- * Provides a modular interface for nutrient data lookups.
- * Abstracts the data source (local database, USDA API, or cached data)
- * to make the system more maintainable and testable.
+ * Provides a multi-tier caching system for nutrient data lookups:
+ * 1. In-memory cache (fastest - sub-millisecond)
+ * 2. Database cache (persistent, fast - few milliseconds)
+ * 3. USDA API (comprehensive, slower - seconds)
+ *
+ * This approach ensures optimal performance while building a comprehensive
+ * local nutrition database over time.
  */
 
-import { findBestUSDAMatch, type USDANutrient } from "./usda";
+import { findBestUSDAMatch } from "./usda";
 import { getNutritionCache } from "./nutritionCache";
+import {
+  findIngredientInDatabase,
+  storeIngredientNutrition,
+  convertDatabaseToNutrientInfo,
+  initializeNutrients,
+} from "./ingredientNutritionDB";
 
 // Nutrient data structure
 export interface NutrientInfo {
@@ -48,497 +58,234 @@ export const NUTRIENT_IDS = {
   VITAMIN_D: "usda:1114",
 } as const;
 
-// Daily values for common nutrients (based on 2000 calorie diet)
-export const DAILY_VALUES: Record<string, { amount: number; unit: string }> = {
-  [NUTRIENT_IDS.ENERGY]: { amount: 2000, unit: "kcal" },
-  [NUTRIENT_IDS.PROTEIN]: { amount: 50, unit: "g" },
-  [NUTRIENT_IDS.FAT]: { amount: 65, unit: "g" },
-  [NUTRIENT_IDS.CARBS]: { amount: 300, unit: "g" },
-  [NUTRIENT_IDS.FIBER]: { amount: 25, unit: "g" },
-  [NUTRIENT_IDS.SUGAR]: { amount: 50, unit: "g" },
-  [NUTRIENT_IDS.SODIUM]: { amount: 2300, unit: "mg" },
-  [NUTRIENT_IDS.SATURATED_FAT]: { amount: 20, unit: "g" },
-  [NUTRIENT_IDS.CHOLESTEROL]: { amount: 300, unit: "mg" },
-  [NUTRIENT_IDS.CALCIUM]: { amount: 1000, unit: "mg" },
-  [NUTRIENT_IDS.IRON]: { amount: 18, unit: "mg" },
-  [NUTRIENT_IDS.POTASSIUM]: { amount: 3500, unit: "mg" },
-  [NUTRIENT_IDS.VITAMIN_A]: { amount: 900, unit: "mcg" },
-  [NUTRIENT_IDS.VITAMIN_C]: { amount: 90, unit: "mg" },
-  [NUTRIENT_IDS.VITAMIN_D]: { amount: 20, unit: "mcg" },
-};
-
 /**
- * Nutrition Data Provider class
- * Implements the data access pattern for nutrient lookups
+ * Enhanced Nutrition Data Provider with Database Persistence
  */
-export class NutritionDataProvider {
-  private cache = getNutritionCache();
-  private localDatabase: Map<string, IngredientNutritionData>;
+class EnhancedNutritionDataProvider {
+  private memoryCache = getNutritionCache();
+  private initPromise: Promise<void> | null = null;
 
-  constructor() {
-    // Initialize with some common ingredients for demo
-    // In production, this would connect to a real database
-    this.localDatabase = new Map();
-    this.initializeLocalData();
+  /**
+   * Initialize the provider and ensure nutrients are set up in database
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.initPromise) {
+      this.initPromise = initializeNutrients().catch((error) => {
+        console.warn("Failed to initialize nutrients:", error);
+      });
+    }
+    await this.initPromise;
   }
 
   /**
-   * Get nutrition data for an ingredient
-   * Tries cache -> local -> USDA in that order
+   * Multi-tier ingredient lookup with automatic USDA fallback and storage
    */
-  async getNutritionData(
-    ingredientName: string,
-    options: {
-      preferUSDA?: boolean;
-      skipCache?: boolean;
-    } = {}
-  ): Promise<IngredientNutritionData | null> {
-    const normalizedName = this.normalizeIngredientName(ingredientName);
-
-    // Check cache first (unless skipped)
-    if (!options.skipCache) {
-      const cached = this.cache.get(
-        `nutrition:${normalizedName}`
-      ) as IngredientNutritionData | null;
-      if (cached) {
-        return { ...cached, source: "cache" };
-      }
-    }
-
-    // Try USDA first if preferred
-    if (options.preferUSDA) {
-      const usdaData = await this.fetchUSDAData(ingredientName);
-      if (usdaData) {
-        this.cache.set(`nutrition:${normalizedName}`, usdaData);
-        return usdaData;
-      }
-    }
-
-    // Try local database
-    const localData = this.getLocalData(normalizedName);
-    if (localData) {
-      this.cache.set(`nutrition:${normalizedName}`, localData);
-      return localData;
-    }
-
-    // Fallback to USDA if not already tried
-    if (!options.preferUSDA) {
-      const usdaData = await this.fetchUSDAData(ingredientName);
-      if (usdaData) {
-        this.cache.set(`nutrition:${normalizedName}`, usdaData);
-        return usdaData;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Get nutrition data from local database
-   */
-  private getLocalData(ingredientName: string): IngredientNutritionData | null {
-    // Try exact match
-    const data = this.localDatabase.get(ingredientName);
-    if (data) {
-      return { ...data, source: "local" as const };
-    }
-
-    // Try fuzzy match
-    for (const [name, nutritionData] of this.localDatabase.entries()) {
-      if (this.isSimilarIngredient(ingredientName, name)) {
-        return {
-          ...nutritionData,
-          source: "local" as const,
-          matchConfidence: 0.8, // Lower confidence for fuzzy match
-        };
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Fetch nutrition data from USDA
-   */
-  private async fetchUSDAData(
+  async getIngredientNutrition(
     ingredientName: string
   ): Promise<IngredientNutritionData | null> {
-    try {
-      const match = await findBestUSDAMatch(ingredientName, {
-        preferGeneric: true,
-        maxResults: 3,
-      });
+    await this.ensureInitialized();
 
-      if (!match || match.confidence < 40) {
+    const normalizedName = this.normalizeIngredientName(ingredientName);
+    const cacheKey = `ingredient:${normalizedName}`;
+
+    // Tier 1: Check in-memory cache (fastest)
+    const memoryResult = this.memoryCache.get(cacheKey);
+    if (memoryResult) {
+      return memoryResult;
+    }
+
+    try {
+      // Tier 2: Check database cache (persistent, fast)
+      const dbResult = await findIngredientInDatabase(normalizedName);
+
+      if (dbResult.found && dbResult.ingredient) {
+        const nutritionData: IngredientNutritionData = {
+          ingredientName,
+          nutrients: convertDatabaseToNutrientInfo(dbResult.ingredient),
+          matchConfidence: dbResult.matchConfidence,
+          source: "local",
+        };
+
+        // Cache in memory for future requests
+        this.memoryCache.set(cacheKey, nutritionData);
+        return nutritionData;
+      }
+
+      // Tier 3: Query USDA API and store results
+      console.log(
+        `🔍 Ingredient "${ingredientName}" not found in database, querying USDA...`
+      );
+
+      const usdaResult = await findBestUSDAMatch(normalizedName);
+      if (!usdaResult) {
+        console.log(`❌ No USDA match found for "${ingredientName}"`);
         return null;
       }
 
-      const nutrients: NutrientInfo[] = [];
+      // Store the USDA result in database for future use
+      const storedIngredient = await storeIngredientNutrition(
+        normalizedName,
+        {
+          fdcId: usdaResult.food.fdcId,
+          description: usdaResult.food.description,
+          dataType: usdaResult.food.dataType || "unknown",
+          nutrients:
+            usdaResult.food.foodNutrients?.map((nutrient) => ({
+              nutrientId: nutrient.nutrientId,
+              nutrientName: nutrient.nutrientName || "",
+              value: nutrient.value || 0,
+              unitName: nutrient.unitName || "",
+            })) || [],
+          category:
+            typeof usdaResult.food.foodCategory === "object"
+              ? (usdaResult.food.foodCategory as { description?: string })
+                  ?.description || "Unknown"
+              : usdaResult.food.foodCategory || "Unknown",
+        },
+        [
+          ingredientName.toLowerCase(),
+          usdaResult.food.description.toLowerCase(),
+        ]
+      );
 
-      if (match.food.foodNutrients) {
-        for (const nutrient of match.food.foodNutrients) {
-          const info = this.convertUSDANutrient(nutrient as USDANutrient);
-          if (info) {
-            nutrients.push(info);
-          }
-        }
+      if (storedIngredient) {
+        const nutritionData: IngredientNutritionData = {
+          ingredientName,
+          nutrients: convertDatabaseToNutrientInfo(storedIngredient),
+          matchConfidence: this.calculateUSDAMatchConfidence(
+            ingredientName,
+            usdaResult.food.description
+          ),
+          source: "usda",
+        };
+
+        // Cache in memory
+        this.memoryCache.set(cacheKey, nutritionData);
+
+        console.log(
+          `✅ Stored nutrition data for "${ingredientName}" from USDA`
+        );
+        return nutritionData;
       }
 
-      return {
-        ingredientName: match.food.description,
-        nutrients,
-        matchConfidence: match.confidence / 100,
-        source: "usda",
-      };
+      console.warn(`⚠️ Failed to store USDA data for "${ingredientName}"`);
+      return null;
     } catch (error) {
-      console.error("Error fetching USDA data:", error);
+      console.error(
+        `❌ Error getting nutrition for "${ingredientName}":`,
+        error
+      );
       return null;
     }
   }
 
   /**
-   * Convert USDA nutrient to our format
+   * Get multiple ingredients efficiently with batch processing
    */
-  private convertUSDANutrient(nutrient: USDANutrient): NutrientInfo | null {
-    const id = nutrient.nutrient?.id || nutrient.nutrientId;
-    const name = nutrient.nutrient?.name || nutrient.nutrientName;
-    const value = nutrient.amount || nutrient.value || 0;
-    const unit = nutrient.nutrient?.unitName || nutrient.unitName || "g";
+  async getMultipleIngredients(
+    ingredientNames: string[]
+  ): Promise<Array<IngredientNutritionData | null>> {
+    // Process in parallel for better performance
+    const results = await Promise.allSettled(
+      ingredientNames.map((name) => this.getIngredientNutrition(name))
+    );
 
-    if (!id || !name || value === 0) {
-      return null;
-    }
-
-    const nutrientId = `usda:${id}`;
-    const dailyValue = this.calculateDailyValue(nutrientId, value, unit);
-
-    return {
-      id: nutrientId,
-      name,
-      value,
-      unit: unit.toLowerCase(),
-      category: this.categorizeNutrient(name),
-      confidence: 0.9, // High confidence for USDA data
-      dailyValue,
-      source: "usda",
-    };
+    return results.map((result) => {
+      if (result.status === "fulfilled") {
+        return result.value;
+      } else {
+        console.warn("Failed to get nutrition for ingredient:", result.reason);
+        return null;
+      }
+    });
   }
 
   /**
-   * Calculate daily value percentage
+   * Calculate confidence score for USDA matches
    */
-  private calculateDailyValue(
-    nutrientId: string,
-    value: number,
-    unit: string
-  ): number | undefined {
-    const dv = DAILY_VALUES[nutrientId];
-    if (!dv || dv.unit.toLowerCase() !== unit.toLowerCase()) {
-      return undefined;
-    }
+  private calculateUSDAMatchConfidence(
+    searchTerm: string,
+    usdaDescription: string
+  ): number {
+    const normalizedSearch = searchTerm.toLowerCase().replace(/[^a-z\s]/g, " ");
+    const normalizedDescription = usdaDescription
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ");
 
-    return Math.round((value / dv.amount) * 100);
+    // Exact match
+    if (normalizedSearch === normalizedDescription) return 1.0;
+
+    // Contains match
+    if (normalizedDescription.includes(normalizedSearch)) return 0.9;
+
+    // Word overlap
+    const searchWords = normalizedSearch
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+    const descWords = normalizedDescription
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+
+    if (searchWords.length === 0) return 0.5;
+
+    const matches = searchWords.filter((word) =>
+      descWords.some(
+        (descWord) => descWord.includes(word) || word.includes(descWord)
+      )
+    );
+
+    const overlapRatio = matches.length / searchWords.length;
+
+    if (overlapRatio >= 0.7) return 0.8;
+    if (overlapRatio >= 0.5) return 0.7;
+    if (overlapRatio >= 0.3) return 0.6;
+
+    return 0.5; // Minimum confidence for USDA matches
   }
 
   /**
-   * Categorize nutrient by name
-   */
-  private categorizeNutrient(name: string): string {
-    const lowerName = name.toLowerCase();
-
-    if (lowerName.includes("energy") || lowerName.includes("calorie"))
-      return "Energy";
-    if (lowerName.includes("protein")) return "Macronutrient";
-    if (lowerName.includes("fat")) return "Macronutrient";
-    if (
-      lowerName.includes("carbohydrate") ||
-      lowerName.includes("sugar") ||
-      lowerName.includes("fiber")
-    )
-      return "Macronutrient";
-    if (lowerName.includes("vitamin")) return "Vitamin";
-    if (
-      lowerName.includes("calcium") ||
-      lowerName.includes("iron") ||
-      lowerName.includes("sodium") ||
-      lowerName.includes("potassium")
-    )
-      return "Mineral";
-
-    return "Other";
-  }
-
-  /**
-   * Normalize ingredient name for matching
+   * Normalize ingredient name for consistent matching
    */
   private normalizeIngredientName(name: string): string {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s]/g, "") // Remove special characters
-      .replace(/\s+/g, " "); // Normalize whitespace
+      .replace(/[^\w\s]/g, " ") // Replace non-word chars with spaces
+      .replace(/\s+/g, " ") // Collapse multiple spaces
+      .replace(
+        /(^|\s)(raw|fresh|frozen|dried|cooked|boiled|steamed|grilled|baked)(\s|$)/g,
+        " "
+      )
+      .trim();
   }
 
   /**
-   * Check if two ingredient names are similar
-   */
-  private isSimilarIngredient(name1: string, name2: string): boolean {
-    const words1 = name1.split(" ");
-    const words2 = name2.split(" ");
-
-    // Check if all words from shorter name are in longer name
-    const shorter = words1.length < words2.length ? words1 : words2;
-    const longer = words1.length >= words2.length ? words1 : words2;
-
-    return shorter.every((word) =>
-      longer.some((w) => w.includes(word) || word.includes(w))
-    );
-  }
-
-  /**
-   * Initialize local database with common ingredients
-   * In production, this would load from a real database
-   */
-  private initializeLocalData(): void {
-    // Add some common ingredients with nutrition data
-    this.localDatabase.set("chicken breast", {
-      ingredientName: "Chicken Breast",
-      nutrients: [
-        {
-          id: NUTRIENT_IDS.ENERGY,
-          name: "Energy",
-          value: 165,
-          unit: "kcal",
-          category: "Energy",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.PROTEIN,
-          name: "Protein",
-          value: 31,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.FAT,
-          name: "Total Fat",
-          value: 3.6,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.CARBS,
-          name: "Carbohydrates",
-          value: 0,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-      ],
-      matchConfidence: 1,
-      source: "local",
-    });
-
-    this.localDatabase.set("white rice", {
-      ingredientName: "White Rice",
-      nutrients: [
-        {
-          id: NUTRIENT_IDS.ENERGY,
-          name: "Energy",
-          value: 130,
-          unit: "kcal",
-          category: "Energy",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.PROTEIN,
-          name: "Protein",
-          value: 2.7,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.FAT,
-          name: "Total Fat",
-          value: 0.3,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.CARBS,
-          name: "Carbohydrates",
-          value: 28,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.FIBER,
-          name: "Fiber",
-          value: 0.4,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-      ],
-      matchConfidence: 1,
-      source: "local",
-    });
-
-    this.localDatabase.set("olive oil", {
-      ingredientName: "Olive Oil",
-      nutrients: [
-        {
-          id: NUTRIENT_IDS.ENERGY,
-          name: "Energy",
-          value: 884,
-          unit: "kcal",
-          category: "Energy",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.FAT,
-          name: "Total Fat",
-          value: 100,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.SATURATED_FAT,
-          name: "Saturated Fat",
-          value: 14,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-      ],
-      matchConfidence: 1,
-      source: "local",
-    });
-
-    this.localDatabase.set("broccoli", {
-      ingredientName: "Broccoli",
-      nutrients: [
-        {
-          id: NUTRIENT_IDS.ENERGY,
-          name: "Energy",
-          value: 34,
-          unit: "kcal",
-          category: "Energy",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.PROTEIN,
-          name: "Protein",
-          value: 2.8,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.CARBS,
-          name: "Carbohydrates",
-          value: 6.6,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.FIBER,
-          name: "Fiber",
-          value: 2.6,
-          unit: "g",
-          category: "Macronutrient",
-          confidence: 1,
-          source: "local",
-        },
-        {
-          id: NUTRIENT_IDS.VITAMIN_C,
-          name: "Vitamin C",
-          value: 89,
-          unit: "mg",
-          category: "Vitamin",
-          confidence: 1,
-          source: "local",
-        },
-      ],
-      matchConfidence: 1,
-      source: "local",
-    });
-  }
-
-  /**
-   * Batch get nutrition data for multiple ingredients
-   */
-  async batchGetNutritionData(
-    ingredientNames: string[],
-    options: {
-      preferUSDA?: boolean;
-      skipCache?: boolean;
-    } = {}
-  ): Promise<Map<string, IngredientNutritionData | null>> {
-    const results = new Map<string, IngredientNutritionData | null>();
-
-    // Process in parallel with concurrency limit
-    const BATCH_SIZE = 5;
-    for (let i = 0; i < ingredientNames.length; i += BATCH_SIZE) {
-      const batch = ingredientNames.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(
-        batch.map((name) => this.getNutritionData(name, options))
-      );
-
-      batch.forEach((name, index) => {
-        results.set(name, batchResults[index]);
-      });
-    }
-
-    return results;
-  }
-
-  /**
-   * Clear all cached data
-   */
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Get cache statistics
+   * Get cache statistics for monitoring
    */
   getCacheStats() {
-    return this.cache.getStats();
+    return {
+      memory: this.memoryCache.getStats(),
+      // Database stats would need to be implemented in ingredientNutritionDB
+    };
+  }
+
+  /**
+   * Clear memory cache (database cache remains persistent)
+   */
+  clearMemoryCache(): void {
+    this.memoryCache.clear();
   }
 }
 
 // Singleton instance
-let dataProviderInstance: NutritionDataProvider | null = null;
+let nutritionDataProvider: EnhancedNutritionDataProvider;
 
-/**
- * Get or create the singleton data provider instance
- */
-export function getNutritionDataProvider(): NutritionDataProvider {
-  if (!dataProviderInstance) {
-    dataProviderInstance = new NutritionDataProvider();
+export function getNutritionDataProvider(): EnhancedNutritionDataProvider {
+  if (!nutritionDataProvider) {
+    nutritionDataProvider = new EnhancedNutritionDataProvider();
   }
-  return dataProviderInstance;
+  return nutritionDataProvider;
 }
+
+// Export the default instance
+export default getNutritionDataProvider();

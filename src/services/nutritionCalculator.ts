@@ -16,8 +16,12 @@ import {
   type NutrientInfo,
   NUTRIENT_IDS,
 } from "./nutritionDataProvider";
+import {
+  cacheNutritionCalculation,
+  getCachedNutritionCalculation,
+} from "./ingredientNutritionDB";
 
-// Initialize data provider
+// Initialize enhanced data provider with database persistence
 const dataProvider = getNutritionDataProvider();
 
 // Input validation schemas
@@ -77,6 +81,16 @@ export async function calculateNutrition(
   const opts = CalculationOptionsSchema.parse(options);
   const warnings: string[] = [];
 
+  // Check database cache first for complete calculation
+  const cachedResult = await getCachedNutritionCalculation(
+    ingredients,
+    opts.servings
+  );
+  if (cachedResult && opts.useCache) {
+    console.log("📦 Returning cached nutrition calculation from database");
+    return cachedResult;
+  }
+
   // Track match sources
   let localMatches = 0;
   let usdaMatches = 0;
@@ -91,13 +105,9 @@ export async function calculateNutrition(
       // Validate input
       const validatedIngredient = IngredientInputSchema.parse(ingredient);
 
-      // Get nutrition data from provider
-      const nutritionData = await dataProvider.getNutritionData(
-        validatedIngredient.name,
-        {
-          preferUSDA: opts.preferUSDA,
-          skipCache: !opts.useCache,
-        }
+      // Get nutrition data from enhanced provider (database-backed)
+      const nutritionData = await dataProvider.getIngredientNutrition(
+        validatedIngredient.name
       );
 
       if (nutritionData) {
@@ -164,7 +174,7 @@ export async function calculateNutrition(
     ingredients.length
   );
 
-  return {
+  const result = {
     totalNutrients,
     perServing,
     servings: opts.servings,
@@ -178,6 +188,19 @@ export async function calculateNutrition(
       warnings,
     },
   };
+
+  // Cache the complete calculation in database for future use
+  if (opts.useCache && matchedIngredients > 0) {
+    await cacheNutritionCalculation(ingredients, opts.servings, result, {
+      local: localMatches,
+      usda: usdaMatches,
+      cached: cachedMatches,
+    }).catch((error) => {
+      console.warn("Failed to cache nutrition calculation:", error);
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -404,7 +427,6 @@ export function parseIngredientString(text: string): IngredientInput | null {
     return null;
   }
 }
-
 /**
  * Get summary nutrition facts (calories and macros)
  */

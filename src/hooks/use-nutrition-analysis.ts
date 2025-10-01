@@ -266,6 +266,8 @@ export function useNutritionAnalysis(
 
         const result = await response.json();
 
+        console.log("Nutrition analysis result:", result);
+
         if (result.success && result.data) {
           // Reset failure count and last failure time on success
           failureCountRef.current = 0;

@@ -120,3 +120,94 @@ model UserFavorite {
 
   @@unique([userId, recipeId])
 }
+
+// Ingredient and Nutrition Models for Persistent Caching
+model Ingredient {
+  id         String  @id @default(uuid())
+  name       String  @unique
+  commonName String? // Alternative/common name for matching
+  category   String? // food category (meat, vegetable, etc.)
+
+  // USDA Data (when available)
+  usdaFdcId    Int?    @unique
+  usdaDataType String? // "foundation", "sr_legacy", "survey", "branded"
+
+  // Metadata
+  searchTerms String[] // Additional terms for fuzzy matching
+  confidence  Float    @default(1.0) // Confidence in ingredient identification
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  nutrients IngredientNutrient[]
+
+  @@index([name])
+  @@index([usdaFdcId])
+}
+
+model Nutrient {
+  id               String @id @default(uuid())
+  name             String @unique
+  nutrientCategory String // "Macronutrients", "Vitamins", "Minerals", etc.
+  unit             String // "g", "mg", "kcal", etc.
+
+  // USDA nutrient number for mapping
+  usdaNutrientId Int? @unique
+
+  // Daily Value information
+  dailyValue     Float? // Daily value amount
+  dailyValueUnit String? // Unit for daily value
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ingredientNutrients IngredientNutrient[]
+
+  @@index([name])
+  @@index([usdaNutrientId])
+}
+
+model IngredientNutrient {
+  id           String @id @default(uuid())
+  ingredientId String
+  nutrientId   String
+
+  // Nutritional values (per 100g)
+  value Float
+
+  // Metadata
+  confidence Float  @default(1.0) // Confidence in this specific nutrient value
+  source     String @default("usda") // "usda", "manual", "estimated"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  nutrient   Nutrient   @relation(fields: [nutrientId], references: [id], onDelete: Cascade)
+
+  @@unique([ingredientId, nutrientId])
+  @@index([ingredientId])
+  @@index([nutrientId])
+}
+
+// Cache for processed nutrition calculations
+model NutritionCache {
+  id       String @id @default(uuid())
+  cacheKey String @unique // Hash of ingredients list + servings
+
+  // Cached data
+  nutritionData Json // Serialized nutrition calculation result
+
+  // Metadata
+  servings   Int
+  confidence Float
+  sources    Json // Source breakdown (local, usda, cached counts)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cacheKey])
+}
