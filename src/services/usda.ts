@@ -154,7 +154,11 @@ export async function searchUSDAFoods(
   }
 
   // Default to Foundation and SR Legacy for better quality data
-  const dataTypes = options.dataTypes || ["Foundation", "SR Legacy"];
+  const dataTypes = options.dataTypes || [
+    "Foundation",
+    "SR Legacy",
+    "Survey (FNDDS)",
+  ];
   dataTypes.forEach((type) => url.searchParams.append("dataType", type));
 
   try {
@@ -209,7 +213,20 @@ export async function getUSDAFoodById(
     }
 
     const data = await response.json();
-    return USDAFoodItemSchema.parse(data);
+    const foodDetail = USDAFoodItemSchema.parse(data);
+
+    // Warn if USDA data is incomplete (helpful for debugging)
+    if (
+      includeNutrients &&
+      foodDetail.foodNutrients &&
+      foodDetail.foodNutrients.length < 5
+    ) {
+      console.warn(
+        `⚠️ USDA food ${fdcId} (${foodDetail.description}) has incomplete nutrient data (${foodDetail.foodNutrients.length} nutrients)`
+      );
+    }
+
+    return foodDetail;
   } catch (error) {
     console.error(`Failed to get USDA food ${fdcId}:`, error);
     return null;
@@ -234,7 +251,7 @@ export async function fetchUSDAIngredientNutrition(
     // Search for the ingredient
     const searchResult = await searchUSDAFoods(ingredientName, {
       pageSize: 1,
-      dataTypes: ["Foundation", "SR Legacy"], // Prefer high-quality data
+      dataTypes: ["Survey (FNDDS)", "Foundation", "SR Legacy", "Branded"],
     });
 
     if (searchResult.foods.length === 0) {
@@ -248,6 +265,8 @@ export async function fetchUSDAIngredientNutrition(
     if (!foodDetail || !foodDetail.foodNutrients) {
       return [];
     }
+
+    console.log("foodDetail", foodDetail.foodNutrients);
 
     // Convert to our internal format
     return convertUSDAToIngredientNutrients(
@@ -296,7 +315,10 @@ export function convertUSDAToIngredientNutrients(
         ingredientId,
         nutrientId: safeNutrientId,
         value: amount,
-        confidence: 0.8, // USDA data has high confidence but not perfect match
+        confidence: 0.8,
+        source: "usda",
+        createdAt: new Date(),
+        updatedAt: new Date(),
         nutrient: {
           id: safeNutrientId,
           name: nutrientName,
@@ -304,7 +326,11 @@ export function convertUSDAToIngredientNutrients(
           nutrientCategory:
             n.nutrient?.nutrientCategory || categorizeNutrient(nutrientName),
           dailyValue: getDailyValue(nutrientName, amount, unit),
+          dailyValueUnit: unit,
           displayOrder: getDisplayOrder(nutrientName),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          usdaNutrientId: rawNutrientId ? Number(rawNutrientId) : null,
         },
       } as IngredientNutrient & { nutrient: Nutrient };
     });

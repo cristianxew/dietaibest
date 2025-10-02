@@ -107,7 +107,20 @@ export function AllergenWarnings({
 
   if (compact) {
     return (
-      <div className={cn("space-y-2", className)}>
+      <div className={cn("space-y-3", className)}>
+        {/* Risk Level Summary */}
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+          {getRiskLevelAlert().icon}
+          <div className="flex-1">
+            <p className="text-sm font-medium">{getRiskLevelAlert().title}</p>
+            <p className="text-xs text-muted-foreground">
+              {allergens.length} allergen{allergens.length !== 1 ? "s" : ""}{" "}
+              detected
+            </p>
+          </div>
+        </div>
+
+        {/* Allergen Badges */}
         <div className="flex flex-wrap gap-2">
           {allergens.map((allergen) => (
             <TooltipProvider key={allergen.allergenId}>
@@ -115,32 +128,64 @@ export function AllergenWarnings({
                 <TooltipTrigger asChild>
                   <Badge
                     variant={getSeverityColor(allergen.severity)}
-                    className="cursor-help"
+                    className="cursor-help hover:opacity-80 transition-opacity"
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       {getSeverityIcon(allergen.severity)}
                       <span>{allergen.allergenName}</span>
                     </div>
                   </Badge>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-sm">
-                  <div className="space-y-1">
-                    <p className="font-semibold">{allergen.allergenName}</p>
-                    <p className="text-xs">Severity: {allergen.severity}</p>
-                    <p className="text-xs">
-                      Found in: {allergen.sources.join(", ")}
+                <TooltipContent className="max-w-sm" side="bottom">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-sm">
+                      {allergen.allergenName}
                     </p>
-                    {allergen.warnings && allergen.warnings.length > 0 && (
-                      <p className="text-xs text-red-600">
-                        {allergen.warnings[0]}
+                    <div className="space-y-1 text-xs">
+                      <p>
+                        <span className="font-medium">Severity:</span>{" "}
+                        {allergen.severity}
                       </p>
-                    )}
+                      <p>
+                        <span className="font-medium">Found in:</span>{" "}
+                        {allergen.sources.join(", ")}
+                      </p>
+                      {allergen.confidence < 80 && (
+                        <p className="text-muted-foreground">
+                          Confidence: {allergen.confidence}%
+                        </p>
+                      )}
+                      {allergen.warnings && allergen.warnings.length > 0 && (
+                        <p className="text-red-600 font-medium">
+                          ⚠️ {allergen.warnings[0]}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           ))}
         </div>
+
+        {/* Recommended Labels Preview */}
+        {recommendedLabels && recommendedLabels.length > 0 && (
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground mb-1">May contain:</p>
+            <div className="flex flex-wrap gap-1">
+              {recommendedLabels.slice(0, 3).map((label) => (
+                <Badge key={label} variant="outline" className="text-xs">
+                  {label}
+                </Badge>
+              ))}
+              {recommendedLabels.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{recommendedLabels.length - 3} more
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

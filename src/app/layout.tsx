@@ -1,8 +1,27 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Lato, Alice, Poppins } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Lato for general body text
+const lato = Lato({ 
+  subsets: ["latin"],
+  weight: ["300", "400", "700", "900"],
+  variable: "--font-lato"
+});
+
+// Alice for headings and section titles
+const alice = Alice({ 
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-alice"
+});
+
+// Poppins for header nav items and buttons
+const poppins = Poppins({ 
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins"
+});
 
 export const metadata: Metadata = {
   title: "Dietaibest - AI-Powered Meal Planning",
@@ -17,7 +36,9 @@ export default function RootLayout({
 }) {
   return (
     <html>
-      <body className={inter.className}>{children}</body>
+      <body className={`${lato.variable} ${alice.variable} ${poppins.variable} ${lato.className}`}>
+        {children}
+      </body>
     </html>
   );
 }

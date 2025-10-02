@@ -10,7 +10,6 @@
  */
 
 import { z } from "zod";
-import convert from "convert-units";
 import {
   getNutritionDataProvider,
   type NutrientInfo,
@@ -20,6 +19,7 @@ import {
   cacheNutritionCalculation,
   getCachedNutritionCalculation,
 } from "./ingredientNutritionDB";
+import { standardizeToGrams } from "./ingredientDensity";
 
 // Initialize enhanced data provider with database persistence
 const dataProvider = getNutritionDataProvider();
@@ -100,15 +100,57 @@ export async function calculateNutrition(
   // Aggregate nutrients across all ingredients
   const nutrientTotals = new Map<string, NutrientResult>();
 
+  // PERFORMANCE FIX: Batch process ingredients with concurrency control
+  // Instead of sequential processing (24 × 15s = 6 minutes), process 5 at a time
+  const BATCH_SIZE = 5;
+  const validatedIngredients: typeof ingredients = [];
+
+  // Pre-validate all ingredients
   for (const ingredient of ingredients) {
     try {
-      // Validate input
-      const validatedIngredient = IngredientInputSchema.parse(ingredient);
+      validatedIngredients.push(IngredientInputSchema.parse(ingredient));
+    } catch (error) {
+      console.error(`Invalid ingredient:`, error);
+      warnings.push(`Invalid ingredient data: ${ingredient.name}`);
+    }
+  }
 
-      // Get nutrition data from enhanced provider (database-backed)
-      const nutritionData = await dataProvider.getIngredientNutrition(
-        validatedIngredient.name
-      );
+  // Process ingredients in concurrent batches
+  for (let i = 0; i < validatedIngredients.length; i += BATCH_SIZE) {
+    const batch = validatedIngredients.slice(i, i + BATCH_SIZE);
+
+    // Process batch concurrently
+    const batchResults = await Promise.allSettled(
+      batch.map(async (validatedIngredient) => {
+        try {
+          // Get nutrition data from enhanced provider (database-backed)
+          const nutritionData = await dataProvider.getIngredientNutrition(
+            validatedIngredient.name
+          );
+
+          return {
+            ingredient: validatedIngredient,
+            nutritionData,
+          };
+        } catch (error) {
+          console.error(`Error processing ingredient:`, error);
+          return {
+            ingredient: validatedIngredient,
+            nutritionData: null,
+            error,
+          };
+        }
+      })
+    );
+
+    // Aggregate results from this batch
+    for (const result of batchResults) {
+      if (result.status === "rejected") {
+        warnings.push(`Failed to process batch ingredient: ${result.reason}`);
+        continue;
+      }
+
+      const { ingredient: validatedIngredient, nutritionData } = result.value;
 
       if (nutritionData) {
         matchedIngredients++;
@@ -130,7 +172,9 @@ export async function calculateNutrition(
         const standardizedNutrients = await standardizeNutrientAmounts(
           nutritionData.nutrients,
           validatedIngredient.amount,
-          validatedIngredient.unit
+          validatedIngredient.unit,
+          validatedIngredient.name,
+          warnings
         );
 
         aggregateNutrients(nutrientTotals, standardizedNutrients);
@@ -139,14 +183,11 @@ export async function calculateNutrition(
           `No nutrition data found for: ${validatedIngredient.name}`
         );
       }
-    } catch (error) {
-      console.error(`Error processing ingredient:`, error);
-      warnings.push(`Failed to process: ${ingredient.name}`);
     }
   }
 
   // Convert map to array and sort by importance
-  const totalNutrients = Array.from(nutrientTotals.values()).sort((a, b) => {
+  let totalNutrients = Array.from(nutrientTotals.values()).sort((a, b) => {
     // Sort by category and name
     const categoryOrder = [
       "Energy",
@@ -160,6 +201,9 @@ export async function calculateNutrition(
     if (catA !== catB) return catA - catB;
     return a.nutrient.name.localeCompare(b.nutrient.name);
   });
+
+  // Ensure basic nutrients are present (adds zero-value placeholders if missing)
+  totalNutrients = ensureBasicNutrients(totalNutrients);
 
   // Calculate per-serving values
   const perServing = totalNutrients.map((nutrient) => ({
@@ -206,111 +250,155 @@ export async function calculateNutrition(
 /**
  * Standardize nutrient amounts to common units
  * Converts ingredient amounts to per 100g basis for consistency
+ * Now uses ingredient density data for accurate volume-to-weight conversions
  */
 async function standardizeNutrientAmounts(
   nutrients: NutrientInfo[],
   amount: number,
-  unit: string
+  unit: string,
+  ingredientName?: string,
+  warnings?: string[]
 ): Promise<NutrientResult[]> {
   const standardized: NutrientResult[] = [];
 
-  // Convert amount to grams if possible
+  // Convert amount to grams using density data if available
   let amountInGrams = amount;
+  let conversionConfidence = 1.0;
 
   try {
-    // Use convert-units library for standard conversions
+    // Use the new density-based conversion system with enhanced error handling
     if (unit !== "g" && unit !== "gram" && unit !== "grams") {
-      // Try mass conversion first
-      try {
-        const massUnits = ["mg", "kg", "oz", "lb"];
-        const unitLower = unit.toLowerCase();
+      const conversion = standardizeToGrams(
+        amount,
+        unit,
+        ingredientName || "unknown"
+      );
+      amountInGrams = conversion.value;
+      conversionConfidence = conversion.confidence;
 
-        if (massUnits.some((u) => unitLower.includes(u))) {
-          // Map common variations to standard units
-          let standardUnit = unitLower;
-          if (unitLower.includes("ounce") || unitLower === "oz")
-            standardUnit = "oz";
-          if (
-            unitLower.includes("pound") ||
-            unitLower === "lb" ||
-            unitLower === "lbs"
-          )
-            standardUnit = "lb";
-          if (unitLower.includes("kilogram") || unitLower === "kg")
-            standardUnit = "kg";
-          if (unitLower.includes("milligram") || unitLower === "mg")
-            standardUnit = "mg";
-
-          // @ts-expect-error convert-units type definitions are incomplete
-          amountInGrams = convert(amount).from(standardUnit).to("g");
-        } else {
-          // For volume units, use approximate conversions
-          amountInGrams = estimateGramsFromVolume(amount, unit);
+      // Log warning if conversion had issues and add to warnings array
+      if (conversion.warning) {
+        console.warn(`Unit conversion warning: ${conversion.warning}`);
+        if (warnings) {
+          warnings.push(
+            `Unit conversion issue for ${amount} ${unit}: ${conversion.warning}`
+          );
         }
-      } catch {
-        // If conversion fails, use the estimate function
-        amountInGrams = estimateGramsFromVolume(amount, unit);
       }
     }
-  } catch {
-    console.warn(`Could not convert ${amount} ${unit} to grams, using as-is`);
+  } catch (error) {
+    console.warn(`Could not convert ${amount} ${unit} to grams:`, error);
+    if (warnings) {
+      warnings.push(`Failed to convert ${amount} ${unit} to grams`);
+    }
   }
 
   // Scale nutrients based on amount (nutrients are typically per 100g)
   const scaleFactor = amountInGrams / 100;
 
   for (const nutrient of nutrients) {
+    const scaledValue = nutrient.value * scaleFactor;
     standardized.push({
       nutrient: {
         id: nutrient.id,
         name: nutrient.name,
         nutrientCategory: nutrient.category,
       },
-      value: nutrient.value * scaleFactor,
+      value: scaledValue,
       unit: nutrient.unit,
       percentDailyValue: nutrient.dailyValue
-        ? (nutrient.value * scaleFactor * nutrient.dailyValue) / 100
+        ? (scaledValue / nutrient.dailyValue) * 100 // Fixed: divide by daily value, not multiply
         : undefined,
-      confidence: nutrient.confidence,
+      confidence: nutrient.confidence * conversionConfidence, // Adjust confidence based on conversion accuracy
     });
   }
 
   return standardized;
 }
 
+// Removed estimateGramsFromVolume - now using ingredientDensity.ts for accurate conversions
+
 /**
- * Estimate grams from volume measurements
- * Uses average densities for common ingredients
+ * Ensure basic nutrients are present in the result
+ * Adds zero-value placeholders for missing core macros to ensure UI consistency
  */
-function estimateGramsFromVolume(amount: number, unit: string): number {
-  const lowerUnit = unit.toLowerCase();
+function ensureBasicNutrients(nutrients: NutrientResult[]): NutrientResult[] {
+  const requiredNutrients = [
+    {
+      id: NUTRIENT_IDS.ENERGY,
+      name: "Energy",
+      category: "Macronutrients",
+      unit: "kcal",
+    },
+    {
+      id: NUTRIENT_IDS.PROTEIN,
+      name: "Protein",
+      category: "Macronutrients",
+      unit: "g",
+    },
+    {
+      id: NUTRIENT_IDS.CARBS,
+      name: "Carbohydrates",
+      category: "Macronutrients",
+      unit: "g",
+    },
+    {
+      id: NUTRIENT_IDS.FAT,
+      name: "Total Fat",
+      category: "Macronutrients",
+      unit: "g",
+    },
+    {
+      id: NUTRIENT_IDS.FIBER,
+      name: "Fiber",
+      category: "Macronutrients",
+      unit: "g",
+    },
+    {
+      id: NUTRIENT_IDS.SUGAR,
+      name: "Total Sugars",
+      category: "Macronutrients",
+      unit: "g",
+    },
+    {
+      id: NUTRIENT_IDS.SODIUM,
+      name: "Sodium",
+      category: "Minerals",
+      unit: "mg",
+    },
+  ];
 
-  // Convert to milliliters first
-  let volumeInMl = amount;
+  const existingIds = new Set(nutrients.map((n) => n.nutrient.id));
+  const existingNames = new Set(
+    nutrients.map((n) => n.nutrient.name.toLowerCase())
+  );
 
-  if (lowerUnit.includes("cup")) {
-    volumeInMl = amount * 236.588;
-  } else if (lowerUnit.includes("tbsp") || lowerUnit.includes("tablespoon")) {
-    volumeInMl = amount * 14.787;
-  } else if (lowerUnit.includes("tsp") || lowerUnit.includes("teaspoon")) {
-    volumeInMl = amount * 4.929;
-  } else if (lowerUnit === "l" || lowerUnit.includes("liter")) {
-    volumeInMl = amount * 1000;
-  } else if (lowerUnit === "ml" || lowerUnit.includes("milliliter")) {
-    volumeInMl = amount;
-  } else if (lowerUnit.includes("fl oz") || lowerUnit.includes("fluid ounce")) {
-    volumeInMl = amount * 29.574;
-  } else if (lowerUnit.includes("pint")) {
-    volumeInMl = amount * 473.176;
-  } else if (lowerUnit.includes("quart")) {
-    volumeInMl = amount * 946.353;
-  } else if (lowerUnit.includes("gallon")) {
-    volumeInMl = amount * 3785.41;
+  const missingNutrients = requiredNutrients
+    .filter((req) => {
+      // Check if nutrient exists by ID or by name
+      const hasById = existingIds.has(req.id);
+      const hasByName = existingNames.has(req.name.toLowerCase());
+      return !hasById && !hasByName;
+    })
+    .map((req) => ({
+      nutrient: {
+        id: req.id,
+        name: req.name,
+        nutrientCategory: req.category,
+      },
+      value: 0,
+      unit: req.unit,
+      confidence: 0,
+    }));
+
+  if (missingNutrients.length > 0) {
+    console.warn(
+      `⚠️ Adding ${missingNutrients.length} missing core nutrients with zero values:`,
+      missingNutrients.map((n) => n.nutrient.name)
+    );
   }
 
-  // Use average density of 1g/ml (like water)
-  // This is a rough approximation - could be enhanced with ingredient-specific densities
-  return volumeInMl;
+  return [...nutrients, ...missingNutrients];
 }
 
 /**
@@ -364,71 +452,40 @@ function calculateOverallConfidence(
   return Math.round(coverageScore * 0.6 + avgNutrientConfidence * 0.4);
 }
 
+// Removed duplicate parseIngredientString function
+// Now using the comprehensive parseIngredient from @/utils/ingredientParser
 /**
- * Parse ingredient string to extract amount, unit, and name
- * This is a simplified version - can be enhanced with NLP
+ * Helper function to find a nutrient by ID or name variations
  */
-export function parseIngredientString(text: string): IngredientInput | null {
-  try {
-    // Remove extra whitespace and normalize
-    const cleaned = text.trim().replace(/\s+/g, " ");
-
-    // Common patterns for ingredient strings
-    const patterns = [
-      // "2 cups flour", "1.5 tbsp olive oil"
-      /^(\d+\.?\d*)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+(.+)$/,
-      // "250g chicken", "500ml milk"
-      /^(\d+\.?\d*)([a-zA-Z]+)\s+(.+)$/,
-      // "1/2 cup sugar", "3/4 tsp salt"
-      /^(\d+\/\d+)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)\s+(.+)$/,
-    ];
-
-    for (const pattern of patterns) {
-      const match = cleaned.match(pattern);
-      if (match) {
-        let [, amountStr] = match;
-        const [, , unitStr, nameStr] = match;
-        const unit = unitStr;
-        const name = nameStr;
-
-        // Handle fractions
-        if (amountStr.includes("/")) {
-          const [numerator, denominator] = amountStr.split("/").map(Number);
-          amountStr = (numerator / denominator).toString();
-        }
-
-        return {
-          amount: parseFloat(amountStr),
-          unit: unit.toLowerCase().trim(),
-          name: name.trim(),
-        };
-      }
-    }
-
-    // If no pattern matches, try to extract just a number at the beginning
-    const simpleMatch = cleaned.match(/^(\d+\.?\d*)\s+(.+)$/);
-    if (simpleMatch) {
-      const [, amountStr, rest] = simpleMatch;
-      return {
-        amount: parseFloat(amountStr),
-        unit: "piece",
-        name: rest.trim(),
-      };
-    }
-
-    // If no amount found, assume 1 piece
-    return {
-      amount: 1,
-      unit: "piece",
-      name: cleaned,
-    };
-  } catch (error) {
-    console.error("Error parsing ingredient:", error);
-    return null;
+function findNutrientByIdOrName(
+  nutrients: NutrientResult[],
+  ids: string[],
+  names: string[]
+): NutrientResult | undefined {
+  // First try by ID (most reliable)
+  for (const id of ids) {
+    const nutrient = nutrients.find((n) => n.nutrient.id === id);
+    if (nutrient && nutrient.value > 0) return nutrient;
   }
+
+  // Fallback to name matching
+  for (const name of names) {
+    const nutrient = nutrients.find((n) => {
+      const nutrientName = n.nutrient.name.toLowerCase();
+      return (
+        nutrientName === name.toLowerCase() ||
+        nutrientName.includes(name.toLowerCase())
+      );
+    });
+    if (nutrient && nutrient.value > 0) return nutrient;
+  }
+
+  return undefined;
 }
+
 /**
  * Get summary nutrition facts (calories and macros)
+ * Enhanced with robust ID and name matching
  */
 export function getSummaryNutrition(nutrients: NutrientResult[]): {
   calories?: number;
@@ -449,33 +506,55 @@ export function getSummaryNutrition(nutrients: NutrientResult[]): {
     sodium?: number;
   } = {};
 
-  for (const nutrient of nutrients) {
-    const id = nutrient.nutrient.id;
-    const name = nutrient.nutrient.name.toLowerCase();
+  // Find each nutrient with multiple fallback strategies
+  const calories = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.ENERGY, "usda:1008"],
+    ["energy", "calories", "kcal"]
+  );
+  if (calories) summary.calories = Math.round(calories.value);
 
-    if (
-      id === NUTRIENT_IDS.ENERGY ||
-      name.includes("energy") ||
-      name.includes("calorie")
-    ) {
-      summary.calories = Math.round(nutrient.value);
-    } else if (id === NUTRIENT_IDS.PROTEIN || name.includes("protein")) {
-      summary.protein = Math.round(nutrient.value * 10) / 10;
-    } else if (id === NUTRIENT_IDS.CARBS || name.includes("carbohydrate")) {
-      summary.carbs = Math.round(nutrient.value * 10) / 10;
-    } else if (
-      id === NUTRIENT_IDS.FAT ||
-      (name.includes("fat") && name.includes("total"))
-    ) {
-      summary.fat = Math.round(nutrient.value * 10) / 10;
-    } else if (id === NUTRIENT_IDS.FIBER || name.includes("fiber")) {
-      summary.fiber = Math.round(nutrient.value * 10) / 10;
-    } else if (id === NUTRIENT_IDS.SUGAR || name.includes("sugar")) {
-      summary.sugar = Math.round(nutrient.value * 10) / 10;
-    } else if (id === NUTRIENT_IDS.SODIUM || name.includes("sodium")) {
-      summary.sodium = Math.round(nutrient.value);
-    }
-  }
+  const protein = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.PROTEIN, "usda:1003"],
+    ["protein"]
+  );
+  if (protein) summary.protein = Math.round(protein.value * 10) / 10;
+
+  const carbs = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.CARBS, "usda:1005"],
+    ["carbohydrate", "carbs", "total carbohydrate"]
+  );
+  if (carbs) summary.carbs = Math.round(carbs.value * 10) / 10;
+
+  const fat = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.FAT, "usda:1004"],
+    ["total fat", "fat", "total lipid", "lipid"]
+  );
+  if (fat) summary.fat = Math.round(fat.value * 10) / 10;
+
+  const fiber = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.FIBER, "usda:1079"],
+    ["fiber", "dietary fiber", "total dietary fiber"]
+  );
+  if (fiber) summary.fiber = Math.round(fiber.value * 10) / 10;
+
+  const sugar = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.SUGAR, "usda:2000"],
+    ["sugar", "total sugars", "sugars"]
+  );
+  if (sugar) summary.sugar = Math.round(sugar.value * 10) / 10;
+
+  const sodium = findNutrientByIdOrName(
+    nutrients,
+    [NUTRIENT_IDS.SODIUM, "usda:1093"],
+    ["sodium"]
+  );
+  if (sodium) summary.sodium = Math.round(sodium.value);
 
   return summary;
 }

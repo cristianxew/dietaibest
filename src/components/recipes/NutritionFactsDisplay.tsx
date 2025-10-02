@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,9 +44,15 @@ export function NutritionFactsDisplay({
   servings,
   confidence = 0,
   className,
-  showAllNutrients = false,
+  showAllNutrients: showAllNutrientsProp = false,
   sources,
 }: NutritionFactsDisplayProps) {
+  const [showAllNutrients, setShowAllNutrients] =
+    useState(showAllNutrientsProp);
+
+  // Debug: Log all nutrients to console
+  console.log("NutritionFactsDisplay - All nutrients:", nutrients);
+
   // Group nutrients by category
   const groupedNutrients = nutrients.reduce((acc, nutrient) => {
     const category = nutrient.nutrient.nutrientCategory;
@@ -56,28 +63,75 @@ export function NutritionFactsDisplay({
     return acc;
   }, {} as Record<string, NutrientData[]>);
 
+  console.log("Grouped nutrients by category:", groupedNutrients);
+
   // Find key macronutrients - flexible matching for different naming conventions
-  const findNutrient = (names: string[]) => {
+  // Enhanced with ID-based matching as primary strategy
+  const findNutrient = (ids: string[], names: string[]) => {
+    // First try by ID (most reliable)
+    for (const id of ids) {
+      const nutrient = nutrients.find((n) => n.nutrient.id === id);
+      if (nutrient && nutrient.value > 0) {
+        console.log(`Found by ID "${id}": ${nutrient.nutrient.name}`);
+        return nutrient;
+      }
+    }
+
+    // Fallback to name matching
     for (const name of names) {
       const nutrient = nutrients.find((n) => {
         const nutrientName = n.nutrient.name.toLowerCase();
-        return (
+        const match =
           nutrientName === name.toLowerCase() ||
-          nutrientName.includes(name.toLowerCase())
-        );
+          nutrientName.includes(name.toLowerCase());
+        if (match) {
+          console.log(`Found by name "${name}": ${n.nutrient.name}`);
+        }
+        return match;
       });
-      if (nutrient) return nutrient;
+      if (nutrient && nutrient.value > 0) return nutrient;
     }
+    console.log(
+      `No match found for IDs: ${ids.join(", ")} or names: ${names.join(", ")}`
+    );
     return undefined;
   };
 
-  const calories = findNutrient(["energy", "calories", "kcal"]);
-  const protein = findNutrient(["protein"]);
-  const carbs = findNutrient(["carbohydrates", "total carbohydrates", "carbs"]);
-  const fat = findNutrient(["total fat", "fat", "total lipid"]);
-  const fiber = findNutrient(["dietary fiber", "fiber", "total dietary fiber"]);
-  const sugar = findNutrient(["sugars", "sugar", "total sugars"]);
-  const sodium = findNutrient(["sodium"]);
+  const calories = findNutrient(
+    ["usda:1008", "73aaeab5-6b7f-4d4f-b69d-c4c6a10c4718"],
+    ["energy", "calories", "kcal"]
+  );
+  const protein = findNutrient(
+    ["usda:1003", "493851b7-bd2d-4d86-8b1b-726ea0d68909"],
+    ["protein"]
+  );
+  const carbs = findNutrient(
+    ["usda:1005"],
+    ["carbohydrates", "total carbohydrates", "carbs", "carbohydrate"]
+  );
+  const fat = findNutrient(
+    ["usda:1004"],
+    ["total fat", "fat", "total lipid", "lipid"]
+  );
+  const fiber = findNutrient(
+    ["usda:1079"],
+    ["dietary fiber", "fiber", "total dietary fiber"]
+  );
+  const sugar = findNutrient(
+    ["usda:2000", "87c5c07b-06fc-41f0-a344-d0d72be87ed9"],
+    ["sugars", "sugar", "total sugars"]
+  );
+  const sodium = findNutrient(["usda:1093"], ["sodium"]);
+
+  console.log("Found key nutrients:", {
+    calories,
+    protein,
+    carbs,
+    fat,
+    fiber,
+    sugar,
+    sodium,
+  });
 
   const getConfidenceBadge = (confidence: number) => {
     if (confidence >= 80) return "default";
@@ -142,34 +196,147 @@ export function NutritionFactsDisplay({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Main Calories Display */}
+        {/* Main Calories Display with Macro Breakdown */}
         {calories && (
-          <div className="border-b pb-4">
+          <div className="border-b pb-4 space-y-4">
             <div className="flex items-baseline justify-between">
-              <span className="text-3xl font-bold">
+              <span className="text-4xl font-bold">
                 {calories.value.toFixed(0)}
               </span>
               <span className="text-sm text-muted-foreground">calories</span>
             </div>
+
+            {/* Visual Macro Breakdown Bar */}
+            {protein && carbs && fat && (
+              <div className="space-y-3">
+                <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden flex">
+                  {(() => {
+                    const proteinCal = protein.value * 4;
+                    const carbsCal = carbs.value * 4;
+                    const fatCal = fat.value * 9;
+                    const total = proteinCal + carbsCal + fatCal;
+
+                    if (total === 0) return null;
+
+                    const proteinPercent = (proteinCal / total) * 100;
+                    const carbsPercent = (carbsCal / total) * 100;
+                    const fatPercent = (fatCal / total) * 100;
+
+                    return (
+                      <>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className="bg-red-500 h-full transition-all"
+                                style={{ width: `${proteinPercent}%` }}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Protein: {proteinPercent.toFixed(1)}%</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className="bg-amber-500 h-full transition-all"
+                                style={{ width: `${carbsPercent}%` }}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Carbs: {carbsPercent.toFixed(1)}%</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className="bg-blue-500 h-full transition-all"
+                                style={{ width: `${fatPercent}%` }}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Fat: {fatPercent.toFixed(1)}%</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
+                    );
+                  })()}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                    <span className="text-muted-foreground">
+                      Protein {protein.value.toFixed(1)}g
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-amber-500 rounded-sm" />
+                    <span className="text-muted-foreground">
+                      Carbs {carbs.value.toFixed(1)}g
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-sm" />
+                    <span className="text-muted-foreground">
+                      Fat {fat.value.toFixed(1)}g
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Primary Macronutrients */}
-        <div className="space-y-3">
-          <h4 className="font-semibold text-sm">Macronutrients</h4>
-          {protein && <NutrientRow nutrient={protein} isMain />}
-          {carbs && <NutrientRow nutrient={carbs} isMain />}
-          {fat && <NutrientRow nutrient={fat} isMain />}
-        </div>
+        {protein || carbs || fat ? (
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm">Macronutrients</h4>
+            {protein && <NutrientRow nutrient={protein} isMain />}
+            {carbs && <NutrientRow nutrient={carbs} isMain />}
+            {fat && <NutrientRow nutrient={fat} isMain />}
+          </div>
+        ) : (
+          // Fallback: Show all nutrients from Macronutrients category if main ones not found
+          groupedNutrients["Macronutrients"] && (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Macronutrients</h4>
+              {groupedNutrients["Macronutrients"].map((nutrient) => (
+                <NutrientRow
+                  key={nutrient.nutrient.id}
+                  nutrient={nutrient}
+                  isMain
+                />
+              ))}
+            </div>
+          )
+        )}
 
         {/* Key Nutrients */}
-        {(fiber || sugar || sodium) && (
+        {fiber || sugar || sodium ? (
           <div className="space-y-3 border-t pt-4">
             <h4 className="font-semibold text-sm">Key Nutrients</h4>
             {fiber && <NutrientRow nutrient={fiber} />}
             {sugar && <NutrientRow nutrient={sugar} />}
             {sodium && <NutrientRow nutrient={sodium} />}
           </div>
+        ) : (
+          // Fallback: Show all available nutrients as key nutrients
+          nutrients.length > 0 &&
+          !protein &&
+          !carbs &&
+          !fat && (
+            <div className="space-y-3 border-t pt-4">
+              <h4 className="font-semibold text-sm">Available Nutrients</h4>
+              {nutrients.slice(0, 10).map((nutrient) => (
+                <NutrientRow key={nutrient.nutrient.id} nutrient={nutrient} />
+              ))}
+            </div>
+          )
         )}
 
         {/* All Other Nutrients (optional) */}
@@ -211,6 +378,23 @@ export function NutritionFactsDisplay({
               }
             )}
           </>
+        )}
+
+        {/* Toggle Button for All Nutrients */}
+        {nutrients.length > 7 && (
+          <div className="border-t pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAllNutrients(!showAllNutrients)}
+              className="w-full"
+            >
+              {showAllNutrients
+                ? `Hide Additional Nutrients`
+                : `Show All ${nutrients.length} Nutrients`}
+            </Button>
+          </div>
         )}
 
         {/* Daily Values Note */}

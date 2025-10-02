@@ -322,34 +322,62 @@ export async function storeIngredientNutrition(
     // First ensure nutrients exist in database
     await initializeNutrients();
 
-    // Create or update ingredient
-    const ingredient = await prisma.ingredient.upsert({
-      where: { name: normalizedName },
-      update: {
-        commonName: usdaData.description,
-        category: usdaData.category,
-        usdaFdcId: usdaData.fdcId,
-        usdaDataType: usdaData.dataType,
-        searchTerms: [
-          ...searchTerms,
-          normalizedName.toLowerCase(),
-          usdaData.description.toLowerCase(),
-        ],
-        updatedAt: new Date(),
-      },
-      create: {
-        name: normalizedName,
-        commonName: usdaData.description,
-        category: usdaData.category,
-        usdaFdcId: usdaData.fdcId,
-        usdaDataType: usdaData.dataType,
-        searchTerms: [
-          ...searchTerms,
-          normalizedName.toLowerCase(),
-          usdaData.description.toLowerCase(),
-        ],
-      },
+    // Check if ingredient with this USDA FDC ID already exists
+    // This prevents unique constraint violations when the same food item
+    // is searched with different names (e.g., "chicken" vs "chicken breast")
+    let ingredient = await prisma.ingredient.findUnique({
+      where: { usdaFdcId: usdaData.fdcId },
     });
+
+    if (ingredient) {
+      // Update existing ingredient found by FDC ID
+      ingredient = await prisma.ingredient.update({
+        where: { id: ingredient.id },
+        data: {
+          commonName: usdaData.description,
+          category: usdaData.category,
+          usdaDataType: usdaData.dataType,
+          searchTerms: Array.from(
+            new Set([
+              ...ingredient.searchTerms,
+              ...searchTerms,
+              normalizedName.toLowerCase(),
+              usdaData.description.toLowerCase(),
+            ])
+          ),
+          updatedAt: new Date(),
+        },
+      });
+    } else {
+      // Create or update ingredient by name
+      ingredient = await prisma.ingredient.upsert({
+        where: { name: normalizedName },
+        update: {
+          commonName: usdaData.description,
+          category: usdaData.category,
+          usdaFdcId: usdaData.fdcId,
+          usdaDataType: usdaData.dataType,
+          searchTerms: [
+            ...searchTerms,
+            normalizedName.toLowerCase(),
+            usdaData.description.toLowerCase(),
+          ],
+          updatedAt: new Date(),
+        },
+        create: {
+          name: normalizedName,
+          commonName: usdaData.description,
+          category: usdaData.category,
+          usdaFdcId: usdaData.fdcId,
+          usdaDataType: usdaData.dataType,
+          searchTerms: [
+            ...searchTerms,
+            normalizedName.toLowerCase(),
+            usdaData.description.toLowerCase(),
+          ],
+        },
+      });
+    }
 
     // Store nutritional data
     for (const nutrientData of usdaData.nutrients) {

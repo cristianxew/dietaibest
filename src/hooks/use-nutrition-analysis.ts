@@ -15,7 +15,7 @@ interface NutrientData {
   confidence: number;
 }
 
-interface NutritionData {
+export interface NutritionData {
   totalNutrients: NutrientData[];
   perServing: NutrientData[];
   servings: number;
@@ -31,47 +31,8 @@ interface NutritionData {
   };
 }
 
-interface DietCompatibilityData {
-  classifications: Array<{
-    dietTypeName: string;
-    isCompatible: boolean;
-    confidence: number;
-    reasons: string[];
-    modifications?: string[];
-  }>;
-  primaryDiets: string[];
-  partialDiets: string[];
-  macroAnalysis: {
-    carbPercentage: number;
-    proteinPercentage: number;
-    fatPercentage: number;
-    isKetogenic: boolean;
-    isHighProtein: boolean;
-    isLowFat: boolean;
-    isBalanced: boolean;
-  };
-}
-
-interface AllergenData {
-  detectedAllergens: Array<{
-    allergenId: string;
-    allergenName: string;
-    category: string;
-    severity: string;
-    detectionType: string;
-    confidence: number;
-    sources: string[];
-    containsAmount?: string;
-    warnings?: string[];
-  }>;
-  riskLevel: string;
-  recommendedLabels: string[];
-}
-
 interface AnalysisResult {
   nutrition?: NutritionData;
-  dietCompatibility?: DietCompatibilityData;
-  allergens?: AllergenData;
   matchedIngredients: number;
   totalIngredients: number;
   confidence: number;
@@ -275,8 +236,6 @@ export function useNutritionAnalysis(
 
           const analysisResult: AnalysisResult = {
             nutrition: result.data.nutrition,
-            dietCompatibility: result.data.dietCompatibility,
-            allergens: result.data.allergens,
             matchedIngredients: result.data.metadata.matchedIngredients,
             totalIngredients: result.data.metadata.totalIngredients,
             confidence: result.data.metadata.confidence,
@@ -404,47 +363,8 @@ export function useNutritionAnalysis(
 
         if (result.success && result.data) {
           // Transform diet check results to our format
-          const dietCompatibility: DietCompatibilityData = {
-            classifications: result.data.results.map(
-              (r: {
-                dietType: string;
-                isCompatible: boolean;
-                confidence: number;
-                reasons: string[];
-                modifications?: string[];
-              }) => ({
-                dietTypeName: r.dietType,
-                isCompatible: r.isCompatible,
-                confidence: r.confidence,
-                reasons: r.reasons,
-                modifications: r.modifications,
-              })
-            ),
-            primaryDiets: result.data.results
-              .filter(
-                (r: { isCompatible: boolean; confidence: number }) =>
-                  r.isCompatible && r.confidence >= 0.8
-              )
-              .map((r: { dietType: string }) => r.dietType),
-            partialDiets: result.data.results
-              .filter(
-                (r: { isCompatible: boolean; confidence: number }) =>
-                  r.isCompatible && r.confidence < 0.8
-              )
-              .map((r: { dietType: string }) => r.dietType),
-            macroAnalysis: result.data.macroAnalysis || {
-              carbPercentage: 0,
-              proteinPercentage: 0,
-              fatPercentage: 0,
-              isKetogenic: false,
-              isHighProtein: false,
-              isLowFat: false,
-              isBalanced: false,
-            },
-          };
 
           const analysisResult: AnalysisResult = {
-            dietCompatibility,
             matchedIngredients: ingredients.length,
             totalIngredients: ingredients.length,
             confidence: 100,
@@ -515,14 +435,7 @@ export function useNutritionAnalysis(
         const result = await response.json();
 
         if (result.success && result.data) {
-          const allergenData: AllergenData = {
-            detectedAllergens: result.data.detectedAllergens,
-            riskLevel: result.data.riskAssessment.overallRisk,
-            recommendedLabels: result.data.riskAssessment.recommendedLabels,
-          };
-
           const analysisResult: AnalysisResult = {
-            allergens: allergenData,
             matchedIngredients: ingredients.length,
             totalIngredients: ingredients.length,
             confidence: result.data.metadata.overallConfidence,
