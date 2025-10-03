@@ -25,7 +25,7 @@
         "signInTitle": "Welcome back",
         "signInDescription": "Sign in to your account to access your personalized meal plans and nutrition tracking.",
         "signUpTitle": "Create your account",
-        "signUpDescription": "Join Dietaibest to get personalized meal plans and track your nutrition journey.",
+        "signUpDescription": "Join DietAIbook to get personalized meal plans and track your nutrition journey.",
         "emailAndPassword": "Email & Password",
         "magicLink": "Magic Link",
         "continueWithGoogle": "Continue with Google",
@@ -48,7 +48,7 @@
         "whatToExpect": "What to expect:",
         "checkInboxAndSpam": "• Check your email inbox (and spam folder)",
         "clickMagicLink": "• Click the magic link to sign in automatically",
-        "redirectBack": "• You'll be redirected back to Dietaibest",
+        "redirectBack": "• You'll be redirected back to DietAIbook",
         "linkOnceOnly": "• The link can only be used once",
         "sendAnotherLink": "Send another link",
         "didntReceiveEmail": "Didn't receive the email? Check your spam folder or try sending another link.",
@@ -148,7 +148,7 @@
         }
     },
     "dashboard": {
-        "welcome": "Welcome to Dietaibest!",
+        "welcome": "Welcome to DietAIbook!",
         "subtitle": "Your AI-powered meal planning companion. Start planning your healthy journey today.",
         "quickActions": {
             "createMealPlan": "Create Meal Plan",
@@ -163,7 +163,7 @@
         "recentActivity": {
             "title": "Recent Activity",
             "description": "Your latest meal planning activities",
-            "welcome": "Welcome to Dietaibest!",
+            "welcome": "Welcome to DietAIbook!",
             "getStarted": "Start by creating your first meal plan or browsing our recipe collection."
         },
         "quickStats": {
@@ -175,7 +175,7 @@
         },
         "gettingStarted": {
             "title": "Getting Started",
-            "description": "Here's how to make the most of Dietaibest",
+            "description": "Here's how to make the most of DietAIbook",
             "step1": {
                 "title": "1. Set Up Your Profile",
                 "description": "Tell us about your dietary preferences and health goals."
@@ -388,7 +388,7 @@
         "backToDashboard": "Back to Dashboard"
     },
     "onboarding": {
-        "title": "Welcome to DietAIBest",
+        "title": "Welcome to DietAIbook",
         "subtitle": "Let's personalize your experience",
         "steps": {
             "demographics": {
@@ -422,7 +422,7 @@
         }
     },
     "meta": {
-        "title": "Dietaibest - AI-Powered Meal Planning",
+        "title": "DietAIbook - AI-Powered Meal Planning",
         "description": "Personalized meal planning and nutrition tracking with AI assistance"
     },
     "placeholders": {

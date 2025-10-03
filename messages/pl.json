@@ -25,7 +25,7 @@
         "signInTitle": "Witamy z powrotem",
         "signInDescription": "Zaloguj się do swojego konta, aby uzyskać dostęp do spersonalizowanych planów posiłków i śledzenia odżywiania.",
         "signUpTitle": "Utwórz swoje konto",
-        "signUpDescription": "Dołącz do Dietaibest, aby otrzymywać spersonalizowane plany posiłków i śledzić swoją podróż żywieniową.",
+        "signUpDescription": "Dołącz do DietAIbook, aby otrzymywać spersonalizowane plany posiłków i śledzić swoją podróż żywieniową.",
         "emailAndPassword": "E-mail i hasło",
         "magicLink": "Magiczny link",
         "continueWithGoogle": "Kontynuuj z Google",
@@ -48,7 +48,7 @@
         "whatToExpect": "Czego się spodziewać:",
         "checkInboxAndSpam": "• Sprawdź swoją skrzynkę odbiorczą (i folder spam)",
         "clickMagicLink": "• Kliknij magiczny link, aby zalogować się automatycznie",
-        "redirectBack": "• Zostaniesz przekierowany z powrotem do Dietaibest",
+        "redirectBack": "• Zostaniesz przekierowany z powrotem do DietAIbook",
         "linkOnceOnly": "• Link może być użyty tylko raz",
         "sendAnotherLink": "Wyślij kolejny link",
         "didntReceiveEmail": "Nie otrzymałeś e-maila? Sprawdź folder spam lub spróbuj wysłać kolejny link.",
@@ -148,7 +148,7 @@
         }
     },
     "dashboard": {
-        "welcome": "Witamy w Dietaibest!",
+        "welcome": "Witamy w DietAIbook!",
         "subtitle": "Twój asystent planowania posiłków oparty na AI. Zacznij planować swoją zdrową podróż już dziś.",
         "quickActions": {
             "createMealPlan": "Utwórz Plan Posiłków",
@@ -163,7 +163,7 @@
         "recentActivity": {
             "title": "Ostatnia Aktywność",
             "description": "Twoje najnowsze działania związane z planowaniem posiłków",
-            "welcome": "Witamy w Dietaibest!",
+            "welcome": "Witamy w DietAIbook!",
             "getStarted": "Zacznij od utworzenia swojego pierwszego planu posiłków lub przeglądania naszej kolekcji przepisów."
         },
         "quickStats": {
@@ -175,7 +175,7 @@
         },
         "gettingStarted": {
             "title": "Pierwsze Kroki",
-            "description": "Oto jak najlepiej wykorzystać Dietaibest",
+            "description": "Oto jak najlepiej wykorzystać DietAIbook",
             "step1": {
                 "title": "1. Skonfiguruj Swój Profil",
                 "description": "Opowiedz nam o swoich preferencjach żywieniowych i celach zdrowotnych."
@@ -388,7 +388,7 @@
         "backToDashboard": "Powrót do Pulpitu"
     },
     "onboarding": {
-        "title": "Witamy w DietAIBest",
+        "title": "Witamy w DietAIbook",
         "subtitle": "Spersonalizujmy Twoje doświadczenie",
         "steps": {
             "demographics": {
@@ -422,7 +422,7 @@
         }
     },
     "meta": {
-        "title": "Dietaibest - Planowanie posiłków z AI",
+        "title": "DietAIbook - Planowanie posiłków z AI",
         "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
     },
     "placeholders": {

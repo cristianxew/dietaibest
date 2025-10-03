@@ -25,7 +25,7 @@
         "signInTitle": "Bienvenido de nuevo",
         "signInDescription": "Inicia sesión en tu cuenta para acceder a tus planes de comidas personalizados y seguimiento nutricional.",
         "signUpTitle": "Crea tu cuenta",
-        "signUpDescription": "Únete a Dietaibest para obtener planes de comidas personalizados y seguir tu viaje nutricional.",
+        "signUpDescription": "Únete a DietAIbook para obtener planes de comidas personalizados y seguir tu viaje nutricional.",
         "emailAndPassword": "Correo y contraseña",
         "magicLink": "Enlace mágico",
         "continueWithGoogle": "Continuar con Google",
@@ -48,7 +48,7 @@
         "whatToExpected": "Qué esperar:",
         "checkInboxAndSpam": "• Revisa tu bandeja de entrada (y carpeta de spam)",
         "clickMagicLink": "• Haz clic en el enlace mágico para iniciar sesión automáticamente",
-        "redirectBack": "• Serás redirigido de vuelta a Dietaibest",
+        "redirectBack": "• Serás redirigido de vuelta a DietAIbook",
         "linkOnceOnly": "• El enlace solo puede usarse una vez",
         "sendAnotherLink": "Enviar otro enlace",
         "didntReceiveEmail": "¿No recibiste el correo? Revisa tu carpeta de spam o intenta enviar otro enlace.",
@@ -148,7 +148,7 @@
         }
     },
     "dashboard": {
-        "welcome": "¡Bienvenido a Dietaibest!",
+        "welcome": "¡Bienvenido a DietAIbook!",
         "subtitle": "Tu compañero de planificación de comidas impulsado por IA. Comienza a planificar tu viaje saludable hoy.",
         "quickActions": {
             "createMealPlan": "Crear Plan de Comidas",
@@ -163,7 +163,7 @@
         "recentActivity": {
             "title": "Actividad Reciente",
             "description": "Tus últimas actividades de planificación de comidas",
-            "welcome": "¡Bienvenido a Dietaibest!",
+            "welcome": "¡Bienvenido a DietAIbook!",
             "getStarted": "Comienza creando tu primer plan de comidas o explorando nuestra colección de recetas."
         },
         "quickStats": {
@@ -175,7 +175,7 @@
         },
         "gettingStarted": {
             "title": "Primeros Pasos",
-            "description": "Así es como aprovechar al máximo Dietaibest",
+            "description": "Así es como aprovechar al máximo DietAIbook",
             "step1": {
                 "title": "1. Configura Tu Perfil",
                 "description": "Cuéntanos sobre tus preferencias dietéticas y objetivos de salud."
@@ -388,7 +388,7 @@
         "backToDashboard": "Volver al Panel"
     },
     "onboarding": {
-        "title": "Bienvenido a DietAIBest",
+        "title": "Bienvenido a DietAIbook",
         "subtitle": "Personalicemos tu experiencia",
         "steps": {
             "demographics": {
@@ -422,7 +422,7 @@
         }
     },
     "meta": {
-        "title": "Dietaibest - Planificación de comidas con IA",
+        "title": "DietAIbook - Planificación de comidas con IA",
         "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
     },
     "placeholders": {

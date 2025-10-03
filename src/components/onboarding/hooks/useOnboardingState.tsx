@@ -121,7 +121,7 @@ const OnboardingContext = createContext<OnboardingContextValue | undefined>(
 );
 
 // Local storage key
-const STORAGE_KEY = "dietaibest_onboarding_state";
+const STORAGE_KEY = "DietAIbook_onboarding_state";
 
 // Provider component
 export function OnboardingProvider({ children }: { children: ReactNode }) {
