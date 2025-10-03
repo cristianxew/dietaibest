@@ -13,18 +13,10 @@ import {
 } from "@/components/ui/tooltip";
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { findKeyMacros, type NutrientData } from "@/utils/nutrientFinder";
 
-interface NutrientData {
-  nutrient: {
-    id: string;
-    name: string;
-    nutrientCategory: string;
-  };
-  value: number;
-  unit: string;
-  percentDailyValue?: number;
-  confidence: number;
-}
+// Re-export for backwards compatibility
+export type { NutrientData };
 
 interface NutritionFactsDisplayProps {
   nutrients: NutrientData[];
@@ -50,6 +42,8 @@ export function NutritionFactsDisplay({
   const [showAllNutrients, setShowAllNutrients] =
     useState(showAllNutrientsProp);
 
+  console.log("NutritionFactsDisplay - Nutrients:", nutrients);
+
   // Debug: Log all nutrients to console
   console.log("NutritionFactsDisplay - All nutrients:", nutrients);
 
@@ -65,63 +59,11 @@ export function NutritionFactsDisplay({
 
   console.log("Grouped nutrients by category:", groupedNutrients);
 
-  // Find key macronutrients - flexible matching for different naming conventions
-  // Enhanced with ID-based matching as primary strategy
-  const findNutrient = (ids: string[], names: string[]) => {
-    // First try by ID (most reliable)
-    for (const id of ids) {
-      const nutrient = nutrients.find((n) => n.nutrient.id === id);
-      if (nutrient && nutrient.value > 0) {
-        console.log(`Found by ID "${id}": ${nutrient.nutrient.name}`);
-        return nutrient;
-      }
-    }
-
-    // Fallback to name matching
-    for (const name of names) {
-      const nutrient = nutrients.find((n) => {
-        const nutrientName = n.nutrient.name.toLowerCase();
-        const match =
-          nutrientName === name.toLowerCase() ||
-          nutrientName.includes(name.toLowerCase());
-        if (match) {
-          console.log(`Found by name "${name}": ${n.nutrient.name}`);
-        }
-        return match;
-      });
-      if (nutrient && nutrient.value > 0) return nutrient;
-    }
-    console.log(
-      `No match found for IDs: ${ids.join(", ")} or names: ${names.join(", ")}`
-    );
-    return undefined;
-  };
-
-  const calories = findNutrient(
-    ["usda:1008", "73aaeab5-6b7f-4d4f-b69d-c4c6a10c4718"],
-    ["energy", "calories", "kcal"]
+  // Find key macronutrients using centralized utility
+  const { calories, protein, carbs, fat, fiber, sugar, sodium } = findKeyMacros(
+    nutrients,
+    true
   );
-  const protein = findNutrient(
-    ["usda:1003", "493851b7-bd2d-4d86-8b1b-726ea0d68909"],
-    ["protein"]
-  );
-  const carbs = findNutrient(
-    ["usda:1005"],
-    ["carbohydrates", "total carbohydrates", "carbs", "carbohydrate"]
-  );
-  const fat = findNutrient(
-    ["usda:1004"],
-    ["total fat", "fat", "total lipid", "lipid"]
-  );
-  const fiber = findNutrient(
-    ["usda:1079"],
-    ["dietary fiber", "fiber", "total dietary fiber"]
-  );
-  const sugar = findNutrient(
-    ["usda:2000", "87c5c07b-06fc-41f0-a344-d0d72be87ed9"],
-    ["sugars", "sugar", "total sugars"]
-  );
-  const sodium = findNutrient(["usda:1093"], ["sodium"]);
 
   console.log("Found key nutrients:", {
     calories,
@@ -305,13 +247,15 @@ export function NutritionFactsDisplay({
           groupedNutrients["Macronutrients"] && (
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">Macronutrients</h4>
-              {groupedNutrients["Macronutrients"].map((nutrient) => (
-                <NutrientRow
-                  key={nutrient.nutrient.id}
-                  nutrient={nutrient}
-                  isMain
-                />
-              ))}
+              {groupedNutrients["Macronutrients"].map(
+                (nutrient: NutrientData) => (
+                  <NutrientRow
+                    key={nutrient.nutrient.id}
+                    nutrient={nutrient}
+                    isMain
+                  />
+                )
+              )}
             </div>
           )
         )}
@@ -342,41 +286,41 @@ export function NutritionFactsDisplay({
         {/* All Other Nutrients (optional) */}
         {showAllNutrients && (
           <>
-            {Object.entries(groupedNutrients).map(
-              ([category, categoryNutrients]) => {
-                // Skip categories we've already shown
-                if (category === "Macronutrients" || category === "Energy") {
-                  return null;
-                }
-
-                // Filter out nutrients we've already displayed
-                const remainingNutrients = categoryNutrients.filter(
-                  (n) =>
-                    n !== calories &&
-                    n !== protein &&
-                    n !== carbs &&
-                    n !== fat &&
-                    n !== fiber &&
-                    n !== sugar &&
-                    n !== sodium
-                );
-
-                if (remainingNutrients.length === 0) return null;
-
-                return (
-                  <div key={category} className="space-y-3 border-t pt-4">
-                    <h4 className="font-semibold text-sm">{category}</h4>
-                    {remainingNutrients.map((nutrient) => (
-                      <NutrientRow
-                        key={nutrient.nutrient.id}
-                        nutrient={nutrient}
-                        compact
-                      />
-                    ))}
-                  </div>
-                );
+            {(
+              Object.entries(groupedNutrients) as [string, NutrientData[]][]
+            ).map(([category, categoryNutrients]) => {
+              // Skip categories we've already shown
+              if (category === "Macronutrients" || category === "Energy") {
+                return null;
               }
-            )}
+
+              // Filter out nutrients we've already displayed
+              const remainingNutrients = categoryNutrients.filter(
+                (n: NutrientData) =>
+                  n !== calories &&
+                  n !== protein &&
+                  n !== carbs &&
+                  n !== fat &&
+                  n !== fiber &&
+                  n !== sugar &&
+                  n !== sodium
+              );
+
+              if (remainingNutrients.length === 0) return null;
+
+              return (
+                <div key={category} className="space-y-3 border-t pt-4">
+                  <h4 className="font-semibold text-sm">{category}</h4>
+                  {remainingNutrients.map((nutrient: NutrientData) => (
+                    <NutrientRow
+                      key={nutrient.nutrient.id}
+                      nutrient={nutrient}
+                      compact
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </>
         )}
 

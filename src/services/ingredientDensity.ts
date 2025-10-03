@@ -529,12 +529,68 @@ export function getIngredientDensity(ingredientName: string): number | null {
 /**
  * Convert volume to weight using ingredient density
  */
+/**
+ * Normalize unit names to convert-units compatible formats
+ */
+function normalizeUnitName(unit: string): string {
+  const normalized = unit.toLowerCase().trim();
+
+  // Map common unit variations to convert-units formats
+  const unitMap: Record<string, string> = {
+    // Volume units
+    tablespoon: "Tbs",
+    tablespoons: "Tbs",
+    tbsp: "Tbs",
+    tbs: "Tbs",
+    teaspoon: "tsp",
+    teaspoons: "tsp",
+    tsp: "tsp",
+    cups: "cup",
+    c: "cup",
+    milliliter: "ml",
+    milliliters: "ml",
+    liter: "l",
+    liters: "l",
+    "fluid ounce": "fl-oz",
+    "fluid ounces": "fl-oz",
+    "fl oz": "fl-oz",
+    floz: "fl-oz",
+
+    // Mass units
+    gram: "g",
+    grams: "g",
+    kilogram: "kg",
+    kilograms: "kg",
+    milligram: "mg",
+    milligrams: "mg",
+    ounce: "oz",
+    ounces: "oz",
+    pound: "lb",
+    pounds: "lb",
+    lb: "lb",
+    lbs: "lb",
+
+    // Count/serving units (pass through)
+    large: "large",
+    medium: "medium",
+    small: "small",
+    serving: "serving",
+    servings: "serving",
+    piece: "piece",
+    pieces: "piece",
+    slice: "slice",
+    slices: "slice",
+  };
+
+  return unitMap[normalized] || normalized;
+}
+
 export function volumeToWeight(
   amount: number,
   volumeUnit: string,
   ingredientName: string
 ): ConversionResult {
-  const normalizedUnit = volumeUnit.toLowerCase().trim();
+  const normalizedUnit = normalizeUnitName(volumeUnit);
 
   // Check if it's already a weight unit (shouldn't be here, but handle gracefully)
   try {
@@ -721,10 +777,10 @@ export function standardizeToGrams(
   unit: string,
   ingredientName: string
 ): ConversionResult {
-  const normalized = unit.toLowerCase().trim();
+  const normalized = normalizeUnitName(unit);
 
   // Already in grams
-  if (normalized === "g" || normalized === "gram" || normalized === "grams") {
+  if (normalized === "g") {
     return {
       value: amount,
       unit: "g",

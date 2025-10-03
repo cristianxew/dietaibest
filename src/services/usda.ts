@@ -10,12 +10,16 @@
 
 import { z } from "zod";
 import { IngredientNutrient, Nutrient } from "@/generated/prisma";
+import { NUTRIENT_IDS } from "@/utils/nutrientDefinitions";
 
 // Configuration
 const USDA_API_BASE = "https://api.nal.usda.gov/fdc/v1";
 const DEFAULT_PAGE_SIZE = 25;
 const REQUEST_TIMEOUT = 10000; // 10 seconds
 const RATE_LIMIT_DELAY = 100; // 100ms between requests
+
+// type NutrientNumber = '1008' | '1003' | '1004' | '1005' | '1079';
+// const CORE_NUTRIENTS: NutrientNumber[] = ['1008','1003','1004','1005','1079'];
 
 // Rate limiting
 let lastRequestTime = 0;
@@ -182,6 +186,7 @@ export async function searchUSDAFoods(
 /**
  * Get detailed food data by FDC ID
  * Includes full nutrient profile
+ * Optimized to request only the 4 most important macronutrients
  */
 export async function getUSDAFoodById(
   fdcId: number,
@@ -200,6 +205,16 @@ export async function getUSDAFoodById(
 
   if (includeNutrients) {
     url.searchParams.append("format", "full");
+
+    // Request only the 4 most important macronutrients for better performance
+    // Energy (1008), Protein (1003), Fat (1004), Carbs (1005)
+    const coreMacros = [
+      NUTRIENT_IDS.ENERGY, // 1008 - Energy
+      NUTRIENT_IDS.PROTEIN, // 1003 - Protein
+      NUTRIENT_IDS.FAT, // 1004 - Total Fat
+      NUTRIENT_IDS.CARBS, // 1005 - Carbohydrates
+    ];
+    url.searchParams.append("nutrients", coreMacros.join(","));
   } else {
     url.searchParams.append("format", "abridged");
   }
@@ -213,6 +228,8 @@ export async function getUSDAFoodById(
     }
 
     const data = await response.json();
+    console.log("data", data);
+
     const foodDetail = USDAFoodItemSchema.parse(data);
 
     // Warn if USDA data is incomplete (helpful for debugging)
@@ -429,6 +446,15 @@ function getDisplayOrder(name: string): number {
  * Find best matching food from USDA for an ingredient name
  * Returns the most relevant result based on search ranking
  */
+
+/* ************************************************************** */
+/* ************************************************************** */
+/* ************************************************************** */
+// Found issue with route. It is not using the getUSDAFoodById function
+/* ************************************************************** */
+/* ************************************************************** */
+/* ************************************************************** */
+
 export async function findBestUSDAMatch(
   ingredientName: string,
   options: {
@@ -438,7 +464,9 @@ export async function findBestUSDAMatch(
 ): Promise<{ food: USDAFoodItem; confidence: number } | null> {
   const searchResults = await searchUSDAFoods(ingredientName, {
     pageSize: options.maxResults || 5,
-    dataTypes: options.preferGeneric ? ["Foundation", "SR Legacy"] : undefined,
+    dataTypes: options.preferGeneric
+      ? ["Foundation", "SR Legacy", "Survey (FNDDS)"]
+      : undefined,
   });
 
   if (searchResults.foods.length === 0) {

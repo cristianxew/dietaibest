@@ -39,24 +39,8 @@ export interface IngredientNutritionData {
   warnings?: string[];
 }
 
-// Common nutrient IDs based on USDA standards
-export const NUTRIENT_IDS = {
-  ENERGY: "usda:1008",
-  PROTEIN: "usda:1003",
-  FAT: "usda:1004",
-  CARBS: "usda:1005",
-  FIBER: "usda:1079",
-  SUGAR: "usda:2000",
-  SODIUM: "usda:1093",
-  SATURATED_FAT: "usda:1258",
-  CHOLESTEROL: "usda:1253",
-  CALCIUM: "usda:1087",
-  IRON: "usda:1089",
-  POTASSIUM: "usda:1092",
-  VITAMIN_A: "usda:1106",
-  VITAMIN_C: "usda:1162",
-  VITAMIN_D: "usda:1114",
-} as const;
+// // Re-export NUTRIENT_IDS from centralized definitions for backwards compatibility
+// export { NUTRIENT_IDS } from "@/utils/nutrientDefinitions";
 
 /**
  * Enhanced Nutrition Data Provider with Database Persistence

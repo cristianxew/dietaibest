@@ -1,6 +1,6 @@
-# Testing Guide for DietaiBest
+# Testing Guide for DietAIbook
 
-This document provides a comprehensive guide to testing in the DietaiBest Next.js application using Vitest for unit testing and Playwright for end-to-end testing.
+This document provides a comprehensive guide to testing in the DietAIbook Next.js application using Vitest for unit testing and Playwright for end-to-end testing.
 
 ## 📋 Table of Contents
 
@@ -39,7 +39,7 @@ bun add -d @playwright/test
 ## 📁 Project Structure
 
 ```
-dietaibest/
+DietAIbook/
 ├── tests/
 │   ├── unit/              # Unit tests
 │   │   ├── Button.test.tsx

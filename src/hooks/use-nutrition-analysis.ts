@@ -2,18 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-
-interface NutrientData {
-  nutrient: {
-    id: string;
-    name: string;
-    nutrientCategory: string;
-  };
-  value: number;
-  unit: string;
-  percentDailyValue?: number;
-  confidence: number;
-}
+import { type NutrientData } from "@/utils/nutrientFinder";
 
 export interface NutritionData {
   totalNutrients: NutrientData[];

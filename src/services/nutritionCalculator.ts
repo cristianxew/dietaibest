@@ -13,13 +13,17 @@ import { z } from "zod";
 import {
   getNutritionDataProvider,
   type NutrientInfo,
-  NUTRIENT_IDS,
 } from "./nutritionDataProvider";
 import {
   cacheNutritionCalculation,
   getCachedNutritionCalculation,
 } from "./ingredientNutritionDB";
 import { standardizeToGrams } from "./ingredientDensity";
+import {
+  ensureBasicNutrients as ensureBasicNutrientsUtil,
+  getSummaryNutrition as getSummaryNutritionUtil,
+  type NutrientData,
+} from "@/utils/nutrientFinder";
 
 // Initialize enhanced data provider with database persistence
 const dataProvider = getNutritionDataProvider();
@@ -35,25 +39,15 @@ const IngredientInputSchema = z.object({
 const CalculationOptionsSchema = z.object({
   servings: z.number().positive().default(1),
   useCache: z.boolean().default(true),
-  preferUSDA: z.boolean().default(false),
+  preferUSDA: z.boolean().default(true),
   includeConfidence: z.boolean().default(true),
 });
 
 export type IngredientInput = z.infer<typeof IngredientInputSchema>;
 export type CalculationOptions = z.infer<typeof CalculationOptionsSchema>;
 
-// Nutrient result structure
-export interface NutrientResult {
-  nutrient: {
-    id: string;
-    name: string;
-    nutrientCategory: string;
-  };
-  value: number;
-  unit: string;
-  percentDailyValue?: number;
-  confidence: number;
-}
+// Nutrient result structure - using centralized type
+export type NutrientResult = NutrientData;
 
 export interface NutritionCalculationResult {
   totalNutrients: NutrientResult[];
@@ -191,9 +185,9 @@ export async function calculateNutrition(
     // Sort by category and name
     const categoryOrder = [
       "Energy",
-      "Macronutrient",
-      "Vitamin",
-      "Mineral",
+      "Macronutrients",
+      "Vitamins",
+      "Minerals",
       "Other",
     ];
     const catA = categoryOrder.indexOf(a.nutrient.nutrientCategory);
@@ -203,7 +197,8 @@ export async function calculateNutrition(
   });
 
   // Ensure basic nutrients are present (adds zero-value placeholders if missing)
-  totalNutrients = ensureBasicNutrients(totalNutrients);
+  // Using centralized utility from nutrientFinder
+  totalNutrients = ensureBasicNutrientsUtil(totalNutrients);
 
   // Calculate per-serving values
   const perServing = totalNutrients.map((nutrient) => ({
@@ -317,89 +312,7 @@ async function standardizeNutrientAmounts(
 }
 
 // Removed estimateGramsFromVolume - now using ingredientDensity.ts for accurate conversions
-
-/**
- * Ensure basic nutrients are present in the result
- * Adds zero-value placeholders for missing core macros to ensure UI consistency
- */
-function ensureBasicNutrients(nutrients: NutrientResult[]): NutrientResult[] {
-  const requiredNutrients = [
-    {
-      id: NUTRIENT_IDS.ENERGY,
-      name: "Energy",
-      category: "Macronutrients",
-      unit: "kcal",
-    },
-    {
-      id: NUTRIENT_IDS.PROTEIN,
-      name: "Protein",
-      category: "Macronutrients",
-      unit: "g",
-    },
-    {
-      id: NUTRIENT_IDS.CARBS,
-      name: "Carbohydrates",
-      category: "Macronutrients",
-      unit: "g",
-    },
-    {
-      id: NUTRIENT_IDS.FAT,
-      name: "Total Fat",
-      category: "Macronutrients",
-      unit: "g",
-    },
-    {
-      id: NUTRIENT_IDS.FIBER,
-      name: "Fiber",
-      category: "Macronutrients",
-      unit: "g",
-    },
-    {
-      id: NUTRIENT_IDS.SUGAR,
-      name: "Total Sugars",
-      category: "Macronutrients",
-      unit: "g",
-    },
-    {
-      id: NUTRIENT_IDS.SODIUM,
-      name: "Sodium",
-      category: "Minerals",
-      unit: "mg",
-    },
-  ];
-
-  const existingIds = new Set(nutrients.map((n) => n.nutrient.id));
-  const existingNames = new Set(
-    nutrients.map((n) => n.nutrient.name.toLowerCase())
-  );
-
-  const missingNutrients = requiredNutrients
-    .filter((req) => {
-      // Check if nutrient exists by ID or by name
-      const hasById = existingIds.has(req.id);
-      const hasByName = existingNames.has(req.name.toLowerCase());
-      return !hasById && !hasByName;
-    })
-    .map((req) => ({
-      nutrient: {
-        id: req.id,
-        name: req.name,
-        nutrientCategory: req.category,
-      },
-      value: 0,
-      unit: req.unit,
-      confidence: 0,
-    }));
-
-  if (missingNutrients.length > 0) {
-    console.warn(
-      `⚠️ Adding ${missingNutrients.length} missing core nutrients with zero values:`,
-      missingNutrients.map((n) => n.nutrient.name)
-    );
-  }
-
-  return [...nutrients, ...missingNutrients];
-}
+// Removed ensureBasicNutrients - now using centralized utility from nutrientFinder.ts
 
 /**
  * Aggregate nutrients from multiple sources
@@ -454,38 +367,12 @@ function calculateOverallConfidence(
 
 // Removed duplicate parseIngredientString function
 // Now using the comprehensive parseIngredient from @/utils/ingredientParser
-/**
- * Helper function to find a nutrient by ID or name variations
- */
-function findNutrientByIdOrName(
-  nutrients: NutrientResult[],
-  ids: string[],
-  names: string[]
-): NutrientResult | undefined {
-  // First try by ID (most reliable)
-  for (const id of ids) {
-    const nutrient = nutrients.find((n) => n.nutrient.id === id);
-    if (nutrient && nutrient.value > 0) return nutrient;
-  }
 
-  // Fallback to name matching
-  for (const name of names) {
-    const nutrient = nutrients.find((n) => {
-      const nutrientName = n.nutrient.name.toLowerCase();
-      return (
-        nutrientName === name.toLowerCase() ||
-        nutrientName.includes(name.toLowerCase())
-      );
-    });
-    if (nutrient && nutrient.value > 0) return nutrient;
-  }
-
-  return undefined;
-}
+// Removed findNutrientByIdOrName - now using centralized utility from nutrientFinder.ts
 
 /**
  * Get summary nutrition facts (calories and macros)
- * Enhanced with robust ID and name matching
+ * Now using centralized utility from nutrientFinder.ts
  */
 export function getSummaryNutrition(nutrients: NutrientResult[]): {
   calories?: number;
@@ -496,67 +383,7 @@ export function getSummaryNutrition(nutrients: NutrientResult[]): {
   sugar?: number;
   sodium?: number;
 } {
-  const summary: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    fiber?: number;
-    sugar?: number;
-    sodium?: number;
-  } = {};
-
-  // Find each nutrient with multiple fallback strategies
-  const calories = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.ENERGY, "usda:1008"],
-    ["energy", "calories", "kcal"]
-  );
-  if (calories) summary.calories = Math.round(calories.value);
-
-  const protein = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.PROTEIN, "usda:1003"],
-    ["protein"]
-  );
-  if (protein) summary.protein = Math.round(protein.value * 10) / 10;
-
-  const carbs = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.CARBS, "usda:1005"],
-    ["carbohydrate", "carbs", "total carbohydrate"]
-  );
-  if (carbs) summary.carbs = Math.round(carbs.value * 10) / 10;
-
-  const fat = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.FAT, "usda:1004"],
-    ["total fat", "fat", "total lipid", "lipid"]
-  );
-  if (fat) summary.fat = Math.round(fat.value * 10) / 10;
-
-  const fiber = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.FIBER, "usda:1079"],
-    ["fiber", "dietary fiber", "total dietary fiber"]
-  );
-  if (fiber) summary.fiber = Math.round(fiber.value * 10) / 10;
-
-  const sugar = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.SUGAR, "usda:2000"],
-    ["sugar", "total sugars", "sugars"]
-  );
-  if (sugar) summary.sugar = Math.round(sugar.value * 10) / 10;
-
-  const sodium = findNutrientByIdOrName(
-    nutrients,
-    [NUTRIENT_IDS.SODIUM, "usda:1093"],
-    ["sodium"]
-  );
-  if (sodium) summary.sodium = Math.round(sodium.value);
-
-  return summary;
+  return getSummaryNutritionUtil(nutrients);
 }
 
 /**
