@@ -1,7 +1,5 @@
 ---
-description: Dietaibest development workflow
-globs:
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Development Workflow & Project Intelligence
