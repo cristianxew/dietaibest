@@ -1999,177 +1999,156 @@
         ]
       },
       {
-        "id": 18,
-        "title": "Custom Nutrition Analysis System",
-        "description": "Develop an in-house nutrition analysis system that processes recipe ingredients to calculate macro/micronutrients, diet labels, health labels, and allergen information without relying on third-party APIs.",
-        "details": "1. Create a nutrition database schema in Supabase:\n   - Design tables for ingredients, nutrients, allergens, and diet classifications\n   - Implement relationships between ingredients and their nutritional profiles\n   - Set up indexing for efficient querying\n\n2. Develop ingredient parsing module:\n   - Create `utils/ingredientParser.ts` to extract ingredient names, quantities, and units\n   - Implement natural language processing for handling various input formats\n   - Build fuzzy matching algorithm to map user inputs to database ingredients\n   - Handle ingredient substitutions and equivalents\n\n3. Build nutrition calculation engine:\n   - Implement `services/nutritionCalculator.ts` for computing nutritional totals\n   - Create algorithms for scaling nutrients based on ingredient quantities\n   - Handle unit conversions (metric/imperial) with precision\n   - Implement portion size calculations\n\n4. Develop diet and health label classification system:\n   - Create rule-based engine for determining diet compatibility (keto, vegan, etc.)\n   - Implement threshold-based classification for health labels\n   - Build allergen detection based on ingredient composition and cross-contamination risks\n\n5. Create nutrition database population utilities:\n   - Develop data import scripts for USDA food database\n   - Implement data validation and normalization\n   - Create admin interface for manual data entry and corrections\n\n6. Build API endpoints for nutrition analysis:\n   - Implement `/api/nutrition/analyze` for processing ingredient lists\n   - Create `/api/nutrition/ingredient-lookup` for single ingredient information\n   - Develop `/api/nutrition/diet-check` for diet compatibility verification\n\n7. Integrate with recipe workflows:\n   - Update recipe creation/editing forms to use the new nutrition system\n   - Implement real-time nutrition calculation during recipe editing\n   - Create nutrition fact display components with customizable formats\n\n8. Implement caching mechanism:\n   - Design efficient caching strategy for frequently accessed nutritional data\n   - Implement cache invalidation for database updates\n\n9. Create comprehensive error handling:\n   - Develop fallback mechanisms for unrecognized ingredients\n   - Implement confidence scoring for nutritional estimates\n   - Build user feedback system for improving ingredient recognition",
-        "testStrategy": "1. Unit test ingredient parsing:\n   - Test parser with various ingredient formats (e.g., \"1 cup flour\", \"2 tbsp olive oil\")\n   - Verify quantity and unit extraction accuracy\n   - Test fuzzy matching with misspelled ingredients\n   - Validate handling of fractions and decimals\n\n2. Test nutrition calculation accuracy:\n   - Compare calculated values against known reference values for common recipes\n   - Verify scaling works correctly with different portion sizes\n   - Test edge cases with very small or large quantities\n   - Validate unit conversion precision\n\n3. Verify diet and health label classification:\n   - Test classification against pre-categorized recipes\n   - Verify allergen detection identifies all potential allergens\n   - Test edge cases where recipes are borderline for specific diet classifications\n   - Validate health label thresholds with nutritionist-approved test cases\n\n4. Performance testing:\n   - Benchmark analysis speed for recipes with varying complexity\n   - Test system under load with concurrent requests\n   - Verify caching improves performance for repeated analyses\n   - Measure database query efficiency\n\n5. Integration testing:\n   - Verify nutrition data appears correctly in recipe creation workflow\n   - Test real-time updates during ingredient editing\n   - Validate nutrition fact displays render correctly\n   - Test integration with meal planning and shopping list features\n\n6. Usability testing:\n   - Gather feedback on nutrition display clarity\n   - Test user understanding of diet and health labels\n   - Verify error messages are helpful when ingredients aren't recognized\n\n7. Database integrity testing:\n   - Verify data import scripts maintain data accuracy\n   - Test database updates propagate correctly to the application\n   - Validate referential integrity between related tables",
-        "status": "in-progress",
-        "dependencies": [
-          1,
-          2,
-          5
-        ],
-        "priority": "medium",
+        "id": 19,
+        "title": "USDA-Powered Nutrition Calculator Implementation",
+        "description": "Build a complete USDA FoodData Central-powered nutrition calculator that parses recipe ingredients, searches USDA FDC, resolves portions to grams, computes accurate macros, and caches results in Supabase for performance.",
+        "details": "Implement a production-ready nutrition calculator with the following key features:\n- Parse free-text recipe ingredients into {name, qty, unit}\n- Search USDA FDC and pick best food match per ingredient (Foundation > FNDDS > SR Legacy > Branded)\n- Resolve household measures (foodPortions[]) to grams with fallback to brand serving or density\n- Compute accurate macros (kcal, protein, fat, carbs, fiber) per ingredient, sum totals and per-serving\n- Cache FDC food details in Supabase to minimize API calls and improve speed\n- All FDC calls must be server-side only (never from browser)\n- Include type safety, error handling, tests, and inline documentation\n\nTechnical Stack:\n- Next.js 15 (App Router) with React 18 + TypeScript 5\n- Prisma ORM connected to Supabase Postgres\n- ShadCN UI + Tailwind CSS\n- Bun runtime & package manager\n- USDA_API_KEY already set in server environment\n\nData Type Priority: Foundation > FNDDS > SR Legacy > Branded (unless brand specified)\nTTL Strategy: Foundation/FNDDS/SR = 180 days, Branded = 30 days",
+        "testStrategy": "1. Unit test ingredient parsing with various formats (fractions, decimals, units)\n2. Test nutrition calculation accuracy against known reference values\n3. Verify portion resolution logic with FDC data types\n4. Performance test caching mechanism with repeated queries\n5. Integration test complete workflow from ingredient input to nutrition display\n6. Test server-side API key security (no client exposure)\n7. Test error handling for unrecognized ingredients and API failures\n8. Acceptance test: paste sample ingredients, set servings, verify accurate calculations",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
         "subtasks": [
           {
             "id": 1,
-            "title": "Design Nutrition Database Schema",
-            "description": "Create a comprehensive database schema in Supabase for storing nutritional information including ingredients, nutrients, allergens, and diet classifications.",
-            "dependencies": [],
-            "details": "1. Design tables for basic ingredients with columns for name, description, food group, and source\n2. Create nutrients table with columns for nutrient name, unit, daily value, and nutrient category (macro/micro)\n3. Design ingredient_nutrients junction table linking ingredients to their nutritional values\n4. Create allergens table and ingredient_allergens junction table\n5. Design diet_types table (vegan, keto, etc.) and diet_ingredient_compatibility table\n6. Implement proper foreign key relationships and constraints\n7. Set up appropriate indexing for efficient querying\n8. Document the schema with entity relationship diagrams",
+            "title": "Create Prisma Schema for FDC Cache and Recipe Ingredients",
+            "description": "Add Prisma models for FdcCache, Recipe, and RecipeIngredient to store USDA FDC data and recipe nutrition information in Supabase Postgres.",
+            "details": "Add the following models to prisma/schema.prisma:\n\n```prisma\nmodel FdcCache {\n  fdcId          Int       @id\n  description    String\n  dataType       String\n  brandOwner     String?   @db.VarChar(255)\n  foodPortions   Json?     // from FDC\n  foodNutrients  Json?     // from FDC (abridged or full)\n  labelNutrients Json?     // Branded foods per serving info if present\n  lastFetchedAt  DateTime  @default(now())\n\n  @@index([dataType])\n  @@index([description])\n}\n\nmodel Recipe {\n  id          String   @id @default(cuid())\n  title       String\n  servings    Int      @default(1)\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n  ingredients RecipeIngredient[]\n}\n\nmodel RecipeIngredient {\n  id            String  @id @default(cuid())\n  recipeId      String\n  originalText  String\n  nameNorm      String\n  qty           Float\n  unit          String\n  fdcId         Int?\n  gramWeight    Float?   // resolved grams for ONE unit\n  confidence    Float?   // 0..1\n  debugJson     Json?\n\n  recipe        Recipe   @relation(fields: [recipeId], references: [id])\n\n  @@index([recipeId])\n  @@index([nameNorm])\n}\n```\n\nAfter adding models, run:\n```bash\nbunx prisma generate\nbunx prisma migrate dev --name add_fdc_nutrition\n```",
             "status": "done",
-            "testStrategy": "Verify database schema with test queries for common use cases. Test foreign key constraints with invalid data. Benchmark query performance with sample data to validate indexing strategy."
+            "dependencies": [],
+            "parentTaskId": 19
           },
           {
             "id": 2,
-            "title": "Develop Ingredient Parser Module",
-            "description": "Create a module that can parse ingredient strings from recipes to extract ingredient names, quantities, and units using natural language processing techniques.",
+            "title": "Implement Server-Only FDC Client and Nutrition Utilities",
+            "description": "Create app/lib/fdc.ts with server-only FDC API client functions for searching foods, fetching by IDs, extracting macros, and resolving portions.",
+            "details": "Create src/lib/fdc.ts with the complete implementation from the requirements document, including:\n\n- API_BASE and KEY configuration with server-only import\n- CORE_NUTRIENTS constant (1008, 1003, 1004, 1005, 1079)\n- Macro type definition\n- DATATYPE_PRIORITY array (Foundation, Survey (FNDDS), SR Legacy, Branded)\n- fdcSearch() function for searching foods\n- fdcFoodsByIds() function for batch fetching\n- extractMacrosFromFood() to parse nutrient data\n- scalePer100g() to scale macros to actual grams\n- resolveGramWeightFromPortions() to match units to FDC portions\n- extractBrandedServing() for branded food serving info\n\nAll functions must use cache: \"no-store\" to avoid Next.js caching (we do our own DB cache).\n\nKey features:\n- Server-side only (import \"server-only\")\n- Type-safe with TypeScript\n- Error handling for API failures\n- Support for abridged and full FDC payloads",
+            "status": "done",
             "dependencies": [
               1
             ],
-            "details": "1. Create `utils/ingredientParser.ts` module\n2. Implement regex patterns to extract quantities, units, and ingredient names\n3. Build parser functions to handle various input formats (e.g., '1 cup flour', '2 tbsp olive oil')\n4. Implement fraction and decimal handling for quantities\n5. Create unit normalization functions to standardize units (e.g., tbsp to tablespoon)\n6. Develop preprocessing functions to clean and normalize input text\n7. Add support for handling preparation methods (e.g., 'chopped', 'diced')\n8. Implement error handling for unparseable ingredients",
-            "status": "done",
-            "testStrategy": "Unit test with various ingredient formats including fractions, decimals, and different unit notations. Test with edge cases like missing quantities or units. Verify parsing accuracy against a test dataset of common recipe ingredients."
+            "parentTaskId": 19
           },
           {
             "id": 3,
-            "title": "Implement Fuzzy Matching Algorithm",
-            "description": "Build a fuzzy matching system to map user-entered ingredients to standardized ingredients in the nutrition database.",
+            "title": "Build Database Cache Repository Layer",
+            "description": "Implement src/lib/fdcRepo.ts with intelligent caching that checks FdcCache first, then fetches from USDA API with TTL-based staleness detection.",
+            "details": "Create src/lib/fdcRepo.ts implementing getFoodsCached() function with:\n\nTTL Strategy:\n- Foundation/Survey (FNDDS)/SR Legacy: 180 days\n- Branded: 30 days\n\nLogic Flow:\n1. Query FdcCache for requested fdcIds\n2. Check if cached entries are stale based on dataType and lastFetchedAt\n3. Identify missing or stale entries\n4. Fetch missing/stale from USDA API using fdcFoodsByIds()\n5. Upsert fetched data into FdcCache with new lastFetchedAt timestamp\n6. Return combined cached + fresh data in requested order\n\nImplementation:\n- Use Prisma client from @/lib/prisma or similar singleton\n- Implement isStale() helper function\n- Handle both update and create cases with upsert\n- Maintain data consistency with proper null handling\n- Return data in same order as input fdcIds array",
+            "status": "done",
             "dependencies": [
               1,
               2
             ],
-            "details": "1. Create `utils/fuzzyMatcher.ts` module\n2. Implement Levenshtein distance algorithm for string similarity\n3. Build ingredient name normalization functions (removing plurals, common variations)\n4. Create scoring system to rank potential matches\n5. Implement threshold-based matching to determine confidence level\n6. Build caching mechanism for frequently matched ingredients\n7. Create fallback mechanism for unrecognized ingredients\n8. Develop ingredient substitution suggestions based on similarity",
-            "status": "done",
-            "testStrategy": "Test with misspelled ingredients, plural forms, and common abbreviations. Verify match accuracy against a test dataset. Benchmark performance with large ingredient lists. Test threshold sensitivity with edge cases."
+            "parentTaskId": 19
           },
           {
             "id": 4,
-            "title": "Build Nutrition Calculation Engine",
-            "description": "Develop the core calculation engine that computes nutritional totals based on ingredients, quantities, and portion sizes.",
-            "dependencies": [
-              1,
-              2,
-              3
-            ],
-            "details": "1. Create `services/nutritionCalculator.ts` module\n2. Implement functions to fetch nutritional data for ingredients from database\n3. Build algorithms for scaling nutrients based on ingredient quantities\n4. Develop unit conversion system for metric/imperial measurements\n5. Implement portion size calculations and serving size adjustments\n6. Create functions to aggregate nutrients across all ingredients\n7. Implement precision handling for small nutrient quantities\n8. Add calculation of percentage daily values based on standard references",
+            "title": "Create Ingredient Parser with Heuristics",
+            "description": "Implement src/lib/ingredients.ts with natural language parsing for recipe ingredient lines, extracting quantity, unit, and name with synonym mapping and density fallbacks.",
+            "details": "Create src/lib/ingredients.ts with complete implementation including:\n\nParsedIngredient Type:\n- original: string\n- name: string (normalized)\n- qty: number\n- unit: string (normalized)\n\nConstants:\n- FRACTIONS map (½, ¼, ¾, ⅓, ⅔, ⅛)\n- UNIT_ALIASES map (grams→g, cup→cup, tablespoon→tbsp, etc.)\n- STATE_WORDS array (chopped, diced, minced, boiled, cooked, raw, etc.)\n- SYNONYMS map (aubergine→eggplant, courgette→zucchini, etc.)\n- DENSITY_FALLBACK_G_PER_UNIT map (onion:cup→160, rice cooked:cup→158, etc.)\n\nFunctions:\n- toNumber(): Parse \"1 1/2\" or \"1½\" to 1.5\n- normalizeUnit(): Convert unit variations to standard forms\n- parseIngredientLine(): Main parser with regex patterns\n\nParsing Logic:\n1. Try pattern: \"<qty> <unit> <name...>\"\n2. Fallback to: \"<name...> <qty> <unit>\"\n3. Strip state words from name\n4. Apply synonym substitutions\n5. Normalize to lowercase\n6. Return ParsedIngredient object\n\nHandle edge cases:\n- Fractions and decimals\n- Missing units (default to \"piece\")\n- Various spacing formats\n- Plural forms",
             "status": "done",
-            "testStrategy": "Unit test nutrient calculations with known ingredient values. Verify scaling accuracy with different quantities. Test unit conversions between metric and imperial. Validate aggregation logic with multi-ingredient recipes."
+            "dependencies": [],
+            "parentTaskId": 19
           },
           {
             "id": 5,
-            "title": "Develop Diet Classification System",
-            "description": "Create a rule-based engine for determining diet compatibility (keto, vegan, etc.) based on ingredient composition and nutritional profiles.",
+            "title": "Implement Recipe Analysis Server Action",
+            "description": "Create src/actions/analyzeRecipe.ts server action that orchestrates the complete nutrition analysis pipeline from ingredient lines to calculated macros.",
+            "details": "Create src/actions/analyzeRecipe.ts with \"use server\" directive implementing analyzeRecipeAction():\n\nInput Type (AnalyzeInput):\n- ingredients: string[]\n- servings: number\n\nOutput Type (AnalyzeResult):\n- items: Array of per-ingredient results with fdcId, description, gramsTotal, macros, confidence, portionNote\n- total: Aggregated macros for entire recipe\n- perServing: Total macros divided by servings\n\nPipeline Steps:\n1. Parse all ingredient lines using parseIngredientLine()\n2. Search USDA FDC for each ingredient name (parallel Promise.all)\n3. Choose best match per ingredient using DATATYPE_PRIORITY sorting\n4. Batch fetch full food details via getFoodsCached()\n5. For each ingredient, resolve gram weight:\n   a. Try resolveGramWeightFromPortions() for household measures\n   b. Try extractBrandedServing() for branded foods\n   c. Try DENSITY_FALLBACK_G_PER_UNIT lookup\n   d. Fall back to assuming grams or qty as grams\n6. Extract per-100g macros and scale to actual grams\n7. Compute confidence scores based on resolution method\n8. Aggregate totals across all ingredients\n9. Calculate per-serving macros\n\nInclude portionNote for each ingredient explaining resolution method.\n\nHandle cases where no FDC match found (return zeros with confidence 0).",
+            "status": "done",
             "dependencies": [
-              1,
+              2,
+              3,
               4
             ],
-            "details": "1. Create `services/dietClassifier.ts` module\n2. Define rule sets for common diets (vegan, vegetarian, keto, paleo, etc.)\n3. Implement ingredient-based classification (e.g., vegan if no animal products)\n4. Build macronutrient ratio-based classification (e.g., keto if high fat, low carb)\n5. Create confidence scoring for diet classifications\n6. Implement threshold-based classification system\n7. Develop explanation generation for classification results\n8. Add support for custom diet definitions",
-            "status": "done",
-            "testStrategy": "Test classification with recipes of known diet types. Verify edge cases near threshold boundaries. Test with ingredients that have special diet considerations. Validate explanation generation for different classification scenarios."
+            "parentTaskId": 19
           },
           {
             "id": 6,
-            "title": "Implement Allergen Detection System",
-            "description": "Build a system to identify potential allergens in recipes based on ingredient composition and cross-contamination risks.",
-            "dependencies": [
-              1,
-              3,
-              4
-            ],
-            "details": "1. Create `services/allergenDetector.ts` module\n2. Implement direct allergen detection from ingredient database\n3. Build derived allergen detection (ingredients that contain allergens)\n4. Create cross-contamination risk assessment\n5. Implement confidence scoring for allergen detection\n6. Develop allergen grouping for related allergens\n7. Create user-friendly allergen reporting format\n8. Add severity classification for different allergen types",
+            "title": "Create FDC Search API Route for Autocomplete",
+            "description": "Implement src/app/api/fdc/search/route.ts API endpoint for ingredient autocomplete suggestions from USDA FDC.",
+            "details": "Create src/app/api/fdc/search/route.ts with:\n\nConfiguration:\n- Add \"server-only\" import\n- Set runtime = \"nodejs\"\n\nPOST Handler:\n- Accept JSON body with { query: string }\n- Validate query parameter\n- Call fdcSearch(query) from fdc.ts\n- Return first 8 results with simplified structure:\n  - fdcId\n  - description\n  - dataType\n  - brandOwner\n\nError Handling:\n- Return 400 for missing/invalid query\n- Return 500 for FDC API failures with error message\n\nResponse format: JSON array of food objects\n\nThis endpoint enables real-time ingredient autocomplete in the UI without exposing the FDC API key to the browser.",
             "status": "done",
-            "testStrategy": "Test with recipes containing known allergens. Verify detection of derived allergens. Test cross-contamination risk assessment with various ingredient combinations. Validate reporting format with different allergen scenarios."
+            "dependencies": [
+              2
+            ],
+            "parentTaskId": 19
           },
           {
             "id": 7,
-            "title": "Create Database Population Utilities",
-            "description": "Develop utilities to populate and maintain the nutrition database with data from USDA and other reliable sources.",
-            "dependencies": [
-              1
-            ],
-            "details": "1. Create `scripts/importNutritionData.ts` for data import\n2. Implement USDA food database import functionality\n3. Build data validation and normalization routines\n4. Create data transformation utilities to match database schema\n5. Implement incremental update capability\n6. Develop data deduplication mechanisms\n7. Create logging and error reporting for import process\n8. Build admin interface components for manual data entry and corrections",
+            "title": "Integrate Nutrition Calculator with Recipe UI",
+            "description": "Update existing recipe UI components (RecipeForm.tsx and recipe-form directory) to integrate the nutrition calculator functionality with real-time analysis and display.",
+            "details": "Integration Points:\n\n1. Update src/components/recipes/RecipeForm.tsx or create new nutrition calculator page at /nutrition\n\n2. UI Components needed:\n   - Textarea or multi-line input for ingredient list (one per line)\n   - Number input for servings\n   - \"Calculate Nutrition\" button\n   - Results display showing:\n     * Per-ingredient breakdown (name, grams, macros, confidence)\n     * Recipe totals (kcal, protein, fat, carbs, fiber)\n     * Per-serving macros\n     * Confidence indicators and portion notes\n\n3. Integration with analyzeRecipeAction:\n   - Call server action on button click\n   - Handle loading states during analysis\n   - Display errors for failed ingredients\n   - Show toast notifications for success/errors\n\n4. Optional enhancements:\n   - Ingredient autocomplete using /api/fdc/search endpoint\n   - Visual confidence indicators (colors/badges)\n   - Expandable details for portion resolution method\n   - Copy/paste friendly format for ingredient input\n\n5. Styling:\n   - Use existing ShadCN UI components\n   - Match current design system\n   - Mobile-responsive layout\n   - Accessible form controls\n\nReference existing recipe-form components but note they contain old implementation that didn't work - use the new server action instead.",
             "status": "done",
-            "testStrategy": "Test data import with sample USDA datasets. Verify data validation catches malformed entries. Test incremental updates with changed data. Validate deduplication with overlapping data sources."
+            "dependencies": [
+              5
+            ],
+            "parentTaskId": 19
           },
           {
             "id": 8,
-            "title": "Build API Endpoints for Nutrition Analysis",
-            "description": "Implement server-side API endpoints to handle nutrition analysis requests and provide nutritional information.",
-            "dependencies": [
-              3,
-              4,
-              5,
-              6
-            ],
-            "details": "1. Create `/api/nutrition/analyze` endpoint for processing ingredient lists\n2. Implement `/api/nutrition/ingredient-lookup` for single ingredient information\n3. Develop `/api/nutrition/diet-check` for diet compatibility verification\n4. Build `/api/nutrition/allergen-check` for allergen detection\n5. Implement request validation and sanitization\n6. Create response formatting with consistent structure\n7. Add error handling and appropriate status codes\n8. Implement rate limiting for API endpoints",
+            "title": "Setup Prisma Singleton for Server Actions",
+            "description": "Ensure Prisma client singleton is properly configured for use in server actions and API routes with global instance management.",
+            "details": "Create or verify src/lib/prisma.ts exists with:\n\n```typescript\nimport { PrismaClient } from \"@prisma/client\";\n\ndeclare global {\n  // allow global `var` declarations\n  // eslint-disable-next-line no-var\n  var prisma: PrismaClient | undefined;\n}\n\nexport const prisma = globalThis.prisma ?? new PrismaClient();\n\nif (process.env.NODE_ENV !== \"production\") globalThis.prisma = prisma;\n```\n\nPurpose:\n- Prevents multiple Prisma client instances in development (hot reload)\n- Single instance in production for connection pooling\n- Accessible throughout server-side code\n\nVerification:\n- Check if similar pattern already exists in project\n- Ensure all server actions import from this singleton\n- Verify Supabase connection string in .env\n- Test with a simple Prisma query\n\nIf the project already has a Prisma singleton in a different location (e.g., @/server/prisma), use that instead and update imports in fdcRepo.ts accordingly.",
             "status": "done",
-            "testStrategy": "Test endpoints with valid and invalid requests. Verify response structure matches expected format. Test error handling with malformed requests. Benchmark endpoint performance with various payload sizes."
+            "dependencies": [],
+            "parentTaskId": 19
           },
           {
             "id": 9,
-            "title": "Implement Caching Mechanism",
-            "description": "Design and implement an efficient caching strategy for frequently accessed nutritional data to improve performance.",
-            "dependencies": [
-              4,
-              8
-            ],
-            "details": "1. Create `services/nutritionCache.ts` module\n2. Implement in-memory LRU cache for frequent lookups\n3. Build database-level caching for analyzed recipes\n4. Create cache key generation based on ingredient lists\n5. Implement cache invalidation strategy for database updates\n6. Add cache statistics tracking for monitoring\n7. Develop cache warming for common ingredients\n8. Create configurable cache settings (size, TTL)",
+            "title": "Create Comprehensive Test Suite",
+            "description": "Implement unit tests for ingredient parsing, nutrition calculations, and portion resolution using Bun's test runner or existing Vitest setup.",
+            "details": "Create tests in tests/unit/ directory:\n\n1. tests/unit/ingredients.test.ts:\n```typescript\nimport { describe, it, expect } from \"bun:test\";\nimport { parseIngredientLine } from \"@/lib/ingredients\";\n\ndescribe(\"parseIngredientLine\", () => {\n  it(\"parses qty unit name\", () => {\n    const p = parseIngredientLine(\"1 1/2 cups chopped onion\");\n    expect(p.qty).toBeCloseTo(1.5);\n    expect(p.unit).toBe(\"cup\");\n    expect(p.name).toContain(\"onion\");\n  });\n\n  it(\"handles grams\", () => {\n    const p = parseIngredientLine(\"150 g chicken breast\");\n    expect(p.qty).toBe(150);\n    expect(p.unit).toBe(\"g\");\n    expect(p.name).toContain(\"chicken\");\n  });\n\n  it(\"handles fractions\", () => {\n    const p = parseIngredientLine(\"½ cup flour\");\n    expect(p.qty).toBe(0.5);\n    expect(p.unit).toBe(\"cup\");\n  });\n\n  it(\"strips state words\", () => {\n    const p = parseIngredientLine(\"2 cups diced tomatoes\");\n    expect(p.name).not.toContain(\"diced\");\n    expect(p.name).toContain(\"tomato\");\n  });\n});\n```\n\n2. tests/unit/fdc.test.ts:\n- Test extractMacrosFromFood with sample FDC payloads\n- Test scalePer100g calculations\n- Test resolveGramWeightFromPortions matching\n\n3. tests/integration/nutrition-analysis.test.ts:\n- Mock FDC API responses\n- Test complete analyzeRecipeAction workflow\n- Verify cache behavior\n\nRun tests:\n```bash\nbun test\n# or\nbunx vitest\n```\n\nEnsure tests pass in CI/CD pipeline.",
             "status": "done",
-            "testStrategy": "Benchmark performance with and without caching. Test cache hit rates with repeated queries. Verify cache invalidation works correctly when data changes. Test cache behavior under high concurrency."
+            "dependencies": [
+              2,
+              4,
+              5
+            ],
+            "parentTaskId": 19
           },
           {
             "id": 10,
-            "title": "Integrate with Recipe Workflows",
-            "description": "Update recipe creation and editing workflows to use the new nutrition analysis system for real-time nutritional information.",
-            "dependencies": [
-              4,
-              8,
-              9
-            ],
-            "details": "1. Update recipe creation/editing forms to use nutrition analysis\n2. Implement real-time nutrition calculation during recipe editing\n3. Create nutrition fact display components with customizable formats\n4. Build ingredient suggestion system based on nutritional goals\n5. Implement portion size adjustment with nutritional updates\n6. Add diet compatibility indicators during recipe creation\n7. Create allergen warnings in recipe workflow\n8. Implement nutritional comparison with similar recipes",
+            "title": "Implement Security and Error Handling",
+            "description": "Add comprehensive error handling, security measures, and developer experience improvements throughout the nutrition calculator system.",
+            "details": "Security Measures:\n1. Verify FDC_API_KEY is never exposed to client:\n   - Use \"server-only\" imports in all FDC modules\n   - Never return raw FDC API responses to client\n   - Validate API key exists on server startup\n\n2. Input validation:\n   - Sanitize ingredient text inputs\n   - Validate servings is positive number\n   - Limit ingredient list length (e.g., max 50 lines)\n   - Prevent SQL injection in Prisma queries (use parameterized)\n\nError Handling:\n1. Network errors:\n   - Try/catch around all FDC API calls\n   - Friendly error messages for users\n   - Log detailed errors server-side for debugging\n   - Implement retry logic for transient failures\n\n2. Parsing errors:\n   - Handle malformed ingredient lines gracefully\n   - Return partial results when some ingredients fail\n   - Include error details in debugJson field\n\n3. Database errors:\n   - Handle Prisma connection failures\n   - Graceful degradation if cache unavailable\n   - Transaction rollback on failures\n\nDeveloper Experience:\n1. Logging:\n   - Console.log when density fallback used (for refinement)\n   - Log cache hit/miss rates\n   - Log parsing failures with original text\n\n2. Documentation:\n   - Inline JSDoc comments for all exported functions\n   - Type definitions for all data structures\n   - README section explaining system architecture\n\n3. Debugging:\n   - Include debugJson in RecipeIngredient for troubleshooting\n   - Expose confidence scores in UI\n   - Show portion resolution notes\n\nToast Notifications:\n- Success: \"Nutrition calculated successfully!\"\n- Warning: \"Some ingredients couldn't be matched (see details)\"\n- Error: \"Failed to calculate nutrition. Please try again.\"",
             "status": "done",
-            "testStrategy": "Test integration with recipe forms. Verify real-time updates when ingredients change. Test display components with various nutritional profiles. Validate suggestion system provides relevant options."
+            "dependencies": [
+              2,
+              3,
+              5,
+              7
+            ],
+            "parentTaskId": 19
           },
           {
             "id": 11,
-            "title": "Develop Comprehensive Error Handling",
-            "description": "Create robust error handling mechanisms for the nutrition analysis system to handle edge cases and provide useful feedback.",
+            "title": "Validate Acceptance Criteria",
+            "description": "Test the complete system against acceptance criteria to ensure all requirements are met with accurate calculations and good performance.",
+            "details": "Acceptance Test at /nutrition route:\n\nTest Input:\n```\n1 cup cooked rice\n150 g chicken breast\n1 tbsp olive oil\n1 cup chopped onion\n```\n\nServings: 2\n\nExpected Results:\n1. Per-ingredient display shows:\n   - Resolved grams for each ingredient\n   - Confidence score (0.0-1.0)\n   - Macros breakdown (kcal, protein, fat, carbs, fiber)\n   - Portion resolution note explaining method\n\n2. Recipe totals display:\n   - Sum of all ingredient macros\n   - Proper decimal precision\n\n3. Per-serving macros:\n   - Totals divided by 2\n   - Clearly labeled \"Per Serving\"\n\n4. Performance requirements:\n   - First analysis completes within 3-5 seconds\n   - Re-analyzing same list completes within <1 second (cache hit)\n   - Database cache shows entries for each fdcId\n\n5. Security verification:\n   - Network tab shows no direct calls to api.nal.usda.gov from browser\n   - All FDC calls go through /api or server actions\n   - FDC_API_KEY not visible in client-side code\n\n6. Code quality:\n   - TypeScript strict mode passes\n   - Next.js 15 builds without errors\n   - Bun tests pass\n   - No console errors in browser\n\nManual Testing Checklist:\n- [ ] Test with various ingredient formats\n- [ ] Test with missing ingredients (should show error)\n- [ ] Test with very large servings count\n- [ ] Test with metric and imperial units\n- [ ] Test with branded food names\n- [ ] Verify cache improves repeat performance\n- [ ] Test error handling with invalid input\n- [ ] Verify mobile responsiveness",
+            "status": "done",
             "dependencies": [
-              2,
-              3,
-              4,
-              8
+              7,
+              10
             ],
-            "details": "1. Implement fallback mechanisms for unrecognized ingredients\n2. Create confidence scoring for nutritional estimates\n3. Build user feedback system for improving ingredient recognition\n4. Implement graceful degradation for partial analysis failures\n5. Create detailed error logging for system improvement\n6. Develop user-friendly error messages\n7. Implement suggestion system for error resolution\n8. Create admin notification for systematic errors",
-            "status": "pending",
-            "testStrategy": "Test with deliberately malformed inputs. Verify fallback mechanisms provide reasonable results. Test user feedback collection. Validate error messages are user-friendly and actionable."
+            "parentTaskId": 19
           },
           {
             "id": 12,
-            "title": "Create Comprehensive Testing Suite",
-            "description": "Develop a comprehensive testing strategy including unit tests, integration tests, and end-to-end tests for the nutrition analysis system.",
+            "title": "Implement Enhancement Features",
+            "description": "Add optional enhancement features including autocomplete, recipe persistence, alternative suggestions, additional nutrients, and internationalization.",
+            "details": "Enhancement Implementations:\n\n1. Ingredient Autocomplete:\n   - Integrate /api/fdc/search endpoint with ingredient input\n   - Debounce search queries (300ms)\n   - Display suggestions in dropdown\n   - Show dataType and brandOwner in suggestions\n   - Allow keyboard navigation (arrow keys, enter)\n\n2. Recipe Persistence:\n   - Save analyzed recipes to Recipe table\n   - Save ingredient matches to RecipeIngredient table\n   - Allow users to re-open and edit saved recipes\n   - Display saved nutrition without re-analyzing\n   - Update nutrition on ingredient changes\n\n3. Alternative Suggestions:\n   - Add toggle to show top 5 FDC candidates per ingredient\n   - Display alternatives with dataType and description\n   - Allow user to manually select preferred match\n   - Re-calculate when alternative selected\n\n4. Additional Nutrients:\n   - Expand CORE_NUTRIENTS to include:\n     * 1093: Sodium (mg)\n     * 2000: Sugar (g)\n     * 1258: Saturated fat (g)\n     * 1292: Polyunsaturated fat (g)\n     * 1253: Cholesterol (mg)\n   - Update Macro type to include new nutrients\n   - Display in nutrition facts table\n\n5. Internationalization:\n   - Add ES/PL/EN ingredient synonyms to SYNONYMS map\n   - Translate UI labels using existing messages/ files\n   - Support locale-specific unit formats\n   - Translate FDC descriptions if available\n\n6. Enhanced UI Features:\n   - Nutritional comparison with similar recipes\n   - Visual macro distribution charts (pie/bar)\n   - Dietary label suggestions (keto, vegan, etc.)\n   - Print-friendly nutrition facts label\n   - Export nutrition data as PDF or JSON\n\nPriority Order:\n1. Recipe persistence (most useful)\n2. Additional nutrients (enhances accuracy)\n3. Autocomplete (improves UX)\n4. Internationalization (supports existing locale system)\n5. Alternative suggestions (power user feature)",
+            "status": "done",
             "dependencies": [
-              2,
-              3,
-              4,
-              5,
-              6,
-              8,
-              10,
               11
             ],
-            "details": "1. Create unit tests for core modules (parser, matcher, calculator)\n2. Implement integration tests for API endpoints\n3. Build test fixtures with known nutritional values\n4. Create performance benchmarks for critical paths\n5. Implement regression tests for bug fixes\n6. Develop end-to-end tests for recipe workflows\n7. Create automated test pipeline in CI/CD\n8. Build test coverage reporting and monitoring",
-            "status": "pending",
-            "testStrategy": "Run tests automatically in CI/CD pipeline. Maintain high test coverage for critical components. Use realistic test fixtures derived from actual recipes. Benchmark performance against established baselines."
+            "parentTaskId": 19
           }
         ]
       }
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-08-29T20:29:43.303Z",
+      "updated": "2025-10-03T23:06:31.542Z",
       "description": "Tasks for master context"
     }
   }

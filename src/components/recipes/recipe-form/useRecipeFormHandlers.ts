@@ -5,18 +5,14 @@ interface UseRecipeFormHandlersProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any; // Using any to avoid complex type matching with react-hook-form
   watchedIngredients: Ingredient[];
-  analyzeNutrition: (
-    ingredients: Ingredient[],
-    options: {
-      includeNutrition: boolean;
-      preferUSDA: boolean;
-    }
-  ) => void;
+  watchedServings: number;
+  analyzeNutrition: (ingredients: Ingredient[], servings: number) => void;
 }
 
 export function useRecipeFormHandlers({
   form,
   watchedIngredients,
+  watchedServings,
   analyzeNutrition,
 }: UseRecipeFormHandlersProps) {
   const handleAddTag = (tag: string) => {
@@ -34,7 +30,7 @@ export function useRecipeFormHandlers({
     );
   };
 
-  const handleAnalyzeNutrition = (preferUSDA = true) => {
+  const handleAnalyzeNutrition = () => {
     if (watchedIngredients && Array.isArray(watchedIngredients)) {
       const validIngredients = watchedIngredients.filter(
         (ing) =>
@@ -42,10 +38,7 @@ export function useRecipeFormHandlers({
       );
 
       if (validIngredients.length > 0) {
-        analyzeNutrition(validIngredients, {
-          includeNutrition: true,
-          preferUSDA,
-        });
+        analyzeNutrition(validIngredients, watchedServings || 1);
       } else {
         toast.error("Please add some ingredients before analyzing nutrition");
       }

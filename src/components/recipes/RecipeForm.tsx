@@ -21,7 +21,7 @@ import {
   RecipeFormNutrition,
   useRecipeFormHandlers,
 } from "./recipe-form";
-import { useNutritionAnalysis } from "@/hooks/use-nutrition-analysis";
+import { useRecipeNutrition } from "@/hooks/use-recipe-nutrition";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData;
@@ -83,42 +83,22 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   const watchedIngredients = form.watch("ingredients");
   const watchedServings = form.watch("servings");
 
-  // Use nutrition analysis hook without automatic triggering
+  // Use new nutrition calculator
   const {
     analyze: analyzeNutrition,
     isLoading: nutritionLoading,
     data: nutritionData,
-  } = useNutritionAnalysis({
-    servings: watchedServings || 1,
+  } = useRecipeNutrition({
     onSuccess: (result) => {
-      // Only update form with nutrition values if we get nutrition data
-      if (result.nutrition?.summary) {
-        const { summary } = result.nutrition;
-
-        // Update form with summarized nutrition values
-        form.setValue("calories", summary.calories);
-        form.setValue("protein", summary.protein);
-        form.setValue("carbs", summary.carbs);
-        form.setValue("fat", summary.fat);
-        form.setValue("fiber", summary.fiber);
-        form.setValue("sugar", summary.sugar);
-        form.setValue("sodium", summary.sodium);
-
-        // Show source information
-        if (result.sources) {
-          const { local, usda, cached } = result.sources;
-          const sourceInfo = [];
-          if (local > 0) sourceInfo.push(`${local} local`);
-          if (usda > 0) sourceInfo.push(`${usda} USDA`);
-          if (cached > 0) sourceInfo.push(`${cached} cached`);
-
-          toast.success(
-            `Nutrition analysis complete! (Sources: ${sourceInfo.join(", ")})`
-          );
-        } else {
-          toast.success("Nutrition analysis complete!");
-        }
-      }
+      // Update form with per-serving nutrition values
+      form.setValue("calories", parseFloat(result.perServing.kcal.toFixed(1)));
+      form.setValue(
+        "protein",
+        parseFloat(result.perServing.protein.toFixed(1))
+      );
+      form.setValue("carbs", parseFloat(result.perServing.carbs.toFixed(1)));
+      form.setValue("fat", parseFloat(result.perServing.fat.toFixed(1)));
+      form.setValue("fiber", parseFloat(result.perServing.fiber.toFixed(1)));
     },
   });
 
@@ -127,6 +107,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     useRecipeFormHandlers({
       form: form,
       watchedIngredients,
+      watchedServings: watchedServings || 1,
       analyzeNutrition,
     });
 
@@ -242,7 +223,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
               form={form}
               nutritionLoading={nutritionLoading}
               nutritionData={nutritionData}
-              onAnalyzeNutritionOnly={handleAnalyzeNutrition}
+              onAnalyzeNutrition={handleAnalyzeNutrition}
             />
           </TabsContent>
         </Tabs>
