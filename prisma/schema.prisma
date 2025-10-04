@@ -68,7 +68,7 @@ model Recipe {
   cookTime     Int? // minutes
   servings     Int      @default(1)
   difficulty   String? // easy, medium, hard
-  ingredients  Json // Array of { name, amount, unit }
+  ingredients  Json? // Raw ingredients from form { name, amount, unit }
   instructions String[] // Array of step instructions
 
   // Nutritional information per serving
@@ -77,8 +77,6 @@ model Recipe {
   carbs    Float?
   fat      Float?
   fiber    Float?
-  sugar    Float?
-  sodium   Float?
 
   // Metadata
   source    String? // url, manual, imported
@@ -90,9 +88,10 @@ model Recipe {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories  RecipeCategory[]
-  favoritedBy UserFavorite[]
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories        RecipeCategory[]
+  favoritedBy       UserFavorite[]
+  recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
 }
 
 model RecipeCategory {
@@ -121,93 +120,38 @@ model UserFavorite {
   @@unique([userId, recipeId])
 }
 
-// Ingredient and Nutrition Models for Persistent Caching
-model Ingredient {
-  id         String  @id @default(uuid())
-  name       String  @unique
-  commonName String? // Alternative/common name for matching
-  category   String? // food category (meat, vegetable, etc.)
+// ============================================================================
+// USDA FoodData Central Integration Models
+// ============================================================================
 
-  // USDA Data (when available)
-  usdaFdcId    Int?    @unique
-  usdaDataType String? // "foundation", "sr_legacy", "survey", "branded"
+model FdcCache {
+  fdcId          Int      @id
+  description    String
+  dataType       String
+  brandOwner     String?  @db.VarChar(255)
+  foodPortions   Json? // from FDC foodPortions array
+  foodNutrients  Json? // from FDC foodNutrients (abridged or full)
+  labelNutrients Json? // Branded foods per serving info if present
+  lastFetchedAt  DateTime @default(now())
 
-  // Metadata
-  searchTerms String[] // Additional terms for fuzzy matching
-  confidence  Float    @default(1.0) // Confidence in ingredient identification
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  nutrients IngredientNutrient[]
-
-  @@index([name])
-  @@index([usdaFdcId])
+  @@index([dataType])
+  @@index([description])
 }
 
-model Nutrient {
-  id               String @id @default(uuid())
-  name             String @unique
-  nutrientCategory String // "Macronutrients", "Vitamins", "Minerals", etc.
-  unit             String // "g", "mg", "kcal", etc.
-
-  // USDA nutrient number for mapping
-  usdaNutrientId Int? @unique
-
-  // Daily Value information
-  dailyValue     Float? // Daily value amount
-  dailyValueUnit String? // Unit for daily value
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  ingredientNutrients IngredientNutrient[]
-
-  @@index([name])
-  @@index([usdaNutrientId])
-}
-
-model IngredientNutrient {
+model RecipeIngredient {
   id           String @id @default(uuid())
-  ingredientId String
-  nutrientId   String
+  recipeId     String
+  originalText String // Original ingredient line as entered
+  nameNorm     String // Normalized ingredient name for matching
+  qty          Float // Parsed quantity
+  unit         String // Normalized unit (g, cup, tbsp, etc.)
+  fdcId        Int? // Matched USDA FDC food ID
+  gramWeight   Float? // Resolved grams for qty * unit
+  confidence   Float? // Matching confidence (0.0-1.0)
+  debugJson    Json? // Debug info for troubleshooting
 
-  // Nutritional values (per 100g)
-  value Float
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
-  // Metadata
-  confidence Float  @default(1.0) // Confidence in this specific nutrient value
-  source     String @default("usda") // "usda", "manual", "estimated"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  nutrient   Nutrient   @relation(fields: [nutrientId], references: [id], onDelete: Cascade)
-
-  @@unique([ingredientId, nutrientId])
-  @@index([ingredientId])
-  @@index([nutrientId])
-}
-
-// Cache for processed nutrition calculations
-model NutritionCache {
-  id       String @id @default(uuid())
-  cacheKey String @unique // Hash of ingredients list + servings
-
-  // Cached data
-  nutritionData Json // Serialized nutrition calculation result
-
-  // Metadata
-  servings   Int
-  confidence Float
-  sources    Json // Source breakdown (local, usda, cached counts)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([cacheKey])
+  @@index([recipeId])
+  @@index([nameNorm])
 }
