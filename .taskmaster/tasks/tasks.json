@@ -2136,8 +2136,8 @@
             "id": 12,
             "title": "Implement Enhancement Features",
             "description": "Add optional enhancement features including autocomplete, recipe persistence, alternative suggestions, additional nutrients, and internationalization.",
-            "details": "Enhancement Implementations:\n\n1. Ingredient Autocomplete:\n   - Integrate /api/fdc/search endpoint with ingredient input\n   - Debounce search queries (300ms)\n   - Display suggestions in dropdown\n   - Show dataType and brandOwner in suggestions\n   - Allow keyboard navigation (arrow keys, enter)\n\n2. Recipe Persistence:\n   - Save analyzed recipes to Recipe table\n   - Save ingredient matches to RecipeIngredient table\n   - Allow users to re-open and edit saved recipes\n   - Display saved nutrition without re-analyzing\n   - Update nutrition on ingredient changes\n\n3. Alternative Suggestions:\n   - Add toggle to show top 5 FDC candidates per ingredient\n   - Display alternatives with dataType and description\n   - Allow user to manually select preferred match\n   - Re-calculate when alternative selected\n\n4. Additional Nutrients:\n   - Expand CORE_NUTRIENTS to include:\n     * 1093: Sodium (mg)\n     * 2000: Sugar (g)\n     * 1258: Saturated fat (g)\n     * 1292: Polyunsaturated fat (g)\n     * 1253: Cholesterol (mg)\n   - Update Macro type to include new nutrients\n   - Display in nutrition facts table\n\n5. Internationalization:\n   - Add ES/PL/EN ingredient synonyms to SYNONYMS map\n   - Translate UI labels using existing messages/ files\n   - Support locale-specific unit formats\n   - Translate FDC descriptions if available\n\n6. Enhanced UI Features:\n   - Nutritional comparison with similar recipes\n   - Visual macro distribution charts (pie/bar)\n   - Dietary label suggestions (keto, vegan, etc.)\n   - Print-friendly nutrition facts label\n   - Export nutrition data as PDF or JSON\n\nPriority Order:\n1. Recipe persistence (most useful)\n2. Additional nutrients (enhances accuracy)\n3. Autocomplete (improves UX)\n4. Internationalization (supports existing locale system)\n5. Alternative suggestions (power user feature)",
-            "status": "done",
+            "details": "Enhancement Implementations:\n\n1. Ingredient Autocomplete:\n   - Integrate /api/fdc/search endpoint with ingredient input\n   - Debounce search queries (300ms)\n   - Display suggestions in dropdown\n   - Show dataType and brandOwner in suggestions\n \n2.  - Save ingredient matches to RecipeIngredient table\n   - Allow users to re-open and edit saved recipes\n   - Display saved nutrition without re-analyzing\n   - Update nutrition on ingredient changes\n\n3. - Display in nutrition facts table\n\n5. Internationalization:\n   - Add ES/PL/EN ingredient synonyms to SYNONYMS map\n   - Translate UI labels using existing messages/ files\n   - Support locale-specific unit formats\n   - Translate FDC descriptions if available\n\n6. Enhanced UI Features:\n - Visual macro distribution charts (pie/bar)\n  Internationalization (supports existing locale system)\n5. ",
+            "status": "pending",
             "dependencies": [
               11
             ],
@@ -2148,7 +2148,7 @@
     ],
     "metadata": {
       "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-10-03T23:06:31.542Z",
+      "updated": "2025-10-04T20:50:32.297Z",
       "description": "Tasks for master context"
     }
   }

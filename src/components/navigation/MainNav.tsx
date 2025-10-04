@@ -8,6 +8,7 @@ import {
   Home,
   BookOpen,
   Calendar,
+  Calculator,
   ShoppingCart,
   User,
   Settings,
@@ -94,12 +95,20 @@ export function MainNav({
         shortcut: "Alt+3",
       },
       {
+        id: "nutrition",
+        label: t("nutrition"),
+        href: "/nutrition",
+        icon: "Calculator",
+        requiresAuth: true,
+        shortcut: "Alt+4",
+      },
+      {
         id: "shopping",
         label: t("shopping"),
         href: "/shopping",
         icon: "ShoppingCart",
         requiresAuth: true,
-        shortcut: "Alt+4",
+        shortcut: "Alt+5",
       },
     ],
     [t]
@@ -129,7 +138,8 @@ export function MainNav({
         "1": "/dashboard",
         "2": "/recipes",
         "3": "/meal-plans",
-        "4": "/shopping",
+        "4": "/nutrition",
+        "5": "/shopping",
       };
 
       const targetPath = shortcutMap[event.key];
@@ -170,6 +180,7 @@ export function MainNav({
       Home,
       BookOpen,
       Calendar,
+      Calculator,
       ShoppingCart,
       User,
       Settings,
