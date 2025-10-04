@@ -225,6 +225,7 @@ export class BrowserUseClient {
     // Start the extraction task with v2 parameters
     const taskResponse = await this.startTask({
       task: taskPrompt,
+      llm: "gpt-4o",
       startUrl: request.url,
       maxSteps: 30,
       structuredOutput: structuredOutputSchema,
@@ -249,6 +250,30 @@ export class BrowserUseClient {
     const basePrompt = `Navigate to ${url} and extract complete recipe information. 
 
 IMPORTANT: Handle any pop-ups, cookie banners, or registration walls automatically.
+
+Extract the following data in JSON format:
+{
+  "title": "Recipe title",
+  "description": "Brief description", 
+  "prepTime": minutes_as_number,
+  "cookTime": minutes_as_number,
+  "servings": number_of_servings,
+  "difficulty": "easy|medium|hard",
+  "imageUrl": "recipe main image url",
+  "ingredients": [
+    {
+      "name": "ingredient name",
+      "amount": number,
+      "unit": "measurement unit"
+    }
+  ],
+  "instructions": ["step 1", "step 2", ...],
+  "tags": ["category", "cuisine", ...],
+  "calories": optional_number,
+  "protein": optional_number_in_grams,
+  "carbs": optional_number_in_grams, 
+  "fat": optional_number_in_grams
+}
 
 Requirements:
 - Navigate past any registration walls or pop-ups
