@@ -426,6 +426,25 @@
         "title": "DietAIbook - Planowanie posiłków z AI",
         "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
     },
+    "nutrition": {
+        "title": "Wartości Odżywcze",
+        "confidence": "Pewność",
+        "portionNote": "Uwaga o Porcji",
+        "alternatives": "Pokaż Alternatywy",
+        "perServing": "Na Porcję",
+        "total": "Razem",
+        "ingredient": "Składnik",
+        "grams": "Gramy",
+        "calculate": "Oblicz Wartości Odżywcze",
+        "saveRecipe": "Zapisz Przepis",
+        "autocomplete": {
+            "placeholder": "Szukaj składnika...",
+            "searching": "Wyszukiwanie w bazie USDA...",
+            "noResults": "Nie znaleziono składników",
+            "minCharacters": "Wpisz co najmniej 2 znaki, aby wyszukać",
+            "heading": "USDA FoodData Central"
+        }
+    },
     "placeholders": {
         "enterEmail": "Wprowadź swój e-mail",
         "enterPassword": "Wprowadź swoje hasło",

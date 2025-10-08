@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Calculator, AlertCircle, Info } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { RecipeNutritionDisplay } from "@/components/recipes/RecipeNutritionDisplay";
 import type { AnalyzeResult } from "@/actions/analyzeRecipe";
 
@@ -28,6 +29,9 @@ export function RecipeFormNutrition({
   nutritionData,
   onAnalyzeNutrition,
 }: RecipeFormNutritionProps) {
+  const t = useTranslations("nutrition");
+  const tRecipes = useTranslations("recipes");
+
   const servings = form.watch("servings") || 1;
   const ingredients = form.watch("ingredients") || [];
   const hasIngredients = ingredients.some(
@@ -39,7 +43,7 @@ export function RecipeFormNutrition({
       {/* Manual Nutrition Entry Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Nutrition Information</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
           <p className="text-sm text-muted-foreground">
             Enter nutritional values per serving manually, or use automatic
             analysis below
@@ -77,7 +81,7 @@ export function RecipeFormNutrition({
               name="protein"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Protein (g)</FormLabel>
+                  <FormLabel>{tRecipes("protein")} (g)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -102,7 +106,7 @@ export function RecipeFormNutrition({
               name="carbs"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Carbohydrates (g)</FormLabel>
+                  <FormLabel>{tRecipes("carbs")} (g)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -127,7 +131,7 @@ export function RecipeFormNutrition({
               name="fat"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fat (g)</FormLabel>
+                  <FormLabel>{tRecipes("fat")} (g)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -209,7 +213,7 @@ export function RecipeFormNutrition({
             ) : (
               <>
                 <Calculator className="mr-2 h-4 w-4" />
-                Calculate Nutrition from Ingredients
+                {t("calculate")}
               </>
             )}
           </Button>

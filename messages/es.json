@@ -426,6 +426,25 @@
         "title": "DietAIbook - Planificación de comidas con IA",
         "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
     },
+    "nutrition": {
+        "title": "Información Nutricional",
+        "confidence": "Confianza",
+        "portionNote": "Nota de Porción",
+        "alternatives": "Mostrar Alternativas",
+        "perServing": "Por Porción",
+        "total": "Total",
+        "ingredient": "Ingrediente",
+        "grams": "Gramos",
+        "calculate": "Calcular Nutrición",
+        "saveRecipe": "Guardar Receta",
+        "autocomplete": {
+            "placeholder": "Buscar ingrediente...",
+            "searching": "Buscando en base de datos USDA...",
+            "noResults": "No se encontraron ingredientes",
+            "minCharacters": "Escribe al menos 2 caracteres para buscar",
+            "heading": "USDA FoodData Central"
+        }
+    },
     "placeholders": {
         "enterEmail": "Ingresa tu correo",
         "enterPassword": "Ingresa tu contraseña",

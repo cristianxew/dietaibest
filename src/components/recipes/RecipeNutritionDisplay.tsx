@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import type { AnalyzeResult } from "@/actions/analyzeRecipe";
+import {
+  formatNutrientValue,
+  formatCalories,
+  getLocaleFromLanguage,
+} from "@/lib/localeFormatting";
 
 interface RecipeNutritionDisplayProps {
   result: AnalyzeResult;
@@ -48,18 +54,24 @@ function MacroCard({
   value,
   unit,
   color,
+  locale,
 }: {
   label: string;
   value: number;
   unit: string;
   color: string;
+  locale: string;
 }) {
+  // Format value based on unit type
+  const formattedValue =
+    unit === "kcal"
+      ? formatCalories(value, locale)
+      : formatNutrientValue(value, locale, value >= 100 ? 0 : 1);
+
   return (
     <div className="text-center">
       <div className="text-sm text-muted-foreground mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${color}`}>
-        {value.toFixed(value >= 100 ? 0 : 1)}
-      </div>
+      <div className={`text-2xl font-bold ${color}`}>{formattedValue}</div>
       <div className="text-xs text-muted-foreground">{unit}</div>
     </div>
   );
@@ -69,6 +81,10 @@ export function RecipeNutritionDisplay({
   result,
   servings,
 }: RecipeNutritionDisplayProps) {
+  const t = useTranslations("recipes");
+  const locale = useLocale();
+  const fullLocale = getLocaleFromLanguage(locale);
+
   const hasFailedItems = result.items.some((item) => item.confidence === 0);
   const hasLowConfidence = result.items.some(
     (item) => item.confidence > 0 && item.confidence < 0.5
@@ -106,9 +122,12 @@ export function RecipeNutritionDisplay({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Per Serving</CardTitle>
+            <CardTitle className="text-lg">
+              {t("nutritionPerServing")}
+            </CardTitle>
             <div className="text-sm text-muted-foreground">
-              {servings} {servings === 1 ? "serving" : "servings"} total
+              {servings}{" "}
+              {servings === 1 ? t("servings").slice(0, -1) : t("servings")}
             </div>
           </div>
         </CardHeader>
@@ -119,30 +138,35 @@ export function RecipeNutritionDisplay({
               value={result.perServing.kcal}
               unit="kcal"
               color="text-orange-600 dark:text-orange-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Protein"
+              label={t("protein")}
               value={result.perServing.protein}
               unit="g"
               color="text-blue-600 dark:text-blue-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Fat"
+              label={t("fat")}
               value={result.perServing.fat}
               unit="g"
               color="text-yellow-600 dark:text-yellow-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Carbs"
+              label={t("carbs")}
               value={result.perServing.carbs}
               unit="g"
               color="text-green-600 dark:text-green-400"
+              locale={fullLocale}
             />
             <MacroCard
               label="Fiber"
               value={result.perServing.fiber}
               unit="g"
               color="text-purple-600 dark:text-purple-400"
+              locale={fullLocale}
             />
           </div>
         </CardContent>
@@ -175,8 +199,8 @@ export function RecipeNutritionDisplay({
                   </div>
                   {item.gramsTotal > 0 && (
                     <div className="text-xs text-muted-foreground">
-                      {item.gramsTotal.toFixed(1)}g •{" "}
-                      {item.macros.kcal.toFixed(0)} kcal
+                      {formatNutrientValue(item.gramsTotal, fullLocale, 1)}g •{" "}
+                      {formatCalories(item.macros.kcal, fullLocale)} kcal
                     </div>
                   )}
                 </div>
@@ -201,30 +225,35 @@ export function RecipeNutritionDisplay({
               value={result.total.kcal}
               unit="kcal"
               color="text-orange-600 dark:text-orange-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Protein"
+              label={t("protein")}
               value={result.total.protein}
               unit="g"
               color="text-blue-600 dark:text-blue-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Fat"
+              label={t("fat")}
               value={result.total.fat}
               unit="g"
               color="text-yellow-600 dark:text-yellow-400"
+              locale={fullLocale}
             />
             <MacroCard
-              label="Carbs"
+              label={t("carbs")}
               value={result.total.carbs}
               unit="g"
               color="text-green-600 dark:text-green-400"
+              locale={fullLocale}
             />
             <MacroCard
               label="Fiber"
               value={result.total.fiber}
               unit="g"
               color="text-purple-600 dark:text-purple-400"
+              locale={fullLocale}
             />
           </div>
         </CardContent>
