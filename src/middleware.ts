@@ -32,7 +32,7 @@ const PROTECTED_API_ROUTES = [
   "/api/nutrition",
 ];
 
-const PUBLIC_API_ROUTES = ["/api/auth", "/api/health"];
+const PUBLIC_API_ROUTES = ["/api/auth", "/api/health", "/api/fdc"];
 
 // Create the intl middleware
 const intlMiddleware = createIntlMiddleware({

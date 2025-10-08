@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
+// import { IngredientAutocomplete } from "@/components/recipes/IngredientAutocomplete";
 
 interface RecipeFormIngredientsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,6 +76,11 @@ export function RecipeFormIngredients({
                 <FormItem className="flex-1">
                   <FormControl>
                     <Input placeholder="Ingredient name" {...field} />
+                    {/* <IngredientAutocomplete
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Search ingredient..."
+                    /> */}
                   </FormControl>
                   <FormMessage />
                 </FormItem>

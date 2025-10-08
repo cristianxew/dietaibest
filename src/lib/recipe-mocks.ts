@@ -229,4 +229,4 @@ const recipes = [
 
 export { recipes };
 
-export const getMockRecipeData = (): RecipeFormData => recipes[5];
+export const getMockRecipeData = (): RecipeFormData => recipes[1];

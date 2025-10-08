@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Calculator, Info } from "lucide-react";
+import { Loader2, Calculator, Info, Plus, Trash2, List } from "lucide-react";
 import { toast } from "sonner";
 import {
   analyzeRecipeAction,
@@ -14,6 +14,8 @@ import {
 } from "@/actions/analyzeRecipe";
 import { NutritionResults } from "./NutritionResults";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { IngredientAutocomplete } from "@/components/recipes/IngredientAutocomplete";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EXAMPLE_RECIPE = `1 cup cooked rice
 150 g chicken breast
@@ -22,16 +24,83 @@ const EXAMPLE_RECIPE = `1 cup cooked rice
 2 tsp garlic
 1/4 cup soy sauce`;
 
+interface StructuredIngredient {
+  id: string;
+  amount: string;
+  unit: string;
+  name: string;
+}
+
 export function NutritionCalculator() {
+  const [inputMode, setInputMode] = useState<"text" | "structured">(
+    "structured"
+  );
   const [ingredientsText, setIngredientsText] = useState("");
+  const [structuredIngredients, setStructuredIngredients] = useState<
+    StructuredIngredient[]
+  >([{ id: "1", amount: "", unit: "", name: "" }]);
   const [servings, setServings] = useState(2);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalyzeResult | null>(null);
 
+  const addIngredient = () => {
+    const newId = (structuredIngredients.length + 1).toString();
+    setStructuredIngredients([
+      ...structuredIngredients,
+      { id: newId, amount: "", unit: "", name: "" },
+    ]);
+  };
+
+  const removeIngredient = (id: string) => {
+    if (structuredIngredients.length === 1) return;
+    setStructuredIngredients(
+      structuredIngredients.filter((ing) => ing.id !== id)
+    );
+  };
+
+  const updateIngredient = (
+    id: string,
+    field: keyof StructuredIngredient,
+    value: string
+  ) => {
+    setStructuredIngredients(
+      structuredIngredients.map((ing) =>
+        ing.id === id ? { ...ing, [field]: value } : ing
+      )
+    );
+  };
+
   const handleAnalyze = async () => {
-    if (!ingredientsText.trim()) {
-      toast.error("Please enter at least one ingredient");
-      return;
+    let ingredientLines: string[] = [];
+
+    // Get ingredients based on input mode
+    if (inputMode === "text") {
+      if (!ingredientsText.trim()) {
+        toast.error("Please enter at least one ingredient");
+        return;
+      }
+      ingredientLines = ingredientsText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+    } else {
+      // Structured mode - build ingredient lines from structured data
+      const validIngredients = structuredIngredients.filter((ing) =>
+        ing.name.trim()
+      );
+
+      if (validIngredients.length === 0) {
+        toast.error("Please add at least one ingredient");
+        return;
+      }
+
+      ingredientLines = validIngredients.map((ing) => {
+        const parts = [];
+        if (ing.amount) parts.push(ing.amount);
+        if (ing.unit) parts.push(ing.unit);
+        parts.push(ing.name);
+        return parts.join(" ");
+      });
     }
 
     if (servings <= 0) {
@@ -43,11 +112,6 @@ export function NutritionCalculator() {
     setResults(null);
 
     try {
-      const ingredientLines = ingredientsText
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-
       const result = await analyzeRecipeAction({
         ingredients: ingredientLines,
         servings,
@@ -82,36 +146,121 @@ export function NutritionCalculator() {
           <CardTitle>Recipe Ingredients</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Enter one ingredient per line with quantity and unit (e.g.,
-              &quot;1 cup rice&quot;, &quot;150 g chicken&quot;, &quot;2 tbsp
-              olive oil&quot;).
-            </AlertDescription>
-          </Alert>
+          <Tabs
+            value={inputMode}
+            onValueChange={(value) =>
+              setInputMode(value as "text" | "structured")
+            }
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="structured">
+                <List className="mr-2 h-4 w-4" />
+                Structured Input
+              </TabsTrigger>
+              <TabsTrigger value="text">
+                <Info className="mr-2 h-4 w-4" />
+                Text Input
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="ingredients">Ingredients</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleLoadExample}
-              >
-                Load Example
-              </Button>
-            </div>
-            <Textarea
-              id="ingredients"
-              placeholder={EXAMPLE_RECIPE}
-              value={ingredientsText}
-              onChange={(e) => setIngredientsText(e.target.value)}
-              rows={10}
-              className="font-mono text-sm"
-            />
-          </div>
+            <TabsContent value="structured" className="space-y-4 mt-4">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Add ingredients with autocomplete from USDA FoodData Central
+                  database.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                {structuredIngredients.map((ingredient) => (
+                  <div key={ingredient.id} className="flex gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="1"
+                      value={ingredient.amount}
+                      onChange={(e) =>
+                        updateIngredient(
+                          ingredient.id,
+                          "amount",
+                          e.target.value
+                        )
+                      }
+                      className="w-20"
+                    />
+                    <Input
+                      placeholder="cup"
+                      value={ingredient.unit}
+                      onChange={(e) =>
+                        updateIngredient(ingredient.id, "unit", e.target.value)
+                      }
+                      className="w-28"
+                    />
+                    <IngredientAutocomplete
+                      value={ingredient.name}
+                      onChange={(value) =>
+                        updateIngredient(ingredient.id, "name", value)
+                      }
+                      placeholder="Search ingredient..."
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeIngredient(ingredient.id)}
+                      disabled={structuredIngredients.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addIngredient}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Ingredient
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="text" className="space-y-4 mt-4">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Enter one ingredient per line with quantity and unit (e.g.,
+                  &quot;1 cup rice&quot;, &quot;150 g chicken&quot;, &quot;2
+                  tbsp olive oil&quot;).
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="ingredients">Ingredients</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLoadExample}
+                  >
+                    Load Example
+                  </Button>
+                </div>
+                <Textarea
+                  id="ingredients"
+                  placeholder={EXAMPLE_RECIPE}
+                  value={ingredientsText}
+                  onChange={(e) => setIngredientsText(e.target.value)}
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-2">
             <Label htmlFor="servings">Number of Servings</Label>
@@ -128,7 +277,7 @@ export function NutritionCalculator() {
 
           <Button
             onClick={handleAnalyze}
-            disabled={isAnalyzing || !ingredientsText.trim()}
+            disabled={isAnalyzing}
             className="w-full sm:w-auto"
           >
             {isAnalyzing ? (
