@@ -15,7 +15,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <ClientProviders messages={messages} locale={locale}>
+    <ClientProviders messages={messages} locale={locale} timeZone="UTC">
       <div className="min-h-screen flex flex-col">
         {/* Header Navigation */}
         <Header />

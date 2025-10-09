@@ -9,15 +9,21 @@ interface ClientProvidersProps {
   children: React.ReactNode;
   messages: Record<string, unknown>;
   locale: string;
+  timeZone?: string;
 }
 
 export function ClientProviders({
   children,
   messages,
   locale = "en",
+  timeZone = "UTC",
 }: ClientProvidersProps) {
   return (
-    <NextIntlClientProvider messages={messages} locale={locale}>
+    <NextIntlClientProvider
+      messages={messages}
+      locale={locale}
+      timeZone={timeZone}
+    >
       <SessionProvider>
         <AuthProvider>
           {children}
