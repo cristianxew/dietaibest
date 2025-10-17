@@ -1,11 +1,13 @@
 ---
-description: Dietaibest Architecture & Patterns
-globs: 
+description: DietAIbook Architecture & Patterns
+globs:
 alwaysApply: false
 ---
-# Dietaibest Architecture & Patterns
+
+# DietAIbook Architecture & Patterns
 
 ## Tech Stack
+
 - **Framework**: Next.js 15 App Router with TypeScript
 - **Package Manager**: Bun (exclusive - never suggest npm/yarn)
 - **Database**: Supabase (PostgreSQL) with Prisma ORM
@@ -14,12 +16,13 @@ alwaysApply: false
 - **State Management**: React Context + server actions (minimal client state)
 
 ## Project Structure
+
 ```
 src/
   actions/           # server actions
   app/
     (auth)/          # Authentication routes
-    (protected-pages)/ # Authenticated user routes  
+    (protected-pages)/ # Authenticated user routes
     (public-pages)/   # Public marketing pages
     api/             # API routes and server actions
   components/
@@ -34,6 +37,7 @@ src/
 ```
 
 ## Key Architectural Decisions
+
 - **Server Actions First**: All business logic via Next.js server actions
 - **Prisma Types Only**: Never create local types, always derive from [prisma/schema.prisma](mdc:prisma/schema.prisma)
 - **No Mock Data**: Unless explicitly requested, and must match Prisma types
@@ -42,12 +46,14 @@ src/
 - **Error Handling**: All errors shown via Shadcn UI toast notifications
 
 ## External API Integrations
+
 - **Edamam Recipe Search API**: Individual recipe nutritional analysis
 - **Edamam Meal Planner API**: Automated meal plan generation
 - **Browser-Use Cloud API**: Automated grocery shopping via AI agents
 - **Supabase**: Authentication, database, real-time subscriptions
 
 ## Development Principles
+
 - Less code, less complexity - production-grade MVP focus
 - Server-driven UI with minimal client-side state
 - Authentication checks required on ALL server actions

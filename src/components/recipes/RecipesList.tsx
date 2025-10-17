@@ -37,7 +37,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-const RECENT_SEARCHES_KEY = "dietaibest-recent-searches";
+const RECENT_SEARCHES_KEY = "DietAIbook-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
 
 type SearchSuggestion = {

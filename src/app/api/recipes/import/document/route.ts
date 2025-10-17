@@ -23,7 +23,7 @@ const MAX_PDF_PAGES = 15; // Document AI limit for form parser
 // Google Cloud Document AI configuration
 const DOCUMENT_AI_CONFIG = {
   projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  location: process.env.DOCUMENT_AI_LOCATION || "us", // us, eu, asia
+  location: process.env.DOCUMENT_AI_LOCATION || "eu", // us, eu, asia
   customProcessorId: process.env.DOCUMENT_AI_CUSTOM_PROCESSOR_ID,
   serviceAccountPath: process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH,
 };

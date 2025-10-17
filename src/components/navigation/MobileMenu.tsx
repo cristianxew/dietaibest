@@ -248,7 +248,7 @@ export function MobileMenu({ className }: MobileMenuProps) {
         >
           {/* Mobile menu description for screen readers */}
           <div id="mobile-menu-description" className="sr-only">
-            Mobile navigation menu containing DietaiBest logo,{" "}
+            Mobile navigation menu containing DietAIbook logo,{" "}
             {isAuthenticated ? "user account information, " : ""}main navigation
             links{isAuthenticated ? ", " : " and "}authentication controls
             {isAuthenticated ? ", " : " "}and language settings. Use Tab to
@@ -260,12 +260,12 @@ export function MobileMenu({ className }: MobileMenuProps) {
               <div
                 className="flex items-center space-x-2"
                 role="img"
-                aria-label="DietaiBest mobile menu header"
+                aria-label="DietAIbook mobile menu header"
               >
                 <div
                   className="w-6 h-6 bg-primary rounded-md flex items-center justify-center"
                   role="img"
-                  aria-label="DietaiBest logo"
+                  aria-label="DietAIbook logo"
                 >
                   <span
                     className="text-primary-foreground font-bold text-xs"
@@ -274,7 +274,7 @@ export function MobileMenu({ className }: MobileMenuProps) {
                     D
                   </span>
                 </div>
-                <span className="font-bold text-lg">DietaiBest</span>
+                <span className="font-bold text-lg">DietAIbook</span>
               </div>
             </SheetTitle>
           </SheetHeader>

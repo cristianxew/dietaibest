@@ -110,7 +110,7 @@ export function MagicLinkForm({
             <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
               <li>• Check your email inbox (and spam folder)</li>
               <li>• Click the magic link to sign in automatically</li>
-              <li>• You&apos;ll be redirected back to Dietaibest</li>
+              <li>• You&apos;ll be redirected back to DietAIbook</li>
               <li>• The link can only be used once</li>
             </ul>
           </div>

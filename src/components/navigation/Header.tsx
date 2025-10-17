@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { LanguageSwitcherCompact } from "@/components/LanguageSwitcher";
 import { MainNav } from "@/components/navigation/MainNav";
 import { AuthControls } from "@/components/navigation/AuthControls";
@@ -30,7 +31,7 @@ interface HeaderProps {
  * Main application header component
  *
  * This is a client component that provides the primary navigation interface
- * for the DietaiBest application. It includes authentication-aware navigation,
+ * for the DietAIbook application. It includes authentication-aware navigation,
  * responsive design, internationalization support, and comprehensive keyboard navigation.
  *
  * @param props - Header component props
@@ -125,36 +126,22 @@ export default function Header({ className, sticky = true }: HeaderProps) {
       >
         {/* Header description for screen readers */}
         <div id="header-description" className="sr-only">
-          DietaiBest site header containing logo, main navigation, language
+          DietAIbook site header containing logo, main navigation, language
           switcher, and authentication controls. Press Alt+H to focus header,
           Alt+M to toggle mobile menu.
         </div>
 
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 max-w-7xl min-w-0">
+        <div className="container mx-auto">
           <div className="flex items-center justify-between h-14 sm:h-16 w-full min-w-0">
-            {/* Logo Section */}
-            <div className="flex items-center flex-shrink-0 min-w-0">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                {/* Brand logo */}
-                <div
-                  className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2"
-                  role="img"
-                  aria-label="DietaiBest logo"
-                >
-                  <span
-                    className="text-primary-foreground font-bold text-xs sm:text-sm"
-                    aria-hidden="true"
-                  >
-                    D
-                  </span>
-                </div>
-                <span
-                  className="font-bold text-lg sm:text-xl text-foreground hidden sm:block transition-all duration-200 truncate"
-                  aria-label="DietaiBest brand name"
-                >
-                  DietaiBest
-                </span>
-              </div>
+            <div>
+              <Image
+                src="/mydietbook.png"
+                alt="My diet book logo"
+                width={132}
+                height={34}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
 
             {/* Main Navigation - Desktop */}

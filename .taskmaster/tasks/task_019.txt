@@ -1,0 +1,952 @@
+# Task ID: 19
+# Title: USDA-Powered Nutrition Calculator Implementation
+# Status: in-progress
+# Dependencies: None
+# Priority: high
+# Description: Build a complete USDA FoodData Central-powered nutrition calculator that parses recipe ingredients, searches USDA FDC, resolves portions to grams, computes accurate macros, and caches results in Supabase for performance.
+# Details:
+Implement a production-ready nutrition calculator with the following key features:
+- Parse free-text recipe ingredients into {name, qty, unit}
+- Search USDA FDC and pick best food match per ingredient (Foundation > FNDDS > SR Legacy > Branded)
+- Resolve household measures (foodPortions[]) to grams with fallback to brand serving or density
+- Compute accurate macros (kcal, protein, fat, carbs, fiber) per ingredient, sum totals and per-serving
+- Cache FDC food details in Supabase to minimize API calls and improve speed
+- All FDC calls must be server-side only (never from browser)
+- Include type safety, error handling, tests, and inline documentation
+
+Technical Stack:
+- Next.js 15 (App Router) with React 18 + TypeScript 5
+- Prisma ORM connected to Supabase Postgres
+- ShadCN UI + Tailwind CSS
+- Bun runtime & package manager
+- USDA_API_KEY already set in server environment
+
+Data Type Priority: Foundation > FNDDS > SR Legacy > Branded (unless brand specified)
+TTL Strategy: Foundation/FNDDS/SR = 180 days, Branded = 30 days
+
+# Test Strategy:
+1. Unit test ingredient parsing with various formats (fractions, decimals, units)
+2. Test nutrition calculation accuracy against known reference values
+3. Verify portion resolution logic with FDC data types
+4. Performance test caching mechanism with repeated queries
+5. Integration test complete workflow from ingredient input to nutrition display
+6. Test server-side API key security (no client exposure)
+7. Test error handling for unrecognized ingredients and API failures
+8. Acceptance test: paste sample ingredients, set servings, verify accurate calculations
+
+# Subtasks:
+## 1. Create Prisma Schema for FDC Cache and Recipe Ingredients [done]
+### Dependencies: None
+### Description: Add Prisma models for FdcCache, Recipe, and RecipeIngredient to store USDA FDC data and recipe nutrition information in Supabase Postgres.
+### Details:
+Add the following models to prisma/schema.prisma:
+
+```prisma
+model FdcCache {
+  fdcId          Int       @id
+  description    String
+  dataType       String
+  brandOwner     String?   @db.VarChar(255)
+  foodPortions   Json?     // from FDC
+  foodNutrients  Json?     // from FDC (abridged or full)
+  labelNutrients Json?     // Branded foods per serving info if present
+  lastFetchedAt  DateTime  @default(now())
+
+  @@index([dataType])
+  @@index([description])
+}
+
+model Recipe {
+  id          String   @id @default(cuid())
+  title       String
+  servings    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ingredients RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id            String  @id @default(cuid())
+  recipeId      String
+  originalText  String
+  nameNorm      String
+  qty           Float
+  unit          String
+  fdcId         Int?
+  gramWeight    Float?   // resolved grams for ONE unit
+  confidence    Float?   // 0..1
+  debugJson     Json?
+
+  recipe        Recipe   @relation(fields: [recipeId], references: [id])
+
+  @@index([recipeId])
+  @@index([nameNorm])
+}
+```
+
+After adding models, run:
+```bash
+bunx prisma generate
+bunx prisma migrate dev --name add_fdc_nutrition
+```
+
+## 2. Implement Server-Only FDC Client and Nutrition Utilities [done]
+### Dependencies: 19.1
+### Description: Create app/lib/fdc.ts with server-only FDC API client functions for searching foods, fetching by IDs, extracting macros, and resolving portions.
+### Details:
+Create src/lib/fdc.ts with the complete implementation from the requirements document, including:
+
+- API_BASE and KEY configuration with server-only import
+- CORE_NUTRIENTS constant (1008, 1003, 1004, 1005, 1079)
+- Macro type definition
+- DATATYPE_PRIORITY array (Foundation, Survey (FNDDS), SR Legacy, Branded)
+- fdcSearch() function for searching foods
+- fdcFoodsByIds() function for batch fetching
+- extractMacrosFromFood() to parse nutrient data
+- scalePer100g() to scale macros to actual grams
+- resolveGramWeightFromPortions() to match units to FDC portions
+- extractBrandedServing() for branded food serving info
+
+All functions must use cache: "no-store" to avoid Next.js caching (we do our own DB cache).
+
+Key features:
+- Server-side only (import "server-only")
+- Type-safe with TypeScript
+- Error handling for API failures
+- Support for abridged and full FDC payloads
+
+## 3. Build Database Cache Repository Layer [done]
+### Dependencies: 19.1, 19.2
+### Description: Implement src/lib/fdcRepo.ts with intelligent caching that checks FdcCache first, then fetches from USDA API with TTL-based staleness detection.
+### Details:
+Create src/lib/fdcRepo.ts implementing getFoodsCached() function with:
+
+TTL Strategy:
+- Foundation/Survey (FNDDS)/SR Legacy: 180 days
+- Branded: 30 days
+
+Logic Flow:
+1. Query FdcCache for requested fdcIds
+2. Check if cached entries are stale based on dataType and lastFetchedAt
+3. Identify missing or stale entries
+4. Fetch missing/stale from USDA API using fdcFoodsByIds()
+5. Upsert fetched data into FdcCache with new lastFetchedAt timestamp
+6. Return combined cached + fresh data in requested order
+
+Implementation:
+- Use Prisma client from @/lib/prisma or similar singleton
+- Implement isStale() helper function
+- Handle both update and create cases with upsert
+- Maintain data consistency with proper null handling
+- Return data in same order as input fdcIds array
+
+## 4. Create Ingredient Parser with Heuristics [done]
+### Dependencies: None
+### Description: Implement src/lib/ingredients.ts with natural language parsing for recipe ingredient lines, extracting quantity, unit, and name with synonym mapping and density fallbacks.
+### Details:
+Create src/lib/ingredients.ts with complete implementation including:
+
+ParsedIngredient Type:
+- original: string
+- name: string (normalized)
+- qty: number
+- unit: string (normalized)
+
+Constants:
+- FRACTIONS map (½, ¼, ¾, ⅓, ⅔, ⅛)
+- UNIT_ALIASES map (grams→g, cup→cup, tablespoon→tbsp, etc.)
+- STATE_WORDS array (chopped, diced, minced, boiled, cooked, raw, etc.)
+- SYNONYMS map (aubergine→eggplant, courgette→zucchini, etc.)
+- DENSITY_FALLBACK_G_PER_UNIT map (onion:cup→160, rice cooked:cup→158, etc.)
+
+Functions:
+- toNumber(): Parse "1 1/2" or "1½" to 1.5
+- normalizeUnit(): Convert unit variations to standard forms
+- parseIngredientLine(): Main parser with regex patterns
+
+Parsing Logic:
+1. Try pattern: "<qty> <unit> <name...>"
+2. Fallback to: "<name...> <qty> <unit>"
+3. Strip state words from name
+4. Apply synonym substitutions
+5. Normalize to lowercase
+6. Return ParsedIngredient object
+
+Handle edge cases:
+- Fractions and decimals
+- Missing units (default to "piece")
+- Various spacing formats
+- Plural forms
+
+## 5. Implement Recipe Analysis Server Action [done]
+### Dependencies: 19.2, 19.3, 19.4
+### Description: Create src/actions/analyzeRecipe.ts server action that orchestrates the complete nutrition analysis pipeline from ingredient lines to calculated macros.
+### Details:
+Create src/actions/analyzeRecipe.ts with "use server" directive implementing analyzeRecipeAction():
+
+Input Type (AnalyzeInput):
+- ingredients: string[]
+- servings: number
+
+Output Type (AnalyzeResult):
+- items: Array of per-ingredient results with fdcId, description, gramsTotal, macros, confidence, portionNote
+- total: Aggregated macros for entire recipe
+- perServing: Total macros divided by servings
+
+Pipeline Steps:
+1. Parse all ingredient lines using parseIngredientLine()
+2. Search USDA FDC for each ingredient name (parallel Promise.all)
+3. Choose best match per ingredient using DATATYPE_PRIORITY sorting
+4. Batch fetch full food details via getFoodsCached()
+5. For each ingredient, resolve gram weight:
+   a. Try resolveGramWeightFromPortions() for household measures
+   b. Try extractBrandedServing() for branded foods
+   c. Try DENSITY_FALLBACK_G_PER_UNIT lookup
+   d. Fall back to assuming grams or qty as grams
+6. Extract per-100g macros and scale to actual grams
+7. Compute confidence scores based on resolution method
+8. Aggregate totals across all ingredients
+9. Calculate per-serving macros
+
+Include portionNote for each ingredient explaining resolution method.
+
+Handle cases where no FDC match found (return zeros with confidence 0).
+
+## 6. Create FDC Search API Route for Autocomplete [done]
+### Dependencies: 19.2
+### Description: Implement src/app/api/fdc/search/route.ts API endpoint for ingredient autocomplete suggestions from USDA FDC.
+### Details:
+Create src/app/api/fdc/search/route.ts with:
+
+Configuration:
+- Add "server-only" import
+- Set runtime = "nodejs"
+
+POST Handler:
+- Accept JSON body with { query: string }
+- Validate query parameter
+- Call fdcSearch(query) from fdc.ts
+- Return first 8 results with simplified structure:
+  - fdcId
+  - description
+  - dataType
+  - brandOwner
+
+Error Handling:
+- Return 400 for missing/invalid query
+- Return 500 for FDC API failures with error message
+
+Response format: JSON array of food objects
+
+This endpoint enables real-time ingredient autocomplete in the UI without exposing the FDC API key to the browser.
+
+## 7. Integrate Nutrition Calculator with Recipe UI [done]
+### Dependencies: 19.5
+### Description: Update existing recipe UI components (RecipeForm.tsx and recipe-form directory) to integrate the nutrition calculator functionality with real-time analysis and display.
+### Details:
+Integration Points:
+
+1. Update src/components/recipes/RecipeForm.tsx or create new nutrition calculator page at /nutrition
+
+2. UI Components needed:
+   - Textarea or multi-line input for ingredient list (one per line)
+   - Number input for servings
+   - "Calculate Nutrition" button
+   - Results display showing:
+     * Per-ingredient breakdown (name, grams, macros, confidence)
+     * Recipe totals (kcal, protein, fat, carbs, fiber)
+     * Per-serving macros
+     * Confidence indicators and portion notes
+
+3. Integration with analyzeRecipeAction:
+   - Call server action on button click
+   - Handle loading states during analysis
+   - Display errors for failed ingredients
+   - Show toast notifications for success/errors
+
+4. Optional enhancements:
+   - Ingredient autocomplete using /api/fdc/search endpoint
+   - Visual confidence indicators (colors/badges)
+   - Expandable details for portion resolution method
+   - Copy/paste friendly format for ingredient input
+
+5. Styling:
+   - Use existing ShadCN UI components
+   - Match current design system
+   - Mobile-responsive layout
+   - Accessible form controls
+
+Reference existing recipe-form components but note they contain old implementation that didn't work - use the new server action instead.
+
+## 8. Setup Prisma Singleton for Server Actions [done]
+### Dependencies: None
+### Description: Ensure Prisma client singleton is properly configured for use in server actions and API routes with global instance management.
+### Details:
+Create or verify src/lib/prisma.ts exists with:
+
+```typescript
+import { PrismaClient } from "@prisma/client";
+
+declare global {
+  // allow global `var` declarations
+  // eslint-disable-next-line no-var
+  var prisma: PrismaClient | undefined;
+}
+
+export const prisma = globalThis.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
+```
+
+Purpose:
+- Prevents multiple Prisma client instances in development (hot reload)
+- Single instance in production for connection pooling
+- Accessible throughout server-side code
+
+Verification:
+- Check if similar pattern already exists in project
+- Ensure all server actions import from this singleton
+- Verify Supabase connection string in .env
+- Test with a simple Prisma query
+
+If the project already has a Prisma singleton in a different location (e.g., @/server/prisma), use that instead and update imports in fdcRepo.ts accordingly.
+
+## 9. Create Comprehensive Test Suite [done]
+### Dependencies: 19.2, 19.4, 19.5
+### Description: Implement unit tests for ingredient parsing, nutrition calculations, and portion resolution using Bun's test runner or existing Vitest setup.
+### Details:
+Create tests in tests/unit/ directory:
+
+1. tests/unit/ingredients.test.ts:
+```typescript
+import { describe, it, expect } from "bun:test";
+import { parseIngredientLine } from "@/lib/ingredients";
+
+describe("parseIngredientLine", () => {
+  it("parses qty unit name", () => {
+    const p = parseIngredientLine("1 1/2 cups chopped onion");
+    expect(p.qty).toBeCloseTo(1.5);
+    expect(p.unit).toBe("cup");
+    expect(p.name).toContain("onion");
+  });
+
+  it("handles grams", () => {
+    const p = parseIngredientLine("150 g chicken breast");
+    expect(p.qty).toBe(150);
+    expect(p.unit).toBe("g");
+    expect(p.name).toContain("chicken");
+  });
+
+  it("handles fractions", () => {
+    const p = parseIngredientLine("½ cup flour");
+    expect(p.qty).toBe(0.5);
+    expect(p.unit).toBe("cup");
+  });
+
+  it("strips state words", () => {
+    const p = parseIngredientLine("2 cups diced tomatoes");
+    expect(p.name).not.toContain("diced");
+    expect(p.name).toContain("tomato");
+  });
+});
+```
+
+2. tests/unit/fdc.test.ts:
+- Test extractMacrosFromFood with sample FDC payloads
+- Test scalePer100g calculations
+- Test resolveGramWeightFromPortions matching
+
+3. tests/integration/nutrition-analysis.test.ts:
+- Mock FDC API responses
+- Test complete analyzeRecipeAction workflow
+- Verify cache behavior
+
+Run tests:
+```bash
+bun test
+# or
+bunx vitest
+```
+
+Ensure tests pass in CI/CD pipeline.
+
+## 10. Implement Security and Error Handling [done]
+### Dependencies: 19.2, 19.3, 19.5, 19.7
+### Description: Add comprehensive error handling, security measures, and developer experience improvements throughout the nutrition calculator system.
+### Details:
+Security Measures:
+1. Verify FDC_API_KEY is never exposed to client:
+   - Use "server-only" imports in all FDC modules
+   - Never return raw FDC API responses to client
+   - Validate API key exists on server startup
+
+2. Input validation:
+   - Sanitize ingredient text inputs
+   - Validate servings is positive number
+   - Limit ingredient list length (e.g., max 50 lines)
+   - Prevent SQL injection in Prisma queries (use parameterized)
+
+Error Handling:
+1. Network errors:
+   - Try/catch around all FDC API calls
+   - Friendly error messages for users
+   - Log detailed errors server-side for debugging
+   - Implement retry logic for transient failures
+
+2. Parsing errors:
+   - Handle malformed ingredient lines gracefully
+   - Return partial results when some ingredients fail
+   - Include error details in debugJson field
+
+3. Database errors:
+   - Handle Prisma connection failures
+   - Graceful degradation if cache unavailable
+   - Transaction rollback on failures
+
+Developer Experience:
+1. Logging:
+   - Console.log when density fallback used (for refinement)
+   - Log cache hit/miss rates
+   - Log parsing failures with original text
+
+2. Documentation:
+   - Inline JSDoc comments for all exported functions
+   - Type definitions for all data structures
+   - README section explaining system architecture
+
+3. Debugging:
+   - Include debugJson in RecipeIngredient for troubleshooting
+   - Expose confidence scores in UI
+   - Show portion resolution notes
+
+Toast Notifications:
+- Success: "Nutrition calculated successfully!"
+- Warning: "Some ingredients couldn't be matched (see details)"
+- Error: "Failed to calculate nutrition. Please try again."
+
+## 11. Validate Acceptance Criteria [done]
+### Dependencies: 19.7, 19.10
+### Description: Test the complete system against acceptance criteria to ensure all requirements are met with accurate calculations and good performance.
+### Details:
+Acceptance Test at /nutrition route:
+
+Test Input:
+```
+1 cup cooked rice
+150 g chicken breast
+1 tbsp olive oil
+1 cup chopped onion
+```
+
+Servings: 2
+
+Expected Results:
+1. Per-ingredient display shows:
+   - Resolved grams for each ingredient
+   - Confidence score (0.0-1.0)
+   - Macros breakdown (kcal, protein, fat, carbs, fiber)
+   - Portion resolution note explaining method
+
+2. Recipe totals display:
+   - Sum of all ingredient macros
+   - Proper decimal precision
+
+3. Per-serving macros:
+   - Totals divided by 2
+   - Clearly labeled "Per Serving"
+
+4. Performance requirements:
+   - First analysis completes within 3-5 seconds
+   - Re-analyzing same list completes within <1 second (cache hit)
+   - Database cache shows entries for each fdcId
+
+5. Security verification:
+   - Network tab shows no direct calls to api.nal.usda.gov from browser
+   - All FDC calls go through /api or server actions
+   - FDC_API_KEY not visible in client-side code
+
+6. Code quality:
+   - TypeScript strict mode passes
+   - Next.js 15 builds without errors
+   - Bun tests pass
+   - No console errors in browser
+
+Manual Testing Checklist:
+- [ ] Test with various ingredient formats
+- [ ] Test with missing ingredients (should show error)
+- [ ] Test with very large servings count
+- [ ] Test with metric and imperial units
+- [ ] Test with branded food names
+- [ ] Verify cache improves repeat performance
+- [ ] Test error handling with invalid input
+- [ ] Verify mobile responsiveness
+
+## 12. Implement Enhancement Features [in-progress]
+### Dependencies: 19.11
+### Description: Add optional enhancement features including autocomplete, recipe persistence, alternative suggestions, additional nutrients, and internationalization.
+### Details:
+Enhancement Implementations:
+
+1. Ingredient Autocomplete:
+   - Integrate /api/fdc/search endpoint with ingredient input
+   - Debounce search queries (300ms)
+   - Display suggestions in dropdown
+   - Show dataType and brandOwner in suggestions
+ 
+2.  - Save ingredient matches to RecipeIngredient table
+   - Allow users to re-open and edit saved recipes
+   - Display saved nutrition without re-analyzing
+   - Update nutrition on ingredient changes
+
+3. - Display in nutrition facts table
+
+5. Internationalization:
+   - Add ES/PL/EN ingredient synonyms to SYNONYMS map
+   - Translate UI labels using existing messages/ files
+   - Support locale-specific unit formats
+   - Translate FDC descriptions if available
+
+6. Enhanced UI Features:
+ - Visual macro distribution charts (pie/bar)
+  Internationalization (supports existing locale system)
+5. 
+
+## 13. Ingredient Autocomplete with Debouncing [pending]
+### Dependencies: None
+### Description: Create a reusable autocomplete component using ShadCN Command/Popover that integrates with /api/fdc/search endpoint with 300ms debouncing.
+### Details:
+Implementation Steps:
+
+1. Install/verify ShadCN Command and Popover components are available
+2. Create `src/components/recipes/IngredientAutocomplete.tsx` component:
+   - Accept props: value, onChange, placeholder
+   - Implement debounced search using useDebouncedCallback or custom hook (300ms delay)
+   - Call /api/fdc/search endpoint with user input
+   - Display results in Command list showing:
+     * Food description (primary text)
+     * dataType badge (Foundation/FNDDS/SR Legacy/Branded with color coding)
+     * brandOwner (if available, secondary text)
+   - Handle loading state with spinner
+   - Handle empty state ("No results found")
+   - Implement keyboard navigation (arrow keys, enter to select)
+   - Accessibility: proper ARIA labels and roles
+
+3. Integrate into RecipeFormIngredients.tsx:
+   - Replace or enhance existing ingredient input fields
+   - Maintain compatibility with free-text input
+   - Update state management to handle autocomplete selections
+
+4. Styling:
+   - Match existing design system
+   - Use ShadCN theming variables
+   - Mobile-responsive dropdown
+   - Max height with scroll for long lists
+
+Acceptance Criteria:
+- [ ] Autocomplete appears after 300ms of typing
+- [ ] Shows max 8 results from FDC API
+- [ ] Displays dataType and brandOwner clearly
+- [ ] Keyboard navigation works (up/down/enter/esc)
+- [ ] Loading and empty states display correctly
+- [ ] Mobile responsive
+
+## 14. Recipe Persistence System [pending]
+### Dependencies: None
+### Description: Extend database models and create server actions for saving, loading, and editing analyzed recipes with full ingredient details.
+### Details:
+Implementation Steps:
+
+1. Update Prisma Schema (if needed):
+   - Verify Recipe model has userId field for user association
+   - Ensure RecipeIngredient stores: fdcId, gramWeight, portionDescription, confidence
+   - Add fields if missing:
+     ```prisma
+     model Recipe {
+       userId      String?  // Link to user who created it
+       // ... existing fields
+     }
+     
+     model RecipeIngredient {
+       portionDescription String?  // Store the portion method used
+       // ... existing fields
+     }
+     ```
+   - Run migration if changes made
+
+2. Create Server Actions in `src/actions/recipeActions.ts`:
+   - `saveRecipe(data: { title, servings, ingredients, userId })`: Save analyzed recipe with all ingredient matches
+   - `getRecipeById(recipeId: string)`: Load recipe with ingredients
+   - `getUserRecipes(userId: string)`: Get all recipes for a user
+   - `updateRecipe(recipeId, data)`: Update existing recipe
+   - `deleteRecipe(recipeId)`: Delete recipe
+   - Include authentication checks using getServerSession or similar
+
+3. Create UI Components:
+   - `SaveRecipeDialog.tsx`: Modal to save current analysis with title input
+   - `SavedRecipesList.tsx`: Display list of user's saved recipes
+   - `RecipeCard.tsx`: Preview card showing title, servings, macro summary
+   - Add "Save Recipe" button to RecipeNutritionDisplay
+   - Add "Load Recipe" button/section to RecipeForm
+
+4. State Management:
+   - Track if current recipe is saved (show "Update" vs "Save" button)
+   - When loading saved recipe, populate form and display nutrition without re-analyzing
+   - Detect ingredient changes and show "Re-calculate" prompt
+   - Handle optimistic updates for better UX
+
+5. Integration:
+   - Wire up all buttons to server actions
+   - Show toast notifications for success/error
+   - Update URL with recipe ID when saving/loading (optional)
+   - Add loading states during save/load operations
+
+Acceptance Criteria:
+- [ ] Can save analyzed recipe with title
+- [ ] Saved recipes appear in user's recipe list
+- [ ] Can load saved recipe without re-analyzing
+- [ ] Nutrition displays correctly from saved data
+- [ ] Can edit and update existing recipe
+- [ ] Re-calculation triggered only when ingredients change
+- [ ] All operations require authentication
+
+## 15. Alternative Food Suggestions UI [pending]
+### Dependencies: None
+### Description: Add expandable UI per ingredient to show top 5 FDC alternatives, allowing manual selection of different food matches.
+### Details:
+Implementation Steps:
+
+1. Extend analyzeRecipeAction Response:
+   - Add `alternatives` array to each item in AnalyzeResult
+   - Store top 5 FDC search results (not just the best match)
+   - Include for each alternative: fdcId, description, dataType, brandOwner
+   - Sort by DATATYPE_PRIORITY
+
+2. Create UI Component `FoodAlternativesSelector.tsx`:
+   - Accordion/Collapsible component per ingredient
+   - Default collapsed with indicator "Show X alternatives"
+   - When expanded, display list of 5 alternatives:
+     * Radio button or selectable card
+     * Food description
+     * DataType badge with color coding
+     * Brand owner (if applicable)
+     * Preview of macros (if available)
+   - Currently selected food highlighted
+   - "Use This" button to switch selection
+
+3. Implement Selection Logic:
+   - Create `recalculateWithAlternative` function
+   - When user selects different food:
+     * Update the fdcId for that ingredient
+     * Fetch new food details if not cached
+     * Recalculate macros for that ingredient only
+     * Update totals and per-serving
+     * Show loading state during recalculation
+   - Persist manual selection to database (when recipe saved)
+   - Add flag to indicate manual vs auto selection
+
+4. State Management:
+   - Track alternatives for each ingredient
+   - Track which ingredients have manual overrides
+   - Handle recalculation efficiently (only affected ingredient)
+   - Show visual indicator for manually-selected foods
+
+5. Update RecipeNutritionDisplay:
+   - Add alternatives section per ingredient row
+   - Add badge/icon indicating manual selection
+   - Implement smooth transitions and animations
+   - Mobile-responsive design
+
+Acceptance Criteria:
+- [ ] Each ingredient shows "Show alternatives" option
+- [ ] Displays top 5 FDC results when expanded
+- [ ] Can select alternative and recalculate nutrition
+- [ ] Manual selections persist when recipe saved
+- [ ] Visual indicator for manually-selected foods
+- [ ] Efficient recalculation (doesn't re-analyze whole recipe)
+- [ ] Mobile responsive with touch-friendly controls
+
+## 16. Extended Nutrients Support (Sodium, Sugar, Saturated Fat) [pending]
+### Dependencies: None
+### Description: Expand nutrition tracking to include sodium (1093), total sugars (2000), and saturated fat (1258) throughout the entire system.
+### Details:
+Implementation Steps:
+
+1. Update `src/lib/fdc.ts`:
+   - Expand CORE_NUTRIENTS constant:
+     ```typescript
+     export const CORE_NUTRIENTS = [
+       "1008", // Energy (kcal)
+       "1003", // Protein
+       "1004", // Total Fat
+       "1005", // Carbohydrates
+       "1079", // Fiber
+       "1093", // Sodium
+       "2000", // Total Sugars
+       "1258", // Saturated Fat
+     ] as const;
+     ```
+   - Update Macro type definition:
+     ```typescript
+     export type Macro = {
+       kcal: number;
+       protein: number;
+       fat: number;
+       carbs: number;
+       fiber: number;
+       sodium: number;      // in mg
+       sugar: number;       // in g
+       saturatedFat: number; // in g
+     };
+     ```
+   - Update extractMacrosFromFood() to extract new nutrients
+   - Update scalePer100g() to scale new nutrients
+   - Update all return types and function signatures
+
+2. Update `src/actions/analyzeRecipe.ts`:
+   - Ensure new nutrients are included in calculation pipeline
+   - Update AnalyzeResult type to include new nutrients
+   - Verify aggregation logic includes new nutrients
+   - Update per-serving calculations
+
+3. Update Database Schema (optional):
+   - Consider adding nutrient fields to RecipeIngredient if caching
+   - Run migration if schema changes
+
+4. Update `src/components/recipes/RecipeNutritionDisplay.tsx`:
+   - Add rows for sodium, sugar, and saturated fat
+   - Display with proper units:
+     * Sodium: mg (or g if > 1000mg)
+     * Sugar: g
+     * Saturated Fat: g
+   - Add appropriate icons or visual indicators
+   - Consider daily value % (if dietary goals available)
+   - Maintain existing tolerance color coding if applicable
+
+5. Update i18n Files:
+   - Add translations for new nutrients in messages/en.json, es.json, pl.json:
+     * "nutrition.sodium"
+     * "nutrition.sugar"
+     * "nutrition.saturatedFat"
+     * "nutrition.sodiumUnit" (mg)
+   - Ensure consistent terminology
+
+6. Testing:
+   - Update unit tests in tests/unit/fdc.test.ts
+   - Verify extraction of new nutrients from sample FDC data
+   - Test scaling calculations
+   - Update integration tests
+
+Acceptance Criteria:
+- [ ] CORE_NUTRIENTS includes all 8 nutrients
+- [ ] Macro type includes sodium, sugar, saturatedFat
+- [ ] extractMacrosFromFood correctly extracts new nutrients
+- [ ] UI displays all nutrients with correct units
+- [ ] Translations available in all languages (EN/ES/PL)
+- [ ] Tests pass for new nutrients
+- [ ] No breaking changes to existing functionality
+
+## 17. Enhanced Internationalization (ES/PL/EN Synonyms) [pending]
+### Dependencies: None
+### Description: Add comprehensive multilingual support for ingredient parsing with Spanish and Polish synonyms, and ensure all nutrition UI labels are properly internationalized.
+### Details:
+Implementation Steps:
+
+1. Expand SYNONYMS Map in `src/lib/ingredients.ts`:
+   - Add comprehensive Spanish (ES) ingredient synonyms:
+     ```typescript
+     // Spanish
+     'cebolla': 'onion',
+     'pollo': 'chicken',
+     'arroz': 'rice',
+     'tomate': 'tomato',
+     'ajo': 'garlic',
+     'zanahoria': 'carrot',
+     'papa': 'potato',
+     'patata': 'potato',
+     'leche': 'milk',
+     'huevo': 'egg',
+     'pan': 'bread',
+     'aceite': 'oil',
+     'sal': 'salt',
+     'azúcar': 'sugar',
+     'harina': 'flour',
+     'mantequilla': 'butter',
+     // ... add 50+ common ingredients
+     ```
+   - Add comprehensive Polish (PL) ingredient synonyms:
+     ```typescript
+     // Polish
+     'cebula': 'onion',
+     'kurczak': 'chicken',
+     'ryż': 'rice',
+     'pomidor': 'tomato',
+     'czosnek': 'garlic',
+     'marchew': 'carrot',
+     'ziemniak': 'potato',
+     'mleko': 'milk',
+     'jajko': 'egg',
+     'chleb': 'bread',
+     'olej': 'oil',
+     'sól': 'salt',
+     'cukier': 'sugar',
+     'mąka': 'flour',
+     'masło': 'butter',
+     // ... add 50+ common ingredients
+     ```
+   - Keep existing English synonyms
+   - Organize by language with comments
+
+2. Add Locale-Specific Unit Parsing:
+   - Add UNIT_ALIASES for Spanish units:
+     ```typescript
+     'gramo': 'g', 'gramos': 'g',
+     'litro': 'l', 'litros': 'l',
+     'taza': 'cup', 'tazas': 'cup',
+     'cucharada': 'tbsp', 'cucharadas': 'tbsp',
+     'cucharadita': 'tsp', 'cucharaditas': 'tsp',
+     ```
+   - Add UNIT_ALIASES for Polish units:
+     ```typescript
+     'gram': 'g', 'gramy': 'g',
+     'litr': 'l', 'litry': 'l',
+     'szklanka': 'cup', 'szklanki': 'cup',
+     'łyżka': 'tbsp', 'łyżki': 'tbsp',
+     'łyżeczka': 'tsp', 'łyżeczki': 'tsp',
+     ```
+
+3. Update i18n Translation Files:
+   - Add nutrition calculator labels to `messages/en.json`:
+     * "nutrition.title": "Nutrition Facts"
+     * "nutrition.confidence": "Confidence"
+     * "nutrition.portionNote": "Portion Note"
+     * "nutrition.alternatives": "Show Alternatives"
+     * "nutrition.perServing": "Per Serving"
+     * "nutrition.total": "Total"
+     * "nutrition.ingredient": "Ingredient"
+     * "nutrition.grams": "Grams"
+     * "nutrition.calculate": "Calculate Nutrition"
+     * "nutrition.saveRecipe": "Save Recipe"
+   - Translate to Spanish in `messages/es.json`
+   - Translate to Polish in `messages/pl.json`
+
+4. Implement Locale-Specific Number Formatting:
+   - Create utility function `formatNutrientValue(value, locale)`:
+     * Use Intl.NumberFormat for locale-specific formatting
+     * Handle decimal separator (comma vs period)
+     * Round appropriately (1 decimal for macros)
+   - Apply to all nutrition displays
+
+5. Update UI Components:
+   - Ensure all hardcoded strings use useTranslations hook
+   - Update RecipeNutritionDisplay.tsx
+   - Update RecipeFormNutrition.tsx
+   - Update any nutrition-related toast messages
+
+6. Testing:
+   - Test ingredient parsing with Spanish inputs
+   - Test ingredient parsing with Polish inputs
+   - Verify UI displays correctly in all three languages
+   - Test locale switching
+   - Verify number formatting for different locales
+
+Acceptance Criteria:
+- [ ] SYNONYMS map includes 50+ Spanish ingredients
+- [ ] SYNONYMS map includes 50+ Polish ingredients
+- [ ] Unit aliases support ES and PL units
+- [ ] All nutrition UI labels translated (EN/ES/PL)
+- [ ] Number formatting respects user locale
+- [ ] Can parse recipes in Spanish
+- [ ] Can parse recipes in Polish
+- [ ] UI language switches correctly
+- [ ] No English hardcoded strings in components
+
+## 18. Visual Macro Distribution Charts [pending]
+### Dependencies: None
+### Description: Install charting library and create visual macro distribution components showing protein/fat/carbs breakdown with pie and bar charts.
+### Details:
+Implementation Steps:
+
+1. Install Charting Library:
+   - Install recharts (React-compatible, lightweight):
+     ```bash
+     bun add recharts
+     ```
+   - Alternative: chart.js with react-chartjs-2 (if preferred)
+   - Verify compatibility with Next.js 15 and React 18
+
+2. Create MacroDistributionChart Component (`src/components/recipes/MacroDistributionChart.tsx`):
+   - Accept props: `macros` (Macro type), `chartType` ('pie' | 'bar')
+   - Calculate macro distribution:
+     * Total calories from protein (4 kcal/g)
+     * Total calories from fat (9 kcal/g)
+     * Total calories from carbs (4 kcal/g)
+     * Percentages of total calories
+   - Implement Pie Chart variant:
+     * Use Recharts PieChart component
+     * Color code segments (protein: blue, fat: yellow, carbs: green)
+     * Show percentage labels
+     * Interactive tooltips with absolute values
+   - Implement Bar Chart variant:
+     * Use Recharts BarChart component
+     * Horizontal bars showing grams
+     * Color coded same as pie chart
+     * Display both grams and % of total calories
+
+3. Create MacrosSummaryCard Component:
+   - Display key stats in card format:
+     * Total calories
+     * Macro breakdown (g and %)
+     * Visual chart
+   - Responsive grid layout
+   - Toggle between pie and bar chart
+   - Use ShadCN Card component
+
+4. Integrate into RecipeNutritionDisplay:
+   - Add MacroDistributionChart below nutrition facts table
+   - Show for both "Total" and "Per Serving" sections
+   - Add toggle to switch between chart types
+   - Collapsible section (can hide/show charts)
+   - Mobile: Stack vertically
+   - Desktop: Side-by-side with table
+
+5. Styling and Accessibility:
+   - Match existing design system colors
+   - Dark mode support (recharts theming)
+   - ARIA labels for chart elements:
+     * "Protein accounts for X% of calories"
+     * Screen reader announces values
+   - Keyboard navigation for chart toggles
+   - Tooltips with clear descriptions
+   - Print-friendly (fallback to table for print media)
+
+6. Performance Optimization:
+   - Lazy load recharts (dynamic import):
+     ```typescript
+     const MacroChart = dynamic(() => import('./MacroDistributionChart'), {
+       ssr: false,
+       loading: () => <ChartSkeleton />
+     });
+     ```
+   - Memoize chart data calculations
+   - Throttle resize events
+
+7. Testing:
+   - Test with various macro distributions
+   - Verify calculations are correct
+   - Test responsive behavior
+   - Verify accessibility with screen reader
+   - Test print view
+
+Acceptance Criteria:
+- [ ] Recharts installed and working
+- [ ] Pie chart displays macro % correctly
+- [ ] Bar chart displays macro grams correctly
+- [ ] Charts match design system colors
+- [ ] Toggle between pie/bar works
+- [ ] Responsive on mobile and desktop
+- [ ] ARIA labels and keyboard navigation work
+- [ ] Dark mode supported
+- [ ] Charts load efficiently (lazy loaded)
+- [ ] Tooltips show detailed information
+- [ ] Print view has fallback
+

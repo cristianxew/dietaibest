@@ -1,7 +1,12 @@
 /**
- * Browser Use API Client for Recipe Extraction
+ * Browser Use API Client for Recipe Extraction (API v2)
  *
- * Simple client for extracting recipe data from URLs using Browser Use Cloud API.
+ * Simple client for extracting recipe data from URLs using Browser Use Cloud API v2.
+ *
+ * API v2 Changes:
+ * - Enhanced request parameters: structuredOutput, vision, maxSteps, etc.
+ *
+ * @see https://docs.cloud.browser-use.com/api-reference/v-2-api-current/tasks/create-task-tasks-post
  */
 
 // ============================================================================
@@ -27,8 +32,32 @@ export interface RecipeExtractionRequest {
 
 export interface BrowserUseTaskRequest {
   task: string;
-  save_browser_data?: boolean;
-  llm_model?: string;
+  llm?:
+    | "gpt-4.1"
+    | "gpt-4.1-mini"
+    | "o4-mini"
+    | "o3"
+    | "gemini-2.5-flash"
+    | "gemini-2.5-pro"
+    | "gemini-flash-latest"
+    | "gemini-flash-lite-latest"
+    | "claude-sonnet-4-20250514"
+    | "gpt-4o"
+    | "gpt-4o-mini"
+    | "llama-4-maverick-17b-128e-instruct"
+    | "claude-3-7-sonnet-20250219";
+  startUrl?: string | null;
+  maxSteps?: number;
+  structuredOutput?: string | null;
+  sessionId?: string | null;
+  metadata?: Record<string, string> | null;
+  secrets?: Record<string, string> | null;
+  allowedDomains?: string[] | null;
+  highlightElements?: boolean;
+  flashMode?: boolean;
+  thinking?: boolean;
+  vision?: boolean;
+  systemPromptExtension?: string;
 }
 
 export interface BrowserUseTaskResponse {
@@ -106,7 +135,7 @@ export class BrowserUseClient {
   constructor(config: BrowserUseConfig) {
     this.config = {
       apiKey: config.apiKey,
-      baseUrl: config.baseUrl || "https://api.browser-use.com/api/v1",
+      baseUrl: config.baseUrl || "https://api.browser-use.com/api/v2",
       timeout: config.timeout || 120000, // 2 minutes default
       retryAttempts: config.retryAttempts || 3,
     };
@@ -121,27 +150,24 @@ export class BrowserUseClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Start a new Browser Use task for recipe extraction
+   * Start a new Browser Use task for recipe extraction (API v2)
    */
   async startTask(
     request: BrowserUseTaskRequest
   ): Promise<BrowserUseTaskResponse> {
-    const response = await this.makeRequest<BrowserUseTaskResponse>(
-      "/run-task",
-      {
-        method: "POST",
-        body: JSON.stringify(request),
-      }
-    );
+    const response = await this.makeRequest<BrowserUseTaskResponse>("/tasks", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
 
     return response;
   }
 
   /**
-   * Get full task details, including results
+   * Get full task details, including results (API v2)
    */
   async getTask(taskId: string): Promise<TaskStatus> {
-    const response = await this.makeRequest<TaskStatus>(`/task/${taskId}`, {
+    const response = await this.makeRequest<TaskStatus>(`/tasks/${taskId}`, {
       method: "GET",
     });
 
@@ -153,7 +179,7 @@ export class BrowserUseClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Extract recipe data from a URL using AI-powered browser automation
+   * Extract recipe data from a URL using AI-powered browser automation (API v2)
    */
   async extractRecipeFromUrl(
     request: RecipeExtractionRequest
@@ -163,10 +189,49 @@ export class BrowserUseClient {
       request.options
     );
 
-    // Start the extraction task
+    // Define structured output schema for better JSON responses
+    const structuredOutputSchema = JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        description: { type: "string" },
+        prepTime: { type: "number" },
+        cookTime: { type: "number" },
+        servings: { type: "number" },
+        difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
+        imageUrl: { type: "string" },
+        ingredients: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              amount: { type: "number" },
+              unit: { type: "string" },
+            },
+            required: ["name", "amount", "unit"],
+          },
+        },
+        instructions: { type: "array", items: { type: "string" } },
+        tags: { type: "array", items: { type: "string" } },
+        calories: { type: "number" },
+        protein: { type: "number" },
+        carbs: { type: "number" },
+        fat: { type: "number" },
+      },
+      required: ["title", "ingredients", "instructions"],
+    });
+
+    // Start the extraction task with v2 parameters
     const taskResponse = await this.startTask({
       task: taskPrompt,
-      save_browser_data: false,
+      llm: "gpt-4o",
+      startUrl: request.url,
+      thinking: true,
+      maxSteps: 30,
+      structuredOutput: structuredOutputSchema,
+      vision: true,
+      highlightElements: false,
     });
 
     // Poll for completion
@@ -554,7 +619,7 @@ Requirements:
         const response = await fetch(url, {
           ...options,
           headers: {
-            Authorization: `Bearer ${this.config.apiKey}`,
+            "X-Browser-Use-API-Key": this.config.apiKey,
             "Content-Type": "application/json",
             ...options.headers,
           },

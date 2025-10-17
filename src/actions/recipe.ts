@@ -10,6 +10,17 @@ import {
 } from "@/types/recipe";
 import { Prisma } from "@/generated/prisma";
 import { revalidatePath } from "next/cache";
+import {
+  analyzeRecipeNutrition,
+  type RecipeNutritionInput,
+} from "@/lib/edamam-service";
+
+// Helper types
+interface StructuredIngredient {
+  name?: string;
+  amount?: string | number;
+  unit?: string;
+}
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -33,7 +44,11 @@ async function getAuthenticatedUser() {
 // Create a new recipe
 export async function createRecipe(
   data: RecipeFormData,
-  source: "manual" | "url" | "imported" | "generated" = "manual"
+  source: "manual" | "url" | "imported" | "generated" = "manual",
+  options?: {
+    analyzeNutrition?: boolean; // Auto-analyze nutrition with Edamam
+    locale?: "en" | "es" | "pl";
+  }
 ) {
   try {
     const user = await getAuthenticatedUser();
@@ -41,6 +56,7 @@ export async function createRecipe(
 
     const { categoryIds, ...recipeData } = validatedData;
 
+    // Create recipe first
     const recipe = await prisma.recipe.create({
       data: {
         ...recipeData,
@@ -57,6 +73,70 @@ export async function createRecipe(
         },
       },
     });
+
+    // Optionally analyze nutrition with Edamam
+    if (options?.analyzeNutrition && recipe.ingredients) {
+      try {
+        // Extract ingredient lines from recipe data
+        const ingredientLines: string[] = [];
+        const ingredientsArray = Array.isArray(recipe.ingredients)
+          ? recipe.ingredients
+          : [recipe.ingredients];
+
+        for (const ing of ingredientsArray) {
+          if (typeof ing === "string") {
+            ingredientLines.push(ing);
+          } else if (ing && typeof ing === "object") {
+            const structuredIng = ing as StructuredIngredient;
+            const name = structuredIng.name || "";
+            const amount = structuredIng.amount || "";
+            const unit = structuredIng.unit || "";
+            if (name) {
+              ingredientLines.push(`${amount} ${unit} ${name}`.trim());
+            }
+          }
+        }
+
+        if (ingredientLines.length > 0) {
+          const nutritionInput: RecipeNutritionInput = {
+            title: recipe.title,
+            ingredients: ingredientLines,
+            servings: recipe.servings,
+            instructions: recipe.instructions,
+          };
+
+          const nutritionResult = await analyzeRecipeNutrition(
+            nutritionInput,
+            user.id,
+            { locale: options.locale }
+          );
+
+          // Update recipe with nutrition data if successful
+          if (!("error" in nutritionResult)) {
+            await prisma.recipe.update({
+              where: { id: recipe.id },
+              data: {
+                calories: nutritionResult.macros.calories,
+                protein: nutritionResult.macros.protein,
+                carbs: nutritionResult.macros.netCarbs,
+                fat: nutritionResult.macros.fat,
+              },
+            });
+
+            console.info(
+              `[Recipe] Auto-analyzed nutrition for recipe: ${recipe.id}`
+            );
+          } else {
+            console.warn(
+              `[Recipe] Failed to auto-analyze nutrition: ${nutritionResult.error}`
+            );
+          }
+        }
+      } catch (nutritionError) {
+        console.error("[Recipe] Nutrition analysis failed:", nutritionError);
+        // Non-critical error, recipe was already created
+      }
+    }
 
     revalidatePath("/recipes");
     return { data: recipe, error: null };
@@ -75,6 +155,10 @@ export async function createImportedRecipe(
   importMetadata?: {
     sourceUrl?: string;
     importedFrom?: string;
+  },
+  options?: {
+    analyzeNutrition?: boolean; // Auto-analyze nutrition with Edamam (default: true)
+    locale?: "en" | "es" | "pl";
   }
 ) {
   try {
@@ -110,6 +194,72 @@ export async function createImportedRecipe(
         },
       },
     });
+
+    // Auto-analyze nutrition for imported recipes (default: true)
+    const shouldAnalyze = options?.analyzeNutrition !== false;
+    if (shouldAnalyze && recipe.ingredients) {
+      try {
+        // Extract ingredient lines
+        const ingredientLines: string[] = [];
+        const ingredientsArray = Array.isArray(recipe.ingredients)
+          ? recipe.ingredients
+          : [recipe.ingredients];
+
+        for (const ing of ingredientsArray) {
+          if (typeof ing === "string") {
+            ingredientLines.push(ing);
+          } else if (ing && typeof ing === "object") {
+            const structuredIng = ing as StructuredIngredient;
+            const name = structuredIng.name || "";
+            const amount = structuredIng.amount || "";
+            const unit = structuredIng.unit || "";
+            if (name) {
+              ingredientLines.push(`${amount} ${unit} ${name}`.trim());
+            }
+          }
+        }
+
+        if (ingredientLines.length > 0) {
+          const nutritionInput: RecipeNutritionInput = {
+            title: recipe.title,
+            ingredients: ingredientLines,
+            servings: recipe.servings,
+            url: recipe.sourceUrl || undefined,
+            instructions: recipe.instructions,
+          };
+
+          const nutritionResult = await analyzeRecipeNutrition(
+            nutritionInput,
+            user.id,
+            { locale: options?.locale }
+          );
+
+          // Update recipe with nutrition data if successful
+          if (!("error" in nutritionResult)) {
+            await prisma.recipe.update({
+              where: { id: recipe.id },
+              data: {
+                calories: nutritionResult.macros.calories,
+                protein: nutritionResult.macros.protein,
+                carbs: nutritionResult.macros.netCarbs,
+                fat: nutritionResult.macros.fat,
+              },
+            });
+
+            console.info(
+              `[Recipe] Auto-analyzed nutrition for imported recipe: ${recipe.id}`
+            );
+          } else {
+            console.warn(
+              `[Recipe] Failed to auto-analyze nutrition: ${nutritionResult.error}`
+            );
+          }
+        }
+      } catch (nutritionError) {
+        console.error("[Recipe] Nutrition analysis failed:", nutritionError);
+        // Non-critical error, recipe was already created
+      }
+    }
 
     revalidatePath("/recipes");
     return { data: recipe, error: null };

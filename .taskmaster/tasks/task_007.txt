@@ -3,61 +3,71 @@
 # Status: pending
 # Dependencies: 1, 5
 # Priority: medium
-# Description: Integrate with both Edamam Recipe Search API and Meal Planner API. Use the Recipe Search API for automatic nutritional calculation of user-created recipes, and the Meal Planner API for generating complete meal plans. Implement caching and error handling for both API request types.
+# Description: Integrate with the Edamam Nutrition Analysis API to provide accurate macro and micronutrient information for user-created and imported recipes. The API uses Natural Language Processing to analyze full recipe text and ingredient lists, returning detailed nutritional information including 28+ nutrients, diet labels, health labels, and allergen information. Implement caching and error handling for API requests.
 # Details:
-1. Set up Edamam API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs
-2. Create environment variables for shared API keys
-3. Implement ingredient parsing and normalization for Recipe Search API
-4. Build nutritional calculation service using Recipe Search API for user recipes
-5. Build meal plan generation service using Meal Planner API
-6. Create caching mechanism for both API response types
-7. Implement retry logic for failed API requests
-8. Build macro calculation utility that processes Recipe Search API responses
-9. Create fallback mechanism for when either API is unavailable
-10. Implement rate limiting handling for both APIs
-11. Add detailed error logging for both API integrations
-12. Create utility for converting between measurement units
-13. Implement batch processing for multiple ingredients and meal plan requests
+1. Set up Edamam Nutrition Analysis API client in `lib/edamam.ts`
+2. Create environment variables for API keys
+3. Implement recipe text and ingredient list parsing for Nutrition Analysis API
+4. Build nutritional calculation service using Nutrition Analysis API for user recipes
+5. Create utility to extract and store diet labels (balanced, high-fiber, high-protein, low-carb, etc.)
+6. Create utility to extract and store health labels (vegan, gluten-free, dairy-free, etc.)
+7. Implement allergen information extraction and storage
+8. Create caching mechanism for API responses
+9. Implement retry logic for failed API requests
+10. Build macro and micronutrient calculation utility that processes Nutrition Analysis API responses
+11. Create fallback mechanism for when API is unavailable
+12. Implement rate limiting handling
+13. Add detailed error logging for API integration
+14. Create utility for converting between measurement units
+15. Integrate nutritional analysis into recipe creation and import workflows
 
 # Test Strategy:
-1. Test both API clients with mock responses
-2. Verify nutritional calculation accuracy for user recipes via Recipe Search API
-3. Verify meal plan generation via Meal Planner API
-4. Test caching mechanism reduces API calls for both endpoints
-5. Verify retry logic handles temporary failures for both APIs
-6. Test rate limit handling for both APIs
-7. Verify fallback mechanism works when either API is down
+1. Test API client with mock responses
+2. Verify nutritional calculation accuracy for user recipes via Nutrition Analysis API
+3. Test extraction of diet labels, health labels, and allergen information
+4. Test caching mechanism reduces API calls
+5. Verify retry logic handles temporary failures
+6. Test rate limit handling
+7. Verify fallback mechanism works when API is down
 8. Test unit conversion utility
-9. Verify batch processing handles multiple ingredients and meal plan requests correctly
+9. Verify integration with recipe creation workflow
+10. Test integration with recipe import workflow
+11. Verify all 28+ nutrients are correctly extracted and stored
 
 # Subtasks:
 ## 1. Configure Edamam API Client and Environment [pending]
 ### Dependencies: None
-### Description: Set up the Edamam API clients in the codebase for both Recipe Search and Meal Planner APIs, and configure environment variables for shared API credentials.
+### Description: Set up the Edamam Nutrition Analysis API client in the codebase and configure environment variables for API credentials.
 ### Details:
-Implement API clients in `lib/edamam.ts` for both Recipe Search and Meal Planner APIs. Ensure API keys are securely managed using environment variables.
+Implement API client in `lib/edamam.ts` for the Nutrition Analysis API. Ensure API keys are securely managed using environment variables.
 
-## 2. Implement Ingredient Parsing and Normalization [pending]
+## 2. Implement Recipe Text and Ingredient List Parsing [pending]
 ### Dependencies: 7.1
-### Description: Develop utilities to parse and normalize recipe ingredient inputs for compatibility with Edamam Recipe Search API requirements.
+### Description: Develop utilities to parse and normalize recipe text and ingredient lists for compatibility with Edamam Nutrition Analysis API requirements.
 ### Details:
-Create functions to standardize ingredient formats and units, ensuring accurate Recipe Search API queries.
+Create functions to standardize recipe formats and ingredient lists, ensuring accurate Nutrition Analysis API queries. Support both structured ingredient lists and full recipe text analysis.
 
-## 3. Develop Nutritional Calculation and Meal Plan Services [pending]
+## 3. Develop Nutritional Analysis Service [pending]
 ### Dependencies: 7.2
-### Description: Build services that send parsed ingredients to the Recipe Search API for nutritional analysis and use the Meal Planner API for automated meal plan generation.
+### Description: Build a service that sends parsed recipe text and ingredient lists to the Nutrition Analysis API and processes the returned nutritional data.
 ### Details:
-Implement API calls for nutritional analysis of user recipes via Recipe Search API and for generating meal plans via Meal Planner API. Extract macro and micronutrient information from Recipe Search API responses and structure meal plan data from Meal Planner API.
+Implement API calls for nutritional analysis of user recipes via Nutrition Analysis API. Extract macro and micronutrient information, diet labels, health labels, and allergen information from API responses. Create data structures to store this information with recipes.
 
 ## 4. Implement Caching and Rate Limiting Handling [pending]
 ### Dependencies: 7.3
-### Description: Add caching for both Recipe Search and Meal Planner API responses and logic to handle Edamam API rate limits efficiently.
+### Description: Add caching for Nutrition Analysis API responses and logic to handle Edamam API rate limits efficiently.
 ### Details:
-Store frequently requested nutritional and meal plan data and implement mechanisms to respect API rate limits, reducing redundant calls.
+Store frequently requested nutritional data and implement mechanisms to respect API rate limits, reducing redundant calls. Ensure cache invalidation when recipes are updated.
 
 ## 5. Add Robust Error Handling and Fallback Mechanisms [pending]
 ### Dependencies: 7.4
-### Description: Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of either Edamam API.
+### Description: Implement retry logic, detailed error logging, and fallback strategies for failures or unavailability of the Edamam Nutrition Analysis API.
 ### Details:
-Ensure the system gracefully handles errors from both APIs, logs issues for debugging, and provides fallback responses when needed.
+Ensure the system gracefully handles errors from the API, logs issues for debugging, and provides fallback responses when needed.
+
+## 6. Integrate with Recipe Creation and Import Workflows [pending]
+### Dependencies: 7.3, 7.4, 7.5
+### Description: Connect the nutritional analysis service with the recipe creation and import workflows to automatically calculate and store nutritional data.
+### Details:
+Modify recipe creation and import processes to trigger nutritional analysis when recipes are created or imported. Store the resulting nutritional data, diet labels, health labels, and allergen information with the recipe in the database.
 

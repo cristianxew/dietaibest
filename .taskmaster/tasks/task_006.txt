@@ -148,7 +148,7 @@ Extend the existing `/api/recipes/import/image` endpoint to create a unified doc
 10. Add appropriate tests for PDF submission scenarios
 </info added on 2025-07-09T09:42:02.036Z>
 
-## 13. Implement Extraction Pipeline: OCR Module [in-progress]
+## 13. Implement Extraction Pipeline: OCR Module [done]
 ### Dependencies: 6.8, 6.12
 ### Description: Develop OCR processing for images and scanned PDFs, extracting text and layout.
 ### Details:
@@ -178,19 +178,22 @@ Implementation plan:
 This approach follows the successful Chefkoch case study pattern and provides a robust, scalable solution for both image and PDF recipe extraction. The system will handle multi-page documents by intelligently processing content across pages and implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.
 </info added on 2025-07-09T09:41:40.441Z>
 
-## 14. Implement Extraction Pipeline: Web Scraping Module [pending]
+## 14. Implement Extraction Pipeline: Web Scraping Module [done]
 ### Dependencies: 6.4
 ### Description: Develop scraping logic for extracting content from provided URLs.
 ### Details:
 Handle dynamic content, pagination, and anti-bot measures.
+<info added on 2025-07-10T14:03:23.603Z>
+Implement URL scraping using Browser Use API to handle dynamic content, pagination, and anti-bot measures. Replace the mock data approach in the existing `/src/app/api/recipes/import/url/route.ts` endpoint with a Browser Use API client. Configure the client with proper authentication using BROWSER_USE_API_KEY and implement a comprehensive recipe extraction workflow that leverages AI agents to navigate complex recipe websites. The implementation should extract structured recipe data (ingredients, instructions, nutrition, metadata) from JavaScript-heavy sites, handle pop-ups and registration walls, and support dynamic loading. Maintain the current mock system as a fallback strategy for API failures and implement real-time status updates during the scraping process. Ensure all technical integration preserves existing validation, security checks, and frontend compatibility while adding proper logging and retry logic.
+</info added on 2025-07-10T14:03:23.603Z>
 
-## 15. Implement Extraction Pipeline: PDF Parsing Module [pending]
+## 15. Implement Extraction Pipeline: PDF Parsing Module [done]
 ### Dependencies: 6.12
 ### Description: Develop PDF parsing logic for extracting structured text, tables, and images.
 ### Details:
 Support both native and scanned PDFs; handle complex layouts.
 
-## 16. Integration Testing Across Input Methods and Extraction Pipeline [pending]
+## 16. Integration Testing Across Input Methods and Extraction Pipeline [done]
 ### Dependencies: 6.13, 6.14, 6.15
 ### Description: Test end-to-end flows for URL, image, and PDF inputs through the entire extraction pipeline.
 ### Details:
@@ -208,7 +211,7 @@ Implement robust error reporting and fallback mechanisms.
 ### Details:
 Ensure screen reader compatibility, keyboard navigation, and translatable UI text.
 
-## 19. Implement Extracted Data to Recipe Form Population [pending]
+## 19. Implement Extracted Data to Recipe Form Population [done]
 ### Dependencies: 6.13
 ### Description: Process the data extracted from Document AI API and automatically populate all relevant fields in the recipe form (title, ingredients, instructions, servings, cooking time, etc.) to allow users to review, edit, and save the imported recipe to their collection.
 ### Details:

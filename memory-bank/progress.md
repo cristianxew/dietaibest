@@ -1,4 +1,4 @@
-# Progress - DietAIBest Development
+# Progress - DietAIbook Development
 
 ## ✅ Completed Features
 

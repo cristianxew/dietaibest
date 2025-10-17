@@ -225,8 +225,51 @@ const recipes = [
     fat: 10,
     categoryIds: [],
   },
+  {
+    title: "Garlic Herb Roasted Chicken",
+    description:
+      "Juicy roasted chicken with crispy skin, infused with garlic, rosemary, and thyme. Perfect for a family dinner.",
+    prepTime: 15,
+    cookTime: 75,
+    servings: 6,
+    tags: ["dinner", "main course", "protein", "comfort food"],
+    imageUrl: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6",
+    ingredients: [
+      { name: "Whole Chicken", amount: 1, unit: "whole (4-5 lbs)" },
+      { name: "Olive Oil", amount: 3, unit: "tbsp" },
+      { name: "Garlic Cloves", amount: 6, unit: "cloves" },
+      { name: "Fresh Rosemary", amount: 3, unit: "sprigs" },
+      { name: "Fresh Thyme", amount: 4, unit: "sprigs" },
+      { name: "Lemon", amount: 1, unit: "whole" },
+      { name: "Butter", amount: 2, unit: "tbsp" },
+      { name: "Salt", amount: 2, unit: "tsp" },
+      { name: "Black Pepper", amount: 1, unit: "tsp" },
+      { name: "Paprika", amount: 1, unit: "tsp" },
+    ],
+    instructions: [
+      "Preheat oven to 425°F (220°C).",
+      "Pat the chicken dry with paper towels.",
+      "Mix olive oil, minced garlic, salt, pepper, and paprika in a small bowl.",
+      "Rub the mixture all over the chicken, including under the skin.",
+      "Stuff the cavity with lemon halves, rosemary, and thyme.",
+      "Place butter pats under the breast skin.",
+      "Tie the legs together with kitchen twine and tuck wing tips under.",
+      "Place chicken breast-side up in a roasting pan.",
+      "Roast for 1 hour 15 minutes, or until internal temperature reaches 165°F.",
+      "Baste with pan juices every 20 minutes.",
+      "Let rest for 10 minutes before carving.",
+      "Serve with roasted vegetables or your favorite sides.",
+    ],
+    isPublic: true,
+    difficulty: recipeDifficultyEnum.parse("medium"),
+    calories: 350,
+    protein: 42,
+    carbs: 2,
+    fat: 18,
+    categoryIds: [],
+  },
 ];
 
 export { recipes };
 
-export const getMockRecipeData = (): RecipeFormData => recipes[5];
+export const getMockRecipeData = (): RecipeFormData => recipes[2];
