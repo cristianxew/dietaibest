@@ -2,27 +2,30 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import {
-  analyzeRecipeAction,
-  type AnalyzeResult,
-} from "@/actions/analyzeRecipe";
+import { useLocale } from "next-intl";
+import { analyzeRecipeNutritionAction } from "@/actions/nutrition";
+import type { NutritionAnalysisResult } from "@/lib/edamam-service";
 
 interface UseRecipeNutritionOptions {
-  onSuccess?: (result: AnalyzeResult) => void;
+  onSuccess?: (result: NutritionAnalysisResult) => void;
   onError?: (error: string) => void;
 }
 
 export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
   const { onSuccess, onError } = options;
+  const locale = useLocale() as "en" | "es" | "pl";
 
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<AnalyzeResult | null>(null);
+  const [data, setData] = useState<NutritionAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const analyze = useCallback(
     async (
+      title: string,
       ingredients: Array<{ name: string; amount: number; unit: string }>,
-      servings: number
+      servings: number,
+      url: string | undefined,
+      instructions: string[]
     ) => {
       // Validate inputs
       const validIngredients = ingredients.filter(
@@ -53,42 +56,55 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
           return parts.join(" ");
         });
 
-        // Call the server action directly
-        const result = await analyzeRecipeAction({
-          ingredients: ingredientStrings,
-          servings,
-        });
+        // Call the new Edamam nutrition action
+        const result = await analyzeRecipeNutritionAction(
+          {
+            title: title || "Untitled Recipe",
+            ingredients: ingredientStrings,
+            url,
+            instructions: instructions || [],
+            servings,
+          },
+          {
+            locale,
+            forceRefresh: false,
+          }
+        );
 
-        if (result.success) {
-          setData(result);
-          onSuccess?.(result);
+        if (result.success && result.data) {
+          setData(result.data);
+          onSuccess?.(result.data);
 
-          // Show success message
-          const matchedCount = result.items.filter(
-            (item) => item.fdcId !== null
-          ).length;
-          const totalCount = result.items.length;
-
-          if (matchedCount === totalCount) {
-            toast.success(`All ${totalCount} ingredients matched!`);
-          } else if (matchedCount > 0) {
-            toast.success(
-              `Matched ${matchedCount} of ${totalCount} ingredients`
-            );
-
-            if (matchedCount < totalCount) {
-              const unmatchedItems = result.items
-                .filter((item) => item.fdcId === null)
-                .map((item) => item.name);
-              toast.warning(
-                `Could not find: ${unmatchedItems.slice(0, 3).join(", ")}${
-                  unmatchedItems.length > 3 ? "..." : ""
-                }`
-              );
-            }
+          // Show success message with cache info
+          if (result.data.fromCache) {
+            toast.success("Nutrition loaded from cache", {
+              description: `${Math.round(
+                result.data.macros.calories
+              )} kcal per serving`,
+            });
           } else {
-            toast.error(
-              "No ingredients could be matched. Try being more specific."
+            toast.success("Nutrition analyzed successfully", {
+              description: `${Math.round(
+                result.data.macros.calories
+              )} kcal per serving`,
+            });
+          }
+
+          // Show diet/health labels if any
+          const labels = [
+            ...result.data.dietLabels,
+            ...result.data.healthLabels,
+          ];
+          if (labels.length > 0) {
+            toast.info(`Labels: ${labels.slice(0, 3).join(", ")}`);
+          }
+
+          // Show cautions if any
+          if (result.data.cautions && result.data.cautions.length > 0) {
+            toast.warning(
+              `Allergen warnings: ${result.data.cautions
+                .slice(0, 3)
+                .join(", ")}`
             );
           }
         } else {
@@ -104,7 +120,7 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
         setIsLoading(false);
       }
     },
-    [onSuccess, onError]
+    [onSuccess, onError, locale]
   );
 
   return {

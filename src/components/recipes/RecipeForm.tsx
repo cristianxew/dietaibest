@@ -82,23 +82,29 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   // Watch ingredients and servings for nutrition analysis
   const watchedIngredients = form.watch("ingredients");
   const watchedServings = form.watch("servings");
+  // const watchedUrl = form.watch("sourceUrl");
+  const watchedInstructions = form.watch("instructions");
 
-  // Use new nutrition calculator
+  // Use new nutrition calculator with Edamam
   const {
     analyze: analyzeNutrition,
     isLoading: nutritionLoading,
     data: nutritionData,
   } = useRecipeNutrition({
     onSuccess: (result) => {
-      // Update form with per-serving nutrition values
-      form.setValue("calories", parseFloat(result.perServing.kcal.toFixed(1)));
-      form.setValue(
-        "protein",
-        parseFloat(result.perServing.protein.toFixed(1))
-      );
-      form.setValue("carbs", parseFloat(result.perServing.carbs.toFixed(1)));
-      form.setValue("fat", parseFloat(result.perServing.fat.toFixed(1)));
-      form.setValue("fiber", parseFloat(result.perServing.fiber.toFixed(1)));
+      // Update form with per-serving nutrition values from Edamam
+      form.setValue("calories", Math.round(result.macros.calories * 10) / 10);
+      form.setValue("protein", Math.round(result.macros.protein * 10) / 10);
+      form.setValue("carbs", Math.round(result.macros.netCarbs * 10) / 10);
+      form.setValue("fat", Math.round(result.macros.fat * 10) / 10);
+
+      // Note: fiber is not in the 4 cached macros per Edamam policy
+      // It's available in fullNutrients for display but not for persistent storage
+      if (result.fullNutrients?.FIBTG) {
+        const fiberPerServing =
+          result.fullNutrients.FIBTG.quantity / result.servings;
+        form.setValue("fiber", Math.round(fiberPerServing * 10) / 10);
+      }
     },
   });
 
@@ -108,6 +114,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
       form: form,
       watchedIngredients,
       watchedServings: watchedServings || 1,
+      watchedInstructions: watchedInstructions || [],
       analyzeNutrition,
     });
 

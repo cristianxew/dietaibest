@@ -10,14 +10,15 @@ datasource db {
 }
 
 model User {
-  id        String         @id @default(uuid())
-  email     String         @unique
-  password  String
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  profile   UserProfile?
-  recipes   Recipe[]
-  favorites UserFavorite[]
+  id               String                 @id @default(uuid())
+  email            String                 @unique
+  password         String
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  profile          UserProfile?
+  recipes          Recipe[]
+  favorites        UserFavorite[]
+  edamamMacroCache EdamamUserMacroCache[] // Cached macros per Edamam policy
 }
 
 model UserProfile {
@@ -88,10 +89,11 @@ model Recipe {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   categories        RecipeCategory[]
   favoritedBy       UserFavorite[]
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
+  edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
 }
 
 model RecipeCategory {
@@ -154,4 +156,44 @@ model RecipeIngredient {
 
   @@index([recipeId])
   @@index([nameNorm])
+}
+
+// ============================================================================
+// Edamam Nutrition Analysis Integration Models
+// ============================================================================
+
+model EdamamRecipeCache {
+  id            String   @id @default(uuid())
+  fingerprint   String   @unique // Deterministic hash of recipe content (title + ingredients)
+  etag          String // ETag from Edamam API for cost control
+  recipeData    Json // Original recipe data sent to Edamam
+  fullResponse  Json // Complete Edamam API response (all nutrients, labels, etc.)
+  lastAnalyzed  DateTime @default(now())
+  analysisCount Int      @default(1) // Track how many times this recipe was analyzed
+
+  @@index([fingerprint])
+  @@index([lastAnalyzed])
+}
+
+model EdamamUserMacroCache {
+  id       String @id @default(uuid())
+  userId   String
+  recipeId String // Link to recipe for context
+
+  // Only 4 macros allowed for persistent storage per Edamam policy
+  calories Float // kcal
+  protein  Float // grams
+  fat      Float // grams
+  netCarbs Float // grams (total carbs - fiber)
+
+  servings  Int      @default(1) // Number of servings for the recipe
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+  @@index([recipeId])
 }
