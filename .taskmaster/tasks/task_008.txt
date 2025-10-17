@@ -6,7 +6,7 @@
 # Description: Create a weekly meal plan calendar with drag-and-drop functionality, real-time macro calculation, and plan persistence.
 # Details:
 1. Build responsive calendar grid component
-2. Implement drag-and-drop using Framer Motion with spring physics
+2. Implement drag-and-drop using dndkit(https://docs.dndkit.com/introduction/getting-started)
 3. Create meal slot component for calendar cells
 4. Build macro calculation service for meal plans
 5. Implement real-time macro updates on plan changes
@@ -15,8 +15,7 @@
 8. Implement plan saving to Supabase
 9. Create plan loading from saved plans
 10. Build plan sharing functionality
-11. Implement PDF export for meal plans
-12. Add responsive design for mobile, tablet, and desktop views
+11. Add responsive design for mobile, tablet, and desktop views
 
 # Test Strategy:
 1. Test drag-and-drop functionality
@@ -94,10 +93,3 @@ Enhance user experience by preventing confusion during asynchronous operations.
 ### Description: Allow users to share their meal calendar with others via link, email, or social platforms.
 ### Details:
 Implement permission controls and sharing options for collaborative planning.
-
-## 12. Add PDF Export Capability [pending]
-### Dependencies: None
-### Description: Allow users to export their meal calendar as a well-formatted PDF document.
-### Details:
-Ensure exported PDFs include all relevant meal, macro, and visual indicator information.
-

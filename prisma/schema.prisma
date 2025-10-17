@@ -19,6 +19,7 @@ model User {
   recipes          Recipe[]
   favorites        UserFavorite[]
   edamamMacroCache EdamamUserMacroCache[] // Cached macros per Edamam policy
+  mealPlans        MealPlan[] // User's meal plans
 }
 
 model UserProfile {
@@ -94,6 +95,7 @@ model Recipe {
   favoritedBy       UserFavorite[]
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
   edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
+  mealPlanMeals     MealPlanMeal[] // Usage in meal plans
 }
 
 model RecipeCategory {
@@ -196,4 +198,77 @@ model EdamamUserMacroCache {
   @@unique([userId, recipeId])
   @@index([userId])
   @@index([recipeId])
+}
+
+// ============================================================================
+// Meal Planning System
+// ============================================================================
+
+model MealPlan {
+  id     String @id @default(uuid())
+  userId String
+  name   String
+
+  // Date range for the meal plan
+  startDate DateTime
+  endDate   DateTime
+
+  // Macro targets (daily averages)
+  targetCalories Float? // kcal per day
+  targetProtein  Float? // grams per day
+  targetCarbs    Float? // grams per day
+  targetFat      Float? // grams per day
+
+  // Plan status
+  isActive Boolean @default(false) // Only one active plan per user
+  isPublic Boolean @default(false) // Allow public sharing
+
+  // Sharing
+  shareToken String? @unique // For public share links
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days MealPlanDay[]
+
+  @@index([userId])
+  @@index([shareToken])
+  @@index([userId, isActive])
+}
+
+model MealPlanDay {
+  id         String   @id @default(uuid())
+  mealPlanId String
+  date       DateTime // Specific date for this day
+  dayOfWeek  Int // 0=Sunday, 1=Monday, ..., 6=Saturday
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealPlan MealPlan       @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  meals    MealPlanMeal[]
+
+  @@unique([mealPlanId, date])
+  @@index([mealPlanId])
+  @@index([date])
+}
+
+model MealPlanMeal {
+  id              String   @id @default(uuid())
+  mealPlanDayId   String
+  recipeId        String
+  mealType        String // breakfast, lunch, dinner, snack
+  servings        Int      @default(1) // Can override recipe default servings
+  sortOrder       Int      @default(0) // For ordering meals within a slot
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealPlanDay MealPlanDay @relation(fields: [mealPlanDayId], references: [id], onDelete: Cascade)
+  recipe      Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([mealPlanDayId])
+  @@index([recipeId])
+  @@index([mealPlanDayId, mealType])
 }
