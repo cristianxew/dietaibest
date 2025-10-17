@@ -227,6 +227,7 @@ export class BrowserUseClient {
       task: taskPrompt,
       llm: "gpt-4o",
       startUrl: request.url,
+      thinking: true,
       maxSteps: 30,
       structuredOutput: structuredOutputSchema,
       vision: true,
