@@ -35,23 +35,16 @@ export function MacroDisplay({
   // Determine overall status (most conservative)
   const hasOver = Object.values(comparisons).some((c) => c.status === "over");
   const hasUnder = Object.values(comparisons).some((c) => c.status === "under");
-  const overallStatus = hasOver
-    ? "over"
-    : hasUnder
-    ? "under"
-    : "on-track";
+  const overallStatus = hasOver ? "over" : hasUnder ? "under" : "on-track";
 
   if (compact) {
     return (
       <div className={cn("space-y-2", className)}>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Macros</span>
+          <span className="text-sm font-medium">{title || "Macros"}</span>
           <Badge
             variant="outline"
-            className={cn(
-              "text-xs",
-              getMacroStatusColor(overallStatus)
-            )}
+            className={cn("text-xs", getMacroStatusColor(overallStatus))}
           >
             {getMacroStatusLabel(overallStatus)}
           </Badge>
@@ -88,9 +81,7 @@ export function MacroDisplay({
           </CardTitle>
           <Badge
             variant="outline"
-            className={cn(
-              getMacroStatusColor(overallStatus)
-            )}
+            className={cn(getMacroStatusColor(overallStatus))}
           >
             {getMacroStatusLabel(overallStatus)}
           </Badge>
@@ -174,7 +165,10 @@ export function MacroDisplay({
             </span>
           </div>
           <Progress
-            value={getProgressPercentage(macros.carbs, comparisons.carbs.target)}
+            value={getProgressPercentage(
+              macros.carbs,
+              comparisons.carbs.target
+            )}
             className="h-2"
             indicatorClassName={getMacroProgressColor(comparisons.carbs.status)}
           />

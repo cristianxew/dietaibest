@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { MealPlanCalendar } from "./meal-plans/MealPlanCalendar";
 import { MealPlanForm } from "./meal-plans/MealPlanForm";
+import { MacroDisplay } from "./meal-plans/MacroDisplay";
 import {
   getMealPlans,
   getMealPlan,
@@ -42,6 +43,7 @@ import {
 import type { MealPlanDisplay } from "@/types/meal-plan";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
 
 export default function MealPlans() {
   const [activeTab, setActiveTab] = useState("current");
@@ -55,7 +57,11 @@ export default function MealPlans() {
   // Load meal plans
   const loadPlans = () => {
     startTransition(async () => {
-      const result = await getMealPlans({ isActive: undefined, limit: 50 });
+      const result = await getMealPlans({
+        page: 1,
+        isActive: undefined,
+        limit: 50,
+      });
       if (result.error) {
         toast.error(result.error);
       } else if (result.data) {
@@ -151,7 +157,9 @@ export default function MealPlans() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="current">Current Plan</TabsTrigger>
-          <TabsTrigger value="saved">Saved Plans ({savedPlans.length})</TabsTrigger>
+          <TabsTrigger value="saved">
+            Saved Plans ({savedPlans.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Current Plan Tab */}
@@ -168,11 +176,16 @@ export default function MealPlans() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Active Meal Plan</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  No Active Meal Plan
+                </h3>
                 <p className="text-muted-foreground mb-4">
                   Create a new meal plan to get started
                 </p>
-                <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+                <Button
+                  onClick={() => setShowCreateDialog(true)}
+                  className="gap-2"
+                >
                   <Plus className="w-4 h-4" />
                   Create Your First Plan
                 </Button>
@@ -180,70 +193,91 @@ export default function MealPlans() {
             </Card>
           )}
 
-          {currentPlan && (
-            <>
-              {/* Plan Overview */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5" />
-                        {currentPlan.name}
-                      </CardTitle>
-                      <CardDescription>
-                        {format(currentPlan.startDate, "MMM d")} -{" "}
-                        {format(currentPlan.endDate, "MMM d, yyyy")}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                        Active
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {currentPlan.isPublic && currentPlan.shareToken && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handleCopyShareLink(currentPlan.shareToken!)}
-                      >
-                        <Share className="w-4 h-4" />
-                        Copy Share Link
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => handleDuplicate(currentPlan.id)}
-                      disabled={isPending}
-                    >
-                      <Copy className="w-4 h-4" />
-                      Duplicate
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(currentPlan.id)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+          {currentPlan &&
+            (() => {
+              const weeklyMacros = calculateWeeklyMacros(currentPlan.days);
+              return (
+                <>
+                  {/* Plan Overview with Macros */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        {/* Plan Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CardTitle className="flex items-center gap-2">
+                              <Calendar className="w-5 h-5" />
+                              {currentPlan.name}
+                            </CardTitle>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+                              Active
+                            </Badge>
+                          </div>
+                          <CardDescription>
+                            {format(currentPlan.startDate, "MMM d")} -{" "}
+                            {format(currentPlan.endDate, "MMM d, yyyy")}
+                          </CardDescription>
+                        </div>
 
-              {/* Calendar View */}
-              <MealPlanCalendar mealPlan={currentPlan} onUpdate={loadPlans} />
-            </>
-          )}
+                        {/* Daily Average Macros - Compact */}
+                        <div className="lg:w-80">
+                          <MacroDisplay
+                            macros={weeklyMacros.averageDailyMacros}
+                            targets={currentPlan.targets}
+                            title="Daily Average Macros"
+                            compact
+                            className="border-0 shadow-none"
+                          />
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {currentPlan.isPublic && currentPlan.shareToken && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() =>
+                              handleCopyShareLink(currentPlan.shareToken!)
+                            }
+                          >
+                            <Share className="w-4 h-4" />
+                            Copy Share Link
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => handleDuplicate(currentPlan.id)}
+                          disabled={isPending}
+                        >
+                          <Copy className="w-4 h-4" />
+                          Duplicate
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(currentPlan.id)}
+                          disabled={isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Calendar View */}
+                  <MealPlanCalendar
+                    mealPlan={currentPlan}
+                    onUpdate={loadPlans}
+                  />
+                </>
+              );
+            })()}
         </TabsContent>
 
         {/* Saved Plans Tab */}
@@ -277,7 +311,10 @@ export default function MealPlans() {
                         </CardDescription>
                       </div>
                       {plan.isPublic && (
-                        <Badge variant="secondary" className="flex-shrink-0 ml-2">
+                        <Badge
+                          variant="secondary"
+                          className="flex-shrink-0 ml-2"
+                        >
                           Public
                         </Badge>
                       )}
@@ -340,8 +377,8 @@ export default function MealPlans() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this meal plan and all its meals. This
-              action cannot be undone.
+              This will permanently delete this meal plan and all its meals.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

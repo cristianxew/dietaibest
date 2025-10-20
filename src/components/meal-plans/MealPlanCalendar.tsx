@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { MealSlot } from "./MealSlot";
 import { MacroDisplay } from "./MacroDisplay";
 import { RecipePicker } from "./RecipePicker";
+import { RecipeSidebar } from "./RecipeSidebar";
 import type {
   MealPlanDisplay,
   DayDisplay,
@@ -20,6 +21,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
+import type { Recipe } from "@/generated/prisma";
+import { cn } from "@/lib/utils";
 
 interface MealPlanCalendarProps {
   mealPlan: MealPlanDisplay;
@@ -50,12 +53,39 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
 
     if (!over) return;
 
+    const dragType = active.data.current?.type as "meal" | "recipe" | undefined;
+    const targetDayId = over.data.current?.dayId as string;
+    const targetMealType = over.data.current?.mealType as MealType;
+
+    if (!targetDayId || !targetMealType) return;
+
+    // Handle recipe drag from sidebar
+    if (dragType === "recipe") {
+      const recipe = active.data.current?.recipe as Recipe;
+      if (recipe) {
+        startTransition(async () => {
+          const result = await addMealToDay({
+            mealPlanDayId: targetDayId,
+            recipeId: recipe.id,
+            mealType: targetMealType,
+            servings: 1,
+          });
+
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            toast.success(`${recipe.title} added to ${targetMealType}!`);
+            onUpdate?.();
+          }
+        });
+      }
+      return;
+    }
+
+    // Handle meal drag (move between slots)
     const sourceMeal = active.data.current?.meal as MealDisplay | undefined;
     const sourceDayId = active.data.current?.sourceDayId as string;
     const sourceMealType = active.data.current?.sourceMealType as MealType;
-
-    const targetDayId = over.data.current?.dayId as string;
-    const targetMealType = over.data.current?.mealType as MealType;
 
     // If dropped on same slot, do nothing
     if (sourceDayId === targetDayId && sourceMealType === targetMealType) {
@@ -136,20 +166,26 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="space-y-6">
-        {/* Weekly Macro Summary */}
-        <MacroDisplay
-          macros={weeklyMacros.averageDailyMacros}
-          targets={mealPlan.targets}
-          title="Daily Average Macros"
-        />
+      {/* Responsive Layout: Sidebar for desktop, stacked for mobile */}
+      <div className="grid lg:grid-cols-[320px_1fr] gap-6">
+        {/* Recipe Sidebar - Desktop Only */}
+        <div className="hidden lg:block h-[calc(100vh-12rem)] sticky top-6">
+          <RecipeSidebar />
+        </div>
 
-        {/* Calendar Grid */}
-        <Card>
+        {/* Main Calendar Area */}
+        <div className="space-y-6">
+          {/* Calendar Grid */}
+          <Card>
           <CardHeader>
             <CardTitle>Weekly Meal Schedule</CardTitle>
             <CardDescription>
-              Drag and drop meals to reorganize your plan
+              <span className="hidden lg:inline">
+                Drag recipes from the sidebar or drag meals to reorganize
+              </span>
+              <span className="lg:hidden">
+                Drag and drop meals to reorganize your plan
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -187,7 +223,7 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0"
+                                className="h-6 w-6 p-0 lg:hidden"
                                 onClick={() => handleAddMeal(day.id, mealType)}
                                 disabled={isPending}
                               >
@@ -212,20 +248,21 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
           </CardContent>
         </Card>
 
-        {/* Drag Overlay */}
-        <DragOverlay>
-          {activeMeal ? (
-            <div className="bg-background border rounded-lg p-3 shadow-lg max-w-xs">
-              <p className="font-medium">{activeMeal.recipeName}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {Math.round(activeMeal.calories)} cal • {Math.round(activeMeal.protein)}g protein
-              </p>
-            </div>
-          ) : null}
-        </DragOverlay>
+          {/* Drag Overlay */}
+          <DragOverlay>
+            {activeMeal ? (
+              <div className="bg-background border rounded-lg p-3 shadow-lg max-w-xs">
+                <p className="font-medium">{activeMeal.recipeName}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {Math.round(activeMeal.calories)} cal • {Math.round(activeMeal.protein)}g protein
+                </p>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </div>
       </div>
 
-      {/* Recipe Picker Dialog */}
+      {/* Recipe Picker Dialog - Mobile/Tablet Only */}
       <RecipePicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}

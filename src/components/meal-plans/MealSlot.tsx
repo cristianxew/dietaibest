@@ -33,6 +33,7 @@ export function MealSlot({
   } = useDraggable({
     id: meal?.id || `empty-${dayId}-${mealType}`,
     data: {
+      type: "meal",
       meal,
       sourceDayId: dayId,
       sourceMealType: mealType,
