@@ -213,6 +213,9 @@ model MealPlan {
   startDate DateTime
   endDate   DateTime
 
+  // Meal slot configuration (which meals to show per day)
+  mealSlots String[] @default(["breakfast", "lunch", "dinner"])
+
   // Macro targets (daily averages)
   targetCalories Float? // kcal per day
   targetProtein  Float? // grams per day
@@ -255,12 +258,12 @@ model MealPlanDay {
 }
 
 model MealPlanMeal {
-  id              String   @id @default(uuid())
-  mealPlanDayId   String
-  recipeId        String
-  mealType        String // breakfast, lunch, dinner, snack
-  servings        Int      @default(1) // Can override recipe default servings
-  sortOrder       Int      @default(0) // For ordering meals within a slot
+  id            String @id @default(uuid())
+  mealPlanDayId String
+  recipeId      String
+  mealType      String // breakfast, lunch, dinner, snack
+  servings      Int    @default(1) // Can override recipe default servings
+  sortOrder     Int    @default(0) // For ordering meals within a slot
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

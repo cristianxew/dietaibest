@@ -9,13 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { mealPlanFormSchema, type MealPlanFormData } from "@/types/meal-plan";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { mealPlanFormSchema, type MealPlanFormData, MEAL_SLOT_PRESETS, type MealType } from "@/types/meal-plan";
 import { toast } from "sonner";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useState, useTransition } from "react";
-import { createMealPlan, updateMealPlan } from "@/actions/meal-plan";
+import { useState, useTransition, useEffect } from "react";
+import { createMealPlan, updateMealPlan, getMealPlans } from "@/actions/meal-plan";
+import { useTranslations } from "next-intl";
 
 interface MealPlanFormProps {
   open: boolean;
@@ -34,9 +37,12 @@ export function MealPlanForm({
   planId,
   defaultValues,
 }: MealPlanFormProps) {
+  const t = useTranslations();
   const [isPending, startTransition] = useTransition();
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedMealCount, setSelectedMealCount] = useState<number>(3);
 
   const {
     register,
@@ -51,6 +57,7 @@ export function MealPlanForm({
       name: "",
       startDate: new Date(),
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      mealSlots: ["breakfast", "lunch", "dinner"],
       isActive: false,
       isPublic: false,
     },
@@ -60,6 +67,34 @@ export function MealPlanForm({
   const endDate = watch("endDate");
   const isActive = watch("isActive");
   const isPublic = watch("isPublic");
+  const templateId = watch("templateId");
+
+  // Load available meal plans for template selection
+  useEffect(() => {
+    if (open && !editMode) {
+      startTransition(async () => {
+        const result = await getMealPlans({ limit: 50 });
+        if (result.data) {
+          setAvailablePlans(
+            result.data.mealPlans.map((plan) => ({
+              id: plan.id,
+              name: plan.name,
+            }))
+          );
+        }
+      });
+    }
+  }, [open, editMode]);
+
+  // Handle meal count selection
+  const handleMealCountChange = (count: string) => {
+    const countNum = parseInt(count);
+    setSelectedMealCount(countNum);
+    const preset = MEAL_SLOT_PRESETS.find((p) => p.count === countNum);
+    if (preset) {
+      setValue("mealSlots", preset.slots);
+    }
+  };
 
   const onSubmit = (data: MealPlanFormData) => {
     startTransition(async () => {
@@ -97,7 +132,7 @@ export function MealPlanForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Plan Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Plan Name</Label>
+            <Label htmlFor="name">{t("mealPlans.form.name")}</Label>
             <Input
               id="name"
               placeholder="e.g., Healthy Weight Loss Week 1"
@@ -106,6 +141,57 @@ export function MealPlanForm({
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
+          </div>
+
+          {/* Template Selection - Only for create mode */}
+          {!editMode && availablePlans.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="templateId">{t("mealPlans.form.createFromTemplate")}</Label>
+              <Select
+                value={templateId || "none"}
+                onValueChange={(value) => setValue("templateId", value === "none" ? undefined : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("mealPlans.form.selectTemplate")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t("mealPlans.form.noTemplate")}</SelectItem>
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t("mealPlans.form.templateDescription")}
+              </p>
+            </div>
+          )}
+
+          {/* Meal Count Selection */}
+          <div className="space-y-3">
+            <Label>{t("mealPlans.form.mealsPerDay")}</Label>
+            <RadioGroup
+              value={selectedMealCount.toString()}
+              onValueChange={handleMealCountChange}
+              className="grid grid-cols-1 gap-2"
+            >
+              {MEAL_SLOT_PRESETS.map((preset) => (
+                <div key={preset.count} className="flex items-center space-x-2">
+                  <RadioGroupItem value={preset.count.toString()} id={`meal-count-${preset.count}`} />
+                  <Label
+                    htmlFor={`meal-count-${preset.count}`}
+                    className="font-normal cursor-pointer flex-1"
+                  >
+                    {t(preset.label)}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+            <p className="text-xs text-muted-foreground">
+              {t("mealPlans.form.mealCountDescription")}
+            </p>
           </div>
 
           {/* Date Range */}

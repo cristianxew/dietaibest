@@ -81,6 +81,27 @@ export async function createMealPlan(data: MealPlanFormData) {
       validatedData.endDate
     );
 
+    // If creating from template, get template meals
+    let templatePlan = null;
+    if (validatedData.templateId) {
+      templatePlan = await prisma.mealPlan.findUnique({
+        where: { id: validatedData.templateId },
+        include: {
+          days: {
+            include: {
+              meals: true,
+            },
+            orderBy: { date: "asc" },
+          },
+        },
+      });
+
+      // Verify ownership of template
+      if (templatePlan && templatePlan.userId !== user.id) {
+        return { data: null, error: "Unauthorized to use this template" };
+      }
+    }
+
     // Create meal plan with days
     const mealPlan = await prisma.mealPlan.create({
       data: {
@@ -88,6 +109,7 @@ export async function createMealPlan(data: MealPlanFormData) {
         name: validatedData.name,
         startDate: validatedData.startDate,
         endDate: validatedData.endDate,
+        mealSlots: validatedData.mealSlots,
         targetCalories: validatedData.targetCalories,
         targetProtein: validatedData.targetProtein,
         targetCarbs: validatedData.targetCarbs,
@@ -96,10 +118,24 @@ export async function createMealPlan(data: MealPlanFormData) {
         isPublic: validatedData.isPublic,
         shareToken: validatedData.isPublic ? generateShareToken() : null,
         days: {
-          create: dates.map((date) => ({
-            date,
-            dayOfWeek: date.getDay(),
-          })),
+          create: dates.map((date, index) => {
+            // Copy meals from template if available
+            const templateDay = templatePlan?.days[index % (templatePlan.days.length || 1)];
+            return {
+              date,
+              dayOfWeek: date.getDay(),
+              meals: templateDay
+                ? {
+                    create: templateDay.meals.map((meal) => ({
+                      recipeId: meal.recipeId,
+                      mealType: meal.mealType,
+                      servings: meal.servings,
+                      sortOrder: meal.sortOrder,
+                    })),
+                  }
+                : undefined,
+            };
+          }),
         },
       },
       include: {
@@ -163,6 +199,7 @@ export async function updateMealPlan(id: string, data: MealPlanFormData) {
       where: { id },
       data: {
         name: validatedData.name,
+        mealSlots: validatedData.mealSlots,
         targetCalories: validatedData.targetCalories,
         targetProtein: validatedData.targetProtein,
         targetCarbs: validatedData.targetCarbs,
@@ -397,6 +434,7 @@ export async function getMealPlan(id: string): Promise<{
       name: mealPlan.name,
       startDate: mealPlan.startDate,
       endDate: mealPlan.endDate,
+      mealSlots: mealPlan.mealSlots as any,
       isActive: mealPlan.isActive,
       isPublic: mealPlan.isPublic,
       shareToken: mealPlan.shareToken || undefined,
@@ -509,6 +547,7 @@ export async function getMealPlanByShareToken(
       name: mealPlan.name,
       startDate: mealPlan.startDate,
       endDate: mealPlan.endDate,
+      mealSlots: mealPlan.mealSlots as any,
       isActive: mealPlan.isActive,
       isPublic: mealPlan.isPublic,
       shareToken: mealPlan.shareToken || undefined,

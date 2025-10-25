@@ -6,17 +6,61 @@ import { z } from "zod";
 
 export const mealTypeEnum = z.enum([
   "breakfast",
+  "morningSnack",
   "lunch",
+  "afternoonSnack",
   "dinner",
+  "eveningSnack",
   "snack",
 ]);
 export type MealType = z.infer<typeof mealTypeEnum>;
 
 export const MEAL_TYPES: MealType[] = [
   "breakfast",
+  "morningSnack",
   "lunch",
+  "afternoonSnack",
   "dinner",
+  "eveningSnack",
   "snack",
+];
+
+// ============================================================================
+// Meal Slot Presets (2-6 meals per day)
+// ============================================================================
+
+export interface MealSlotPreset {
+  count: number;
+  label: string; // Translation key
+  slots: MealType[];
+}
+
+export const MEAL_SLOT_PRESETS: MealSlotPreset[] = [
+  {
+    count: 2,
+    label: "mealPlans.mealCount.2",
+    slots: ["lunch", "dinner"],
+  },
+  {
+    count: 3,
+    label: "mealPlans.mealCount.3",
+    slots: ["breakfast", "lunch", "dinner"],
+  },
+  {
+    count: 4,
+    label: "mealPlans.mealCount.4",
+    slots: ["breakfast", "lunch", "dinner", "snack"],
+  },
+  {
+    count: 5,
+    label: "mealPlans.mealCount.5",
+    slots: ["breakfast", "morningSnack", "lunch", "afternoonSnack", "dinner"],
+  },
+  {
+    count: 6,
+    label: "mealPlans.mealCount.6",
+    slots: ["breakfast", "morningSnack", "lunch", "afternoonSnack", "dinner", "eveningSnack"],
+  },
 ];
 
 // ============================================================================
@@ -28,6 +72,8 @@ export const mealPlanFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
   startDate: z.date({ required_error: "Start date is required" }),
   endDate: z.date({ required_error: "End date is required" }),
+  mealSlots: z.array(mealTypeEnum).min(2).max(6).default(["breakfast", "lunch", "dinner"]),
+  templateId: z.string().uuid().optional(), // Optional: create from existing plan
   targetCalories: z.number().min(0).optional(),
   targetProtein: z.number().min(0).optional(),
   targetCarbs: z.number().min(0).optional(),
@@ -155,6 +201,7 @@ export interface MealPlanDisplay {
   name: string;
   startDate: Date;
   endDate: Date;
+  mealSlots: MealType[]; // Which meals to display per day
   isActive: boolean;
   isPublic: boolean;
   shareToken?: string;

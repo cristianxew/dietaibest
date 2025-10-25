@@ -11,26 +11,25 @@ import type {
 
 /**
  * Calculate macros for a single meal based on recipe data and servings
+ *
+ * NOTE: Recipe nutritional values (calories, protein, carbs, fat) are stored
+ * as PER-SERVING values in the database. Therefore, we only need to multiply
+ * by the number of servings in this meal, NOT divide by recipe servings.
  */
 export function calculateMealMacros(
   recipeCalories: number,
   recipeProtein: number,
   recipeCarbs: number,
   recipeFat: number,
-  recipeServings: number,
+  recipeServings: number, // Not used - kept for backward compatibility
   mealServings: number
 ): MacroSummary {
-  // Normalize to per-serving values, then multiply by actual servings
-  const perServingCalories = recipeCalories / recipeServings;
-  const perServingProtein = recipeProtein / recipeServings;
-  const perServingCarbs = recipeCarbs / recipeServings;
-  const perServingFat = recipeFat / recipeServings;
-
+  // Recipe values are already per-serving, so just multiply by meal servings
   return {
-    calories: Math.round(perServingCalories * mealServings * 10) / 10,
-    protein: Math.round(perServingProtein * mealServings * 10) / 10,
-    carbs: Math.round(perServingCarbs * mealServings * 10) / 10,
-    fat: Math.round(perServingFat * mealServings * 10) / 10,
+    calories: Math.round(recipeCalories * mealServings * 10) / 10,
+    protein: Math.round(recipeProtein * mealServings * 10) / 10,
+    carbs: Math.round(recipeCarbs * mealServings * 10) / 10,
+    fat: Math.round(recipeFat * mealServings * 10) / 10,
   };
 }
 

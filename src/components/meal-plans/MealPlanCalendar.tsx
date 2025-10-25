@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MealSlot } from "./MealSlot";
 import { MacroDisplay } from "./MacroDisplay";
@@ -29,14 +35,17 @@ interface MealPlanCalendarProps {
   onUpdate?: () => void;
 }
 
-const MEAL_TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
-
-export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) {
+export function MealPlanCalendar({
+  mealPlan,
+  onUpdate,
+}: MealPlanCalendarProps) {
   const [isPending, startTransition] = useTransition();
   const [activeMeal, setActiveMeal] = useState<MealDisplay | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<MealType | null>(
+    null
+  );
 
   // Handle drag start
   const handleDragStart = (event: DragStartEvent) => {
@@ -64,6 +73,22 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
       const recipe = active.data.current?.recipe as Recipe;
       if (recipe) {
         startTransition(async () => {
+          // Check if target slot already has a meal
+          const targetDay = mealPlan.days.find((d) => d.id === targetDayId);
+          const existingMeal = targetDay?.meals.find(
+            (m) => m.mealType === targetMealType
+          );
+
+          // If slot is occupied, remove existing meal first
+          if (existingMeal) {
+            const removeResult = await removeMealFromDay(existingMeal.id);
+            if (removeResult.error) {
+              toast.error(removeResult.error);
+              return;
+            }
+          }
+
+          // Add new recipe to slot
           const result = await addMealToDay({
             mealPlanDayId: targetDayId,
             recipeId: recipe.id,
@@ -74,7 +99,10 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
           if (result.error) {
             toast.error(result.error);
           } else {
-            toast.success(`${recipe.title} added to ${targetMealType}!`);
+            const message = existingMeal
+              ? `${recipe.title} replaced ${existingMeal.recipeName}!`
+              : `${recipe.title} added to ${targetMealType}!`;
+            toast.success(message);
             onUpdate?.();
           }
         });
@@ -154,7 +182,10 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
   };
 
   // Get meal for a specific day and meal type
-  const getMeal = (day: DayDisplay, mealType: MealType): MealDisplay | undefined => {
+  const getMeal = (
+    day: DayDisplay,
+    mealType: MealType
+  ): MealDisplay | undefined => {
     return day.meals.find((m) => m.mealType === mealType);
   };
 
@@ -177,76 +208,89 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
         <div className="space-y-6">
           {/* Calendar Grid */}
           <Card>
-          <CardHeader>
-            <CardTitle>Weekly Meal Schedule</CardTitle>
-            <CardDescription>
-              <span className="hidden lg:inline">
-                Drag recipes from the sidebar or drag meals to reorganize
-              </span>
-              <span className="lg:hidden">
-                Drag and drop meals to reorganize your plan
-              </span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mealPlan.days.map((day) => (
-                <div key={day.id} className="border rounded-lg p-4">
-                  {/* Day Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium">
-                        {format(day.date, "EEEE")}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {format(day.date, "MMM d, yyyy")}
-                      </p>
+            <CardHeader>
+              <CardTitle>Weekly Meal Schedule</CardTitle>
+              <CardDescription>
+                <span className="hidden lg:inline">
+                  Drag recipes from the sidebar or drag meals to reorganize
+                </span>
+                <span className="lg:hidden">
+                  Drag and drop meals to reorganize your plan
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {mealPlan.days.map((day) => (
+                  <div key={day.id} className="border rounded-lg p-4">
+                    {/* Day Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="font-medium">
+                          {format(day.date, "EEEE")}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {format(day.date, "MMM d, yyyy")}
+                        </p>
+                      </div>
+                      <MacroDisplay
+                        macros={day.macros}
+                        targets={mealPlan.targets}
+                        compact
+                      />
                     </div>
-                    <MacroDisplay
-                      macros={day.macros}
-                      targets={mealPlan.targets}
-                      compact
-                    />
-                  </div>
 
-                  {/* Meal Slots */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {MEAL_TYPE_ORDER.map((mealType) => {
-                      const meal = getMeal(day, mealType);
-                      return (
-                        <div key={mealType} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="text-xs font-medium uppercase text-muted-foreground">
-                              {mealType}
-                            </label>
-                            {!meal && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 lg:hidden"
-                                onClick={() => handleAddMeal(day.id, mealType)}
-                                disabled={isPending}
-                              >
-                                <Plus className="w-3 h-3" />
-                              </Button>
-                            )}
+                    {/* Meal Slots */}
+                    <div
+                      className={cn(
+                        "grid gap-3",
+                        mealPlan?.mealSlots?.length <= 3
+                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                          : mealPlan?.mealSlots?.length === 4
+                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                          : mealPlan?.mealSlots?.length === 5
+                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
+                      )}
+                    >
+                      {mealPlan?.mealSlots?.map((mealType) => {
+                        const meal = getMeal(day, mealType);
+                        return (
+                          <div key={mealType} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-medium uppercase text-muted-foreground">
+                                {mealType}
+                              </label>
+                              {!meal && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 lg:hidden"
+                                  onClick={() =>
+                                    handleAddMeal(day.id, mealType)
+                                  }
+                                  disabled={isPending}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                            <MealSlot
+                              meal={meal}
+                              dayId={day.id}
+                              mealType={mealType}
+                              onRemove={handleRemoveMeal}
+                              isDragging={activeMeal?.id === meal?.id}
+                            />
                           </div>
-                          <MealSlot
-                            meal={meal}
-                            dayId={day.id}
-                            mealType={mealType}
-                            onRemove={handleRemoveMeal}
-                            isDragging={activeMeal?.id === meal?.id}
-                          />
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Drag Overlay */}
           <DragOverlay>
@@ -254,7 +298,8 @@ export function MealPlanCalendar({ mealPlan, onUpdate }: MealPlanCalendarProps) 
               <div className="bg-background border rounded-lg p-3 shadow-lg max-w-xs">
                 <p className="font-medium">{activeMeal.recipeName}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {Math.round(activeMeal.calories)} cal • {Math.round(activeMeal.protein)}g protein
+                  {Math.round(activeMeal.calories)} cal •{" "}
+                  {Math.round(activeMeal.protein)}g protein
                 </p>
               </div>
             ) : null}
