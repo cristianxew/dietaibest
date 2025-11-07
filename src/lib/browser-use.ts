@@ -248,11 +248,22 @@ export class BrowserUseClient {
     url: string,
     options?: RecipeExtractionRequest["options"]
   ): string {
-    const basePrompt = `Navigate to ${url} and extract complete recipe information. 
+    const basePrompt = `Navigate to ${url} Extract the complete recipe information as follows:
 
-IMPORTANT: Handle any pop-ups, cookie banners, or registration walls automatically.
-
-Extract the following data in JSON format:
+1. Wait for the page to fully load and for all dynamic content to be visible (wait at least 2 seconds after navigation, and after dismissing any pop-ups).
+2. Automatically detect and close or accept any pop-ups, overlays, cookie banners, or registration walls.
+3. For the following fields, extract directly from the DOM, structured data (such as JSON-LD <script> tags), and meta tags:
+- title: Recipe title
+- description: Brief description
+- prepTime, cookTime, servings: extract as numbers, from visible fields, meta tags, or structured data
+- difficulty: If not labeled, infer as 'easy' if preparation is simple and ingredients are few, else leave null
+- imageUrl: Extract from the main recipe image, <meta property="og:image">, or JSON-LD; ensure it's a full URL
+- ingredients: List each with name, amount, and unit. Parse amounts and units from structured data if available, else from the visible list
+- instructions: Extract step-by-step instructions as an array, using either the visible steps, or from structured data
+- tags: Extract from any labeled categories, cuisines, or tags on the page, or in structured data/meta tags; if not available, leave as an empty array
+- calories, protein, carbs, fat: Extract from nutrition facts section, structured data, or meta tags. If not found, use null
+4. If any field is not found, set its value to null (or an empty array for lists) in the JSON.
+5. Output only the JSON object as specified below, with no extra text:
 {
   "title": "Recipe title",
   "description": "Brief description", 
@@ -275,14 +286,8 @@ Extract the following data in JSON format:
   "carbs": optional_number_in_grams, 
   "fat": optional_number_in_grams
 }
-
-Requirements:
-- Navigate past any registration walls or pop-ups
-- Handle dynamic content loading
-- Extract from recipe cards, structured data, or recipe text
-- If multiple recipes on page, extract the main/featured recipe
-- Return only valid JSON, no additional text
-- If recipe not found, return {"error": "No recipe found on this page"}`;
+6. If the recipe is not found, return {"error": "No recipe found on this page"}
+`;
 
     if (options?.waitForNetworkIdle) {
       return (
