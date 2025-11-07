@@ -60,14 +60,14 @@ export function sumMacros(meals: MacroSummary[]): MacroSummary {
  */
 export function calculateDayMacros(
   meals: MealDisplay[],
-  date: Date,
-  dayOfWeek: number
+  dayNumber: number,
+  date?: Date
 ): DayMacros {
   const macros = sumMacros(meals);
   return {
     ...macros,
+    dayNumber,
     date,
-    dayOfWeek,
   };
 }
 
@@ -76,8 +76,8 @@ export function calculateDayMacros(
  */
 export function calculateWeeklyMacros(days: DayDisplay[]): WeeklyMacros {
   const dayMacros: DayMacros[] = days.map((day) => ({
+    dayNumber: day.dayNumber,
     date: day.date,
-    dayOfWeek: day.dayOfWeek,
     ...day.macros,
   }));
 

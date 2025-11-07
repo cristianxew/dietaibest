@@ -2,31 +2,49 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { mealPlanFormSchema, type MealPlanFormData, MEAL_SLOT_PRESETS, type MealType } from "@/types/meal-plan";
+import { Slider } from "@/components/ui/slider";
+import {
+  mealPlanTemplateFormSchema,
+  type MealPlanTemplateFormData,
+  MEAL_SLOT_PRESETS,
+  type MealType,
+} from "@/types/meal-plan";
 import { toast } from "sonner";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useState, useTransition, useEffect } from "react";
-import { createMealPlan, updateMealPlan, getMealPlans } from "@/actions/meal-plan";
+import {
+  createMealPlan,
+  updateMealPlan,
+  getMealPlans,
+} from "@/actions/meal-plan";
 import { useTranslations } from "next-intl";
 
 interface MealPlanFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (createdTemplateId?: string) => void;
   editMode?: boolean;
   planId?: string;
-  defaultValues?: Partial<MealPlanFormData>;
+  defaultValues?: Partial<MealPlanTemplateFormData>;
 }
 
 export function MealPlanForm({
@@ -39,10 +57,12 @@ export function MealPlanForm({
 }: MealPlanFormProps) {
   const t = useTranslations();
   const [isPending, startTransition] = useTransition();
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [endDateOpen, setEndDateOpen] = useState(false);
-  const [availablePlans, setAvailablePlans] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedMealCount, setSelectedMealCount] = useState<number>(3);
+  const [availablePlans, setAvailablePlans] = useState<
+    Array<{ id: string; name: string; duration: number }>
+  >([]);
+  const [selectedMealCount, setSelectedMealCount] = useState<number>(
+    defaultValues?.mealSlots?.length || 3
+  );
 
   const {
     register,
@@ -51,34 +71,31 @@ export function MealPlanForm({
     setValue,
     watch,
     reset,
-  } = useForm<MealPlanFormData>({
-    resolver: zodResolver(mealPlanFormSchema),
+  } = useForm<MealPlanTemplateFormData>({
+    resolver: zodResolver(mealPlanTemplateFormSchema),
     defaultValues: defaultValues || {
       name: "",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      duration: 7, // Default to 7 days
       mealSlots: ["breakfast", "lunch", "dinner"],
-      isActive: false,
       isPublic: false,
     },
   });
 
-  const startDate = watch("startDate");
-  const endDate = watch("endDate");
-  const isActive = watch("isActive");
+  const duration = watch("duration");
   const isPublic = watch("isPublic");
   const templateId = watch("templateId");
 
-  // Load available meal plans for template selection
+  // Load available meal plan templates for template selection
   useEffect(() => {
     if (open && !editMode) {
       startTransition(async () => {
-        const result = await getMealPlans({ limit: 50 });
+        const result = await getMealPlans({ page: 1, limit: 50 });
         if (result.data) {
           setAvailablePlans(
-            result.data.mealPlans.map((plan) => ({
-              id: plan.id,
-              name: plan.name,
+            result.data.templates.map((template: any) => ({
+              id: template.id,
+              name: template.name,
+              duration: template.duration,
             }))
           );
         }
@@ -96,69 +113,103 @@ export function MealPlanForm({
     }
   };
 
-  const onSubmit = (data: MealPlanFormData) => {
+  // Handle duration slider change
+  const handleDurationChange = (value: number[]) => {
+    setValue("duration", value[0]);
+  };
+
+  const onSubmit = (data: MealPlanTemplateFormData) => {
     startTransition(async () => {
-      const result = editMode && planId
-        ? await updateMealPlan(planId, data)
-        : await createMealPlan(data);
+      const result =
+        editMode && planId
+          ? await updateMealPlan(planId, data)
+          : await createMealPlan(data);
 
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success(
-          editMode ? "Meal plan updated!" : "Meal plan created!"
+          editMode
+            ? "Meal plan template updated!"
+            : "Meal plan template created!"
         );
         reset();
         onOpenChange(false);
-        onSuccess?.();
+        // Pass the created template ID to onSuccess callback (only for new templates)
+        onSuccess?.(editMode ? undefined : result.data?.id);
       }
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editMode ? "Edit Meal Plan" : "Create New Meal Plan"}
+            {editMode
+              ? "Edit Meal Plan Template"
+              : "Create New Meal Plan Template"}
           </DialogTitle>
           <DialogDescription>
             {editMode
-              ? "Update your meal plan settings"
-              : "Set up a new meal plan with your nutrition goals"}
+              ? "Update your meal plan template. Changes will apply to all future uses."
+              : "Set up a reusable meal plan template with your nutrition goals"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Plan Name */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Template Name */}
           <div className="space-y-2">
             <Label htmlFor="name">{t("mealPlans.form.name")}</Label>
             <Input
               id="name"
-              placeholder="e.g., Healthy Weight Loss Week 1"
+              placeholder="e.g., Healthy Weight Loss Plan"
               {...register("name")}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Give your template a memorable name you can reuse
+            </p>
           </div>
 
           {/* Template Selection - Only for create mode */}
           {!editMode && availablePlans.length > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="templateId">{t("mealPlans.form.createFromTemplate")}</Label>
+              <Label htmlFor="templateId">
+                {t("mealPlans.form.createFromTemplate")}
+              </Label>
               <Select
                 value={templateId || "none"}
-                onValueChange={(value) => setValue("templateId", value === "none" ? undefined : value)}
+                onValueChange={(value) => {
+                  const newTemplateId = value === "none" ? undefined : value;
+                  setValue("templateId", newTemplateId);
+
+                  // If a template is selected, update duration to match
+                  if (newTemplateId) {
+                    const selectedTemplate = availablePlans.find(
+                      (p) => p.id === newTemplateId
+                    );
+                    if (selectedTemplate) {
+                      setValue("duration", selectedTemplate.duration);
+                    }
+                  }
+                }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("mealPlans.form.selectTemplate")} />
+                  <SelectValue
+                    placeholder={t("mealPlans.form.selectTemplate")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{t("mealPlans.form.noTemplate")}</SelectItem>
+                  <SelectItem value="none">
+                    {t("mealPlans.form.noTemplate")}
+                  </SelectItem>
                   {availablePlans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name}
+                      {plan.name} ({plan.duration}{" "}
+                      {plan.duration === 1 ? "day" : "days"})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -168,6 +219,70 @@ export function MealPlanForm({
               </p>
             </div>
           )}
+
+          {/* Duration Input with Slider */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="duration">Plan Duration</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-primary">
+                  {duration}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {duration === 1 ? "day" : "days"}
+                </span>
+              </div>
+            </div>
+
+            <Slider
+              value={[duration]}
+              onValueChange={handleDurationChange}
+              min={1}
+              max={30}
+              step={1}
+              className="w-full"
+            />
+
+            {/* Quick duration presets */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setValue("duration", 7)}
+                className={cn(duration === 7 && "border-primary")}
+              >
+                1 Week
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setValue("duration", 14)}
+                className={cn(duration === 14 && "border-primary")}
+              >
+                2 Weeks
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setValue("duration", 30)}
+                className={cn(duration === 30 && "border-primary")}
+              >
+                1 Month
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              You can schedule this template to start on any date later
+            </p>
+            {errors.duration && (
+              <p className="text-sm text-destructive">
+                {errors.duration.message}
+              </p>
+            )}
+          </div>
 
           {/* Meal Count Selection */}
           <div className="space-y-3">
@@ -179,7 +294,10 @@ export function MealPlanForm({
             >
               {MEAL_SLOT_PRESETS.map((preset) => (
                 <div key={preset.count} className="flex items-center space-x-2">
-                  <RadioGroupItem value={preset.count.toString()} id={`meal-count-${preset.count}`} />
+                  <RadioGroupItem
+                    value={preset.count.toString()}
+                    id={`meal-count-${preset.count}`}
+                  />
                   <Label
                     htmlFor={`meal-count-${preset.count}`}
                     className="font-normal cursor-pointer flex-1"
@@ -194,88 +312,15 @@ export function MealPlanForm({
             </p>
           </div>
 
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setValue("startDate", date);
-                        setStartDateOpen(false);
-                      }
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.startDate && (
-                <p className="text-sm text-destructive">
-                  {errors.startDate.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        setValue("endDate", date);
-                        setEndDateOpen(false);
-                      }
-                    }}
-                    disabled={(date) => date < startDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.endDate && (
-                <p className="text-sm text-destructive">
-                  {errors.endDate.message}
-                </p>
-              )}
-            </div>
-          </div>
-
           {/* Macro Targets */}
           <div className="space-y-3">
             <Label>Daily Macro Targets (Optional)</Label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="targetCalories" className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor="targetCalories"
+                  className="text-xs text-muted-foreground"
+                >
                   Calories
                 </Label>
                 <Input
@@ -286,7 +331,10 @@ export function MealPlanForm({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="targetProtein" className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor="targetProtein"
+                  className="text-xs text-muted-foreground"
+                >
                   Protein (g)
                 </Label>
                 <Input
@@ -297,7 +345,10 @@ export function MealPlanForm({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="targetCarbs" className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor="targetCarbs"
+                  className="text-xs text-muted-foreground"
+                >
                   Carbs (g)
                 </Label>
                 <Input
@@ -308,7 +359,10 @@ export function MealPlanForm({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="targetFat" className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor="targetFat"
+                  className="text-xs text-muted-foreground"
+                >
                   Fat (g)
                 </Label>
                 <Input
@@ -319,29 +373,19 @@ export function MealPlanForm({
                 />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Set target macros to help you stay on track with your nutrition
+              goals
+            </p>
           </div>
 
           {/* Settings */}
           <div className="space-y-3 pt-2 border-t">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="isActive">Set as Active Plan</Label>
-                <p className="text-xs text-muted-foreground">
-                  Only one plan can be active at a time
-                </p>
-              </div>
-              <Switch
-                id="isActive"
-                checked={isActive}
-                onCheckedChange={(checked) => setValue("isActive", checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
                 <Label htmlFor="isPublic">Make Public</Label>
                 <p className="text-xs text-muted-foreground">
-                  Generate a shareable link
+                  Generate a shareable link for this template
                 </p>
               </div>
               <Switch
@@ -367,8 +411,8 @@ export function MealPlanForm({
               {isPending
                 ? "Saving..."
                 : editMode
-                ? "Update Plan"
-                : "Create Plan"}
+                ? "Update Template"
+                : "Create Template"}
             </Button>
           </div>
         </form>

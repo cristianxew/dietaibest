@@ -35,7 +35,7 @@ export function RecipePicker({
 
   const handleSearch = () => {
     startTransition(async () => {
-      const result = await getRecipes({ search, limit: 20 });
+      const result = await getRecipes({ page: 1, search, limit: 20 });
       if (result.error) {
         toast.error(result.error);
       } else if (result.data) {

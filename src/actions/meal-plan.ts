@@ -3,26 +3,25 @@
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import {
-  mealPlanFormSchema,
+  mealPlanTemplateFormSchema,
   addMealSchema,
   moveMealSchema,
   updateMealServingsSchema,
-  mealPlanFilterSchema,
-  type MealPlanFormData,
+  type MealPlanTemplateFormData,
   type AddMealData,
   type MoveMealData,
   type UpdateMealServingsData,
-  type MealPlanFilter,
-  type MealPlanDisplay,
-  type DayDisplay,
-  type MealDisplay,
+  type MealPlanTemplateFilter,
 } from "@/types/meal-plan";
-import { calculateMealMacros, sumMacros } from "@/lib/meal-plan-macros";
-import { Prisma } from "@/generated/prisma";
 import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
+import { addDays, format } from "date-fns";
+import { Prisma } from "@/generated/prisma";
 
-// Helper to get authenticated user
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
 async function getAuthenticatedUser() {
   const session = await getServerSession();
   if (!session?.user?.email) {
@@ -40,90 +39,66 @@ async function getAuthenticatedUser() {
   return user;
 }
 
-// Helper to generate share token
 function generateShareToken(): string {
   return randomBytes(32).toString("base64url");
 }
 
-// Helper to generate date range for meal plan
-function generateDateRange(startDate: Date, endDate: Date): Date[] {
-  const dates: Date[] = [];
-  const current = new Date(startDate);
-
-  while (current <= endDate) {
-    dates.push(new Date(current));
-    current.setDate(current.getDate() + 1);
-  }
-
-  return dates;
-}
-
 // ============================================================================
-// Create Meal Plan
+// Create Meal Plan Template
 // ============================================================================
 
-export async function createMealPlan(data: MealPlanFormData) {
+export async function createMealPlan(data: MealPlanTemplateFormData) {
   try {
     const user = await getAuthenticatedUser();
-    const validatedData = mealPlanFormSchema.parse(data);
-
-    // If setting as active, deactivate other plans
-    if (validatedData.isActive) {
-      await prisma.mealPlan.updateMany({
-        where: { userId: user.id, isActive: true },
-        data: { isActive: false },
-      });
-    }
-
-    // Generate dates for the meal plan
-    const dates = generateDateRange(
-      validatedData.startDate,
-      validatedData.endDate
-    );
+    const validatedData = mealPlanTemplateFormSchema.parse(data);
 
     // If creating from template, get template meals
     let templatePlan = null;
     if (validatedData.templateId) {
-      templatePlan = await prisma.mealPlan.findUnique({
+      templatePlan = await prisma.mealPlanTemplate.findUnique({
         where: { id: validatedData.templateId },
         include: {
           days: {
             include: {
               meals: true,
             },
-            orderBy: { date: "asc" },
+            orderBy: { dayNumber: "asc" },
           },
         },
       });
 
       // Verify ownership of template
-      if (templatePlan && templatePlan.userId !== user.id) {
+      if (
+        templatePlan &&
+        templatePlan.userId !== user.id &&
+        !templatePlan.isPublic
+      ) {
         return { data: null, error: "Unauthorized to use this template" };
       }
     }
 
-    // Create meal plan with days
-    const mealPlan = await prisma.mealPlan.create({
+    // Create meal plan template with days
+    const mealPlanTemplate = await prisma.mealPlanTemplate.create({
       data: {
         userId: user.id,
         name: validatedData.name,
-        startDate: validatedData.startDate,
-        endDate: validatedData.endDate,
+        duration: validatedData.duration,
         mealSlots: validatedData.mealSlots,
         targetCalories: validatedData.targetCalories,
         targetProtein: validatedData.targetProtein,
         targetCarbs: validatedData.targetCarbs,
         targetFat: validatedData.targetFat,
-        isActive: validatedData.isActive,
         isPublic: validatedData.isPublic,
         shareToken: validatedData.isPublic ? generateShareToken() : null,
         days: {
-          create: dates.map((date, index) => {
-            // Copy meals from template if available
-            const templateDay = templatePlan?.days[index % (templatePlan.days.length || 1)];
+          create: Array.from({ length: validatedData.duration }, (_, index) => {
+            const dayNumber = index + 1;
+            // Copy meals from template if available (cycle through if template is shorter)
+            const templateDay =
+              templatePlan?.days[index % (templatePlan.days.length || 1)];
+
             return {
-              date,
-              dayOfWeek: date.getDay(),
+              dayNumber,
               meals: templateDay
                 ? {
                     create: templateDay.meals.map((meal) => ({
@@ -147,66 +122,75 @@ export async function createMealPlan(data: MealPlanFormData) {
               },
             },
           },
+          orderBy: { dayNumber: "asc" },
         },
       },
     });
 
     revalidatePath("/meal-plans");
-    return { data: mealPlan, error: null };
+    return { data: mealPlanTemplate, error: null };
   } catch (error) {
-    console.error("Create meal plan error:", error);
+    console.error("Create meal plan template error:", error);
     return {
       data: null,
       error:
-        error instanceof Error ? error.message : "Failed to create meal plan",
+        error instanceof Error
+          ? error.message
+          : "Failed to create meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Update Meal Plan
+// Update Meal Plan Template
 // ============================================================================
 
-export async function updateMealPlan(id: string, data: MealPlanFormData) {
+export async function updateMealPlan(
+  id: string,
+  data: MealPlanTemplateFormData
+) {
   try {
     const user = await getAuthenticatedUser();
-    const validatedData = mealPlanFormSchema.parse(data);
+    const validatedData = mealPlanTemplateFormSchema.parse(data);
 
-    // Check if user owns the meal plan
-    const existingPlan = await prisma.mealPlan.findUnique({
+    // Check if user owns the template
+    const existingTemplate = await prisma.mealPlanTemplate.findUnique({
       where: { id },
-      select: { userId: true },
+      select: {
+        userId: true,
+        duration: true,
+        shareToken: true,
+      },
     });
 
-    if (!existingPlan) {
-      return { data: null, error: "Meal plan not found" };
+    if (!existingTemplate) {
+      return { data: null, error: "Meal plan template not found" };
     }
 
-    if (existingPlan.userId !== user.id) {
+    if (existingTemplate.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
-    // If setting as active, deactivate other plans
-    if (validatedData.isActive) {
-      await prisma.mealPlan.updateMany({
-        where: { userId: user.id, isActive: true, NOT: { id } },
-        data: { isActive: false },
-      });
-    }
+    // Handle duration changes
+    const durationChanged =
+      existingTemplate.duration !== validatedData.duration;
 
-    // Update meal plan (note: date range changes not supported to keep it simple)
-    const mealPlan = await prisma.mealPlan.update({
+    // Update the template
+    const updatedTemplate = await prisma.mealPlanTemplate.update({
       where: { id },
       data: {
         name: validatedData.name,
+        duration: validatedData.duration,
         mealSlots: validatedData.mealSlots,
         targetCalories: validatedData.targetCalories,
         targetProtein: validatedData.targetProtein,
         targetCarbs: validatedData.targetCarbs,
         targetFat: validatedData.targetFat,
-        isActive: validatedData.isActive,
         isPublic: validatedData.isPublic,
-        shareToken: validatedData.isPublic ? generateShareToken() : null,
+        shareToken:
+          validatedData.isPublic && !existingTemplate.shareToken
+            ? generateShareToken()
+            : existingTemplate.shareToken,
       },
       include: {
         days: {
@@ -217,149 +201,390 @@ export async function updateMealPlan(id: string, data: MealPlanFormData) {
               },
             },
           },
+          orderBy: { dayNumber: "asc" },
         },
       },
     });
 
+    // If duration changed, adjust days
+    if (durationChanged) {
+      const currentDayCount = await prisma.mealPlanDay.count({
+        where: { templateId: id },
+      });
+
+      if (validatedData.duration > currentDayCount) {
+        // Add new days
+        const newDays = Array.from(
+          { length: validatedData.duration - currentDayCount },
+          (_, index) => ({
+            templateId: id,
+            dayNumber: currentDayCount + index + 1,
+          })
+        );
+        await prisma.mealPlanDay.createMany({
+          data: newDays,
+        });
+      } else if (validatedData.duration < currentDayCount) {
+        // Remove excess days
+        await prisma.mealPlanDay.deleteMany({
+          where: {
+            templateId: id,
+            dayNumber: {
+              gt: validatedData.duration,
+            },
+          },
+        });
+      }
+    }
+
     revalidatePath("/meal-plans");
-    revalidatePath(`/meal-plans/${id}`);
-    return { data: mealPlan, error: null };
+    return { data: updatedTemplate, error: null };
   } catch (error) {
-    console.error("Update meal plan error:", error);
+    console.error("Update meal plan template error:", error);
     return {
       data: null,
       error:
-        error instanceof Error ? error.message : "Failed to update meal plan",
+        error instanceof Error
+          ? error.message
+          : "Failed to update meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Delete Meal Plan
+// Schedule Meal Plan Template
+// ============================================================================
+
+export async function scheduleMealPlan(templateId: string, startDate: Date) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Get the template
+    const template = await prisma.mealPlanTemplate.findUnique({
+      where: { id: templateId },
+      select: {
+        userId: true,
+        duration: true,
+        isPublic: true,
+      },
+    });
+
+    if (!template) {
+      return { data: null, error: "Meal plan template not found" };
+    }
+
+    // Verify access
+    if (template.userId !== user.id && !template.isPublic) {
+      return { data: null, error: "Unauthorized to use this template" };
+    }
+
+    // Normalize start date
+    const normalizedStartDate = new Date(startDate);
+    normalizedStartDate.setHours(0, 0, 0, 0);
+
+    // Calculate end date
+    const endDate = addDays(normalizedStartDate, template.duration - 1);
+
+    // Check for overlapping schedules
+    const overlappingSchedule = await prisma.mealPlanSchedule.findFirst({
+      where: {
+        userId: user.id,
+        status: "active",
+        OR: [
+          {
+            AND: [
+              { startDate: { lte: normalizedStartDate } },
+              { template: { duration: { gte: 1 } } }, // Has duration
+            ],
+          },
+        ],
+      },
+      include: {
+        template: {
+          select: {
+            duration: true,
+          },
+        },
+      },
+    });
+
+    if (overlappingSchedule) {
+      // Check if dates actually overlap
+      const overlappingEndDate = addDays(
+        overlappingSchedule.startDate,
+        overlappingSchedule.template.duration - 1
+      );
+
+      if (
+        (normalizedStartDate >= overlappingSchedule.startDate &&
+          normalizedStartDate <= overlappingEndDate) ||
+        (endDate >= overlappingSchedule.startDate &&
+          endDate <= overlappingEndDate) ||
+        (normalizedStartDate <= overlappingSchedule.startDate &&
+          endDate >= overlappingEndDate)
+      ) {
+        return {
+          data: null,
+          error: `Schedule conflicts with an existing plan from ${format(
+            overlappingSchedule.startDate,
+            "MMM d"
+          )} to ${format(overlappingEndDate, "MMM d")}`,
+        };
+      }
+    }
+
+    // Create the schedule
+    const schedule = await prisma.mealPlanSchedule.create({
+      data: {
+        templateId,
+        userId: user.id,
+        startDate: normalizedStartDate,
+        status: "active",
+      },
+      include: {
+        template: {
+          include: {
+            days: {
+              include: {
+                meals: {
+                  include: {
+                    recipe: true,
+                  },
+                },
+              },
+              orderBy: { dayNumber: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    revalidatePath("/meal-plans");
+    return { data: schedule, error: null };
+  } catch (error) {
+    console.error("Schedule meal plan error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to schedule meal plan",
+    };
+  }
+}
+
+// ============================================================================
+// Unschedule Meal Plan
+// ============================================================================
+
+export async function unscheduleMealPlan(scheduleId: string) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Check ownership
+    const schedule = await prisma.mealPlanSchedule.findUnique({
+      where: { id: scheduleId },
+      select: { userId: true },
+    });
+
+    if (!schedule) {
+      return { data: null, error: "Schedule not found" };
+    }
+
+    if (schedule.userId !== user.id) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    // Delete the schedule (template remains intact)
+    await prisma.mealPlanSchedule.delete({
+      where: { id: scheduleId },
+    });
+
+    revalidatePath("/meal-plans");
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    console.error("Unschedule meal plan error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to unschedule meal plan",
+    };
+  }
+}
+
+// ============================================================================
+// Delete Meal Plan Template
 // ============================================================================
 
 export async function deleteMealPlan(id: string) {
   try {
     const user = await getAuthenticatedUser();
 
-    // Check if user owns the meal plan
-    const existingPlan = await prisma.mealPlan.findUnique({
+    // Check ownership
+    const template = await prisma.mealPlanTemplate.findUnique({
       where: { id },
       select: { userId: true },
     });
 
-    if (!existingPlan) {
-      return { data: null, error: "Meal plan not found" };
+    if (!template) {
+      return { data: null, error: "Meal plan template not found" };
     }
 
-    if (existingPlan.userId !== user.id) {
+    if (template.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
-    await prisma.mealPlan.delete({
+    // Delete template (cascades to days, meals, and schedules)
+    await prisma.mealPlanTemplate.delete({
       where: { id },
     });
 
     revalidatePath("/meal-plans");
     return { data: { success: true }, error: null };
   } catch (error) {
-    console.error("Delete meal plan error:", error);
+    console.error("Delete meal plan template error:", error);
     return {
       data: null,
       error:
-        error instanceof Error ? error.message : "Failed to delete meal plan",
+        error instanceof Error
+          ? error.message
+          : "Failed to delete meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Get Meal Plans (List)
+// Clear Scheduled Plans (Legacy - now just cancels old schedules)
 // ============================================================================
 
-export async function getMealPlans(filter?: MealPlanFilter) {
+export async function clearScheduledPlans() {
   try {
     const user = await getAuthenticatedUser();
-    const validatedFilter = mealPlanFilterSchema.parse(filter || {});
 
+    // Cancel all completed schedules
+    await prisma.mealPlanSchedule.updateMany({
+      where: {
+        userId: user.id,
+        status: "completed",
+      },
+      data: {
+        status: "cancelled",
+      },
+    });
+
+    revalidatePath("/meal-plans");
+    return { data: { success: true }, error: null };
+  } catch (error) {
+    console.error("Clear scheduled plans error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to clear scheduled plans",
+    };
+  }
+}
+
+// ============================================================================
+// Get Meal Plan Templates
+// ============================================================================
+
+export async function getMealPlans(filter?: MealPlanTemplateFilter) {
+  try {
+    const user = await getAuthenticatedUser();
     const {
       search,
-      isActive,
-      startDateFrom,
-      startDateTo,
+      duration,
+      isPublic,
       sortBy = "createdAt",
       sortOrder = "desc",
       page = 1,
       limit = 12,
-    } = validatedFilter;
+    } = filter || {};
 
-    // Build where clause
-    const where: Prisma.MealPlanWhereInput = {
+    const where: Prisma.MealPlanTemplateWhereInput = {
       userId: user.id,
       ...(search && {
-        name: { contains: search, mode: "insensitive" },
+        name: {
+          contains: search,
+          mode: "insensitive" as Prisma.QueryMode,
+        },
       }),
-      ...(isActive !== undefined && { isActive }),
-      ...(startDateFrom && { startDate: { gte: startDateFrom } }),
-      ...(startDateTo && { startDate: { lte: startDateTo } }),
+      ...(duration !== undefined && { duration }),
+      ...(isPublic !== undefined && { isPublic }),
     };
 
-    // Get total count
-    const totalCount = await prisma.mealPlan.count({ where });
-
-    // Get meal plans with pagination
-    const mealPlans = await prisma.mealPlan.findMany({
-      where,
-      orderBy: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
-      include: {
-        days: {
-          include: {
-            meals: {
-              include: {
-                recipe: true,
+    const [templates, total] = await Promise.all([
+      prisma.mealPlanTemplate.findMany({
+        where,
+        include: {
+          days: {
+            include: {
+              meals: {
+                include: {
+                  recipe: true,
+                },
               },
             },
+            orderBy: { dayNumber: "asc" },
           },
-          orderBy: { date: "asc" },
+          schedules: {
+            where: {
+              status: "active",
+            },
+            orderBy: {
+              startDate: "asc",
+            },
+            take: 5, // Show up to 5 active schedules
+          },
+          _count: {
+            select: {
+              schedules: true,
+            },
+          },
         },
-      },
-    });
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.mealPlanTemplate.count({ where }),
+    ]);
 
+    revalidatePath("/meal-plans");
     return {
       data: {
-        mealPlans,
+        templates,
         pagination: {
           page,
           limit,
-          totalCount,
-          totalPages: Math.ceil(totalCount / limit),
+          total,
+          totalPages: Math.ceil(total / limit),
         },
       },
       error: null,
     };
   } catch (error) {
-    console.error("Get meal plans error:", error);
+    console.error("Get meal plan templates error:", error);
     return {
       data: null,
       error:
-        error instanceof Error ? error.message : "Failed to get meal plans",
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch meal plan templates",
     };
   }
 }
 
 // ============================================================================
-// Get Single Meal Plan
+// Get Single Meal Plan Template
 // ============================================================================
 
-export async function getMealPlan(id: string): Promise<{
-  data: MealPlanDisplay | null;
-  error: string | null;
-}> {
+export async function getMealPlan(id: string) {
   try {
     const user = await getAuthenticatedUser();
 
-    const mealPlan = await prisma.mealPlan.findUnique({
+    const template = await prisma.mealPlanTemplate.findUnique({
       where: { id },
       include: {
         days: {
@@ -368,294 +593,160 @@ export async function getMealPlan(id: string): Promise<{
               include: {
                 recipe: true,
               },
-              orderBy: [{ mealType: "asc" }, { sortOrder: "asc" }],
+              orderBy: { sortOrder: "asc" },
             },
           },
-          orderBy: { date: "asc" },
+          orderBy: { dayNumber: "asc" },
+        },
+        schedules: {
+          where: {
+            userId: user.id,
+          },
+          orderBy: {
+            startDate: "desc",
+          },
         },
       },
     });
 
-    if (!mealPlan) {
-      return { data: null, error: "Meal plan not found" };
+    if (!template) {
+      return { data: null, error: "Meal plan template not found" };
     }
 
-    // Check authorization
-    if (mealPlan.userId !== user.id) {
+    // Check access
+    if (template.userId !== user.id && !template.isPublic) {
       return { data: null, error: "Unauthorized" };
     }
 
-    // Transform to display format with calculated macros
-    const daysDisplay: DayDisplay[] = mealPlan.days.map((day) => {
-      const mealsDisplay: MealDisplay[] = day.meals.map((meal) => {
-        const macros = calculateMealMacros(
-          meal.recipe.calories || 0,
-          meal.recipe.protein || 0,
-          meal.recipe.carbs || 0,
-          meal.recipe.fat || 0,
-          meal.recipe.servings,
-          meal.servings
-        );
-
-        return {
-          id: meal.id,
-          recipeId: meal.recipeId,
-          recipeName: meal.recipe.title,
-          recipeImage: meal.recipe.imageUrl || undefined,
-          mealType: meal.mealType as any,
-          servings: meal.servings,
-          ...macros,
-        };
-      });
-
-      const dayMacros = sumMacros(mealsDisplay);
-
-      return {
-        id: day.id,
-        date: day.date,
-        dayOfWeek: day.dayOfWeek,
-        meals: mealsDisplay,
-        macros: dayMacros,
-      };
-    });
-
-    // Calculate weekly macros
-    const totalMacros = sumMacros(daysDisplay.map((d) => d.macros));
-    const numDays = daysDisplay.length || 1;
-    const averageDailyMacros = {
-      calories: Math.round((totalMacros.calories / numDays) * 10) / 10,
-      protein: Math.round((totalMacros.protein / numDays) * 10) / 10,
-      carbs: Math.round((totalMacros.carbs / numDays) * 10) / 10,
-      fat: Math.round((totalMacros.fat / numDays) * 10) / 10,
-    };
-
-    const mealPlanDisplay: MealPlanDisplay = {
-      id: mealPlan.id,
-      name: mealPlan.name,
-      startDate: mealPlan.startDate,
-      endDate: mealPlan.endDate,
-      mealSlots: mealPlan.mealSlots as any,
-      isActive: mealPlan.isActive,
-      isPublic: mealPlan.isPublic,
-      shareToken: mealPlan.shareToken || undefined,
-      targets: {
-        calories: mealPlan.targetCalories || undefined,
-        protein: mealPlan.targetProtein || undefined,
-        carbs: mealPlan.targetCarbs || undefined,
-        fat: mealPlan.targetFat || undefined,
-      },
-      days: daysDisplay,
-      weeklyMacros: {
-        totalMacros,
-        averageDailyMacros,
-        days: daysDisplay.map((d) => ({
-          date: d.date,
-          dayOfWeek: d.dayOfWeek,
-          ...d.macros,
-        })),
-      },
-    };
-
-    return { data: mealPlanDisplay, error: null };
+    return { data: template, error: null };
   } catch (error) {
-    console.error("Get meal plan error:", error);
+    console.error("Get meal plan template error:", error);
     return {
       data: null,
       error:
-        error instanceof Error ? error.message : "Failed to get meal plan",
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Get Meal Plan by Share Token (Public)
+// Get Meal Plan Template by Share Token
 // ============================================================================
 
-export async function getMealPlanByShareToken(
-  shareToken: string
-): Promise<{
-  data: MealPlanDisplay | null;
-  error: string | null;
-}> {
+export async function getMealPlanByShareToken(shareToken: string) {
   try {
-    const mealPlan = await prisma.mealPlan.findUnique({
+    const template = await prisma.mealPlanTemplate.findUnique({
       where: { shareToken, isPublic: true },
       include: {
         days: {
           include: {
             meals: {
               include: {
-                recipe: true,
+                recipe: {
+                  select: {
+                    id: true,
+                    title: true,
+                    imageUrl: true,
+                    description: true,
+                    prepTime: true,
+                    cookTime: true,
+                    servings: true,
+                    calories: true,
+                    protein: true,
+                    carbs: true,
+                    fat: true,
+                  },
+                },
               },
-              orderBy: [{ mealType: "asc" }, { sortOrder: "asc" }],
+              orderBy: { sortOrder: "asc" },
             },
           },
-          orderBy: { date: "asc" },
+          orderBy: { dayNumber: "asc" },
+        },
+        user: {
+          select: {
+            email: true,
+          },
         },
       },
     });
 
-    if (!mealPlan) {
-      return { data: null, error: "Meal plan not found or not public" };
+    if (!template) {
+      return {
+        data: null,
+        error: "Meal plan template not found or not public",
+      };
     }
 
-    // Transform to display format (same as getMealPlan)
-    const daysDisplay: DayDisplay[] = mealPlan.days.map((day) => {
-      const mealsDisplay: MealDisplay[] = day.meals.map((meal) => {
-        const macros = calculateMealMacros(
-          meal.recipe.calories || 0,
-          meal.recipe.protein || 0,
-          meal.recipe.carbs || 0,
-          meal.recipe.fat || 0,
-          meal.recipe.servings,
-          meal.servings
-        );
-
-        return {
-          id: meal.id,
-          recipeId: meal.recipeId,
-          recipeName: meal.recipe.title,
-          recipeImage: meal.recipe.imageUrl || undefined,
-          mealType: meal.mealType as any,
-          servings: meal.servings,
-          ...macros,
-        };
-      });
-
-      const dayMacros = sumMacros(mealsDisplay);
-
-      return {
-        id: day.id,
-        date: day.date,
-        dayOfWeek: day.dayOfWeek,
-        meals: mealsDisplay,
-        macros: dayMacros,
-      };
-    });
-
-    const totalMacros = sumMacros(daysDisplay.map((d) => d.macros));
-    const numDays = daysDisplay.length || 1;
-    const averageDailyMacros = {
-      calories: Math.round((totalMacros.calories / numDays) * 10) / 10,
-      protein: Math.round((totalMacros.protein / numDays) * 10) / 10,
-      carbs: Math.round((totalMacros.carbs / numDays) * 10) / 10,
-      fat: Math.round((totalMacros.fat / numDays) * 10) / 10,
-    };
-
-    const mealPlanDisplay: MealPlanDisplay = {
-      id: mealPlan.id,
-      name: mealPlan.name,
-      startDate: mealPlan.startDate,
-      endDate: mealPlan.endDate,
-      mealSlots: mealPlan.mealSlots as any,
-      isActive: mealPlan.isActive,
-      isPublic: mealPlan.isPublic,
-      shareToken: mealPlan.shareToken || undefined,
-      targets: {
-        calories: mealPlan.targetCalories || undefined,
-        protein: mealPlan.targetProtein || undefined,
-        carbs: mealPlan.targetCarbs || undefined,
-        fat: mealPlan.targetFat || undefined,
-      },
-      days: daysDisplay,
-      weeklyMacros: {
-        totalMacros,
-        averageDailyMacros,
-        days: daysDisplay.map((d) => ({
-          date: d.date,
-          dayOfWeek: d.dayOfWeek,
-          ...d.macros,
-        })),
-      },
-    };
-
-    return { data: mealPlanDisplay, error: null };
+    return { data: template, error: null };
   } catch (error) {
-    console.error("Get meal plan by share token error:", error);
+    console.error("Get meal plan template by share token error:", error);
     return {
       data: null,
       error:
         error instanceof Error
           ? error.message
-          : "Failed to get shared meal plan",
+          : "Failed to fetch meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Duplicate Meal Plan
+// Duplicate Meal Plan Template
 // ============================================================================
 
-export async function duplicateMealPlan(
-  id: string,
-  newName?: string,
-  newStartDate?: Date
-) {
+export async function duplicateMealPlan(id: string, newName?: string) {
   try {
     const user = await getAuthenticatedUser();
 
-    // Get original meal plan
-    const original = await prisma.mealPlan.findUnique({
+    // Get the template to duplicate
+    const sourceTemplate = await prisma.mealPlanTemplate.findUnique({
       where: { id },
       include: {
         days: {
           include: {
             meals: true,
           },
+          orderBy: { dayNumber: "asc" },
         },
       },
     });
 
-    if (!original) {
-      return { data: null, error: "Meal plan not found" };
+    if (!sourceTemplate) {
+      return { data: null, error: "Meal plan template not found" };
     }
 
-    if (original.userId !== user.id) {
+    // Check access
+    if (sourceTemplate.userId !== user.id && !sourceTemplate.isPublic) {
       return { data: null, error: "Unauthorized" };
     }
 
-    // Calculate new date range
-    const originalDuration = Math.ceil(
-      (original.endDate.getTime() - original.startDate.getTime()) /
-        (1000 * 60 * 60 * 24)
-    );
-    const startDate = newStartDate || new Date();
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + originalDuration);
-
-    const dates = generateDateRange(startDate, endDate);
-
     // Create duplicate
-    const duplicate = await prisma.mealPlan.create({
+    const duplicatedTemplate = await prisma.mealPlanTemplate.create({
       data: {
         userId: user.id,
-        name: newName || `${original.name} (Copy)`,
-        startDate,
-        endDate,
-        targetCalories: original.targetCalories,
-        targetProtein: original.targetProtein,
-        targetCarbs: original.targetCarbs,
-        targetFat: original.targetFat,
-        isActive: false, // Never duplicate as active
-        isPublic: false,
+        name: newName || `${sourceTemplate.name} (Copy)`,
+        duration: sourceTemplate.duration,
+        mealSlots: sourceTemplate.mealSlots,
+        targetCalories: sourceTemplate.targetCalories,
+        targetProtein: sourceTemplate.targetProtein,
+        targetCarbs: sourceTemplate.targetCarbs,
+        targetFat: sourceTemplate.targetFat,
+        isPublic: false, // Copies are private by default
         days: {
-          create: dates.map((date, index) => {
-            const originalDay = original.days[index];
-            return {
-              date,
-              dayOfWeek: date.getDay(),
-              meals: originalDay
-                ? {
-                    create: originalDay.meals.map((meal) => ({
-                      recipeId: meal.recipeId,
-                      mealType: meal.mealType,
-                      servings: meal.servings,
-                      sortOrder: meal.sortOrder,
-                    })),
-                  }
-                : undefined,
-            };
-          }),
+          create: sourceTemplate.days.map((day) => ({
+            dayNumber: day.dayNumber,
+            meals: {
+              create: day.meals.map((meal) => ({
+                recipeId: meal.recipeId,
+                mealType: meal.mealType,
+                servings: meal.servings,
+                sortOrder: meal.sortOrder,
+              })),
+            },
+          })),
         },
       },
       include: {
@@ -667,26 +758,27 @@ export async function duplicateMealPlan(
               },
             },
           },
+          orderBy: { dayNumber: "asc" },
         },
       },
     });
 
     revalidatePath("/meal-plans");
-    return { data: duplicate, error: null };
+    return { data: duplicatedTemplate, error: null };
   } catch (error) {
-    console.error("Duplicate meal plan error:", error);
+    console.error("Duplicate meal plan template error:", error);
     return {
       data: null,
       error:
         error instanceof Error
           ? error.message
-          : "Failed to duplicate meal plan",
+          : "Failed to duplicate meal plan template",
     };
   }
 }
 
 // ============================================================================
-// Add Meal to Day
+// Meal Management Functions (these remain largely unchanged)
 // ============================================================================
 
 export async function addMealToDay(data: AddMealData) {
@@ -694,11 +786,13 @@ export async function addMealToDay(data: AddMealData) {
     const user = await getAuthenticatedUser();
     const validatedData = addMealSchema.parse(data);
 
-    // Verify ownership
+    // Verify day belongs to user's template
     const day = await prisma.mealPlanDay.findUnique({
       where: { id: validatedData.mealPlanDayId },
       include: {
-        mealPlan: { select: { userId: true } },
+        template: {
+          select: { userId: true },
+        },
       },
     });
 
@@ -706,16 +800,17 @@ export async function addMealToDay(data: AddMealData) {
       return { data: null, error: "Meal plan day not found" };
     }
 
-    if (day.mealPlan.userId !== user.id) {
+    if (day.template.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
-    // Get the next sort order for this meal type
+    // Get next sort order
     const existingMeals = await prisma.mealPlanMeal.findMany({
       where: {
         mealPlanDayId: validatedData.mealPlanDayId,
         mealType: validatedData.mealType,
       },
+      select: { sortOrder: true },
       orderBy: { sortOrder: "desc" },
       take: 1,
     });
@@ -723,7 +818,7 @@ export async function addMealToDay(data: AddMealData) {
     const nextSortOrder =
       existingMeals.length > 0 ? existingMeals[0].sortOrder + 1 : 0;
 
-    // Create meal
+    // Add meal
     const meal = await prisma.mealPlanMeal.create({
       data: {
         mealPlanDayId: validatedData.mealPlanDayId,
@@ -748,21 +843,19 @@ export async function addMealToDay(data: AddMealData) {
   }
 }
 
-// ============================================================================
-// Remove Meal from Day
-// ============================================================================
-
 export async function removeMealFromDay(mealId: string) {
   try {
     const user = await getAuthenticatedUser();
 
-    // Verify ownership
+    // Verify meal belongs to user's template
     const meal = await prisma.mealPlanMeal.findUnique({
       where: { id: mealId },
       include: {
         mealPlanDay: {
           include: {
-            mealPlan: { select: { userId: true } },
+            template: {
+              select: { userId: true },
+            },
           },
         },
       },
@@ -772,10 +865,11 @@ export async function removeMealFromDay(mealId: string) {
       return { data: null, error: "Meal not found" };
     }
 
-    if (meal.mealPlanDay.mealPlan.userId !== user.id) {
+    if (meal.mealPlanDay.template.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
+    // Delete meal
     await prisma.mealPlanMeal.delete({
       where: { id: mealId },
     });
@@ -791,22 +885,20 @@ export async function removeMealFromDay(mealId: string) {
   }
 }
 
-// ============================================================================
-// Move Meal (Drag and Drop)
-// ============================================================================
-
 export async function moveMeal(data: MoveMealData) {
   try {
     const user = await getAuthenticatedUser();
     const validatedData = moveMealSchema.parse(data);
 
-    // Verify ownership
+    // Verify meal belongs to user's template
     const meal = await prisma.mealPlanMeal.findUnique({
       where: { id: validatedData.mealId },
       include: {
         mealPlanDay: {
           include: {
-            mealPlan: { select: { userId: true } },
+            template: {
+              select: { userId: true, id: true },
+            },
           },
         },
       },
@@ -816,16 +908,30 @@ export async function moveMeal(data: MoveMealData) {
       return { data: null, error: "Meal not found" };
     }
 
-    if (meal.mealPlanDay.mealPlan.userId !== user.id) {
+    if (meal.mealPlanDay.template.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
-    // Get the next sort order for target meal type
+    // Verify target day belongs to same template
+    const targetDay = await prisma.mealPlanDay.findUnique({
+      where: { id: validatedData.targetDayId },
+      select: { templateId: true },
+    });
+
+    if (!targetDay || targetDay.templateId !== meal.mealPlanDay.template.id) {
+      return {
+        data: null,
+        error: "Target day not found or belongs to different template",
+      };
+    }
+
+    // Get next sort order in target slot
     const existingMeals = await prisma.mealPlanMeal.findMany({
       where: {
         mealPlanDayId: validatedData.targetDayId,
         mealType: validatedData.targetMealType,
       },
+      select: { sortOrder: true },
       orderBy: { sortOrder: "desc" },
       take: 1,
     });
@@ -833,7 +939,7 @@ export async function moveMeal(data: MoveMealData) {
     const nextSortOrder =
       existingMeals.length > 0 ? existingMeals[0].sortOrder + 1 : 0;
 
-    // Update meal
+    // Move meal
     const updatedMeal = await prisma.mealPlanMeal.update({
       where: { id: validatedData.mealId },
       data: {
@@ -857,22 +963,20 @@ export async function moveMeal(data: MoveMealData) {
   }
 }
 
-// ============================================================================
-// Update Meal Servings
-// ============================================================================
-
 export async function updateMealServings(data: UpdateMealServingsData) {
   try {
     const user = await getAuthenticatedUser();
     const validatedData = updateMealServingsSchema.parse(data);
 
-    // Verify ownership
+    // Verify meal belongs to user's template
     const meal = await prisma.mealPlanMeal.findUnique({
       where: { id: validatedData.mealId },
       include: {
         mealPlanDay: {
           include: {
-            mealPlan: { select: { userId: true } },
+            template: {
+              select: { userId: true },
+            },
           },
         },
       },
@@ -882,7 +986,7 @@ export async function updateMealServings(data: UpdateMealServingsData) {
       return { data: null, error: "Meal not found" };
     }
 
-    if (meal.mealPlanDay.mealPlan.userId !== user.id) {
+    if (meal.mealPlanDay.template.userId !== user.id) {
       return { data: null, error: "Unauthorized" };
     }
 
@@ -907,4 +1011,10 @@ export async function updateMealServings(data: UpdateMealServingsData) {
           : "Failed to update meal servings",
     };
   }
+}
+
+// Legacy function name (deprecated but kept for backwards compatibility)
+export async function overwriteActivePlan(templateId: string, startDate: Date) {
+  // Just schedule the template as active
+  return scheduleMealPlan(templateId, startDate);
 }

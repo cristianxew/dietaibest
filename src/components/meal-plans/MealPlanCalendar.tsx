@@ -209,13 +209,18 @@ export function MealPlanCalendar({
           {/* Calendar Grid */}
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Meal Schedule</CardTitle>
+              <CardTitle>
+                {mealPlan.days[0]?.date ? "Weekly Meal Schedule" : "Template Meal Schedule"}
+              </CardTitle>
               <CardDescription>
                 <span className="hidden lg:inline">
                   Drag recipes from the sidebar or drag meals to reorganize
                 </span>
                 <span className="lg:hidden">
-                  Drag and drop meals to reorganize your plan
+                  {mealPlan.days[0]?.date
+                    ? "Drag and drop meals to reorganize your plan"
+                    : "Add meals to each day of your template"
+                  }
                 </span>
               </CardDescription>
             </CardHeader>
@@ -227,10 +232,10 @@ export function MealPlanCalendar({
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="font-medium">
-                          {format(day.date, "EEEE")}
+                          {day.date ? format(day.date, "EEEE") : `Day ${day.dayNumber}`}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {format(day.date, "MMM d, yyyy")}
+                          {day.date ? format(day.date, "MMM d, yyyy") : `Template Day ${day.dayNumber}`}
                         </p>
                       </div>
                       <MacroDisplay
