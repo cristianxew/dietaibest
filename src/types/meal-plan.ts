@@ -64,28 +64,36 @@ export const MEAL_SLOT_PRESETS: MealSlotPreset[] = [
 ];
 
 // ============================================================================
-// Meal Plan Schemas
+// Meal Plan Template Schemas
 // ============================================================================
 
-// Meal Plan form schema for creation/editing
-export const mealPlanFormSchema = z.object({
+// Meal Plan Template form schema for creation/editing
+export const mealPlanTemplateFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  startDate: z.date({ required_error: "Start date is required" }),
-  endDate: z.date({ required_error: "End date is required" }),
+  duration: z.number().int().min(1).max(365, "Duration must be between 1 and 365 days"),
   mealSlots: z.array(mealTypeEnum).min(2).max(6).default(["breakfast", "lunch", "dinner"]),
-  templateId: z.string().uuid().optional(), // Optional: create from existing plan
+  templateId: z.string().uuid().optional(), // Optional: create from existing template
   targetCalories: z.number().min(0).optional(),
   targetProtein: z.number().min(0).optional(),
   targetCarbs: z.number().min(0).optional(),
   targetFat: z.number().min(0).optional(),
-  isActive: z.boolean().default(false),
   isPublic: z.boolean().default(false),
-}).refine((data) => data.endDate >= data.startDate, {
-  message: "End date must be after or equal to start date",
-  path: ["endDate"],
 });
 
-export type MealPlanFormData = z.infer<typeof mealPlanFormSchema>;
+export type MealPlanTemplateFormData = z.infer<typeof mealPlanTemplateFormSchema>;
+
+// Schema for scheduling a template to the calendar
+export const scheduleMealPlanSchema = z.object({
+  templateId: z.string().uuid("Invalid template ID"),
+  startDate: z.date({ required_error: "Start date is required" }),
+  status: z.enum(["active", "completed", "cancelled"]).default("active"),
+});
+
+export type ScheduleMealPlanData = z.infer<typeof scheduleMealPlanSchema>;
+
+// Legacy alias for backwards compatibility
+export const mealPlanFormSchema = mealPlanTemplateFormSchema;
+export type MealPlanFormData = MealPlanTemplateFormData;
 
 // Schema for adding a meal to a plan
 export const addMealSchema = z.object({
@@ -114,19 +122,36 @@ export const updateMealServingsSchema = z.object({
 
 export type UpdateMealServingsData = z.infer<typeof updateMealServingsSchema>;
 
-// Meal plan filter schema
-export const mealPlanFilterSchema = z.object({
+// Meal plan template filter schema
+export const mealPlanTemplateFilterSchema = z.object({
   search: z.string().optional(),
-  isActive: z.boolean().optional(),
-  startDateFrom: z.date().optional(),
-  startDateTo: z.date().optional(),
-  sortBy: z.enum(["createdAt", "startDate", "name"]).optional(),
+  duration: z.number().int().optional(), // Filter by specific duration
+  isPublic: z.boolean().optional(),
+  sortBy: z.enum(["createdAt", "name", "duration"]).optional(),
   sortOrder: z.enum(["asc", "desc"]).optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(50).default(12),
 });
 
-export type MealPlanFilter = z.infer<typeof mealPlanFilterSchema>;
+export type MealPlanTemplateFilter = z.infer<typeof mealPlanTemplateFilterSchema>;
+
+// Meal plan schedule filter schema
+export const mealPlanScheduleFilterSchema = z.object({
+  search: z.string().optional(),
+  status: z.enum(["active", "completed", "cancelled"]).optional(),
+  startDateFrom: z.date().optional(),
+  startDateTo: z.date().optional(),
+  sortBy: z.enum(["createdAt", "startDate"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(50).default(12),
+});
+
+export type MealPlanScheduleFilter = z.infer<typeof mealPlanScheduleFilterSchema>;
+
+// Legacy alias
+export const mealPlanFilterSchema = mealPlanTemplateFilterSchema;
+export type MealPlanFilter = MealPlanTemplateFilter;
 
 // ============================================================================
 // Macro Calculation Types
@@ -140,8 +165,8 @@ export interface MacroSummary {
 }
 
 export interface DayMacros extends MacroSummary {
-  date: Date;
-  dayOfWeek: number;
+  dayNumber: number; // Relative day number in template (1, 2, 3, ...)
+  date?: Date; // Optional: calculated date for schedules
 }
 
 export interface WeeklyMacros {
@@ -190,24 +215,41 @@ export interface MealDisplay {
 
 export interface DayDisplay {
   id: string;
-  date: Date;
-  dayOfWeek: number;
+  dayNumber: number; // Relative day number (1, 2, 3, ...)
+  date?: Date; // Optional: calculated date for schedules
   meals: MealDisplay[];
   macros: MacroSummary;
 }
 
-export interface MealPlanDisplay {
+// Template display (no dates, just structure)
+export interface MealPlanTemplateDisplay {
   id: string;
   name: string;
-  startDate: Date;
-  endDate: Date;
+  duration: number; // Days
   mealSlots: MealType[]; // Which meals to display per day
-  isActive: boolean;
   isPublic: boolean;
   shareToken?: string;
   targets?: MacroTarget;
   days: DayDisplay[];
-  weeklyMacros: WeeklyMacros;
+  averageMacros: MacroSummary; // Average macros per day
+}
+
+// Schedule display (template + dates)
+export interface MealPlanScheduleDisplay {
+  id: string;
+  templateId: string;
+  templateName: string;
+  startDate: Date;
+  endDate: Date; // Calculated from startDate + template.duration
+  status: "active" | "completed" | "cancelled";
+  template: MealPlanTemplateDisplay;
+}
+
+// Legacy alias for backwards compatibility
+export interface MealPlanDisplay extends MealPlanTemplateDisplay {
+  startDate?: Date;
+  endDate?: Date;
+  isActive?: boolean;
 }
 
 // ============================================================================
