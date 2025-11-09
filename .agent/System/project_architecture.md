@@ -1,9 +1,10 @@
 # DietAIbook - Project Architecture
 
-**Last Updated:** 2025-10-25
+**Last Updated:** 2025-11-09
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
+- [Recipe Import System](./recipe_import_system.md)
 - [README Index](../README.md)
 
 ---
@@ -231,6 +232,13 @@ dietaibest/
 - `deleteRecipe()` - Remove recipe
 - `getRecipes()` - List with filters
 - `toggleFavorite()` - Favorite/unfavorite
+
+**URL Import System:**
+- Task-based extraction via Browser-Use Cloud API v2
+- Real-time progress via SSE (Server-Sent Events)
+- Handles anti-bot protection, popups, structured data
+- Data validation (ignores unreliable `isSuccess` flag)
+- See [Recipe Import System](./recipe_import_system.md) for details
 
 ### 2. Meal Planning System
 **Location:** `src/actions/meal-plan.ts`, `src/components/meal-plans/`

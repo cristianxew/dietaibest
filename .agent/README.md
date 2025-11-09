@@ -2,11 +2,11 @@
 
 **DietAIbook - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2025-10-25
+Last Updated: 2025-11-09
 
 ---
 
-## =Ú Documentation Structure
+## =ï¿½ Documentation Structure
 
 This directory contains comprehensive documentation for the DietAIbook project, organized into three main categories:
 
@@ -21,7 +21,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
-## =Â Documentation Index
+## =ï¿½ Documentation Index
 
 ### System Documentation
 
@@ -54,6 +54,25 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Understanding system architecture
 - Planning new features
 - Troubleshooting integration issues
+
+---
+
+#### [Recipe Import System](./System/recipe_import_system.md)
+**Purpose:** Complete technical documentation for URL recipe import feature
+
+**Contains:**
+- End-to-end data flow (Browser-Use API integration)
+- API endpoints (SSE, polling, cancellation)
+- Frontend state management patterns
+- Critical bug fixes (isMountedRef, isSuccess flag, EventSource cleanup)
+- Error handling and security (SSRF protection)
+- Best practices and debugging guide
+
+**When to read:**
+- Working on recipe import features
+- Debugging extraction issues
+- Understanding Browser-Use API integration
+- Learning React hooks patterns
 
 ---
 
@@ -108,23 +127,25 @@ Currently no feature-specific PRDs. This section will contain:
 
 ### Standard Operating Procedures
 
-Currently no SOPs documented. This section will contain:
-- Step-by-step guides for common tasks
-- Development workflows
-- Deployment procedures
-- Troubleshooting guides
+#### [React Hooks - Common Pitfalls](./SOP/react_hooks_pitfalls.md)
+**Purpose:** Quick reference for avoiding common React hooks mistakes
 
-**Example future documents:**
-- `adding_schema_migration.md` - How to add database migrations
-- `adding_new_page_route.md` - How to add new Next.js routes
-- `adding_server_action.md` - How to create server actions
-- `integrating_external_api.md` - How to integrate new APIs
-- `deployment_checklist.md` - Production deployment steps
-- `testing_guidelines.md` - Unit, integration, and E2E testing
+**Contains:**
+- isMountedRef initialization pattern
+- EventSource cleanup best practices
+- AbortController usage for fetch
+- Stale closure prevention
+- Production examples from codebase
+
+**When to read:**
+- Before implementing complex async flows
+- Debugging state update warnings
+- Working with EventSource/SSE
+- Code review checklist
 
 ---
 
-## =€ Quick Start for New Developers
+## =ï¿½ Quick Start for New Developers
 
 ### 1. Read These First (in order):
 1. **[Project README](../README.md)** - Project overview and setup instructions
@@ -162,31 +183,31 @@ bun dev
 ### By Topic:
 
 **Tech Stack Questions**
-- Next.js / React patterns ’ [Project Architecture - Tech Stack](./System/project_architecture.md#tech-stack)
-- Database / Prisma ’ [Database Schema](./System/database_schema.md)
+- Next.js / React patterns ï¿½ [Project Architecture - Tech Stack](./System/project_architecture.md#tech-stack)
+- Database / Prisma ï¿½ [Database Schema](./System/database_schema.md)
 
 **Feature Implementation**
-- Recipe management ’ [Project Architecture - Core Features](./System/project_architecture.md#core-features)
-- Meal planning ’ [Project Architecture - Meal Planning System](./System/project_architecture.md#2-meal-planning-system)
-- Nutrition analysis ’ [Project Architecture - Nutritional Analysis](./System/project_architecture.md#3-nutritional-analysis)
+- Recipe management ï¿½ [Project Architecture - Core Features](./System/project_architecture.md#core-features)
+- Meal planning ï¿½ [Project Architecture - Meal Planning System](./System/project_architecture.md#2-meal-planning-system)
+- Nutrition analysis ï¿½ [Project Architecture - Nutritional Analysis](./System/project_architecture.md#3-nutritional-analysis)
 
 **External APIs**
-- Edamam integration ’ [Project Architecture - External Integrations](./System/project_architecture.md#1-edamam-api)
-- Browser-Use ’ [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#3-browser-use-cloud-api)
-- USDA FoodData Central ’ [Project Architecture - USDA FoodData Central](./System/project_architecture.md#2-usda-fooddata-central-api)
+- Edamam integration ï¿½ [Project Architecture - External Integrations](./System/project_architecture.md#1-edamam-api)
+- Browser-Use ï¿½ [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#3-browser-use-cloud-api)
+- USDA FoodData Central ï¿½ [Project Architecture - USDA FoodData Central](./System/project_architecture.md#2-usda-fooddata-central-api)
 
 **Database Questions**
-- Table structure ’ [Database Schema - Core Entities](./System/database_schema.md#core-entities)
-- Relationships ’ [Database Schema - Relationships](./System/database_schema.md#relationships)
-- Indexes ’ [Database Schema - Indexes & Performance](./System/database_schema.md#indexes--performance)
+- Table structure ï¿½ [Database Schema - Core Entities](./System/database_schema.md#core-entities)
+- Relationships ï¿½ [Database Schema - Relationships](./System/database_schema.md#relationships)
+- Indexes ï¿½ [Database Schema - Indexes & Performance](./System/database_schema.md#indexes--performance)
 
 **Authentication**
-- Auth flow ’ [Project Architecture - Authentication & Authorization](./System/project_architecture.md#authentication--authorization)
-- User permissions ’ [Database Schema - User & UserProfile](./System/database_schema.md#user)
+- Auth flow ï¿½ [Project Architecture - Authentication & Authorization](./System/project_architecture.md#authentication--authorization)
+- User permissions ï¿½ [Database Schema - User & UserProfile](./System/database_schema.md#user)
 
 ---
 
-## =Ý Documentation Maintenance
+## =ï¿½ Documentation Maintenance
 
 ### When to Update Documentation:
 
@@ -215,7 +236,7 @@ bun dev
 
 ---
 
-## <¯ Documentation Goals
+## <ï¿½ Documentation Goals
 
 ### Objectives:
 1. **Onboard new developers quickly** - All information in one place
@@ -258,7 +279,7 @@ bun dev
 
 ---
 
-## =ç Questions or Issues?
+## =ï¿½ Questions or Issues?
 
 If you can't find information in this documentation:
 1. Check if it should be documented (if yes, add it!)
@@ -270,7 +291,7 @@ If you can't find information in this documentation:
 
 ---
 
-## =Ú Related Resources
+## =ï¿½ Related Resources
 
 ### External Documentation:
 - [Next.js 15 Documentation](https://nextjs.org/docs)
@@ -288,6 +309,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2025-10-25
+**Last Updated:** 2025-11-09
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes
