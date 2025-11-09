@@ -69,17 +69,53 @@ export interface TaskStatus {
   status:
     | "pending"
     | "running"
+    | "started" // Browser Use API v2 uses "started" instead of "running"
+    | "paused"
     | "completed"
     | "finished"
     | "failed"
+    | "stopped" // Browser Use API v2 uses "stopped" for failures
     | "cancelled";
   progress?: number;
   message?: string;
   result?: unknown;
   output?: unknown;
   error?: string;
+  errorDetails?: string; // Additional error information
+  isSuccess?: boolean; // Browser Use API v2 includes this
   startedAt?: string;
   completedAt?: string;
+}
+
+/**
+ * Browser Use API v2 Task Step
+ */
+export interface BrowserUseTaskStep {
+  stepNumber?: number;
+  url?: string;
+  screenshot?: string;
+  previousGoalEvaluation?: string;
+  nextGoal?: string;
+  actions?: unknown[];
+}
+
+/**
+ * Extended task details from Browser Use API v2
+ * Includes additional fields not in the base TaskStatus interface
+ */
+export interface BrowserUseTaskDetails extends TaskStatus {
+  steps?: BrowserUseTaskStep[];
+  startUrl?: string;
+  isSuccess?: boolean;
+  errorDetails?: string;
+  output?: unknown;
+}
+
+/**
+ * Extended task status with computed progress
+ */
+export interface ExtendedTaskStatus extends BrowserUseTaskDetails {
+  progress: number;
 }
 
 export interface ExtractedRecipeData {
@@ -166,8 +202,8 @@ export class BrowserUseClient {
   /**
    * Get full task details, including results (API v2)
    */
-  async getTask(taskId: string): Promise<TaskStatus> {
-    const response = await this.makeRequest<TaskStatus>(`/tasks/${taskId}`, {
+  async getTask(taskId: string): Promise<BrowserUseTaskDetails> {
+    const response = await this.makeRequest<BrowserUseTaskDetails>(`/tasks/${taskId}`, {
       method: "GET",
     });
 
@@ -179,11 +215,11 @@ export class BrowserUseClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Extract recipe data from a URL using AI-powered browser automation (API v2)
+   * Start recipe extraction and return task ID immediately
    */
-  async extractRecipeFromUrl(
+  async startRecipeExtraction(
     request: RecipeExtractionRequest
-  ): Promise<ExtractedRecipeData> {
+  ): Promise<{ taskId: string }> {
     const taskPrompt = this.buildRecipeExtractionPrompt(
       request.url,
       request.options
@@ -234,8 +270,111 @@ export class BrowserUseClient {
       highlightElements: false,
     });
 
+    return { taskId: taskResponse.id };
+  }
+
+  /**
+   * Get the current status of a task including steps and progress
+   */
+  async getTaskStatus(taskId: string): Promise<ExtendedTaskStatus> {
+    try {
+      const taskDetails = await this.getTask(taskId);
+
+      // Log the raw response for debugging
+      console.log(`[BrowserUse] Task ${taskId} status:`, {
+        status: taskDetails.status,
+        isSuccess: taskDetails.isSuccess,
+        error: taskDetails.error,
+        stepsCount: taskDetails.steps?.length || 0,
+      });
+
+      // Check if task has stopped or failed
+      if (taskDetails.status === "stopped" || taskDetails.status === "failed") {
+        // Extract detailed error information
+        const errorDetails =
+          taskDetails.errorDetails ||
+          taskDetails.error ||
+          "Task stopped due to consecutive failures";
+
+        console.error(`[BrowserUse] Task ${taskId} failed:`, errorDetails);
+      }
+
+      // Calculate progress based on steps
+      let progress = 0;
+      if (taskDetails.status === "pending") {
+        progress = 5;
+      } else if (taskDetails.status === "running" || taskDetails.status === "started") {
+        const steps = taskDetails.steps?.length || 0;
+        // Estimate based on typical recipe extraction (10-15 steps)
+        progress = Math.min(95, Math.max(10, Math.round((steps / 12) * 100)));
+      } else if (taskDetails.status === "completed" || taskDetails.status === "finished") {
+        // Also check isSuccess flag if available
+        const isSuccess = taskDetails.isSuccess !== false;
+        progress = isSuccess ? 100 : 0;
+      } else if (taskDetails.status === "stopped" || taskDetails.status === "failed") {
+        progress = 0;
+      }
+
+      return {
+        ...taskDetails,
+        progress,
+        // Ensure output is set from either output or result
+        output: taskDetails.output || taskDetails.result,
+      };
+    } catch (error) {
+      // If it's a 404, let it bubble up
+      if (error instanceof BrowserUseError && error.status === 404) {
+        throw error;
+      }
+      throw this.createError(
+        "GET_TASK_ERROR",
+        "Failed to get task status",
+        500,
+        { taskId, originalError: error }
+      );
+    }
+  }
+
+  /**
+   * Cancel a running task
+   */
+  async cancelTask(taskId: string): Promise<void> {
+    try {
+      // Try to cancel the task by updating its status
+      // Note: Browser Use API might not have a direct cancel endpoint,
+      // so we may need to work around this
+      await this.makeRequest(`/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      // If DELETE is not supported, try PATCH with cancelled status
+      try {
+        await this.makeRequest(`/tasks/${taskId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "cancelled" }),
+        });
+      } catch (patchError) {
+        throw this.createError(
+          "CANCEL_TASK_ERROR",
+          "Failed to cancel task. The task may have already completed.",
+          500,
+          { taskId, originalError: error }
+        );
+      }
+    }
+  }
+
+  /**
+   * Extract recipe data from a URL using AI-powered browser automation (API v2)
+   * @deprecated Use startRecipeExtraction and getTaskStatus for better UX
+   */
+  async extractRecipeFromUrl(
+    request: RecipeExtractionRequest
+  ): Promise<ExtractedRecipeData> {
+    const { taskId } = await this.startRecipeExtraction(request);
+
     // Poll for completion
-    const result = await this.pollTaskCompletion(taskResponse.id);
+    const result = await this.pollTaskCompletion(taskId);
 
     // Parse and validate the extracted data
     return this.parseRecipeData(result, request.url);

@@ -332,22 +332,36 @@
             "importButton": "Importuj Przepis",
             "importAnother": "Importuj Kolejny Przepis",
             "tryAgain": "Spróbuj Ponownie",
+            "cancel": "Anuluj",
             "complete": "ukończone",
             "extractionSuccess": "Przepis został pomyślnie wyodrębniony z URL!",
+            "extractionCancelled": "Wyodrębnianie przepisu zostało anulowane",
             "status": {
                 "ready": "Gotowy do importu",
                 "validating": "Walidacja URL...",
+                "starting": "Rozpoczynanie wyodrębniania przepisu...",
                 "fetching": "Pobieranie danych przepisu...",
                 "extractingRecipe": "Wyodrębnianie informacji o przepisie...",
                 "analyzingContent": "Analizowanie treści przepisu...",
-                "complete": "Przetwarzanie zakończone"
+                "complete": "Przepis został pomyślnie wyodrębniony!"
             },
             "errors": {
-                "urlRequired": "URL jest wymagany",
+                "urlRequired": "Proszę wprowadzić URL",
                 "invalidUrl": "Proszę wprowadzić prawidłowy URL",
                 "invalidProtocol": "URL musi zaczynać się od http:// lub https://",
                 "validationFailed": "Walidacja URL nie powiodła się",
-                "processingFailed": "Nie udało się przetworzyć URL"
+                "processingFailed": "Nie udało się przetworzyć URL. Spróbuj z innym przepisem.",
+                "consecutiveFailures": "Wyodrębnianie przepisu nie powiodło się po wielu próbach. Może to nastąpić, jeśli:\n• Witryna ma ochronę anti-bot\n• Strona wymaga interakcji JavaScript, których nie możemy zautomatyzować\n• Format przepisu jest nietypowy\n\nSpróbuj z innym URL przepisu lub prostszą witryną z przepisami.",
+                "taskNotFound": "Nie można znaleźć zadania wyodrębniania. Spróbuj ponownie.",
+                "timeout": "Wyodrębnianie przepisu trwa dłużej niż oczekiwano. Witryna może być wolna lub złożona. Spróbuj z prostszą stroną przepisu.",
+                "cancelled": "Wyodrębnianie przepisu zostało anulowane.",
+                "network": "Wystąpił błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
+                "unauthorized": "Musisz się zalogować, aby importować przepisy.",
+                "validation": "URL wydaje się być nieprawidłowy. Sprawdź i spróbuj ponownie.",
+                "noRecipe": "Nie można znaleźć przepisu na tej stronie. Upewnij się, że URL prowadzi do strony przepisu z widocznymi składnikami i instrukcjami.",
+                "blocked": "Witryna ma wyskakujące okienka lub nakładki, które uniemożliwiły wyodrębnienie. Spróbuj z inną witryną z przepisami.",
+                "antiBot": "Witryna blokuje zautomatyzowany dostęp. Spróbuj z innym źródłem przepisów.",
+                "cancelFailed": "Nie udało się anulować wyodrębniania"
             }
         }
     },

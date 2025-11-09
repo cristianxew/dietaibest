@@ -52,6 +52,7 @@ const urlImportSchema = z.object({
     }, "URL is not allowed for security reasons"),
 });
 
+// Start a new recipe extraction task and return task ID immediately
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
@@ -74,16 +75,19 @@ export async function POST(request: NextRequest) {
     const { url } = validation.data;
 
     try {
-      // Extract recipe using Browser Use
+      // Start extraction task and return task ID immediately
       const browserUseClient = getBrowserUseClient();
-      const recipeData = await browserUseClient.extractRecipeFromUrl({ url });
+      const { taskId } = await browserUseClient.startRecipeExtraction({ url });
 
-      return NextResponse.json(recipeData);
+      return NextResponse.json({
+        taskId,
+        message: "Recipe extraction started"
+      });
     } catch (error) {
       console.error("[Recipe Import] Browser Use error:", error);
       return NextResponse.json(
         {
-          error: "Failed to extract recipe from URL",
+          error: "Failed to start recipe extraction",
           details: error instanceof Error ? error.message : "Unknown error",
         },
         { status: 500 }

@@ -332,22 +332,36 @@
             "importButton": "Importar Receta",
             "importAnother": "Importar Otra Receta",
             "tryAgain": "Intentar de Nuevo",
+            "cancel": "Cancelar",
             "complete": "completo",
             "extractionSuccess": "¡Receta extraída exitosamente desde URL!",
+            "extractionCancelled": "Extracción de receta cancelada",
             "status": {
                 "ready": "Listo para importar",
                 "validating": "Validando URL...",
+                "starting": "Iniciando extracción de receta...",
                 "fetching": "Obteniendo datos de receta...",
                 "extractingRecipe": "Extrayendo información de receta...",
                 "analyzingContent": "Analizando contenido de receta...",
-                "complete": "Procesamiento completo"
+                "complete": "¡Receta extraída exitosamente!"
             },
             "errors": {
-                "urlRequired": "URL es requerida",
+                "urlRequired": "Por favor ingresa una URL",
                 "invalidUrl": "Por favor ingresa una URL válida",
                 "invalidProtocol": "La URL debe comenzar con http:// o https://",
                 "validationFailed": "Error en validación de URL",
-                "processingFailed": "Error al procesar URL"
+                "processingFailed": "Error al procesar la URL. Por favor intenta con una receta diferente.",
+                "consecutiveFailures": "La extracción de receta falló después de múltiples intentos. Esto puede suceder si:\n• El sitio web tiene protección anti-bot\n• La página requiere interacciones JavaScript que no podemos automatizar\n• El formato de la receta es inusual\n\nIntenta con una URL de receta diferente o un sitio web más simple.",
+                "taskNotFound": "No se pudo encontrar la tarea de extracción. Por favor intenta de nuevo.",
+                "timeout": "La extracción de receta está tomando más tiempo del esperado. El sitio web puede ser lento o complejo. Por favor intenta con una página de receta más simple.",
+                "cancelled": "La extracción de receta fue cancelada.",
+                "network": "Error de red. Por favor verifica tu conexión e intenta de nuevo.",
+                "unauthorized": "Necesitas iniciar sesión para importar recetas.",
+                "validation": "La URL parece ser inválida. Por favor verifica e intenta de nuevo.",
+                "noRecipe": "No se pudo encontrar ninguna receta en esta página. Por favor asegúrate de que la URL apunta a una página de receta con ingredientes e instrucciones visibles.",
+                "blocked": "El sitio web tiene ventanas emergentes u overlays que impidieron la extracción. Intenta con un sitio de recetas diferente.",
+                "antiBot": "El sitio web está bloqueando el acceso automatizado. Por favor intenta con una fuente de recetas diferente.",
+                "cancelFailed": "Error al cancelar la extracción"
             }
         }
     },

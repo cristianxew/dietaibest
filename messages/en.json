@@ -332,22 +332,36 @@
             "importButton": "Import Recipe",
             "importAnother": "Import Another Recipe",
             "tryAgain": "Try Again",
+            "cancel": "Cancel",
             "complete": "complete",
             "extractionSuccess": "Recipe extracted successfully from URL!",
+            "extractionCancelled": "Recipe extraction cancelled",
             "status": {
                 "ready": "Ready to import",
                 "validating": "Validating URL...",
+                "starting": "Starting recipe extraction...",
                 "fetching": "Fetching recipe data...",
                 "extractingRecipe": "Extracting recipe information...",
                 "analyzingContent": "Analyzing recipe content...",
-                "complete": "Processing complete"
+                "complete": "Recipe extracted successfully"
             },
             "errors": {
-                "urlRequired": "URL is required",
+                "urlRequired": "Please enter a URL",
                 "invalidUrl": "Please enter a valid URL",
                 "invalidProtocol": "URL must start with http:// or https://",
                 "validationFailed": "URL validation failed",
-                "processingFailed": "Failed to process URL"
+                "processingFailed": "Failed to process the URL. Please try again with a different recipe.",
+                "consecutiveFailures": "Recipe extraction failed after multiple attempts. This can happen if:\n• The website has anti-bot protection\n• The page requires JavaScript interactions we can't automate\n• The recipe format is unusual\n\nTry a different recipe URL or a simpler recipe website.",
+                "taskNotFound": "The extraction task could not be found. Please try again.",
+                "timeout": "The recipe extraction is taking longer than expected. The website might be slow or complex. Please try again with a simpler recipe page.",
+                "cancelled": "The recipe extraction was cancelled.",
+                "network": "Network error occurred. Please check your connection and try again.",
+                "unauthorized": "You need to be logged in to import recipes.",
+                "validation": "The URL appears to be invalid. Please check and try again.",
+                "noRecipe": "No recipe could be found on this page. Please ensure the URL points to a recipe page with visible ingredients and instructions.",
+                "blocked": "The website has popups or overlays that prevented extraction. Try a different recipe site.",
+                "antiBot": "The website is blocking automated access. Please try a different recipe source.",
+                "cancelFailed": "Failed to cancel extraction"
             }
         }
     },
