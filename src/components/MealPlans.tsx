@@ -10,7 +10,15 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,20 +102,20 @@ export default function MealPlans() {
     loadTemplates();
   }, [loadTemplates]);
 
-  // Handle template duplication
+  // Handle meal plan duplication
   const handleDuplicate = (templateId: string) => {
     startTransition(async () => {
       const result = await duplicateMealPlan(templateId);
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal plan template duplicated!");
+        toast.success("Meal plan duplicated!");
         loadTemplates();
       }
     });
   };
 
-  // Handle template deletion
+  // Handle meal plan deletion
   const handleDelete = (templateId: string) => {
     setTemplateToDelete(templateId);
     setDeleteDialogOpen(true);
@@ -122,7 +130,7 @@ export default function MealPlans() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal plan template deleted!");
+        toast.success("Meal plan deleted!");
         loadTemplates();
       }
       setDeleteDialogOpen(false);
@@ -234,6 +242,90 @@ export default function MealPlans() {
     });
   };
 
+  // Handle switching between meal plans in Edit Meals tab
+  const handleSwitchMealPlan = (templateId: string) => {
+    startTransition(async () => {
+      const result = await getMealPlan(templateId);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.data) {
+        const data = result.data as TemplateWithMealsAndSchedules;
+        // Transform template data to include calculated macros for each day
+        const days = data.days.map((day) => {
+          const meals = day.meals || [];
+          const macros = meals.reduce(
+            (acc, meal) => ({
+              calories:
+                acc.calories + (meal.recipe?.calories || 0) * meal.servings,
+              protein:
+                acc.protein + (meal.recipe?.protein || 0) * meal.servings,
+              carbs: acc.carbs + (meal.recipe?.carbs || 0) * meal.servings,
+              fat: acc.fat + (meal.recipe?.fat || 0) * meal.servings,
+            }),
+            { calories: 0, protein: 0, carbs: 0, fat: 0 }
+          );
+
+          return {
+            id: day.id,
+            dayNumber: day.dayNumber,
+            date: undefined,
+            macros,
+            meals: meals.map((meal) => ({
+              id: meal.id,
+              recipeId: meal.recipeId,
+              recipeName: meal.recipe?.title || "Unknown",
+              recipeImage: meal.recipe?.imageUrl || undefined,
+              mealType: meal.mealType as unknown as MealType,
+              servings: meal.servings,
+              calories: (meal.recipe?.calories || 0) * meal.servings,
+              protein: (meal.recipe?.protein || 0) * meal.servings,
+              carbs: (meal.recipe?.carbs || 0) * meal.servings,
+              fat: (meal.recipe?.fat || 0) * meal.servings,
+            })),
+          };
+        });
+
+        const averageMacros = days.length
+          ? {
+              calories: Math.round(
+                days.reduce((s, d) => s + d.macros.calories, 0) / days.length
+              ),
+              protein: Math.round(
+                days.reduce((s, d) => s + d.macros.protein, 0) / days.length
+              ),
+              carbs: Math.round(
+                days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
+              ),
+              fat: Math.round(
+                days.reduce((s, d) => s + d.macros.fat, 0) / days.length
+              ),
+            }
+          : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+        const templateWithMacros: MealPlanTemplateDisplay = {
+          id: data.id,
+          name: data.name,
+          duration: data.duration,
+          mealSlots:
+            data.mealSlots as unknown as MealPlanTemplateDisplay["mealSlots"],
+          isPublic: data.isPublic,
+          shareToken: data.shareToken ?? undefined,
+          targets: {
+            calories: data.targetCalories ?? undefined,
+            protein: data.targetProtein ?? undefined,
+            carbs: data.targetCarbs ?? undefined,
+            fat: data.targetFat ?? undefined,
+          },
+          days,
+          averageMacros,
+        };
+
+        setEditingMealTemplate(templateWithMacros);
+        // Don't switch tabs, stay on edit-meals
+      }
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header Actions */}
@@ -241,8 +333,7 @@ export default function MealPlans() {
         <div>
           <h2 className="text-2xl font-bold">Meal Plans</h2>
           <p className="text-muted-foreground">
-            Create reusable meal plan templates and schedule them on your
-            calendar
+            Create reusable meal plans and schedule them on your calendar
           </p>
         </div>
 
@@ -253,7 +344,7 @@ export default function MealPlans() {
             disabled={isPending}
           >
             <Plus className="w-4 h-4" />
-            Create Template
+            Create Meal Plan
           </Button>
         </div>
       </div>
@@ -262,18 +353,18 @@ export default function MealPlans() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="templates">
-            My Templates ({templates.length})
+            My Meal Plans ({templates.length})
           </TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
           <TabsTrigger value="edit-meals">Edit Meals</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
         </TabsList>
 
-        {/* Templates Tab */}
+        {/* Meal Plans Tab */}
         <TabsContent value="templates" className="space-y-6">
           {isPending && templates.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Loading templates...
+                Loading meal plans...
               </CardContent>
             </Card>
           )}
@@ -282,19 +373,16 @@ export default function MealPlans() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  No Meal Plan Templates
-                </h3>
+                <h3 className="text-lg font-medium mb-2">No Meal Plans</h3>
                 <p className="text-muted-foreground mb-4">
-                  Create reusable meal plan templates that you can schedule
-                  anytime
+                  Create reusable meal plans that you can schedule anytime
                 </p>
                 <Button
                   onClick={() => setShowCreateDialog(true)}
                   className="gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Create Your First Template
+                  Create Your First Meal Plan
                 </Button>
               </CardContent>
             </Card>
@@ -414,7 +502,7 @@ export default function MealPlans() {
                         disabled={isPending}
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
-                        Delete Template
+                        Delete Meal Plan
                       </Button>
                     </CardContent>
                   </Card>
@@ -424,45 +512,38 @@ export default function MealPlans() {
           )}
         </TabsContent>
 
-        {/* Calendar View Tab */}
-        <TabsContent value="calendar" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5" />
-                Schedule Your Templates
-              </CardTitle>
-              <CardDescription>
-                Drag and drop templates from the list onto calendar dates to
-                schedule them. You can schedule the same template multiple
-                times.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <SavedPlansCalendar
-            savedPlans={templates}
-            activePlan={null}
-            onUpdate={loadTemplates}
-          />
-        </TabsContent>
-
         {/* Edit Meals Tab */}
         <TabsContent value="edit-meals" className="space-y-6">
           {editingMealTemplate ? (
             <>
-              {/* Header with back button */}
+              {/* Header with meal plan selector */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        <Edit2 className="w-5 h-5" />
-                        {editingMealTemplate.name}
-                      </CardTitle>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Edit2 className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <Select
+                          value={editingMealTemplate.id}
+                          onValueChange={handleSwitchMealPlan}
+                          disabled={isPending}
+                        >
+                          <SelectTrigger className="w-full max-w-md">
+                            <SelectValue placeholder="Select a meal plan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {templates.map((template) => (
+                              <SelectItem key={template.id} value={template.id}>
+                                {template.name} ({template.duration}{" "}
+                                {template.duration === 1 ? "day" : "days"})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <CardDescription>
-                        Add meals to each day of your template. Changes will
-                        apply to all schedules using this template.
+                        Add meals to each day of your meal plan. Changes will
+                        apply to all schedules using this meal plan.
                       </CardDescription>
                     </div>
                     <Button
@@ -471,10 +552,10 @@ export default function MealPlans() {
                         setEditingMealTemplate(null);
                         setActiveTab("templates");
                       }}
-                      className="gap-2"
+                      className="gap-2 flex-shrink-0"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Back to Templates
+                      Back to Meal Plans
                     </Button>
                   </div>
                 </CardHeader>
@@ -496,39 +577,88 @@ export default function MealPlans() {
               <CardContent className="py-12 text-center">
                 <Edit2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">
-                  No Template Selected
+                  Select a Meal Plan to Edit
                 </h3>
-                <p className="text-muted-foreground mb-4">
-                  Select a template from the `My Templates` tab to start adding
-                  meals
+                <p className="text-muted-foreground mb-6">
+                  Choose a meal plan from the list below to start adding meals
                 </p>
-                <Button
-                  onClick={() => setActiveTab("templates")}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Go to Templates
-                </Button>
+
+                {templates.length > 0 ? (
+                  <div className="space-y-2 max-w-md mx-auto">
+                    <Label htmlFor="meal-plan-select">Meal Plan</Label>
+                    <Select
+                      onValueChange={handleSwitchMealPlan}
+                      disabled={isPending}
+                    >
+                      <SelectTrigger id="meal-plan-select">
+                        <SelectValue placeholder="Choose a meal plan..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name} ({template.duration}{" "}
+                            {template.duration === 1 ? "day" : "days"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      You don&apos;t have any meal plans yet
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setActiveTab("templates");
+                        setShowCreateDialog(true);
+                      }}
+                      className="gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create Your First Meal Plan
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
         </TabsContent>
+
+        {/* Calendar View Tab */}
+        <TabsContent value="calendar" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="w-5 h-5" />
+                Schedule Your Meal Plans
+              </CardTitle>
+              <CardDescription>
+                Drag and drop meal plans from the list onto calendar dates to
+                schedule them. You can schedule the same meal plan multiple
+                times.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <SavedPlansCalendar savedPlans={templates} onUpdate={loadTemplates} />
+        </TabsContent>
       </Tabs>
 
-      {/* Create Meal Plan Template Dialog */}
+      {/* Create Meal Plan Dialog */}
       <MealPlanForm
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSuccess={(createdTemplateId) => {
           loadTemplates();
-          // If a new template was created, automatically open it in Edit Meals tab
+          // If a new meal plan was created, automatically open it in Edit Meals tab
           if (createdTemplateId) {
             handleEditMeals(createdTemplateId);
           }
         }}
       />
 
-      {/* Edit Meal Plan Template Dialog */}
+      {/* Edit Meal Plan Dialog */}
       {editingTemplate && (
         <MealPlanForm
           open={showEditDialog}
@@ -558,8 +688,8 @@ export default function MealPlans() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this meal plan template and all its
-              schedules. This action cannot be undone.
+              This will permanently delete this meal plan and all its schedules.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

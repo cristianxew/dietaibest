@@ -49,6 +49,8 @@ import {
   isWithinInterval,
   addDays,
   differenceInDays,
+  isBefore,
+  startOfDay,
 } from "date-fns";
 import {
   DndContext,
@@ -63,6 +65,56 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { Prisma } from "@/generated/prisma";
+
+// Color palette for meal plan highlighting
+const TEMPLATE_COLORS = [
+  {
+    bg: "bg-blue-100 dark:bg-blue-900/30",
+    border: "border-blue-300 dark:border-blue-700",
+    badge: "bg-blue-200 dark:bg-blue-800",
+  },
+  {
+    bg: "bg-green-100 dark:bg-green-900/30",
+    border: "border-green-300 dark:border-green-700",
+    badge: "bg-green-200 dark:bg-green-800",
+  },
+  {
+    bg: "bg-purple-100 dark:bg-purple-900/30",
+    border: "border-purple-300 dark:border-purple-700",
+    badge: "bg-purple-200 dark:bg-purple-800",
+  },
+  {
+    bg: "bg-orange-100 dark:bg-orange-900/30",
+    border: "border-orange-300 dark:border-orange-700",
+    badge: "bg-orange-200 dark:bg-orange-800",
+  },
+  {
+    bg: "bg-pink-100 dark:bg-pink-900/30",
+    border: "border-pink-300 dark:border-pink-700",
+    badge: "bg-pink-200 dark:bg-pink-800",
+  },
+  {
+    bg: "bg-cyan-100 dark:bg-cyan-900/30",
+    border: "border-cyan-300 dark:border-cyan-700",
+    badge: "bg-cyan-200 dark:bg-cyan-800",
+  },
+  {
+    bg: "bg-indigo-100 dark:bg-indigo-900/30",
+    border: "border-indigo-300 dark:border-indigo-700",
+    badge: "bg-indigo-200 dark:bg-indigo-800",
+  },
+  {
+    bg: "bg-rose-100 dark:bg-rose-900/30",
+    border: "border-rose-300 dark:border-rose-700",
+    badge: "bg-rose-200 dark:bg-rose-800",
+  },
+];
+
+// Helper function to get consistent color for a template
+function getTemplateColor(templateId: string, allTemplates: TemplateWithMealsAndSchedules[]) {
+  const index = allTemplates.findIndex((t) => t.id === templateId);
+  return TEMPLATE_COLORS[index % TEMPLATE_COLORS.length];
+}
 
 // Type for template with schedules and days/meals
 type TemplateWithMealsAndSchedules = Prisma.MealPlanTemplateGetPayload<{
@@ -177,6 +229,8 @@ interface CalendarDayProps {
   date: Date;
   isCurrentMonth: boolean;
   schedules: DaySchedule[];
+  templates: TemplateWithMealsAndSchedules[];
+  onUnschedule: (scheduleId: string) => void;
 }
 
 interface MealDayPopoverProps {
@@ -274,16 +328,40 @@ function MealDayPopover({
   );
 }
 
-function CalendarDay({ date, isCurrentMonth, schedules }: CalendarDayProps) {
+function CalendarDay({
+  date,
+  isCurrentMonth,
+  schedules,
+  templates,
+  onUnschedule
+}: CalendarDayProps) {
+  // Check if this day is in the past
+  const today = startOfDay(new Date());
+  const isPastDay = isBefore(date, today);
+  const hasSchedules = schedules.length > 0;
+  const isDisabled = isPastDay && !hasSchedules;
+
+  // Get color from first schedule's template (if multiple, use first)
+  const firstSchedule = schedules[0];
+  const templateColor = firstSchedule
+    ? getTemplateColor(firstSchedule.schedule.templateId, templates)
+    : null;
+
   const { setNodeRef, isOver } = useDroppable({
     id: `day-${format(date, "yyyy-MM-dd")}`,
     data: {
       type: "calendar-day",
       date,
+      disabled: isDisabled,
     },
   });
 
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const handleUnscheduleClick = (scheduleId: string) => {
+    setPopoverOpen(false);
+    onUnschedule(scheduleId);
+  };
 
   return (
     <div
@@ -291,9 +369,10 @@ function CalendarDay({ date, isCurrentMonth, schedules }: CalendarDayProps) {
       className={cn(
         "min-h-24 border p-1 transition-colors",
         !isCurrentMonth && "bg-muted/50 text-muted-foreground",
-        isToday(date) && "bg-primary/5 border-primary",
-        isOver && "bg-primary/10 border-primary",
-        schedules.length > 0 && "bg-blue-50 dark:bg-blue-950/20"
+        isToday(date) && "border-primary border-2",
+        isOver && !isDisabled && "border-primary border-2 ring-2 ring-primary/20",
+        isDisabled && "opacity-40 cursor-not-allowed bg-muted/30",
+        hasSchedules && templateColor && [templateColor.bg, templateColor.border]
       )}
     >
       <div className="flex items-center justify-between mb-1">
@@ -306,7 +385,13 @@ function CalendarDay({ date, isCurrentMonth, schedules }: CalendarDayProps) {
           {format(date, "d")}
         </span>
         {schedules.length > 0 && (
-          <Badge variant="secondary" className="text-xs h-5">
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-xs h-5",
+              templateColor && templateColor.badge
+            )}
+          >
             {schedules.length}
           </Badge>
         )}
@@ -316,17 +401,23 @@ function CalendarDay({ date, isCurrentMonth, schedules }: CalendarDayProps) {
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
             <div className="space-y-0.5 cursor-pointer">
-              {schedules.slice(0, 2).map(({ schedule, dayNumber }) => (
-                <div
-                  key={schedule.id}
-                  className="text-xs p-1 bg-primary/10 rounded truncate"
-                >
-                  <div className="font-medium truncate">
-                    {schedule.template.name}
+              {schedules.slice(0, 2).map(({ schedule, dayNumber }) => {
+                const color = getTemplateColor(schedule.templateId, templates);
+                return (
+                  <div
+                    key={schedule.id}
+                    className={cn(
+                      "text-xs p-1 rounded truncate",
+                      color.badge
+                    )}
+                  >
+                    <div className="font-medium truncate">
+                      {schedule.template.name}
+                    </div>
+                    <div className="text-muted-foreground">Day {dayNumber}</div>
                   </div>
-                  <div className="text-muted-foreground">Day {dayNumber}</div>
-                </div>
-              ))}
+                );
+              })}
               {schedules.length > 2 && (
                 <div className="text-xs text-muted-foreground text-center">
                   +{schedules.length - 2} more
@@ -338,10 +429,7 @@ function CalendarDay({ date, isCurrentMonth, schedules }: CalendarDayProps) {
             <MealDayPopover
               date={date}
               schedules={schedules}
-              onUnschedule={() => {
-                setPopoverOpen(false);
-                // This will be handled by parent
-              }}
+              onUnschedule={handleUnscheduleClick}
             />
           </PopoverContent>
         </Popover>
@@ -443,6 +531,24 @@ export function SavedPlansCalendar({
       const templateId = active.data.current.templateId;
       const duration = active.data.current.duration;
       const targetDate = over.data.current.date as Date;
+      const isDisabled = over.data.current.disabled;
+
+      // Check if trying to drop on disabled (past empty) day
+      if (isDisabled) {
+        toast.error(
+          "Cannot schedule meal plans on past dates. Please choose a current or future date."
+        );
+        return;
+      }
+
+      // Check if target date is in the past
+      const today = startOfDay(new Date());
+      if (isBefore(targetDate, today)) {
+        toast.error(
+          "Cannot schedule meal plans on past dates. Please choose a current or future date."
+        );
+        return;
+      }
 
       // Calculate end date
       const endDate = addDays(targetDate, duration - 1);
@@ -467,12 +573,12 @@ export function SavedPlansCalendar({
         return;
       }
 
-      // Schedule the template
+      // Schedule the meal plan
       handleScheduleTemplate(templateId, targetDate);
     }
   };
 
-  // Schedule a template
+  // Schedule a meal plan
   const handleScheduleTemplate = async (
     templateId: string,
     startDate: Date
@@ -483,17 +589,17 @@ export function SavedPlansCalendar({
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Template scheduled successfully!");
+        toast.success("Meal plan scheduled successfully!");
         onUpdate();
       }
     });
   };
 
-  // // Unschedule a plan
-  // const handleUnschedule = (scheduleId: string) => {
-  //   setScheduleToDelete(scheduleId);
-  //   setUnscheduleDialogOpen(true);
-  // };
+  // Unschedule a plan
+  const handleUnschedule = (scheduleId: string) => {
+    setScheduleToDelete(scheduleId);
+    setUnscheduleDialogOpen(true);
+  };
 
   const confirmUnschedule = () => {
     if (!scheduleToDelete) return;
@@ -526,13 +632,13 @@ export function SavedPlansCalendar({
         collisionDetection={closestCenter}
       >
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Templates List */}
+          {/* Meal Plans List */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Your Templates</CardTitle>
+                <CardTitle className="text-base">Your Meal Plans</CardTitle>
                 <CardDescription className="text-xs">
-                  Drag templates onto calendar dates to schedule them
+                  Drag meal plans onto calendar dates to schedule them
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -540,7 +646,7 @@ export function SavedPlansCalendar({
                   <div className="space-y-2">
                     {savedPlans.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-8">
-                        No templates available
+                        No meal plans available
                       </p>
                     ) : (
                       savedPlans.map((template) => (
@@ -605,20 +711,26 @@ export function SavedPlansCalendar({
                         date={date}
                         isCurrentMonth={isSameMonth(date, currentMonth)}
                         schedules={schedulesForDate}
+                        templates={savedPlans}
+                        onUnschedule={handleUnschedule}
                       />
                     );
                   })}
                 </div>
 
                 {/* Legend */}
-                <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-primary/5 border border-primary rounded" />
+                    <div className="w-4 h-4 bg-primary/5 border-2 border-primary rounded" />
                     <span>Today</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-blue-50 dark:bg-blue-950/20 border rounded" />
-                    <span>Scheduled</span>
+                    <div className="w-4 h-4 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded" />
+                    <span>Scheduled (colored by meal plan)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-muted/30 border rounded opacity-40" />
+                    <span>Past day (unavailable)</span>
                   </div>
                 </div>
               </CardContent>
@@ -654,7 +766,7 @@ export function SavedPlansCalendar({
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Schedule?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove this schedule from your calendar. The template
+              This will remove this schedule from your calendar. The meal plan
               will remain available for future use.
             </AlertDialogDescription>
           </AlertDialogHeader>

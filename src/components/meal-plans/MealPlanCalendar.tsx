@@ -210,7 +210,7 @@ export function MealPlanCalendar({
           <Card>
             <CardHeader>
               <CardTitle>
-                {mealPlan.days[0]?.date ? "Weekly Meal Schedule" : "Template Meal Schedule"}
+                {mealPlan.days[0]?.date ? "Weekly Meal Schedule" : "Meal Plan Schedule"}
               </CardTitle>
               <CardDescription>
                 <span className="hidden lg:inline">
@@ -219,7 +219,7 @@ export function MealPlanCalendar({
                 <span className="lg:hidden">
                   {mealPlan.days[0]?.date
                     ? "Drag and drop meals to reorganize your plan"
-                    : "Add meals to each day of your template"
+                    : "Add meals to each day of your meal plan"
                   }
                 </span>
               </CardDescription>
@@ -235,7 +235,7 @@ export function MealPlanCalendar({
                           {day.date ? format(day.date, "EEEE") : `Day ${day.dayNumber}`}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {day.date ? format(day.date, "MMM d, yyyy") : `Template Day ${day.dayNumber}`}
+                          {day.date ? format(day.date, "MMM d, yyyy") : `Day ${day.dayNumber}`}
                         </p>
                       </div>
                       <MacroDisplay

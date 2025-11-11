@@ -129,13 +129,11 @@ export function MealPlanForm({
         toast.error(result.error);
       } else {
         toast.success(
-          editMode
-            ? "Meal plan template updated!"
-            : "Meal plan template created!"
+          editMode ? "Meal plan updated!" : "Meal plan created!"
         );
         reset();
         onOpenChange(false);
-        // Pass the created template ID to onSuccess callback (only for new templates)
+        // Pass the created meal plan ID to onSuccess callback (only for new meal plans)
         onSuccess?.(editMode ? undefined : result.data?.id);
       }
     });
@@ -146,19 +144,17 @@ export function MealPlanForm({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editMode
-              ? "Edit Meal Plan Template"
-              : "Create New Meal Plan Template"}
+            {editMode ? "Edit Meal Plan" : "Create New Meal Plan"}
           </DialogTitle>
           <DialogDescription>
             {editMode
-              ? "Update your meal plan template. Changes will apply to all future uses."
-              : "Set up a reusable meal plan template with your nutrition goals"}
+              ? "Update your meal plan. Changes will apply to all future uses."
+              : "Set up a reusable meal plan with your nutrition goals"}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Template Name */}
+          {/* Meal Plan Name */}
           <div className="space-y-2">
             <Label htmlFor="name">{t("mealPlans.form.name")}</Label>
             <Input
@@ -170,11 +166,11 @@ export function MealPlanForm({
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Give your template a memorable name you can reuse
+              Give your meal plan a memorable name you can reuse
             </p>
           </div>
 
-          {/* Template Selection - Only for create mode */}
+          {/* Meal Plan Selection - Only for create mode */}
           {!editMode && availablePlans.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="templateId">
@@ -275,7 +271,7 @@ export function MealPlanForm({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              You can schedule this template to start on any date later
+              You can schedule this meal plan to start on any date later
             </p>
             {errors.duration && (
               <p className="text-sm text-destructive">
@@ -385,7 +381,7 @@ export function MealPlanForm({
               <div className="space-y-0.5">
                 <Label htmlFor="isPublic">Make Public</Label>
                 <p className="text-xs text-muted-foreground">
-                  Generate a shareable link for this template
+                  Generate a shareable link for this meal plan
                 </p>
               </div>
               <Switch
@@ -411,8 +407,8 @@ export function MealPlanForm({
               {isPending
                 ? "Saving..."
                 : editMode
-                ? "Update Template"
-                : "Create Template"}
+                ? "Update Meal Plan"
+                : "Create Meal Plan"}
             </Button>
           </div>
         </form>
