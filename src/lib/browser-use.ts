@@ -45,7 +45,8 @@ export interface BrowserUseTaskRequest {
     | "gpt-4o"
     | "gpt-4o-mini"
     | "llama-4-maverick-17b-128e-instruct"
-    | "claude-3-7-sonnet-20250219";
+    | "claude-3-7-sonnet-20250219"
+    | "browser-use-llm";
   startUrl?: string | null;
   maxSteps?: number;
   structuredOutput?: string | null;
@@ -203,9 +204,12 @@ export class BrowserUseClient {
    * Get full task details, including results (API v2)
    */
   async getTask(taskId: string): Promise<BrowserUseTaskDetails> {
-    const response = await this.makeRequest<BrowserUseTaskDetails>(`/tasks/${taskId}`, {
-      method: "GET",
-    });
+    const response = await this.makeRequest<BrowserUseTaskDetails>(
+      `/tasks/${taskId}`,
+      {
+        method: "GET",
+      }
+    );
 
     return response;
   }
@@ -303,15 +307,24 @@ export class BrowserUseClient {
       let progress = 0;
       if (taskDetails.status === "pending") {
         progress = 5;
-      } else if (taskDetails.status === "running" || taskDetails.status === "started") {
+      } else if (
+        taskDetails.status === "running" ||
+        taskDetails.status === "started"
+      ) {
         const steps = taskDetails.steps?.length || 0;
         // Estimate based on typical recipe extraction (10-15 steps)
         progress = Math.min(95, Math.max(10, Math.round((steps / 12) * 100)));
-      } else if (taskDetails.status === "completed" || taskDetails.status === "finished") {
+      } else if (
+        taskDetails.status === "completed" ||
+        taskDetails.status === "finished"
+      ) {
         // Also check isSuccess flag if available
         const isSuccess = taskDetails.isSuccess !== false;
         progress = isSuccess ? 100 : 0;
-      } else if (taskDetails.status === "stopped" || taskDetails.status === "failed") {
+      } else if (
+        taskDetails.status === "stopped" ||
+        taskDetails.status === "failed"
+      ) {
         progress = 0;
       }
 
@@ -353,7 +366,7 @@ export class BrowserUseClient {
           method: "PATCH",
           body: JSON.stringify({ status: "cancelled" }),
         });
-      } catch (patchError) {
+      } catch {
         throw this.createError(
           "CANCEL_TASK_ERROR",
           "Failed to cancel task. The task may have already completed.",
