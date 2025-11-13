@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -135,6 +136,7 @@ interface DraggableTemplateCardProps {
 }
 
 function DraggableTemplateCard({ template }: DraggableTemplateCardProps) {
+  const t = useTranslations("mealPlans");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `template-${template.id}`,
     data: {
@@ -167,12 +169,12 @@ function DraggableTemplateCard({ template }: DraggableTemplateCardProps) {
             </CardTitle>
             <CardDescription className="text-xs flex items-center gap-1 mt-1">
               <Clock className="w-3 h-3" />
-              {template.duration} {template.duration === 1 ? "day" : "days"}
+              {template.duration} {template.duration === 1 ? t("calendar.day") : t("calendar.days")}
             </CardDescription>
             {activeSchedulesCount > 0 && (
               <Badge variant="outline" className="mt-1 text-xs">
                 {activeSchedulesCount}{" "}
-                {activeSchedulesCount === 1 ? "schedule" : "schedules"}
+                {activeSchedulesCount === 1 ? t("calendar.schedule") : t("calendar.schedules")}
               </Badge>
             )}
           </div>
@@ -244,6 +246,8 @@ function MealDayPopover({
   schedules,
   onUnschedule,
 }: MealDayPopoverProps) {
+  const t = useTranslations("mealPlans");
+
   if (schedules.length === 0) {
     return null;
   }
@@ -268,7 +272,7 @@ function MealDayPopover({
                       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100"
                   )}
                 >
-                  Day {dayNumber}
+                  {t("calendar.dayPrefix")} {dayNumber}
                 </Badge>
                 <span className="text-sm font-medium line-clamp-1">
                   {schedule.template.name}
@@ -294,7 +298,7 @@ function MealDayPopover({
                         {meal.recipe?.imageUrl ? (
                           <AvatarImage
                             src={meal.recipe.imageUrl}
-                            alt={meal.recipe.title || "Recipe"}
+                            alt={meal.recipe.title || t("calendar.recipe")}
                           />
                         ) : null}
                         <AvatarFallback>
@@ -306,11 +310,11 @@ function MealDayPopover({
                           {meal.mealType}
                         </p>
                         <p className="text-sm font-medium line-clamp-1">
-                          {meal.recipe?.title || "Unknown Recipe"}
+                          {meal.recipe?.title || t("calendar.unknownRecipe")}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {meal.servings}{" "}
-                          {meal.servings === 1 ? "serving" : "servings"}
+                          {meal.servings === 1 ? t("serving") : t("servings")}
                         </p>
                       </div>
                     </div>
@@ -318,7 +322,7 @@ function MealDayPopover({
               </div>
             ) : (
               <p className="text-xs text-muted-foreground pl-2">
-                No meals planned for this day
+                {t("calendar.noMealsPlanned")}
               </p>
             )}
           </div>
@@ -335,6 +339,7 @@ function CalendarDay({
   templates,
   onUnschedule
 }: CalendarDayProps) {
+  const t = useTranslations("mealPlans");
   // Check if this day is in the past
   const today = startOfDay(new Date());
   const isPastDay = isBefore(date, today);
@@ -414,13 +419,13 @@ function CalendarDay({
                     <div className="font-medium truncate">
                       {schedule.template.name}
                     </div>
-                    <div className="text-muted-foreground">Day {dayNumber}</div>
+                    <div className="text-muted-foreground">{t("calendar.dayPrefix")} {dayNumber}</div>
                   </div>
                 );
               })}
               {schedules.length > 2 && (
                 <div className="text-xs text-muted-foreground text-center">
-                  +{schedules.length - 2} more
+                  {t("calendar.moreSchedules", { count: schedules.length - 2 })}
                 </div>
               )}
             </div>
@@ -442,6 +447,7 @@ export function SavedPlansCalendar({
   savedPlans,
   onUpdate,
 }: SavedPlansCalendarProps) {
+  const t = useTranslations("mealPlans");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [draggedTemplate, setDraggedTemplate] =
     useState<TemplateWithMealsAndSchedules | null>(null);
@@ -535,18 +541,14 @@ export function SavedPlansCalendar({
 
       // Check if trying to drop on disabled (past empty) day
       if (isDisabled) {
-        toast.error(
-          "Cannot schedule meal plans on past dates. Please choose a current or future date."
-        );
+        toast.error(t("calendar.errors.pastDate"));
         return;
       }
 
       // Check if target date is in the past
       const today = startOfDay(new Date());
       if (isBefore(targetDate, today)) {
-        toast.error(
-          "Cannot schedule meal plans on past dates. Please choose a current or future date."
-        );
+        toast.error(t("calendar.errors.pastDate"));
         return;
       }
 
@@ -567,9 +569,7 @@ export function SavedPlansCalendar({
       });
 
       if (hasOverlap) {
-        toast.error(
-          "This schedule overlaps with an existing plan. Please choose different dates."
-        );
+        toast.error(t("calendar.errors.overlap"));
         return;
       }
 
@@ -589,7 +589,7 @@ export function SavedPlansCalendar({
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal plan scheduled successfully!");
+        toast.success(t("calendar.scheduledSuccess"));
         onUpdate();
       }
     });
@@ -610,7 +610,7 @@ export function SavedPlansCalendar({
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Schedule removed successfully!");
+        toast.success(t("calendar.unscheduledSuccess"));
         onUpdate();
       }
 
@@ -636,9 +636,9 @@ export function SavedPlansCalendar({
           <div className="lg:col-span-1">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Your Meal Plans</CardTitle>
+                <CardTitle className="text-base">{t("calendar.yourMealPlans")}</CardTitle>
                 <CardDescription className="text-xs">
-                  Drag meal plans onto calendar dates to schedule them
+                  {t("calendar.dragInstruction")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -646,7 +646,7 @@ export function SavedPlansCalendar({
                   <div className="space-y-2">
                     {savedPlans.length === 0 ? (
                       <p className="text-sm text-muted-foreground text-center py-8">
-                        No meal plans available
+                        {t("calendar.noPlansAvailable")}
                       </p>
                     ) : (
                       savedPlans.map((template) => (
@@ -683,7 +683,7 @@ export function SavedPlansCalendar({
                     </Button>
                   </div>
                   <Button variant="outline" size="sm" onClick={goToToday}>
-                    Today
+                    {t("calendar.today")}
                   </Button>
                 </div>
               </CardHeader>
@@ -722,15 +722,15 @@ export function SavedPlansCalendar({
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-primary/5 border-2 border-primary rounded" />
-                    <span>Today</span>
+                    <span>{t("calendar.today")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded" />
-                    <span>Scheduled (colored by meal plan)</span>
+                    <span>{t("calendar.scheduledLegend")}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-muted/30 border rounded opacity-40" />
-                    <span>Past day (unavailable)</span>
+                    <span>{t("calendar.pastDayLegend")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -764,16 +764,15 @@ export function SavedPlansCalendar({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Schedule?</AlertDialogTitle>
+            <AlertDialogTitle>{t("calendar.removeScheduleTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove this schedule from your calendar. The meal plan
-              will remain available for future use.
+              {t("calendar.removeScheduleDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmUnschedule}>
-              Remove Schedule
+              {t("calendar.removeScheduleAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

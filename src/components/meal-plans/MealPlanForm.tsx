@@ -1,6 +1,10 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  type SubmitHandler,
+  type DefaultValues,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -25,8 +29,8 @@ import { Slider } from "@/components/ui/slider";
 import {
   mealPlanTemplateFormSchema,
   type MealPlanTemplateFormData,
+  type MealPlanTemplateFormInput,
   MEAL_SLOT_PRESETS,
-  type MealType,
 } from "@/types/meal-plan";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -47,6 +51,12 @@ interface MealPlanFormProps {
   defaultValues?: Partial<MealPlanTemplateFormData>;
 }
 
+type TemplateSummary = {
+  id: string;
+  name: string;
+  duration: number;
+};
+
 export function MealPlanForm({
   open,
   onOpenChange,
@@ -60,8 +70,21 @@ export function MealPlanForm({
   const [availablePlans, setAvailablePlans] = useState<
     Array<{ id: string; name: string; duration: number }>
   >([]);
+  const defaultFormValues: DefaultValues<MealPlanTemplateFormInput> = {
+    name: "",
+    duration: 7,
+    mealSlots: ["breakfast", "lunch", "dinner"],
+    isPublic: false,
+    ...(defaultValues as Partial<MealPlanTemplateFormInput>),
+  };
+  const initialMealSlots = defaultFormValues.mealSlots ?? [
+    "breakfast",
+    "lunch",
+    "dinner",
+  ];
+
   const [selectedMealCount, setSelectedMealCount] = useState<number>(
-    defaultValues?.mealSlots?.length || 3
+    initialMealSlots.length
   );
 
   const {
@@ -71,14 +94,9 @@ export function MealPlanForm({
     setValue,
     watch,
     reset,
-  } = useForm<MealPlanTemplateFormData>({
+  } = useForm<MealPlanTemplateFormInput, undefined, MealPlanTemplateFormData>({
     resolver: zodResolver(mealPlanTemplateFormSchema),
-    defaultValues: defaultValues || {
-      name: "",
-      duration: 7, // Default to 7 days
-      mealSlots: ["breakfast", "lunch", "dinner"],
-      isPublic: false,
-    },
+    defaultValues: defaultFormValues,
   });
 
   const duration = watch("duration");
@@ -91,8 +109,10 @@ export function MealPlanForm({
       startTransition(async () => {
         const result = await getMealPlans({ page: 1, limit: 50 });
         if (result.data) {
+          const templates = (result.data.templates ?? []) as TemplateSummary[];
+
           setAvailablePlans(
-            result.data.templates.map((template: any) => ({
+            templates.map((template) => ({
               id: template.id,
               name: template.name,
               duration: template.duration,
@@ -118,7 +138,7 @@ export function MealPlanForm({
     setValue("duration", value[0]);
   };
 
-  const onSubmit = (data: MealPlanTemplateFormData) => {
+  const onSubmit: SubmitHandler<MealPlanTemplateFormData> = (data) => {
     startTransition(async () => {
       const result =
         editMode && planId
@@ -128,9 +148,7 @@ export function MealPlanForm({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success(
-          editMode ? "Meal plan updated!" : "Meal plan created!"
-        );
+        toast.success(editMode ? "Meal plan updated!" : "Meal plan created!");
         reset();
         onOpenChange(false);
         // Pass the created meal plan ID to onSuccess callback (only for new meal plans)
@@ -205,7 +223,10 @@ export function MealPlanForm({
                   {availablePlans.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
                       {plan.name} ({plan.duration}{" "}
-                      {plan.duration === 1 ? "day" : "days"})
+                      {plan.duration === 1
+                        ? t("mealPlans.calendar.day")
+                        : t("mealPlans.calendar.days")}
+                      )
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -219,13 +240,15 @@ export function MealPlanForm({
           {/* Duration Input with Slider */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="duration">Plan Duration</Label>
+              <Label htmlFor="duration">{t("mealPlans.form.duration")}</Label>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-primary">
                   {duration}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {duration === 1 ? "day" : "days"}
+                  {duration === 1
+                    ? t("mealPlans.calendar.day")
+                    : t("mealPlans.calendar.days")}
                 </span>
               </div>
             </div>
@@ -248,7 +271,7 @@ export function MealPlanForm({
                 onClick={() => setValue("duration", 7)}
                 className={cn(duration === 7 && "border-primary")}
               >
-                1 Week
+                {t("mealPlans.form.oneWeek")}
               </Button>
               <Button
                 type="button"
@@ -257,7 +280,7 @@ export function MealPlanForm({
                 onClick={() => setValue("duration", 14)}
                 className={cn(duration === 14 && "border-primary")}
               >
-                2 Weeks
+                {t("mealPlans.form.twoWeeks")}
               </Button>
               <Button
                 type="button"
@@ -266,12 +289,12 @@ export function MealPlanForm({
                 onClick={() => setValue("duration", 30)}
                 className={cn(duration === 30 && "border-primary")}
               >
-                1 Month
+                {t("mealPlans.form.oneMonth")}
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              You can schedule this meal plan to start on any date later
+              {t("mealPlans.form.scheduleHint")}
             </p>
             {errors.duration && (
               <p className="text-sm text-destructive">

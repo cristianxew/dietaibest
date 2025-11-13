@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, closestCenter } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
@@ -20,13 +21,13 @@ import type {
   DayDisplay,
   MealDisplay,
   MealType,
-  MEAL_TYPES,
+  // MEAL_TYPES,
 } from "@/types/meal-plan";
 import { moveMeal, addMealToDay, removeMealFromDay } from "@/actions/meal-plan";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
+// import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
 import type { Recipe } from "@/generated/prisma";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export function MealPlanCalendar({
   mealPlan,
   onUpdate,
 }: MealPlanCalendarProps) {
+  const t = useTranslations("mealPlans");
   const [isPending, startTransition] = useTransition();
   const [activeMeal, setActiveMeal] = useState<MealDisplay | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -100,8 +102,14 @@ export function MealPlanCalendar({
             toast.error(result.error);
           } else {
             const message = existingMeal
-              ? `${recipe.title} replaced ${existingMeal.recipeName}!`
-              : `${recipe.title} added to ${targetMealType}!`;
+              ? t("calendar.recipeReplaced", {
+                  recipe: recipe.title,
+                  existing: existingMeal.recipeName,
+                })
+              : t("calendar.recipeAdded", {
+                  recipe: recipe.title,
+                  mealType: targetMealType,
+                });
             toast.success(message);
             onUpdate?.();
           }
@@ -132,7 +140,7 @@ export function MealPlanCalendar({
         if (result.error) {
           toast.error(result.error);
         } else {
-          toast.success("Meal moved!");
+          toast.success(t("mealMoved"));
           onUpdate?.();
         }
       });
@@ -147,7 +155,7 @@ export function MealPlanCalendar({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal removed!");
+        toast.success(t("mealRemoved"));
         onUpdate?.();
       }
     });
@@ -175,7 +183,12 @@ export function MealPlanCalendar({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success(`${recipeName} added to ${selectedMealType}!`);
+        toast.success(
+          t("calendar.recipeAdded", {
+            recipe: recipeName,
+            mealType: selectedMealType,
+          })
+        );
         onUpdate?.();
       }
     });
@@ -189,7 +202,7 @@ export function MealPlanCalendar({
     return day.meals.find((m) => m.mealType === mealType);
   };
 
-  const weeklyMacros = calculateWeeklyMacros(mealPlan.days);
+  // const weeklyMacros = calculateWeeklyMacros(mealPlan.days);
 
   return (
     <DndContext
@@ -210,17 +223,16 @@ export function MealPlanCalendar({
           <Card>
             <CardHeader>
               <CardTitle>
-                {mealPlan.days[0]?.date ? "Weekly Meal Schedule" : "Meal Plan Schedule"}
+                {mealPlan.days[0]?.date
+                  ? t("weeklySchedule")
+                  : t("calendar.mealPlanSchedule")}
               </CardTitle>
               <CardDescription>
-                <span className="hidden lg:inline">
-                  Drag recipes from the sidebar or drag meals to reorganize
-                </span>
+                <span className="hidden lg:inline">{t("dragFromSidebar")}</span>
                 <span className="lg:hidden">
                   {mealPlan.days[0]?.date
-                    ? "Drag and drop meals to reorganize your plan"
-                    : "Add meals to each day of your meal plan"
-                  }
+                    ? t("calendar.dragToReorganizeMobile")
+                    : t("calendar.addMealsDescription")}
                 </span>
               </CardDescription>
             </CardHeader>
@@ -232,10 +244,18 @@ export function MealPlanCalendar({
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <h4 className="font-medium">
-                          {day.date ? format(day.date, "EEEE") : `Day ${day.dayNumber}`}
+                          {day.date
+                            ? format(day.date, "EEEE")
+                            : t("calendar.dayNumber", {
+                                number: day.dayNumber,
+                              })}
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {day.date ? format(day.date, "MMM d, yyyy") : `Day ${day.dayNumber}`}
+                          {day.date
+                            ? format(day.date, "MMM d, yyyy")
+                            : t("calendar.dayNumber", {
+                                number: day.dayNumber,
+                              })}
                         </p>
                       </div>
                       <MacroDisplay

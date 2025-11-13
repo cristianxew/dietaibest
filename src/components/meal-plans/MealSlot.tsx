@@ -8,6 +8,7 @@ import type { MealDisplay, MealType } from "@/types/meal-plan";
 import { formatMacroValue } from "@/lib/meal-plan-macros";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 interface MealSlotProps {
   meal?: MealDisplay;
@@ -24,6 +25,8 @@ export function MealSlot({
   onRemove,
   isDragging,
 }: MealSlotProps) {
+  const t = useTranslations("mealPlans");
+
   // Set up draggable (if meal exists)
   const {
     attributes: dragAttributes,
@@ -68,7 +71,7 @@ export function MealSlot({
         )}
       >
         <p className="text-xs text-muted-foreground text-center">
-          Drop meal here
+          {t("dropMealHere")}
         </p>
       </Card>
     );
@@ -91,7 +94,7 @@ export function MealSlot({
           {...dragAttributes}
           {...dragListeners}
           className="cursor-grab active:cursor-grabbing touch-none mt-0.5 hover:text-primary transition-colors"
-          aria-label="Drag to move meal"
+          aria-label={t("slot.dragToMove")}
         >
           <GripVertical className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -118,7 +121,7 @@ export function MealSlot({
           <p className="text-sm font-medium line-clamp-1">{meal.recipeName}</p>
           {meal.servings !== 1 && (
             <p className="text-xs text-muted-foreground">
-              {meal.servings} servings
+              {meal.servings} {t("servings")}
             </p>
           )}
           <div className="flex gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
@@ -135,7 +138,7 @@ export function MealSlot({
             size="sm"
             className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
             onClick={() => onRemove(meal.id)}
-            aria-label="Remove meal"
+            aria-label={t("slot.removeMeal")}
           >
             <X className="w-3 h-3" />
           </Button>

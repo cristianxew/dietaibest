@@ -59,7 +59,14 @@ export const MEAL_SLOT_PRESETS: MealSlotPreset[] = [
   {
     count: 6,
     label: "mealPlans.mealCount.6",
-    slots: ["breakfast", "morningSnack", "lunch", "afternoonSnack", "dinner", "eveningSnack"],
+    slots: [
+      "breakfast",
+      "morningSnack",
+      "lunch",
+      "afternoonSnack",
+      "dinner",
+      "eveningSnack",
+    ],
   },
 ];
 
@@ -70,8 +77,16 @@ export const MEAL_SLOT_PRESETS: MealSlotPreset[] = [
 // Meal Plan Template form schema for creation/editing
 export const mealPlanTemplateFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
-  duration: z.number().int().min(1).max(365, "Duration must be between 1 and 365 days"),
-  mealSlots: z.array(mealTypeEnum).min(2).max(6).default(["breakfast", "lunch", "dinner"]),
+  duration: z
+    .number()
+    .int()
+    .min(1)
+    .max(365, "Duration must be between 1 and 365 days"),
+  mealSlots: z
+    .array(mealTypeEnum)
+    .min(2)
+    .max(6)
+    .default(["breakfast", "lunch", "dinner"]),
   templateId: z.string().uuid().optional(), // Optional: create from existing template
   targetCalories: z.number().min(0).optional(),
   targetProtein: z.number().min(0).optional(),
@@ -80,7 +95,12 @@ export const mealPlanTemplateFormSchema = z.object({
   isPublic: z.boolean().default(false),
 });
 
-export type MealPlanTemplateFormData = z.infer<typeof mealPlanTemplateFormSchema>;
+export type MealPlanTemplateFormData = z.infer<
+  typeof mealPlanTemplateFormSchema
+>;
+export type MealPlanTemplateFormInput = z.input<
+  typeof mealPlanTemplateFormSchema
+>;
 
 // Schema for scheduling a template to the calendar
 export const scheduleMealPlanSchema = z.object({
@@ -133,7 +153,9 @@ export const mealPlanTemplateFilterSchema = z.object({
   limit: z.number().int().min(1).max(50).default(12),
 });
 
-export type MealPlanTemplateFilter = z.infer<typeof mealPlanTemplateFilterSchema>;
+export type MealPlanTemplateFilter = z.infer<
+  typeof mealPlanTemplateFilterSchema
+>;
 
 // Meal plan schedule filter schema
 export const mealPlanScheduleFilterSchema = z.object({
@@ -147,7 +169,9 @@ export const mealPlanScheduleFilterSchema = z.object({
   limit: z.number().int().min(1).max(50).default(12),
 });
 
-export type MealPlanScheduleFilter = z.infer<typeof mealPlanScheduleFilterSchema>;
+export type MealPlanScheduleFilter = z.infer<
+  typeof mealPlanScheduleFilterSchema
+>;
 
 // Legacy alias
 export const mealPlanFilterSchema = mealPlanTemplateFilterSchema;

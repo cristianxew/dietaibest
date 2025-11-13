@@ -54,11 +54,14 @@ import {
 import { toast } from "sonner";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import type { Prisma } from "@/generated/prisma";
+import { useTranslations } from "next-intl";
 // import { format } from "date-fns";
 // import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
 // import { cn } from "@/lib/utils";
 
 export default function MealPlans() {
+  const t = useTranslations("mealPlans");
+  const common = useTranslations("common");
   const [activeTab, setActiveTab] = useState("templates");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   type TemplateWithMealsAndSchedules = Prisma.MealPlanTemplateGetPayload<{
@@ -109,7 +112,7 @@ export default function MealPlans() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal plan duplicated!");
+        toast.success(t("planDuplicated"));
         loadTemplates();
       }
     });
@@ -130,7 +133,7 @@ export default function MealPlans() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Meal plan deleted!");
+        toast.success(t("planDeleted"));
         loadTemplates();
       }
       setDeleteDialogOpen(false);
@@ -142,7 +145,7 @@ export default function MealPlans() {
   const handleCopyShareLink = (shareToken: string) => {
     const url = `${window.location.origin}/meal-plans/shared/${shareToken}`;
     navigator.clipboard.writeText(url);
-    toast.success("Share link copied to clipboard!");
+    toast.success(t("shareLinkCopied"));
   };
 
   // Handle template editing
@@ -189,7 +192,7 @@ export default function MealPlans() {
             meals: meals.map((meal) => ({
               id: meal.id,
               recipeId: meal.recipeId,
-              recipeName: meal.recipe?.title || "Unknown",
+              recipeName: meal.recipe?.title || t("calendar.unknownRecipe"),
               recipeImage: meal.recipe?.imageUrl || undefined,
               mealType: meal.mealType as unknown as MealType,
               servings: meal.servings,
@@ -273,7 +276,7 @@ export default function MealPlans() {
             meals: meals.map((meal) => ({
               id: meal.id,
               recipeId: meal.recipeId,
-              recipeName: meal.recipe?.title || "Unknown",
+              recipeName: meal.recipe?.title || t("calendar.unknownRecipe"),
               recipeImage: meal.recipe?.imageUrl || undefined,
               mealType: meal.mealType as unknown as MealType,
               servings: meal.servings,
@@ -331,10 +334,8 @@ export default function MealPlans() {
       {/* Header Actions */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Meal Plans</h2>
-          <p className="text-muted-foreground">
-            Create reusable meal plans and schedule them on your calendar
-          </p>
+          <h2 className="text-2xl font-bold">{t("title")}</h2>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="flex gap-2">
@@ -344,7 +345,7 @@ export default function MealPlans() {
             disabled={isPending}
           >
             <Plus className="w-4 h-4" />
-            Create Meal Plan
+            {t("createPlan")}
           </Button>
         </div>
       </div>
@@ -353,10 +354,10 @@ export default function MealPlans() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="templates">
-            My Meal Plans ({templates.length})
+            {t("myMealPlans", { count: templates.length })}
           </TabsTrigger>
-          <TabsTrigger value="edit-meals">Edit Meals</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+          <TabsTrigger value="edit-meals">{t("editMeals")}</TabsTrigger>
+          <TabsTrigger value="calendar">{t("calendarView")}</TabsTrigger>
         </TabsList>
 
         {/* Meal Plans Tab */}
@@ -364,7 +365,7 @@ export default function MealPlans() {
           {isPending && templates.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
-                Loading meal plans...
+                {t("loadingTemplates")}
               </CardContent>
             </Card>
           )}
@@ -373,16 +374,16 @@ export default function MealPlans() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No Meal Plans</h3>
+                <h3 className="text-lg font-medium mb-2">{t("noMealPlans")}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Create reusable meal plans that you can schedule anytime
+                  {t("noMealPlansDescription")}
                 </p>
                 <Button
                   onClick={() => setShowCreateDialog(true)}
                   className="gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Create Your First Meal Plan
+                  {t("createFirstPlan")}
                 </Button>
               </CardContent>
             </Card>
@@ -412,20 +413,22 @@ export default function MealPlans() {
                                 variant="secondary"
                                 className="flex-shrink-0"
                               >
-                                Public
+                                {t("public")}
                               </Badge>
                             )}
                           </div>
                           <CardDescription className="flex items-center gap-2">
                             <Clock className="w-3 h-3" />
                             {template.duration}{" "}
-                            {template.duration === 1 ? "day" : "days"}
+                            {template.duration === 1
+                              ? t("calendar.day")
+                              : t("calendar.days")}
                             {activeSchedulesCount > 0 && (
                               <Badge variant="outline" className="ml-2">
                                 {activeSchedulesCount}{" "}
                                 {activeSchedulesCount === 1
-                                  ? "schedule"
-                                  : "schedules"}
+                                  ? t("calendar.schedule")
+                                  : t("calendar.schedules")}
                               </Badge>
                             )}
                           </CardDescription>
@@ -439,7 +442,7 @@ export default function MealPlans() {
                             {Math.round(template.targetCalories)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Daily Calories Target
+                            {t("targetCalories")}
                           </p>
                         </div>
                       )}
@@ -454,7 +457,7 @@ export default function MealPlans() {
                         disabled={isPending}
                       >
                         <Edit2 className="w-4 h-4" />
-                        Edit Meals
+                        {t("editMeals")}
                       </Button>
 
                       <div className="flex gap-2">
@@ -466,7 +469,7 @@ export default function MealPlans() {
                           disabled={isPending}
                         >
                           <Edit className="w-3 h-3 mr-1" />
-                          Edit Details
+                          {t("editDetails")}
                         </Button>
                         <Button
                           variant="outline"
@@ -476,7 +479,7 @@ export default function MealPlans() {
                           disabled={isPending}
                         >
                           <Copy className="w-3 h-3 mr-1" />
-                          Duplicate
+                          {t("duplicate")}
                         </Button>
                       </div>
 
@@ -490,7 +493,7 @@ export default function MealPlans() {
                           }
                         >
                           <Share className="w-4 h-4" />
-                          Copy Share Link
+                          {t("copyShareLink")}
                         </Button>
                       )}
 
@@ -502,7 +505,7 @@ export default function MealPlans() {
                         disabled={isPending}
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
-                        Delete Meal Plan
+                        {t("deleteMealPlan")}
                       </Button>
                     </CardContent>
                   </Card>
@@ -529,21 +532,23 @@ export default function MealPlans() {
                           disabled={isPending}
                         >
                           <SelectTrigger className="w-full max-w-md">
-                            <SelectValue placeholder="Select a meal plan" />
+                            <SelectValue placeholder={t("chooseMealPlan")} />
                           </SelectTrigger>
                           <SelectContent>
                             {templates.map((template) => (
                               <SelectItem key={template.id} value={template.id}>
                                 {template.name} ({template.duration}{" "}
-                                {template.duration === 1 ? "day" : "days"})
+                                {template.duration === 1
+                                  ? t("calendar.day")
+                                  : t("calendar.days")}
+                                )
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
                       <CardDescription>
-                        Add meals to each day of your meal plan. Changes will
-                        apply to all schedules using this meal plan.
+                        {t("editMealsDescription")}
                       </CardDescription>
                     </div>
                     <Button
@@ -555,7 +560,7 @@ export default function MealPlans() {
                       className="gap-2 flex-shrink-0"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Back to Meal Plans
+                      {t("backToMealPlans")}
                     </Button>
                   </div>
                 </CardHeader>
@@ -577,27 +582,30 @@ export default function MealPlans() {
               <CardContent className="py-12 text-center">
                 <Edit2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">
-                  Select a Meal Plan to Edit
+                  {t("selectToEdit")}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Choose a meal plan from the list below to start adding meals
+                  {t("selectToEditDescription")}
                 </p>
 
                 {templates.length > 0 ? (
                   <div className="space-y-2 max-w-md mx-auto">
-                    <Label htmlFor="meal-plan-select">Meal Plan</Label>
+                    <Label htmlFor="meal-plan-select">{t("mealPlan")}</Label>
                     <Select
                       onValueChange={handleSwitchMealPlan}
                       disabled={isPending}
                     >
                       <SelectTrigger id="meal-plan-select">
-                        <SelectValue placeholder="Choose a meal plan..." />
+                        <SelectValue placeholder={t("chooseMealPlan")} />
                       </SelectTrigger>
                       <SelectContent>
                         {templates.map((template) => (
                           <SelectItem key={template.id} value={template.id}>
                             {template.name} ({template.duration}{" "}
-                            {template.duration === 1 ? "day" : "days"})
+                            {template.duration === 1
+                              ? t("calendar.day")
+                              : t("calendar.days")}
+                            )
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -606,7 +614,7 @@ export default function MealPlans() {
                 ) : (
                   <div className="text-center space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      You don&apos;t have any meal plans yet
+                      {t("noMealPlansYet")}
                     </p>
                     <Button
                       onClick={() => {
@@ -616,7 +624,7 @@ export default function MealPlans() {
                       className="gap-2"
                     >
                       <Plus className="w-4 h-4" />
-                      Create Your First Meal Plan
+                      {t("createFirstPlan")}
                     </Button>
                   </div>
                 )}
@@ -631,12 +639,10 @@ export default function MealPlans() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarDays className="w-5 h-5" />
-                Schedule Your Meal Plans
+                {t("calendar.scheduleTitle")}
               </CardTitle>
               <CardDescription>
-                Drag and drop meal plans from the list onto calendar dates to
-                schedule them. You can schedule the same meal plan multiple
-                times.
+                {t("calendar.scheduleDescription")}
               </CardDescription>
             </CardHeader>
           </Card>
@@ -686,19 +692,18 @@ export default function MealPlans() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this meal plan and all its schedules.
-              This action cannot be undone.
+              {t("deleteDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{common("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Delete
+              {common("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -12,6 +12,7 @@ import { getRecipes } from "@/actions/recipe";
 import type { Recipe } from "@/generated/prisma";
 import Image from "next/image";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface RecipePickerProps {
   open: boolean;
@@ -28,6 +29,8 @@ export function RecipePicker({
   dayId,
   mealType,
 }: RecipePickerProps) {
+  const t = useTranslations("mealPlans");
+  const tCommon = useTranslations("common");
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isPending, startTransition] = useTransition();
@@ -58,10 +61,10 @@ export function RecipePicker({
       <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>
-            Select Recipe{" "}
+            {t("picker.selectRecipe")}{" "}
             {mealType && (
               <span className="text-muted-foreground font-normal">
-                for {mealType}
+                {t("picker.forMealType", { mealType })}
               </span>
             )}
           </DialogTitle>
@@ -72,7 +75,7 @@ export function RecipePicker({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search recipes..."
+              placeholder={t("searchRecipes")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => {
@@ -84,7 +87,7 @@ export function RecipePicker({
             />
           </div>
           <Button onClick={handleSearch} disabled={isPending}>
-            Search
+            {tCommon("search")}
           </Button>
         </div>
 
@@ -92,19 +95,19 @@ export function RecipePicker({
         <ScrollArea className="h-[400px] pr-4">
           {isPending && (
             <div className="text-center text-muted-foreground py-8">
-              Loading recipes...
+              {t("picker.loadingRecipes")}
             </div>
           )}
 
           {!isPending && !hasSearched && (
             <div className="text-center text-muted-foreground py-8">
-              Search for recipes to add to your meal plan
+              {t("picker.searchPrompt")}
             </div>
           )}
 
           {!isPending && hasSearched && recipes.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              No recipes found. Try a different search term.
+              {t("picker.noResults")}
             </div>
           )}
 

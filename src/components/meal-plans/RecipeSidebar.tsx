@@ -17,8 +17,11 @@ import { DraggableRecipeCard } from "./DraggableRecipeCard";
 import type { Recipe, RecipeCategory } from "@/generated/prisma";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 export function RecipeSidebar() {
+  const t = useTranslations("mealPlans");
+  const tRecipes = useTranslations("recipes");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,10 +80,10 @@ export function RecipeSidebar() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <ChefHat className="w-5 h-5" />
-          Recipes
+          {t("recipes")}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Drag recipes to your meal plan
+          {t("recipesDescription")}
         </p>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-3 min-h-0 p-4 pt-0">
@@ -88,20 +91,21 @@ export function RecipeSidebar() {
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search recipes..."
+            placeholder={t("searchRecipes")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-8 h-9 text-sm"
+            disabled={isPending}
           />
         </div>
 
         {/* Category Filter */}
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isPending}>
           <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder={t("allCategories")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">{t("allCategories")}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
@@ -114,28 +118,29 @@ export function RecipeSidebar() {
         <Select
           value={selectedDifficulty}
           onValueChange={setSelectedDifficulty}
+          disabled={isPending}
         >
           <SelectTrigger className="h-9 text-sm">
-            <SelectValue placeholder="All Difficulties" />
+            <SelectValue placeholder={t("allDifficulties")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Difficulties</SelectItem>
-            <SelectItem value="easy">Easy</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="hard">Hard</SelectItem>
+            <SelectItem value="all">{t("allDifficulties")}</SelectItem>
+            <SelectItem value="easy">{tRecipes("difficulty.easy")}</SelectItem>
+            <SelectItem value="medium">{tRecipes("difficulty.medium")}</SelectItem>
+            <SelectItem value="hard">{tRecipes("difficulty.hard")}</SelectItem>
           </SelectContent>
         </Select>
 
         {/* Recipe Count */}
         {!loading && (
           <p className="text-xs text-muted-foreground">
-            {recipes.length} recipe{recipes.length !== 1 ? "s" : ""} found
+            {t("recipesFound", { count: recipes.length })}
           </p>
         )}
 
         {/* Recipe List */}
         <ScrollArea className="flex-1 -mx-4 px-4 max-h-[400px]">
-          {loading ? (
+          {loading && recipes.length === 0 ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-20 w-full" />
@@ -143,7 +148,7 @@ export function RecipeSidebar() {
             </div>
           ) : recipes.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">No recipes found</p>
+              <p className="text-sm text-muted-foreground">{t("noRecipesFound")}</p>
             </div>
           ) : (
             <div className="space-y-2 pb-4">
