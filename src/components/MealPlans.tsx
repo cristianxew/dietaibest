@@ -44,6 +44,7 @@ import { MealPlanCalendar } from "./meal-plans/MealPlanCalendar";
 import { MealPlanForm } from "./meal-plans/MealPlanForm";
 // import { MacroDisplay } from "./meal-plans/MacroDisplay";
 import { SavedPlansCalendar } from "./meal-plans/SavedPlansCalendar";
+import { AIGenerateButton } from "./meal-plans/AIGenerateButton";
 import { ArrowLeft, Edit2 } from "lucide-react";
 import {
   getMealPlans,
@@ -551,17 +552,32 @@ export default function MealPlans() {
                         {t("editMealsDescription")}
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingMealTemplate(null);
-                        setActiveTab("templates");
-                      }}
-                      className="gap-2 flex-shrink-0"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      {t("backToMealPlans")}
-                    </Button>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <AIGenerateButton
+                        templateId={editingMealTemplate.id}
+                        duration={editingMealTemplate.duration}
+                        mealSlots={editingMealTemplate.mealSlots}
+                        targetCalories={editingMealTemplate.targets?.calories}
+                        targetProtein={editingMealTemplate.targets?.protein}
+                        targetCarbs={editingMealTemplate.targets?.carbs}
+                        targetFat={editingMealTemplate.targets?.fat}
+                        onSuggestionsApplied={() => {
+                          handleEditMeals(editingMealTemplate.id);
+                          loadTemplates();
+                        }}
+                      />
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingMealTemplate(null);
+                          setActiveTab("templates");
+                        }}
+                        className="gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        {t("backToMealPlans")}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
               </Card>
