@@ -10,15 +10,17 @@ datasource db {
 }
 
 model User {
-  id               String                 @id @default(uuid())
-  email            String                 @unique
-  password         String
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
-  profile          UserProfile?
-  recipes          Recipe[]
-  favorites        UserFavorite[]
-  edamamMacroCache EdamamUserMacroCache[] // Cached macros per Edamam policy
+  id                 String                 @id @default(uuid())
+  email              String                 @unique
+  password           String
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  profile            UserProfile?
+  recipes            Recipe[]
+  favorites          UserFavorite[]
+  edamamMacroCache   EdamamUserMacroCache[] // Cached macros per Edamam policy
+  mealPlanTemplates  MealPlanTemplate[] // User's meal plan templates
+  mealPlanSchedules  MealPlanSchedule[] // User's scheduled meal plans
 }
 
 model UserProfile {
@@ -94,6 +96,7 @@ model Recipe {
   favoritedBy       UserFavorite[]
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
   edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
+  mealPlanMeals     MealPlanMeal[] // Usage in meal plans
 }
 
 model RecipeCategory {
@@ -196,4 +199,95 @@ model EdamamUserMacroCache {
   @@unique([userId, recipeId])
   @@index([userId])
   @@index([recipeId])
+}
+
+// ============================================================================
+// Meal Planning System (Template-Based Architecture)
+// ============================================================================
+
+// MealPlanTemplate: Reusable meal plan templates without fixed dates
+model MealPlanTemplate {
+  id       String @id @default(uuid())
+  userId   String
+  name     String
+  duration Int // Duration in days (e.g., 7 for a week)
+
+  // Meal slot configuration (which meals to show per day)
+  mealSlots String[] @default(["breakfast", "lunch", "dinner"])
+
+  // Macro targets (daily averages)
+  targetCalories Float? // kcal per day
+  targetProtein  Float? // grams per day
+  targetCarbs    Float? // grams per day
+  targetFat      Float? // grams per day
+
+  // Sharing
+  isPublic   Boolean @default(false) // Allow public sharing
+  shareToken String? @unique // For public share links
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days      MealPlanDay[] // Template days (day 1, day 2, etc.)
+  schedules MealPlanSchedule[] // Where this template is scheduled
+
+  @@index([userId])
+  @@index([shareToken])
+}
+
+// MealPlanSchedule: Tracks when/where templates are used on the calendar
+model MealPlanSchedule {
+  id         String   @id @default(uuid())
+  templateId String
+  userId     String
+  startDate  DateTime // When this schedule starts
+  status     String   @default("active") // active, completed, cancelled
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  template MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([startDate])
+  @@index([userId, startDate]) // For overlap detection
+}
+
+// MealPlanDay: Template days with relative day numbers
+model MealPlanDay {
+  id         String @id @default(uuid())
+  templateId String
+  dayNumber  Int // Relative day number (1, 2, 3, ... duration)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  template MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  meals    MealPlanMeal[]
+
+  @@unique([templateId, dayNumber])
+  @@index([templateId])
+}
+
+// MealPlanMeal: Individual recipe assignments (unchanged structure)
+model MealPlanMeal {
+  id            String @id @default(uuid())
+  mealPlanDayId String
+  recipeId      String
+  mealType      String // breakfast, lunch, dinner, snack
+  servings      Int    @default(1) // Can override recipe default servings
+  sortOrder     Int    @default(0) // For ordering meals within a slot
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealPlanDay MealPlanDay @relation(fields: [mealPlanDayId], references: [id], onDelete: Cascade)
+  recipe      Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([mealPlanDayId])
+  @@index([recipeId])
+  @@index([mealPlanDayId, mealType])
 }

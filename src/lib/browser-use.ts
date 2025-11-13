@@ -45,7 +45,8 @@ export interface BrowserUseTaskRequest {
     | "gpt-4o"
     | "gpt-4o-mini"
     | "llama-4-maverick-17b-128e-instruct"
-    | "claude-3-7-sonnet-20250219";
+    | "claude-3-7-sonnet-20250219"
+    | "browser-use-llm";
   startUrl?: string | null;
   maxSteps?: number;
   structuredOutput?: string | null;
@@ -69,17 +70,53 @@ export interface TaskStatus {
   status:
     | "pending"
     | "running"
+    | "started" // Browser Use API v2 uses "started" instead of "running"
+    | "paused"
     | "completed"
     | "finished"
     | "failed"
+    | "stopped" // Browser Use API v2 uses "stopped" for failures
     | "cancelled";
   progress?: number;
   message?: string;
   result?: unknown;
   output?: unknown;
   error?: string;
+  errorDetails?: string; // Additional error information
+  isSuccess?: boolean; // Browser Use API v2 includes this
   startedAt?: string;
   completedAt?: string;
+}
+
+/**
+ * Browser Use API v2 Task Step
+ */
+export interface BrowserUseTaskStep {
+  stepNumber?: number;
+  url?: string;
+  screenshot?: string;
+  previousGoalEvaluation?: string;
+  nextGoal?: string;
+  actions?: unknown[];
+}
+
+/**
+ * Extended task details from Browser Use API v2
+ * Includes additional fields not in the base TaskStatus interface
+ */
+export interface BrowserUseTaskDetails extends TaskStatus {
+  steps?: BrowserUseTaskStep[];
+  startUrl?: string;
+  isSuccess?: boolean;
+  errorDetails?: string;
+  output?: unknown;
+}
+
+/**
+ * Extended task status with computed progress
+ */
+export interface ExtendedTaskStatus extends BrowserUseTaskDetails {
+  progress: number;
 }
 
 export interface ExtractedRecipeData {
@@ -166,10 +203,13 @@ export class BrowserUseClient {
   /**
    * Get full task details, including results (API v2)
    */
-  async getTask(taskId: string): Promise<TaskStatus> {
-    const response = await this.makeRequest<TaskStatus>(`/tasks/${taskId}`, {
-      method: "GET",
-    });
+  async getTask(taskId: string): Promise<BrowserUseTaskDetails> {
+    const response = await this.makeRequest<BrowserUseTaskDetails>(
+      `/tasks/${taskId}`,
+      {
+        method: "GET",
+      }
+    );
 
     return response;
   }
@@ -179,11 +219,11 @@ export class BrowserUseClient {
   // --------------------------------------------------------------------------
 
   /**
-   * Extract recipe data from a URL using AI-powered browser automation (API v2)
+   * Start recipe extraction and return task ID immediately
    */
-  async extractRecipeFromUrl(
+  async startRecipeExtraction(
     request: RecipeExtractionRequest
-  ): Promise<ExtractedRecipeData> {
+  ): Promise<{ taskId: string }> {
     const taskPrompt = this.buildRecipeExtractionPrompt(
       request.url,
       request.options
@@ -234,8 +274,120 @@ export class BrowserUseClient {
       highlightElements: false,
     });
 
+    return { taskId: taskResponse.id };
+  }
+
+  /**
+   * Get the current status of a task including steps and progress
+   */
+  async getTaskStatus(taskId: string): Promise<ExtendedTaskStatus> {
+    try {
+      const taskDetails = await this.getTask(taskId);
+
+      // Log the raw response for debugging
+      console.log(`[BrowserUse] Task ${taskId} status:`, {
+        status: taskDetails.status,
+        isSuccess: taskDetails.isSuccess,
+        error: taskDetails.error,
+        stepsCount: taskDetails.steps?.length || 0,
+      });
+
+      // Check if task has stopped or failed
+      if (taskDetails.status === "stopped" || taskDetails.status === "failed") {
+        // Extract detailed error information
+        const errorDetails =
+          taskDetails.errorDetails ||
+          taskDetails.error ||
+          "Task stopped due to consecutive failures";
+
+        console.error(`[BrowserUse] Task ${taskId} failed:`, errorDetails);
+      }
+
+      // Calculate progress based on steps
+      let progress = 0;
+      if (taskDetails.status === "pending") {
+        progress = 5;
+      } else if (
+        taskDetails.status === "running" ||
+        taskDetails.status === "started"
+      ) {
+        const steps = taskDetails.steps?.length || 0;
+        // Estimate based on typical recipe extraction (10-15 steps)
+        progress = Math.min(95, Math.max(10, Math.round((steps / 12) * 100)));
+      } else if (
+        taskDetails.status === "completed" ||
+        taskDetails.status === "finished"
+      ) {
+        // Also check isSuccess flag if available
+        const isSuccess = taskDetails.isSuccess !== false;
+        progress = isSuccess ? 100 : 0;
+      } else if (
+        taskDetails.status === "stopped" ||
+        taskDetails.status === "failed"
+      ) {
+        progress = 0;
+      }
+
+      return {
+        ...taskDetails,
+        progress,
+        // Ensure output is set from either output or result
+        output: taskDetails.output || taskDetails.result,
+      };
+    } catch (error) {
+      // If it's a 404, let it bubble up
+      if (error instanceof BrowserUseError && error.status === 404) {
+        throw error;
+      }
+      throw this.createError(
+        "GET_TASK_ERROR",
+        "Failed to get task status",
+        500,
+        { taskId, originalError: error }
+      );
+    }
+  }
+
+  /**
+   * Cancel a running task
+   */
+  async cancelTask(taskId: string): Promise<void> {
+    try {
+      // Try to cancel the task by updating its status
+      // Note: Browser Use API might not have a direct cancel endpoint,
+      // so we may need to work around this
+      await this.makeRequest(`/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+    } catch (error) {
+      // If DELETE is not supported, try PATCH with cancelled status
+      try {
+        await this.makeRequest(`/tasks/${taskId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "cancelled" }),
+        });
+      } catch {
+        throw this.createError(
+          "CANCEL_TASK_ERROR",
+          "Failed to cancel task. The task may have already completed.",
+          500,
+          { taskId, originalError: error }
+        );
+      }
+    }
+  }
+
+  /**
+   * Extract recipe data from a URL using AI-powered browser automation (API v2)
+   * @deprecated Use startRecipeExtraction and getTaskStatus for better UX
+   */
+  async extractRecipeFromUrl(
+    request: RecipeExtractionRequest
+  ): Promise<ExtractedRecipeData> {
+    const { taskId } = await this.startRecipeExtraction(request);
+
     // Poll for completion
-    const result = await this.pollTaskCompletion(taskResponse.id);
+    const result = await this.pollTaskCompletion(taskId);
 
     // Parse and validate the extracted data
     return this.parseRecipeData(result, request.url);
@@ -248,11 +400,22 @@ export class BrowserUseClient {
     url: string,
     options?: RecipeExtractionRequest["options"]
   ): string {
-    const basePrompt = `Navigate to ${url} and extract complete recipe information. 
+    const basePrompt = `Navigate to ${url} Extract the complete recipe information as follows:
 
-IMPORTANT: Handle any pop-ups, cookie banners, or registration walls automatically.
-
-Extract the following data in JSON format:
+1. Wait for the page to fully load and for all dynamic content to be visible (wait at least 2 seconds after navigation, and after dismissing any pop-ups).
+2. Automatically detect and close or accept any pop-ups, overlays, cookie banners, or registration walls.
+3. For the following fields, extract directly from the DOM, structured data (such as JSON-LD <script> tags), and meta tags:
+- title: Recipe title
+- description: Brief description
+- prepTime, cookTime, servings: extract as numbers, from visible fields, meta tags, or structured data
+- difficulty: If not labeled, infer as 'easy' if preparation is simple and ingredients are few, else leave null
+- imageUrl: Extract from the main recipe image, <meta property="og:image">, or JSON-LD; ensure it's a full URL
+- ingredients: List each with name, amount, and unit. Parse amounts and units from structured data if available, else from the visible list
+- instructions: Extract step-by-step instructions as an array, using either the visible steps, or from structured data
+- tags: Extract from any labeled categories, cuisines, or tags on the page, or in structured data/meta tags; if not available, leave as an empty array
+- calories, protein, carbs, fat: Extract from nutrition facts section, structured data, or meta tags. If not found, use null
+4. If any field is not found, set its value to null (or an empty array for lists) in the JSON.
+5. Output only the JSON object as specified below, with no extra text:
 {
   "title": "Recipe title",
   "description": "Brief description", 
@@ -275,14 +438,8 @@ Extract the following data in JSON format:
   "carbs": optional_number_in_grams, 
   "fat": optional_number_in_grams
 }
-
-Requirements:
-- Navigate past any registration walls or pop-ups
-- Handle dynamic content loading
-- Extract from recipe cards, structured data, or recipe text
-- If multiple recipes on page, extract the main/featured recipe
-- Return only valid JSON, no additional text
-- If recipe not found, return {"error": "No recipe found on this page"}`;
+6. If the recipe is not found, return {"error": "No recipe found on this page"}
+`;
 
     if (options?.waitForNetworkIdle) {
       return (

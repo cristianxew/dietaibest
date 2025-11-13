@@ -74,23 +74,31 @@ interface URLUploadProps {
     extractedData?: ExtractedRecipeData;
   }) => void;
   onUploadError?: (error: string) => void;
+  useSSE?: boolean; // Use Server-Sent Events for real-time updates (default: true)
 }
 
 interface UploadState {
   status:
     | "idle"
     | "validating"
-    | "fetching"
+    | "starting"
+    | "polling"
     | "processing"
-    | "analyzing"
     | "success"
     | "error";
   progress: number;
   message: string;
   url?: string;
+  taskId?: string;
+  currentStep?: number;
+  currentUrl?: string;
 }
 
-export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
+export function URLUpload({
+  onURLUploaded,
+  onUploadError,
+  useSSE = true,
+}: URLUploadProps) {
   const t = useTranslations("recipes.urlUpload");
   const [uploadState, setUploadState] = useState<UploadState>({
     status: "idle",
@@ -98,11 +106,24 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
     message: "",
   });
   const isMountedRef = useRef(true);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      // Clean up EventSource if it exists
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      // Abort any ongoing fetch requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     };
   }, []);
 
@@ -113,14 +134,84 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
     },
   });
 
-  // Safe state update function to prevent updates on unmounted components
-  const safeSetUploadState = useCallback(
-    (updater: (prev: UploadState) => UploadState) => {
-      if (isMountedRef.current) {
-        setUploadState(updater);
+  // Get user-friendly error message
+  const getErrorMessage = useCallback(
+    (error: unknown): string => {
+      const errorStr = error instanceof Error ? error.message : String(error);
+
+      // Check for specific error patterns and return user-friendly messages
+
+      // Consecutive failures / stopped task
+      if (
+        errorStr.includes("consecutive failures") ||
+        errorStr.includes("stopped")
+      ) {
+        return t("errors.consecutiveFailures");
       }
+
+      if (errorStr.includes("404") || errorStr.includes("not found")) {
+        return t("errors.taskNotFound");
+      }
+
+      if (
+        errorStr.includes("timeout") ||
+        errorStr.includes("timed out") ||
+        errorStr.includes("taking longer than expected")
+      ) {
+        return t("errors.timeout");
+      }
+
+      if (errorStr.includes("cancelled")) {
+        return t("errors.cancelled");
+      }
+
+      if (
+        errorStr.includes("network") ||
+        errorStr.includes("fetch") ||
+        errorStr.includes("connection")
+      ) {
+        return t("errors.network");
+      }
+
+      if (
+        errorStr.includes("authentication") ||
+        errorStr.includes("unauthorized")
+      ) {
+        return t("errors.unauthorized");
+      }
+
+      if (errorStr.includes("validation") || errorStr.includes("invalid")) {
+        return t("errors.validation");
+      }
+
+      if (
+        errorStr.includes("recipe") &&
+        errorStr.includes("not") &&
+        (errorStr.includes("found") || errorStr.includes("contain"))
+      ) {
+        return t("errors.noRecipe");
+      }
+
+      if (errorStr.includes("popup") || errorStr.includes("overlay")) {
+        return t("errors.blocked");
+      }
+
+      if (
+        errorStr.includes("anti-bot") ||
+        errorStr.includes("captcha") ||
+        errorStr.includes("protection")
+      ) {
+        return t("errors.antiBot");
+      }
+
+      // Default fallback - return the actual error message if it's descriptive enough
+      if (errorStr.length > 20 && errorStr.length < 200) {
+        return errorStr;
+      }
+
+      return t("errors.processingFailed");
     },
-    [] // No dependencies needed since isMountedRef.current is stable
+    [t]
   );
 
   // Validate URL format
@@ -141,6 +232,7 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
             error: t("errors.invalidProtocol"),
           };
         }
+
         return { isValid: true };
       } catch {
         return {
@@ -152,34 +244,22 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
     [t] // Only depend on t
   );
 
-  // Fetch and process URL
+  // Start extraction task and monitor status
   const fetchURLAndProcess = useCallback(
     async (url: string): Promise<ExtractedRecipeData | null> => {
-      // Phase 1: Fetching (0-30%)
-      safeSetUploadState((prev) => ({
-        ...prev,
-        status: "fetching",
-        progress: 0,
-        message: t("status.fetching"),
-      }));
+      // Phase 1: Starting task
+      if (isMountedRef.current) {
+        setUploadState((prev) => ({
+          ...prev,
+          status: "starting",
+          progress: 0,
+          message: t("status.starting"),
+        }));
+      }
 
       try {
-        // Simulate fetching progress
-        for (let i = 0; i <= 30; i += 5) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          safeSetUploadState((prev) => ({ ...prev, progress: i }));
-        }
-
-        // Phase 2: Processing (30-70%)
-        safeSetUploadState((prev) => ({
-          ...prev,
-          status: "processing",
-          message: t("status.extractingRecipe"),
-          progress: 30,
-        }));
-
-        // Call backend API
-        const response = await fetch("/api/recipes/import/url", {
+        // Start the extraction task
+        const startResponse = await fetch("/api/recipes/import/url", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -187,95 +267,368 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
           body: JSON.stringify({ url }),
         });
 
-        // Simulate processing progress
-        for (let i = 40; i <= 70; i += 10) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          safeSetUploadState((prev) => ({ ...prev, progress: i }));
-        }
+        const startResult = await startResponse.json();
 
-        const result = await response.json();
-
-        if (!response.ok) {
+        if (!startResponse.ok) {
           throw new Error(
-            result.error ||
-              "Unable to extract recipe from this URL. The website might not be supported or the page doesn't contain a valid recipe."
+            startResult.error ||
+              "Unable to start recipe extraction. Please try again."
           );
         }
 
-        // Phase 3: Analyzing (70-95%)
-        safeSetUploadState((prev) => ({
-          ...prev,
-          status: "analyzing",
-          message: t("status.analyzingContent"),
-          progress: 70,
-        }));
+        const { taskId } = startResult;
 
-        for (let i = 75; i <= 95; i += 5) {
-          await new Promise((resolve) => setTimeout(resolve, 200));
-          safeSetUploadState((prev) => ({ ...prev, progress: i }));
+        // Update state with task ID
+        if (isMountedRef.current) {
+          setUploadState((prev) => ({
+            ...prev,
+            taskId,
+            status: "polling",
+            progress: 5,
+            message: t("status.extractingRecipe"),
+          }));
         }
 
-        // Phase 4: Complete (95-100%)
-        safeSetUploadState((prev) => ({
-          ...prev,
-          status: "success",
-          message: t("status.complete"),
-          progress: 100,
-        }));
+        // Phase 2: Monitor task status (SSE or polling)
+        if (useSSE) {
+          // Use Server-Sent Events for real-time updates
+          return new Promise<ExtractedRecipeData | null>((resolve, reject) => {
+            // Clean up any existing EventSource completely before creating new one
+            if (eventSourceRef.current) {
+              const oldEventSource = eventSourceRef.current;
+              try {
+                oldEventSource.close();
+                console.log("[URLUpload] Closed old EventSource");
+              } catch (error) {
+                console.warn(
+                  "[URLUpload] Error closing old EventSource:",
+                  error
+                );
+              }
+              // Immediately set to null to prevent orphaned references
+              eventSourceRef.current = null;
+            }
 
-        // Transform the result to match our interface
-        if (result.title) {
-          return {
-            title: result.title || "Imported Recipe",
-            description: result.description || "",
-            ingredients: result.ingredients || [],
-            instructions: result.instructions || [],
-            prepTime: result.prepTime,
-            cookTime: result.cookTime,
-            servings: result.servings || 4,
-            difficulty: result.difficulty,
-            cuisine: result.cuisine,
-            tags: result.tags || [],
-            calories: result.calories,
-            protein: result.protein,
-            carbs: result.carbs,
-            fat: result.fat,
-            imageUrl: result.imageUrl,
-          };
+            // Create new EventSource
+            console.log(
+              `[URLUpload] Creating new EventSource for task ${taskId}`
+            );
+            const eventSource = new EventSource(
+              `/api/recipes/import/url/status?taskId=${taskId}`
+            );
+            eventSourceRef.current = eventSource;
+
+            eventSource.onmessage = (event) => {
+              try {
+                const data = JSON.parse(event.data);
+
+                // Update UI based on event type
+                switch (data.type) {
+                  case "connected":
+                    console.log("[URLUpload] Connected to SSE stream");
+                    break;
+
+                  case "status":
+                    console.log(
+                      `[URLUpload] Status update: ${data.status} - ${data.progress}%`
+                    );
+                    if (isMountedRef.current) {
+                      setUploadState((prev) => ({
+                        ...prev,
+                        status: "polling",
+                        progress: data.progress || prev.progress,
+                        message: data.message || prev.message,
+                        currentStep: data.currentStep,
+                        currentUrl: data.currentUrl,
+                      }));
+                    }
+                    break;
+
+                  case "complete":
+                    console.log("[URLUpload] Recipe extraction completed");
+                    if (isMountedRef.current) {
+                      setUploadState((prev) => ({
+                        ...prev,
+                        status: "success",
+                        progress: 100,
+                        message: t("status.complete"),
+                      }));
+                    }
+
+                    // Only close if this is still the current EventSource
+                    if (eventSourceRef.current === eventSource) {
+                      eventSource.close();
+                      eventSourceRef.current = null;
+                      console.log(
+                        "[URLUpload] Closed EventSource after completion"
+                      );
+                    }
+
+                    // Resolve with the extracted data
+                    if (data.data) {
+                      resolve({
+                        title: data.data.title || "Imported Recipe",
+                        description: data.data.description || "",
+                        ingredients: data.data.ingredients || [],
+                        instructions: data.data.instructions || [],
+                        prepTime: data.data.prepTime,
+                        cookTime: data.data.cookTime,
+                        servings: data.data.servings || 4,
+                        difficulty: data.data.difficulty,
+                        cuisine: data.data.cuisine,
+                        tags: data.data.tags || [],
+                        calories: data.data.calories,
+                        protein: data.data.protein,
+                        carbs: data.data.carbs,
+                        fat: data.data.fat,
+                        imageUrl: data.data.imageUrl,
+                      });
+                    } else {
+                      resolve(null);
+                    }
+                    break;
+
+                  case "error":
+                  case "failed":
+                  case "stopped":
+                    console.error(
+                      `[URLUpload] Extraction ${data.type}:`,
+                      data.message
+                    );
+
+                    // Only close if this is still the current EventSource
+                    if (eventSourceRef.current === eventSource) {
+                      eventSource.close();
+                      eventSourceRef.current = null;
+                      console.log("[URLUpload] Closed EventSource after error");
+                    }
+
+                    reject(
+                      new Error(data.message || "Recipe extraction failed")
+                    );
+                    break;
+
+                  case "cancelled":
+                    console.log("[URLUpload] Extraction cancelled");
+
+                    // Only close if this is still the current EventSource
+                    if (eventSourceRef.current === eventSource) {
+                      eventSource.close();
+                      eventSourceRef.current = null;
+                      console.log(
+                        "[URLUpload] Closed EventSource after cancellation"
+                      );
+                    }
+
+                    reject(new Error("Recipe extraction was cancelled"));
+                    break;
+
+                  case "timeout":
+                    console.warn(
+                      "[URLUpload] Extraction timeout:",
+                      data.message
+                    );
+
+                    // Only close if this is still the current EventSource
+                    if (eventSourceRef.current === eventSource) {
+                      eventSource.close();
+                      eventSourceRef.current = null;
+                      console.log(
+                        "[URLUpload] Closed EventSource after timeout"
+                      );
+                    }
+
+                    reject(
+                      new Error(data.message || "Recipe extraction timed out")
+                    );
+                    break;
+                }
+              } catch (error) {
+                console.error("Error parsing SSE data:", error);
+              }
+            };
+
+            eventSource.onerror = (error) => {
+              console.error("[URLUpload] SSE connection error:", error);
+
+              // Only cleanup if this is still the current EventSource
+              // This prevents orphaned handlers from interfering
+              if (eventSourceRef.current === eventSource) {
+                eventSource.close();
+                eventSourceRef.current = null;
+                console.log("[URLUpload] Cleaned up EventSource after error");
+              } else {
+                console.warn(
+                  "[URLUpload] Orphaned EventSource error handler called, ignoring"
+                );
+              }
+
+              reject(new Error("Lost connection to extraction service"));
+            };
+          });
+        } else {
+          // Use polling for compatibility
+          const pollInterval = 2000; // Poll every 2 seconds
+          const maxPolls = 60; // Max 2 minutes of polling
+          let pollCount = 0;
+
+          while (pollCount < maxPolls) {
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+
+            // Check if component is still mounted
+            if (!isMountedRef.current) {
+              break;
+            }
+
+            // Get task status
+            const statusResponse = await fetch(
+              `/api/recipes/import/url/${taskId}`
+            );
+
+            if (!statusResponse.ok) {
+              if (statusResponse.status === 404) {
+                // Task not found yet, continue polling
+                pollCount++;
+                continue;
+              }
+              throw new Error("Failed to get task status");
+            }
+
+            const statusResult = await statusResponse.json();
+
+            // Update UI with real progress
+            if (isMountedRef.current) {
+              setUploadState((prev) => ({
+                ...prev,
+                status: "polling",
+                progress: statusResult.progress || prev.progress,
+                message: statusResult.message || prev.message,
+                currentStep: statusResult.currentStep,
+                currentUrl: statusResult.currentUrl,
+              }));
+            }
+
+            // Check if task is complete
+            if (
+              statusResult.status === "completed" ||
+              statusResult.status === "finished"
+            ) {
+              // Task completed successfully
+              if (isMountedRef.current) {
+                setUploadState((prev) => ({
+                  ...prev,
+                  status: "success",
+                  progress: 100,
+                  message: t("status.complete"),
+                }));
+              }
+
+              // Return the extracted recipe data
+              if (statusResult.data) {
+                return {
+                  title: statusResult.data.title || "Imported Recipe",
+                  description: statusResult.data.description || "",
+                  ingredients: statusResult.data.ingredients || [],
+                  instructions: statusResult.data.instructions || [],
+                  prepTime: statusResult.data.prepTime,
+                  cookTime: statusResult.data.cookTime,
+                  servings: statusResult.data.servings || 4,
+                  difficulty: statusResult.data.difficulty,
+                  cuisine: statusResult.data.cuisine,
+                  tags: statusResult.data.tags || [],
+                  calories: statusResult.data.calories,
+                  protein: statusResult.data.protein,
+                  carbs: statusResult.data.carbs,
+                  fat: statusResult.data.fat,
+                  imageUrl: statusResult.data.imageUrl,
+                };
+              }
+
+              return null;
+            }
+
+            // Check if task failed or stopped
+            if (
+              statusResult.status === "failed" ||
+              statusResult.status === "stopped"
+            ) {
+              throw new Error(
+                statusResult.message ||
+                  statusResult.error ||
+                  "Recipe extraction failed. Please check the URL and try again."
+              );
+            }
+
+            // Check if task was cancelled
+            if (statusResult.status === "cancelled") {
+              throw new Error("Recipe extraction was cancelled");
+            }
+
+            pollCount++;
+          }
+
+          // Polling timeout
+          throw new Error(
+            "Recipe extraction is taking longer than expected. Please try again."
+          );
         }
-
-        return null;
       } catch (error) {
-        console.error("URL processing error:", error);
-        throw new Error(
-          error instanceof Error ? error.message : t("errors.processingFailed")
-        );
+        console.error("[URLUpload] URL processing error:", error);
+
+        // Clean up EventSource if error occurred
+        if (eventSourceRef.current) {
+          try {
+            eventSourceRef.current.close();
+            console.log(
+              "[URLUpload] Closed EventSource after processing error"
+            );
+          } catch (closeError) {
+            console.warn("[URLUpload] Error closing EventSource:", closeError);
+          }
+          eventSourceRef.current = null;
+        }
+
+        // Clean up AbortController if error occurred
+        if (abortControllerRef.current) {
+          try {
+            abortControllerRef.current.abort();
+          } catch (abortError) {
+            console.warn("[URLUpload] Error aborting requests:", abortError);
+          }
+          abortControllerRef.current = null;
+        }
+
+        throw error; // Pass the error up for better handling
       }
     },
-    [t, safeSetUploadState] // Minimal dependencies
+    [t, useSSE] // Add useSSE to dependencies
   );
 
   // Handle URL processing
   const processURL = useCallback(
     async (url: string) => {
-      safeSetUploadState((prev) => ({
-        ...prev,
-        status: "validating",
-        progress: 0,
-        message: t("status.validating"),
-        url,
-      }));
+      if (isMountedRef.current) {
+        setUploadState((prev) => ({
+          ...prev,
+          status: "validating",
+          progress: 0,
+          message: t("status.validating"),
+          url,
+        }));
+      }
 
       try {
         // Validate the URL
         const validation = validateURL(url);
         if (!validation.isValid) {
-          safeSetUploadState((prev) => ({
-            ...prev,
-            status: "error",
-            progress: 0,
-            message: validation.error || t("errors.validationFailed"),
-          }));
+          if (isMountedRef.current) {
+            setUploadState((prev) => ({
+              ...prev,
+              status: "error",
+              progress: 0,
+              message: validation.error || t("errors.validationFailed"),
+            }));
+          }
           onUploadError?.(validation.error || t("errors.validationFailed"));
           toast.error(validation.error || t("errors.validationFailed"));
           return;
@@ -319,25 +672,38 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
           );
         }
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : t("errors.processingFailed");
-        safeSetUploadState((prev) => ({
-          ...prev,
-          status: "error",
-          progress: 0,
-          message: errorMessage,
-        }));
+        const errorMessage = getErrorMessage(error);
+        if (isMountedRef.current) {
+          setUploadState((prev) => ({
+            ...prev,
+            status: "error",
+            progress: 0,
+            message: errorMessage,
+          }));
+        }
         onUploadError?.(errorMessage);
         toast.error(errorMessage);
+
+        // If it's a cancelled error, don't show the error alert
+        if (errorMessage.includes("cancelled")) {
+          if (isMountedRef.current) {
+            setUploadState((prev) => ({
+              ...prev,
+              status: "idle",
+              progress: 0,
+              message: "",
+            }));
+          }
+        }
       }
     },
     [
       t,
-      safeSetUploadState,
       validateURL,
       fetchURLAndProcess,
       onURLUploaded,
       onUploadError,
+      getErrorMessage,
     ] // Keep necessary dependencies
   );
 
@@ -349,23 +715,103 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
     [processURL]
   );
 
+  // Handle form errors
+  const onFormError = useCallback((errors: any) => {
+    if (errors.url?.message) {
+      toast.error(errors.url.message);
+    }
+  }, []);
+
+  // Cancel the current extraction task
+  const cancelExtraction = useCallback(async () => {
+    if (!uploadState.taskId) return;
+
+    try {
+      // Close EventSource if it exists
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+
+      // Cancel the task via API
+      const response = await fetch(
+        `/api/recipes/import/url/${uploadState.taskId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to cancel task");
+      }
+
+      // Reset state
+      setUploadState({
+        status: "idle",
+        progress: 0,
+        message: "",
+      });
+
+      toast.info(t("extractionCancelled"));
+    } catch (error) {
+      console.error("Error cancelling extraction:", error);
+      toast.error(t("errors.cancelFailed"));
+    }
+  }, [uploadState.taskId, t]);
+
   // Reset upload state
-  const resetUpload = () => {
+  const resetUpload = useCallback(() => {
+    console.log("[URLUpload] Resetting upload state");
+
+    // Clean up EventSource if it exists
+    if (eventSourceRef.current) {
+      try {
+        eventSourceRef.current.close();
+        console.log("[URLUpload] Closed EventSource during reset");
+      } catch (error) {
+        console.warn(
+          "[URLUpload] Error closing EventSource during reset:",
+          error
+        );
+      }
+      eventSourceRef.current = null;
+    }
+
+    // Clean up AbortController if it exists
+    if (abortControllerRef.current) {
+      try {
+        abortControllerRef.current.abort();
+        console.log("[URLUpload] Aborted ongoing requests during reset");
+      } catch (error) {
+        console.warn(
+          "[URLUpload] Error aborting requests during reset:",
+          error
+        );
+      }
+      abortControllerRef.current = null;
+    }
+
+    // Reset ALL state fields to ensure clean slate
     setUploadState({
       status: "idle",
       progress: 0,
       message: "",
+      url: undefined,
+      taskId: undefined,
+      currentStep: undefined,
+      currentUrl: undefined,
     });
+
     form.reset();
-  };
+  }, [form]);
 
   // Render status icon
   const renderStatusIcon = () => {
     switch (uploadState.status) {
       case "validating":
-      case "fetching":
+      case "starting":
+      case "polling":
       case "processing":
-      case "analyzing":
         return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
       case "success":
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
@@ -378,9 +824,9 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
 
   const isLoading = [
     "validating",
-    "fetching",
+    "starting",
+    "polling",
     "processing",
-    "analyzing",
   ].includes(uploadState.status);
 
   return (
@@ -396,7 +842,7 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
           {/* URL Form */}
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleSubmit)}
+              onSubmit={form.handleSubmit(handleSubmit, onFormError)}
               className="space-y-4"
             >
               <FormField
@@ -428,35 +874,66 @@ export function URLUpload({ onURLUploaded, onUploadError }: URLUploadProps) {
                     </span>
                   </div>
 
-                  {/* Progress bar */}
+                  {/* Progress bar and extraction details */}
                   {isLoading && (
                     <div className="space-y-2">
                       <Progress
                         value={uploadState.progress}
                         className="w-full"
                       />
-                      <p className="text-sm text-muted-foreground">
-                        {uploadState.progress}% {t("complete")}
-                      </p>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-muted-foreground">
+                          {uploadState.progress}% {t("complete")}
+                        </p>
+                        {uploadState.currentStep !== undefined && (
+                          <p className="text-sm text-muted-foreground">
+                            Step {uploadState.currentStep}
+                          </p>
+                        )}
+                      </div>
+                      {uploadState.currentUrl && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          <span className="font-medium">Current page:</span>{" "}
+                          {uploadState.currentUrl}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Submit Button */}
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {uploadState.message}
-                  </>
-                ) : (
-                  <>
-                    {t("importButton")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+              {/* Submit and Cancel Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className={isLoading ? "flex-1" : "w-full"}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {uploadState.message}
+                    </>
+                  ) : (
+                    <>
+                      {t("importButton")}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+
+                {/* Cancel button - only show when actively extracting */}
+                {isLoading && uploadState.taskId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={cancelExtraction}
+                    className="px-4"
+                  >
+                    {t("cancel")}
+                  </Button>
                 )}
-              </Button>
+              </div>
 
               {/* Action buttons for success/error states */}
               {uploadState.status === "success" && (
