@@ -72,20 +72,25 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         </span>
       </Button>
 
-      <Link href={`/${locale}/recipes/${recipe.id}`}>
+      <Link  href={`/${locale}/recipes/${recipe.id}`}>
         {/* Recipe image */}
-        {recipe.imageUrl && (
-          <div className="aspect-video w-full overflow-hidden">
+          <div style={{ marginTop: "-25px" }} className="aspect-video w-full overflow-hidden">
+           {recipe.imageUrl ? (
             <img
               src={recipe.imageUrl}
               alt={recipe.title}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+              <Utensils className="h-12 w-12 opacity-20" />
+            </div>
+          )}
           </div>
-        )}
+        
 
         <CardHeader>
-          <CardTitle className="line-clamp-2">{recipe.title}</CardTitle>
+          <CardTitle className="line-clamp-2 py-3">{recipe.title}</CardTitle>
           {recipe.description && (
             <p className="text-sm text-muted-foreground line-clamp-2">
               {recipe.description}
@@ -114,7 +119,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           )}
 
           {/* Quick stats */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
             {totalTime > 0 && (
               <div className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
