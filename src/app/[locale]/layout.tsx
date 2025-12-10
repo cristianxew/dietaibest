@@ -1,35 +1,20 @@
-import { getMessages } from "next-intl/server";
-import { ClientProviders } from "@/providers/ClientProviders";
-import Header from "@/components/navigation/Header";
-
 interface LocaleLayoutProps {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }
 
+/**
+ * Base layout for locale-specific routes
+ *
+ * Navigation is handled by route group layouts:
+ * - (public-pages): Uses LandingNav (top navigation)
+ * - (protected-pages): Uses AppSidebar (sidebar navigation)
+ *
+ * Both route groups have their own layouts that include ClientProviders
+ * This layout only provides the locale wrapper structure
+ */
 export default async function LocaleLayout({
   children,
-  params,
 }: LocaleLayoutProps) {
-  const { locale } = await params;
-  const messages = await getMessages();
-
-  return (
-    <ClientProviders messages={messages} locale={locale} timeZone="UTC">
-      <div className="min-h-screen flex flex-col">
-        {/* Header Navigation */}
-        <Header />
-
-        {/* Main content with proper spacing to account for sticky header */}
-        <main
-          id="main-content"
-          className="flex-1 relative"
-          tabIndex={-1}
-          aria-label="Main content"
-        >
-          {children}
-        </main>
-      </div>
-    </ClientProviders>
-  );
+  return <>{children}</>;
 }

@@ -1,0 +1,634 @@
+<html lang="en" class="scroll-smooth"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DietAI - Autonomous Nutrition Operating System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['Geist Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            900: '#14532d',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .sidebar-transition { transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        /* Checkbox Custom Styles */
+        .custom-checkbox input:checked + div { background-color: #18181b; border-color: #18181b; }
+        .custom-checkbox input:checked + div svg { display: block; }
+    </style>
+
+    <script>
+        // Modal Logic
+        function toggleLoginModal() {
+            const modal = document.getElementById('login-modal');
+            const backdrop = document.getElementById('login-backdrop');
+            const card = document.getElementById('login-card');
+            
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    card.classList.remove('opacity-0', 'scale-95');
+                }, 10);
+            } else {
+                backdrop.classList.add('opacity-0');
+                card.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        }
+
+        // Agent Sidebar Logic
+        function toggleAgent() {
+            const sidebar = document.getElementById('agent-sidebar');
+            const arrow = document.getElementById('agent-arrow');
+            
+            if (sidebar.classList.contains('translate-x-[calc(100%-2.5rem)]') || sidebar.classList.contains('md:translate-x-[calc(100%-3rem)]')) {
+                // Open
+                sidebar.classList.remove('translate-x-[calc(100%-2.5rem)]', 'md:translate-x-[calc(100%-3rem)]');
+                sidebar.classList.add('translate-x-0');
+                arrow.classList.add('rotate-180');
+            } else {
+                // Close
+                sidebar.classList.add('translate-x-[calc(100%-2.5rem)]', 'md:translate-x-[calc(100%-3rem)]');
+                sidebar.classList.remove('translate-x-0');
+                arrow.classList.remove('rotate-180');
+            }
+        }
+
+        // Login Handler
+        function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login-submit');
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            setTimeout(() => {
+                window.location.reload(); // Simulate login
+            }, 1500);
+        }
+    </script>
+</head>
+<body class="min-h-screen antialiased flex flex-col items-center text-neutral-900 bg-neutral-950 pt-4 md:pt-8 pb-8 px-2 md:px-4 relative overflow-x-hidden font-sans">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-[100] hidden items-center justify-center flex">
+        <div onclick="toggleLoginModal()" class="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm transition-opacity opacity-0 duration-300" id="login-backdrop"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="login-card">
+            <button onclick="toggleLoginModal()" class="absolute top-4 right-4 text-neutral-400 hover:text-neutral-900 transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-neutral-900 text-white mb-4 shadow-lg shadow-green-900/20">
+                    <iconify-icon icon="solar:chef-hat-bold-duotone" width="24" height="24"></iconify-icon>
+                </div>
+                <h3 class="text-xl font-display font-medium text-neutral-900 tracking-tight">Access DietAI</h3>
+                <p class="text-sm text-neutral-500 mt-2">Resume your nutritional journey.</p>
+            </div>
+
+            <form class="space-y-4" onsubmit="handleLogin(event)">
+                <button type="button" class="w-full py-2.5 px-4 border border-neutral-200 rounded-lg flex items-center justify-center gap-2 hover:bg-neutral-50 transition-all text-sm font-medium text-neutral-700">
+                    <iconify-icon icon="logos:google-icon" width="18"></iconify-icon>
+                    Continue with Google
+                </button>
+                
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-neutral-100"></div>
+                    <span class="flex-shrink-0 mx-4 text-xs text-neutral-400 font-medium uppercase tracking-wider">Or</span>
+                    <div class="flex-grow border-t border-neutral-100"></div>
+                </div>
+
+                <div>
+                    <input type="email" class="w-full px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition-all placeholder:text-neutral-400" placeholder="hello@example.com">
+                </div>
+                <button type="submit" id="btn-login-submit" class="w-full py-3 bg-neutral-900 text-white rounded-lg text-sm font-medium hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-900/10">
+                    Sign In with Email
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Agent Sidebar -->
+    <div class="fixed flex sidebar-transition h-[60vh] z-50 top-1/2 -translate-y-1/2 right-0 translate-x-[calc(100%-2.5rem)] md:translate-x-[calc(100%-3rem)] items-center" id="agent-sidebar">
+        <button onclick="toggleAgent()" class="bg-neutral-900 text-white w-10 md:w-12 h-32 md:h-40 rounded-l-xl shadow-xl flex flex-col gap-4 items-center justify-center border-y border-l border-white/10 hover:bg-neutral-800 transition-colors z-20 outline-none">
+            <iconify-icon icon="solar:magic-stick-3-bold-duotone" width="20" height="20" class="text-green-400"></iconify-icon>
+            <div class="h-px w-6 bg-white/20"></div>
+            <i data-lucide="chevron-left" class="w-5 h-5 transition-transform duration-500" id="agent-arrow"></i>
+        </button>
+
+        <div class="w-full max-w-sm md:w-[26rem] h-full bg-white/95 backdrop-blur-xl border-l border-neutral-200 shadow-2xl p-6 flex flex-col relative z-10 rounded-bl-3xl">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-100">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 border border-green-100">
+                        <iconify-icon icon="solar:user-rounded-bold-duotone" width="20"></iconify-icon>
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-neutral-900">Nutrition Assistant</div>
+                    <div class="text-[0.65rem] text-neutral-500 uppercase tracking-wider font-medium">Online • Agent Active</div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-4 pr-2">
+                <!-- Chat Message -->
+                <div class="flex gap-3">
+                    <div class="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 mt-1">
+                        <iconify-icon icon="solar:bot-bold" class="text-neutral-500" width="14"></iconify-icon>
+                    </div>
+                    <div class="bg-neutral-50 border border-neutral-100 p-3 rounded-2xl rounded-tl-none text-xs text-neutral-600 leading-relaxed">
+                        I noticed your protein intake was low yesterday. I've adjusted today's dinner to include <span class="font-medium text-neutral-900">Grilled Salmon (32g Protein)</span>. Shall I add it to the shopping list?
+                    </div>
+                </div>
+                
+                <!-- User Message -->
+                <div class="flex gap-3 flex-row-reverse">
+                     <div class="bg-neutral-900 text-white p-3 rounded-2xl rounded-tr-none text-xs leading-relaxed">
+                        Yes, please. Also, I'm eating out for lunch tomorrow.
+                    </div>
+                </div>
+
+                <!-- Agent Response with Action -->
+                <div class="flex gap-3">
+                    <div class="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center shrink-0 mt-1">
+                        <iconify-icon icon="solar:bot-bold" class="text-neutral-500" width="14"></iconify-icon>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="bg-neutral-50 border border-neutral-100 p-3 rounded-2xl rounded-tl-none text-xs text-neutral-600 leading-relaxed">
+                            Understood. I've updated your calorie budget for tomorrow's lunch to <span class="font-medium text-neutral-900">800 kcal</span> to compensate.
+                        </div>
+                        <div class="bg-white border border-green-100 p-2 rounded-xl flex items-center gap-3 shadow-sm">
+                            <div class="bg-green-50 p-1.5 rounded-lg text-green-600">
+                                <iconify-icon icon="solar:cart-large-2-bold-duotone" width="16"></iconify-icon>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-[0.65rem] uppercase text-neutral-400 font-medium tracking-wide">Updated List</div>
+                                <div class="text-xs font-medium text-neutral-900">Added: Atlantic Salmon</div>
+                            </div>
+                            <button class="text-[0.65rem] bg-neutral-900 text-white px-2 py-1 rounded hover:bg-neutral-800 transition-colors">View</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative mt-4 pt-4 border-t border-neutral-100">
+                <input type="text" placeholder="Type a command or log food..." class="w-full bg-neutral-50 border border-neutral-200 rounded-xl py-3 px-4 pr-10 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-900/5 focus:border-neutral-900 transition-all">
+                <button class="absolute right-2 bottom-2 top-[1.3rem] p-1.5 text-neutral-400 hover:text-neutral-900 transition-colors">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="relative w-full max-w-[90rem] bg-[#FAFAFA] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col min-h-[95vh] border border-white/50">
+        <!-- Noise & Background Gradients -->
+        <div class="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        <div class="absolute top-0 right-0 w-[40rem] h-[40rem] bg-gradient-to-b from-green-200/20 to-transparent blur-3xl pointer-events-none rounded-full translate-x-1/3 -translate-y-1/3"></div>
+        <div class="absolute bottom-0 left-0 w-[40rem] h-[40rem] bg-gradient-to-t from-orange-100/20 to-transparent blur-3xl pointer-events-none rounded-full -translate-x-1/3 translate-y-1/3"></div>
+
+        <!-- Navigation -->
+        <nav class="flex flex-wrap z-30 pt-6 px-6 md:px-12 items-center justify-between relative">
+            <div class="flex items-center gap-2.5 cursor-pointer group">
+                <div class="flex text-white bg-neutral-900 w-8 h-8 rounded-lg items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                    <iconify-icon icon="solar:leaf-bold-duotone" width="18" class="text-green-400"></iconify-icon>
+                </div>
+                <span class="text-lg font-display font-medium tracking-tight text-neutral-900">
+                    DietAI
+                </span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+                <a href="#features" class="text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors tracking-wide">FEATURES</a>
+                <a href="#how-it-works" class="text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors tracking-wide">HOW IT WORKS</a>
+                <a href="#pricing" class="text-xs font-medium text-neutral-500 hover:text-neutral-900 transition-colors tracking-wide">PRICING</a>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="toggleLoginModal()" class="hidden md:flex text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors px-4 py-2">
+                    Log in
+                </button>
+                <button onclick="toggleLoginModal()" class="group flex items-center gap-2 bg-neutral-900 text-white rounded-full pl-4 pr-1 py-1.5 shadow-lg shadow-neutral-200 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                    <span class="text-xs font-medium tracking-wide pl-1">Get Started</span>
+                    <div class="w-6 h-6 bg-white rounded-full flex items-center justify-center text-neutral-900 group-hover:rotate-45 transition-transform duration-300">
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </div>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Content Body -->
+        <div class="flex-1 z-10 relative">
+            
+            <!-- HERO SECTION -->
+            <section class="pt-20 pb-24 md:pt-32 md:pb-32 px-6 md:px-12 max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+                    
+                    <!-- Hero Text -->
+                    <div class="lg:col-span-7 flex flex-col gap-6">
+                        <div class="inline-flex items-center gap-2 self-start bg-white border border-neutral-200 rounded-full px-3 py-1 shadow-sm animate-fade-in-up">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            <span class="text-[0.65rem] uppercase font-semibold tracking-widest text-neutral-500">
+                                AI Agent V2.0 Live
+                            </span>
+                        </div>
+
+                        <h1 class="text-5xl md:text-7xl lg:text-8xl leading-[0.95] font-display font-medium text-neutral-900 tracking-tight">
+                            Nutrition on <br>
+                            <span class="bg-clip-text text-transparent bg-gradient-to-r from-neutral-500 via-neutral-800 to-neutral-900">Autopilot.</span>
+                        </h1>
+                        
+                        <p class="text-lg text-neutral-600 font-light leading-relaxed max-w-xl">
+                            Stop manually tracking calories. DietAI agents build your meal plans, scrape recipes, and order your groceries automatically—while balancing your macros.
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                            <button onclick="toggleLoginModal()" class="px-8 py-4 bg-neutral-900 text-white rounded-xl text-sm font-medium tracking-wide hover:bg-neutral-800 transition-all shadow-xl shadow-neutral-900/10 flex items-center justify-center gap-2">
+                                <iconify-icon icon="solar:wand-bold-duotone" width="18"></iconify-icon>
+                                Generate My Plan
+                            </button>
+                            <button class="px-8 py-4 bg-white border border-neutral-200 text-neutral-700 rounded-xl text-sm font-medium tracking-wide hover:border-neutral-400 transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i>
+                                Watch Demo
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 mt-8 text-neutral-400">
+                            <span class="text-xs">Trusted by health conscious teams at</span>
+                            <div class="flex gap-4 opacity-60 grayscale hover:grayscale-0 transition-all">
+                                <iconify-icon icon="simple-icons:linear" width="16"></iconify-icon>
+                                <iconify-icon icon="simple-icons:notion" width="16"></iconify-icon>
+                                <iconify-icon icon="simple-icons:airbnb" width="16"></iconify-icon>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Visual -->
+                    <div class="lg:col-span-5 relative group">
+                        <!-- Abstract decorative elements -->
+                        <div class="absolute -inset-4 bg-gradient-to-tr from-green-100 to-neutral-100 rounded-[2rem] -z-10 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700"></div>
+                        
+                        <!-- Main Card -->
+                        <div class="bg-white rounded-2xl shadow-2xl border border-neutral-100 overflow-hidden relative">
+                            <!-- Header Mockup -->
+                            <div class="px-6 py-4 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
+                                <div class="flex gap-2">
+                                    <div class="w-3 h-3 rounded-full bg-red-400/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-amber-400/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-400/80"></div>
+                                </div>
+                                <div class="text-[0.65rem] font-mono text-neutral-400 uppercase tracking-widest">Weekly_Plan.ai</div>
+                            </div>
+
+                            <!-- Dashboard Content -->
+                            <div class="p-6 space-y-6">
+                                <!-- Macros Row -->
+                                <div class="flex justify-between items-end">
+                                    <div>
+                                        <div class="text-xs text-neutral-500 font-medium mb-1">Daily Target</div>
+                                        <div class="text-3xl font-display font-medium text-neutral-900">2,450 <span class="text-sm text-neutral-400 font-normal">kcal</span></div>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <div class="text-center">
+                                            <div class="w-10 h-10 rounded-full border-2 border-green-500 flex items-center justify-center text-[0.65rem] font-bold">45%</div>
+                                            <div class="text-[0.6rem] text-neutral-400 mt-1 uppercase">Carb</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="w-10 h-10 rounded-full border-2 border-blue-500 flex items-center justify-center text-[0.65rem] font-bold">30%</div>
+                                            <div class="text-[0.6rem] text-neutral-400 mt-1 uppercase">Prot</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="w-10 h-10 rounded-full border-2 border-orange-400 border-t-transparent -rotate-45 flex items-center justify-center text-[0.65rem] font-bold rotate-45 text-neutral-300">25%</div>
+                                            <div class="text-[0.6rem] text-neutral-400 mt-1 uppercase">Fat</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Agent Activity -->
+                                <div class="bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <iconify-icon icon="solar:stars-minimalistic-bold-duotone" class="text-purple-500"></iconify-icon>
+                                        <span class="text-xs font-semibold text-neutral-700">Agent Activity</span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <div class="flex items-center gap-2 text-neutral-600">
+                                                <i data-lucide="link" class="w-3 h-3"></i>
+                                                <span>Scraped "Spicy Tofu Bowl"</span>
+                                            </div>
+                                            <span class="text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[0.6rem] font-medium">Done</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs">
+                                            <div class="flex items-center gap-2 text-neutral-600">
+                                                <i data-lucide="scale" class="w-3 h-3"></i>
+                                                <span>Adjusting Macros</span>
+                                            </div>
+                                            <span class="text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[0.6rem] font-medium">Done</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-xs opacity-50">
+                                            <div class="flex items-center gap-2 text-neutral-600">
+                                                <i data-lucide="shopping-cart" class="w-3 h-3"></i>
+                                                <span>Instacart Checkout</span>
+                                            </div>
+                                            <span class="animate-pulse bg-neutral-200 px-1.5 py-0.5 rounded text-[0.6rem] w-8 h-4 block"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Toggle Button -->
+                                <div class="flex items-center justify-between bg-neutral-900 text-white p-4 rounded-xl shadow-lg">
+                                    <div class="flex items-center gap-3">
+                                        <div class="bg-white/20 p-2 rounded-lg">
+                                            <iconify-icon icon="solar:cart-check-bold-duotone" width="18"></iconify-icon>
+                                        </div>
+                                        <div class="text-xs">
+                                            <div class="font-medium">Auto-Purchase</div>
+                                            <div class="text-neutral-400">Whole Foods Market</div>
+                                        </div>
+                                    </div>
+                                    <label class="custom-checkbox cursor-pointer relative inline-flex items-center">
+                                        <input type="checkbox" checked="" class="sr-only peer">
+                                        <div class="w-9 h-5 bg-neutral-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FEATURES GRID -->
+            <section id="features" class="py-24 bg-white border-y border-neutral-200">
+                <div class="max-w-7xl mx-auto px-6 md:px-12">
+                    <div class="mb-16 max-w-2xl">
+                        <h2 class="text-3xl md:text-4xl font-display font-medium text-neutral-900 tracking-tight mb-4">
+                            Complete Nutrition Management
+                        </h2>
+                        <p class="text-neutral-500 leading-relaxed">
+                            Traditional apps require manual entry. DietAI uses agents to handle the tedious parts of nutrition, from reading recipes to buying groceries.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- Feature 1 -->
+                        <div class="bg-neutral-50 rounded-2xl p-8 border border-neutral-100 hover:border-neutral-300 transition-colors group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <iconify-icon icon="solar:document-add-bold-duotone" width="100"></iconify-icon>
+                            </div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6 text-orange-500">
+                                <iconify-icon icon="solar:link-bold-duotone" width="24"></iconify-icon>
+                            </div>
+                            <h3 class="text-lg font-display font-medium text-neutral-900 mb-2">Smart Import</h3>
+                            <p class="text-sm text-neutral-500 leading-relaxed">
+                                Paste any URL, upload a PDF, or snap a photo of a menu. Our OCR agent extracts ingredients and calculates macros instantly.
+                            </p>
+                        </div>
+
+                        <!-- Feature 2 -->
+                        <div class="bg-neutral-50 rounded-2xl p-8 border border-neutral-100 hover:border-neutral-300 transition-colors group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <iconify-icon icon="solar:pie-chart-2-bold-duotone" width="100"></iconify-icon>
+                            </div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6 text-blue-500">
+                                <iconify-icon icon="solar:tuning-bold-duotone" width="24"></iconify-icon>
+                            </div>
+                            <h3 class="text-lg font-display font-medium text-neutral-900 mb-2">Macro Auto-Balance</h3>
+                            <p class="text-sm text-neutral-500 leading-relaxed">
+                                Define your goals (e.g., High Protein, Keto). The planner agent automatically adjusts portion sizes in your recipes to hit targets.
+                            </p>
+                        </div>
+
+                        <!-- Feature 3 -->
+                        <div class="bg-neutral-50 rounded-2xl p-8 border border-neutral-100 hover:border-neutral-300 transition-colors group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <iconify-icon icon="solar:bag-check-bold-duotone" width="100"></iconify-icon>
+                            </div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm border border-neutral-100 flex items-center justify-center mb-6 text-green-600">
+                                <iconify-icon icon="solar:cart-large-4-bold-duotone" width="24"></iconify-icon>
+                            </div>
+                            <h3 class="text-lg font-display font-medium text-neutral-900 mb-2">One-Click Pantry</h3>
+                            <p class="text-sm text-neutral-500 leading-relaxed">
+                                Generates a consolidated shopping list and integrates with Instacart &amp; Amazon Fresh for instant checkout.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HOW IT WORKS / STEPS -->
+            <section id="how-it-works" class="py-24 px-6 md:px-12 max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <span class="text-xs font-semibold text-green-600 uppercase tracking-widest mb-4 block">The Workflow</span>
+                        <h2 class="text-3xl md:text-5xl font-display font-medium text-neutral-900 tracking-tight mb-8">
+                            From onboarding to <br>dinner in three steps.
+                        </h2>
+                        
+                        <div class="space-y-8">
+                            <div class="flex gap-6 group">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full border border-neutral-200 bg-white text-neutral-500 flex items-center justify-center text-sm font-medium group-hover:bg-neutral-900 group-hover:text-white transition-colors">1</div>
+                                <div>
+                                    <h4 class="text-lg font-medium text-neutral-900 mb-2">Profile &amp; Goals Wizard</h4>
+                                    <p class="text-sm text-neutral-500 leading-relaxed">Complete a 2-minute onboarding. AI determines your BMR, activity level, and dietary preferences (Vegan, Paleo, etc.).</p>
+                                </div>
+                            </div>
+                            <div class="w-px h-8 bg-neutral-200 ml-4"></div>
+                            <div class="flex gap-6 group">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full border border-neutral-200 bg-white text-neutral-500 flex items-center justify-center text-sm font-medium group-hover:bg-neutral-900 group-hover:text-white transition-colors">2</div>
+                                <div>
+                                    <h4 class="text-lg font-medium text-neutral-900 mb-2">Generate Weekly Plan</h4>
+                                    <p class="text-sm text-neutral-500 leading-relaxed">Review your AI-generated menu. Swap meals with a click. The system learns what you like over time.</p>
+                                </div>
+                            </div>
+                            <div class="w-px h-8 bg-neutral-200 ml-4"></div>
+                            <div class="flex gap-6 group">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full border border-neutral-200 bg-white text-neutral-500 flex items-center justify-center text-sm font-medium group-hover:bg-neutral-900 group-hover:text-white transition-colors">3</div>
+                                <div>
+                                    <h4 class="text-lg font-medium text-neutral-900 mb-2">Shop &amp; Cook</h4>
+                                    <p class="text-sm text-neutral-500 leading-relaxed">Export ingredients to your preferred grocery delivery service. Follow step-by-step cooking guides.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="relative bg-neutral-900 rounded-3xl p-8 text-white shadow-2xl overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-green-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-3 mb-8">
+                                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                <div class="ml-auto text-xs font-mono text-neutral-400">wizard_v2.exe</div>
+                            </div>
+
+                            <div class="space-y-6 font-mono text-sm">
+                                <div>
+                                    <span class="text-green-400">➜</span> <span class="text-neutral-400">Analyze Profile:</span> <span class="text-white">Male, 180lbs, Active</span>
+                                </div>
+                                <div>
+                                    <span class="text-green-400">➜</span> <span class="text-neutral-400">Calc TDEE:</span> <span class="text-white">2,850 kcal</span>
+                                </div>
+                                <div>
+                                    <span class="text-green-400">➜</span> <span class="text-neutral-400">Goal:</span> <span class="text-white">Hypertrophy (Surplus)</span>
+                                </div>
+                                <div class="py-4 border-y border-neutral-800 my-4">
+                                    <div class="text-neutral-500 mb-2">// Generating Plan...</div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-white">Monday Breakfast</span>
+                                        <span class="text-green-400">Oatmeal &amp; Whey</span>
+                                    </div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-white">Monday Lunch</span>
+                                        <span class="text-green-400">Chicken Quinoa Bowl</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-white">Monday Dinner</span>
+                                        <span class="text-green-400">Steak &amp; Asparagus</span>
+                                    </div>
+                                </div>
+                                <button class="w-full py-3 bg-white text-neutral-900 rounded font-bold uppercase tracking-wider text-xs hover:bg-neutral-200 transition-colors">
+                                    Confirm Plan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRICING -->
+            <section id="pricing" class="py-24 px-6 md:px-12 bg-neutral-50 border-t border-neutral-200">
+                <div class="max-w-7xl mx-auto">
+                    <div class="text-center mb-16">
+                        <h2 class="text-3xl md:text-5xl font-display font-medium text-neutral-900 tracking-tight mb-4">Simple, transparent pricing</h2>
+                        <p class="text-neutral-500">Invest in your health for less than the cost of one takeout meal.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        <!-- Free -->
+                        <div class="bg-white p-8 rounded-2xl border border-neutral-200 hover:shadow-xl transition-all duration-300 relative group">
+                            <h3 class="font-display font-medium text-xl text-neutral-900 mb-2">Starter</h3>
+                            <div class="text-4xl font-display font-semibold text-neutral-900 mb-6">$0</div>
+                            <ul class="space-y-4 text-sm text-neutral-600 mb-8">
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Manual Tracking</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Basic Recipe Storage</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Standard Shopping List</li>
+                            </ul>
+                            <button class="w-full py-3 border border-neutral-200 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors">Sign Up Free</button>
+                        </div>
+
+                        <!-- Pro -->
+                        <div class="bg-neutral-900 p-8 rounded-2xl border border-neutral-800 text-white shadow-2xl relative md:-translate-y-4 transform">
+                            <div class="absolute top-0 right-0 bg-green-500 text-white text-[0.6rem] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl rounded-tr-xl">Recommended</div>
+                            <h3 class="font-display font-medium text-xl text-white mb-2">Pro Chef</h3>
+                            <div class="text-4xl font-display font-semibold text-white mb-6">$12<span class="text-lg font-normal text-neutral-400">/mo</span></div>
+                            <ul class="space-y-4 text-sm text-neutral-300 mb-8">
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-green-400"></i> Unlimited AI Planning</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-green-400"></i> URL Recipe Scraping</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-green-400"></i> Instacart Integration</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-green-400"></i> Macro Balancing Agent</li>
+                            </ul>
+                            <button onclick="toggleLoginModal()" class="w-full py-3 bg-white text-neutral-900 rounded-lg text-sm font-bold uppercase tracking-wider hover:bg-neutral-200 transition-colors">Start Trial</button>
+                        </div>
+
+                        <!-- Family -->
+                        <div class="bg-white p-8 rounded-2xl border border-neutral-200 hover:shadow-xl transition-all duration-300 relative group">
+                            <h3 class="font-display font-medium text-xl text-neutral-900 mb-2">Family</h3>
+                            <div class="text-4xl font-display font-semibold text-neutral-900 mb-6">$29<span class="text-lg font-normal text-neutral-400">/mo</span></div>
+                            <ul class="space-y-4 text-sm text-neutral-600 mb-8">
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Up to 5 Profiles</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Consolidated Shopping</li>
+                                <li class="flex gap-3"><i data-lucide="check" class="w-5 h-5 text-neutral-900"></i> Dietary Conflict Check</li>
+                            </ul>
+                            <button class="w-full py-3 border border-neutral-200 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors">Contact Sales</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-neutral-200 pt-16 pb-8 px-6 md:px-12 z-10">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-12">
+                <div class="max-w-xs">
+                    <div class="flex items-center gap-2 mb-4">
+                        <iconify-icon icon="solar:leaf-bold-duotone" width="20" class="text-neutral-900"></iconify-icon>
+                        <span class="font-display font-medium text-lg tracking-tight">DietAI</span>
+                    </div>
+                    <p class="text-sm text-neutral-500">
+                        The first operating system for your nutrition. Powered by autonomous agents, designed for human health.
+                    </p>
+                </div>
+                <div class="grid grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="font-medium text-sm text-neutral-900 mb-4">Product</h4>
+                        <ul class="space-y-2 text-sm text-neutral-500">
+                            <li><a href="#" class="hover:text-neutral-900">Features</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Integrations</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Pricing</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Changelog</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-sm text-neutral-900 mb-4">Company</h4>
+                        <ul class="space-y-2 text-sm text-neutral-500">
+                            <li><a href="#" class="hover:text-neutral-900">About</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Blog</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Careers</a></li>
+                            <li><a href="#" class="hover:text-neutral-900">Contact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="max-w-7xl mx-auto mt-16 pt-8 border-t border-neutral-100 flex flex-col md:flex-row justify-between items-center text-xs text-neutral-400">
+                <p>© 2024 DietAI Inc. All rights reserved.</p>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-neutral-900">Privacy Policy</a>
+                    <a href="#" class="hover:text-neutral-900">Terms of Service</a>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+</body></html>

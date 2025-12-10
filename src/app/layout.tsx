@@ -1,22 +1,43 @@
 import type { Metadata } from "next";
-import { Lato, Alice, Poppins } from "next/font/google";
+import { Inter, Space_Grotesk, Lato, Alice, Poppins } from "next/font/google";
+import localFont from "next/font/local";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-// Lato for general body text
+// Primary fonts for the new design system
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+});
+
+// Geist Mono for code and technical content
+const geistMono = localFont({
+  src: "./fonts/GeistMono-Variable.woff2",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+  fallback: ["ui-monospace", "monospace"],
+});
+
+// Legacy fonts (kept for backward compatibility with existing app pages)
 const lato = Lato({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
   variable: "--font-lato",
 });
 
-// Alice for headings and section titles
 const alice = Alice({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-alice",
 });
 
-// Poppins for header nav items and buttons
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -24,9 +45,26 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "DietAIbook - AI-Powered Meal Planning",
+  title: "DietAI - Autonomous Nutrition Operating System",
   description:
-    "Personalized meal planning and nutrition tracking with AI assistance",
+    "Stop manually tracking calories. DietAI agents build your meal plans, scrape recipes, and order your groceries automatically—while balancing your macros.",
+  keywords: [
+    "meal planning",
+    "nutrition",
+    "AI",
+    "diet",
+    "recipes",
+    "macros",
+    "health",
+    "automation",
+  ],
+  authors: [{ name: "DietAI" }],
+  openGraph: {
+    title: "DietAI - Nutrition on Autopilot",
+    description:
+      "AI-powered meal planning and nutrition tracking. Let our agents handle the tedious parts of nutrition.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -35,11 +73,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${lato.variable} ${alice.variable} ${poppins.variable} ${lato.className}`}
+        className={`
+          ${inter.variable}
+          ${spaceGrotesk.variable}
+          ${geistMono.variable}
+          ${lato.variable}
+          ${alice.variable}
+          ${poppins.variable}
+          antialiased
+        `}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
