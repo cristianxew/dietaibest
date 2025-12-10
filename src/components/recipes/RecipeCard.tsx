@@ -72,10 +72,10 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         </span>
       </Button>
 
-      <Link  href={`/${locale}/recipes/${recipe.id}`}>
+      <Link href={`/${locale}/recipes/${recipe.id}`}>
         {/* Recipe image */}
-          <div style={{ marginTop: "-25px" }} className="aspect-video w-full overflow-hidden">
-           {recipe.imageUrl ? (
+        <div style={{ marginTop: "-25px" }} className="aspect-video w-full overflow-hidden">
+          {recipe.imageUrl ? (
             <img
               src={recipe.imageUrl}
               alt={recipe.title}
@@ -86,8 +86,8 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
               <Utensils className="h-12 w-12 opacity-20" />
             </div>
           )}
-          </div>
-        
+        </div>
+
 
         <CardHeader>
           <CardTitle className="line-clamp-2 py-3">{recipe.title}</CardTitle>
@@ -149,8 +149,8 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 recipe.difficulty === "easy"
                   ? "default"
                   : recipe.difficulty === "medium"
-                  ? "secondary"
-                  : "destructive"
+                    ? "secondary"
+                    : "destructive"
               }
             >
               {t(`difficulty.${recipe.difficulty}`)}
