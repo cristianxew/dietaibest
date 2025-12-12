@@ -484,6 +484,7 @@
         "servings": "porciones",
         "serving": "porción",
         "percentOfTarget": "% del objetivo",
+        "mealPlanner": "Planificador de Comidas",
         "myMealPlans": "Mis Planes de Comidas ({count})",
         "editMeals": "Editar Comidas",
         "calendarView": "Vista de Calendario",

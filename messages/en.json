@@ -484,6 +484,7 @@
         "servings": "servings",
         "serving": "serving",
         "percentOfTarget": "% of target",
+        "mealPlanner": "Meal Planner",
         "myMealPlans": "My Meal Plans ({count})",
         "editMeals": "Edit Meals",
         "calendarView": "Calendar View",

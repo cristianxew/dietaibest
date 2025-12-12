@@ -21,15 +21,16 @@ import type {
   DayDisplay,
   MealDisplay,
   MealType,
-  // MEAL_TYPES,
 } from "@/types/meal-plan";
 import { moveMeal, addMealToDay, removeMealFromDay } from "@/actions/meal-plan";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
-// import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
+import { Plus, Utensils, Calendar, Flame } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Recipe } from "@/generated/prisma";
 import { cn } from "@/lib/utils";
+
+const CONTAINER_HEIGHT = "h-[calc(100vh-12rem)]";
 
 interface MealPlanCalendarProps {
   mealPlan: MealPlanDisplay;
@@ -202,7 +203,18 @@ export function MealPlanCalendar({
     return day.meals.find((m) => m.mealType === mealType);
   };
 
-  // const weeklyMacros = calculateWeeklyMacros(mealPlan.days);
+  // Get meal type icon
+  const getMealTypeIcon = (mealType: string) => {
+    const icons: Record<string, string> = {
+      breakfast: "🌅",
+      lunch: "☀️",
+      dinner: "🌙",
+      snack: "🍎",
+      snack1: "🍎",
+      snack2: "🥜",
+    };
+    return icons[mealType.toLowerCase()] || "🍽️";
+  };
 
   return (
     <DndContext
@@ -213,124 +225,163 @@ export function MealPlanCalendar({
       {/* Responsive Layout: Sidebar for desktop, stacked for mobile */}
       <div className="grid lg:grid-cols-[320px_1fr] gap-6">
         {/* Recipe Sidebar - Desktop Only */}
-        <div className="hidden lg:block h-[calc(100vh-12rem)] sticky top-6">
+        <div className={cn("hidden lg:block sticky top-6", CONTAINER_HEIGHT)}>
           <RecipeSidebar />
         </div>
 
         {/* Main Calendar Area */}
-        <div className="space-y-6">
-          {/* Calendar Grid */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {mealPlan.days[0]?.date
-                  ? t("weeklySchedule")
-                  : t("calendar.mealPlanSchedule")}
-              </CardTitle>
-              <CardDescription>
-                <span className="hidden lg:inline">{t("dragFromSidebar")}</span>
-                <span className="lg:hidden">
-                  {mealPlan.days[0]?.date
-                    ? t("calendar.dragToReorganizeMobile")
-                    : t("calendar.addMealsDescription")}
-                </span>
-              </CardDescription>
+        <Card className={cn("border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden flex flex-col", CONTAINER_HEIGHT)}>
+          {/* Header with gradient */}
+          <div className="relative flex-shrink-0">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-100/40 to-gold-100/20 dark:from-brand-500/10 dark:to-gold-500/5" />
+            <CardHeader className="relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20">
+                  <Calendar className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="font-display text-lg tracking-tight truncate">
+                    {mealPlan.name}
+                  </CardTitle>
+                  <CardDescription className="mt-0.5">
+                    <span className="hidden lg:inline">{t("dragFromSidebar")}</span>
+                    <span className="lg:hidden">
+                      {mealPlan.days[0]?.date
+                        ? t("calendar.dragToReorganizeMobile")
+                        : t("calendar.addMealsDescription")}
+                    </span>
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mealPlan.days.map((day) => (
-                  <div key={day.id} className="border rounded-lg p-4">
-                    {/* Day Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-medium">
-                          {day.date
-                            ? format(day.date, "EEEE")
-                            : t("calendar.dayNumber", {
-                                number: day.dayNumber,
-                              })}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {day.date
-                            ? format(day.date, "MMM d, yyyy")
-                            : t("calendar.dayNumber", {
-                                number: day.dayNumber,
-                              })}
-                        </p>
-                      </div>
-                      <MacroDisplay
-                        macros={day.macros}
-                        targets={mealPlan.targets}
-                        compact
-                      />
-                    </div>
+          </div>
 
-                    {/* Meal Slots */}
-                    <div
-                      className={cn(
-                        "grid gap-3",
-                        mealPlan?.mealSlots?.length <= 3
-                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-                          : mealPlan?.mealSlots?.length === 4
-                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                          : mealPlan?.mealSlots?.length === 5
-                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
-                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
-                      )}
-                    >
-                      {mealPlan?.mealSlots?.map((mealType) => {
-                        const meal = getMeal(day, mealType);
-                        return (
-                          <div key={mealType} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="text-xs font-medium uppercase text-muted-foreground">
-                                {mealType}
-                              </label>
-                              {!meal && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 lg:hidden"
-                                  onClick={() =>
-                                    handleAddMeal(day.id, mealType)
-                                  }
-                                  disabled={isPending}
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              )}
-                            </div>
-                            <MealSlot
-                              meal={meal}
-                              dayId={day.id}
-                              mealType={mealType}
-                              onRemove={handleRemoveMeal}
-                              isDragging={activeMeal?.id === meal?.id}
-                            />
+          <CardContent className="flex-1 min-h-0 p-0">
+            <ScrollArea className="h-full px-4 pb-4">
+              <div className="space-y-4 pt-2">
+                {mealPlan.days.map((day, dayIndex) => (
+                  <div
+                    key={day.id}
+                    className={cn(
+                      "relative rounded-2xl border border-border/60 bg-card/50 overflow-hidden transition-all duration-300",
+                      "hover:border-brand-200/60 dark:hover:border-brand-500/30 hover:shadow-md"
+                    )}
+                    style={{ animationDelay: `${dayIndex * 50}ms` }}
+                  >
+                    {/* Day Content */}
+                    <div className="p-4">
+                      {/* Day Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <h4 className="font-display font-semibold text-foreground tracking-tight">
+                              {day.date
+                                ? format(day.date, "EEEE")
+                                : t("calendar.dayNumber", {
+                                    number: day.dayNumber,
+                                  })}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">
+                              {day.date
+                                ? format(day.date, "MMM d, yyyy")
+                                : `Day ${day.dayNumber}`}
+                            </p>
                           </div>
-                        );
-                      })}
+                        </div>
+
+                        {/* Macro Summary */}
+                        <MacroDisplay
+                          macros={day.macros}
+                          targets={mealPlan.targets}
+                          compact
+                        />
+                      </div>
+
+                      {/* Meal Slots Grid */}
+                      <div
+                        className={cn(
+                          "grid gap-3",
+                          mealPlan?.mealSlots?.length <= 3
+                            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                            : mealPlan?.mealSlots?.length === 4
+                            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                            : mealPlan?.mealSlots?.length === 5
+                            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+                            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
+                        )}
+                      >
+                        {mealPlan?.mealSlots?.map((mealType, slotIndex) => {
+                          const meal = getMeal(day, mealType);
+                          return (
+                            <div
+                              key={mealType}
+                              className="space-y-2"
+                              style={{ animationDelay: `${(dayIndex * mealPlan.mealSlots.length + slotIndex) * 30}ms` }}
+                            >
+                              {/* Meal Type Label */}
+                              <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                  <span>{getMealTypeIcon(mealType)}</span>
+                                  <span>{mealType}</span>
+                                </label>
+                                {!meal && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 lg:hidden rounded-full hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                                    onClick={() => handleAddMeal(day.id, mealType)}
+                                    disabled={isPending}
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+
+                              {/* Meal Slot */}
+                              <MealSlot
+                                meal={meal}
+                                dayId={day.id}
+                                mealType={mealType}
+                                onRemove={handleRemoveMeal}
+                                isDragging={activeMeal?.id === meal?.id}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-          {/* Drag Overlay */}
-          <DragOverlay>
-            {activeMeal ? (
-              <div className="bg-background border rounded-lg p-3 shadow-lg max-w-xs">
-                <p className="font-medium">{activeMeal.recipeName}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Math.round(activeMeal.calories)} cal •{" "}
+      </div>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {activeMeal ? (
+          <div className="w-64 p-4 rounded-2xl bg-card border border-brand-200 dark:border-brand-500/30 shadow-2xl shadow-brand-500/20">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-brand-100 dark:bg-brand-500/20">
+                <Utensils className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-display font-semibold text-sm text-foreground truncate">
+                  {activeMeal.recipeName}
+                </p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                  <Flame className="w-3 h-3 text-brand-500" />
+                  {Math.round(activeMeal.calories)} cal
+                  <span className="text-muted-foreground/40">•</span>
                   {Math.round(activeMeal.protein)}g protein
                 </p>
               </div>
-            ) : null}
-          </DragOverlay>
-        </div>
-      </div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
 
       {/* Recipe Picker Dialog - Mobile/Tablet Only */}
       <RecipePicker

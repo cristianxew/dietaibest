@@ -1,4 +1,7 @@
-import { Progress } from "@/components/ui/progress";
+"use client";
+
+import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts";
+
 
 interface MacroDisplayProps {
   calories?: number | null;
@@ -6,43 +9,6 @@ interface MacroDisplayProps {
   carbs?: number | null;
   fat?: number | null;
   fiber?: number | null;
-  sugar?: number | null;
-  sodium?: number | null;
-}
-
-interface MacroItemProps {
-  label: string;
-  value: number | null | undefined;
-  unit: string;
-  color: string;
-  maxValue?: number;
-}
-
-function MacroItem({ label, value, unit, color, maxValue }: MacroItemProps) {
-  if (value === null || value === undefined) return null;
-
-  const percentage = maxValue ? (value / maxValue) * 100 : 0;
-
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-baseline">
-        <span className="text-sm font-medium">{label}</span>
-        <span className="text-sm text-muted-foreground">
-          {value.toFixed(1)} {unit}
-        </span>
-      </div>
-      {maxValue && (
-        <Progress
-          value={percentage}
-          className="h-2"
-          style={{
-            // @ts-expect-error - CSS variable
-            "--progress-color": color,
-          }}
-        />
-      )}
-    </div>
-  );
 }
 
 export function MacroDisplay({
@@ -51,83 +17,127 @@ export function MacroDisplay({
   carbs,
   fat,
   fiber,
-  sugar,
-  sodium,
 }: MacroDisplayProps) {
-  // Daily recommended values for reference (can be customized)
-  const dailyValues = {
-    calories: 2000,
-    protein: 50,
-    carbs: 300,
-    fat: 65,
-    fiber: 28,
-    sugar: 50,
-    sodium: 2300,
+  // Filter out invalid data
+  if (
+    calories === undefined ||
+    calories === null ||
+    !protein ||
+    !carbs ||
+    !fat
+  ) {
+    return null;
+  }
+
+  // Calculate percentages based on standard caloric values: Protein 4, Carbs 4, Fat 9
+  const totalCals = (protein || 0) * 4 + (carbs || 0) * 4 + (fat || 0) * 9;
+  // Use provided calories if available, otherwise calculated
+  const displayCals = calories || totalCals;
+
+  const getPercent = (grams: number, calsPerGram: number) => {
+    if (!displayCals) return 0;
+    return Math.round(((grams * calsPerGram) / displayCals) * 100);
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Main macros */}
-      {calories !== null && calories !== undefined && (
-        <div className="pb-4 border-b">
-          <div className="text-3xl font-bold">{calories.toFixed(0)}</div>
-          <div className="text-sm text-muted-foreground">Calories</div>
-        </div>
-      )}
+  const stats = [
+    {
+      label: "Carbs",
+      value: carbs,
+      unit: "g",
+      color: "#D4A017", // Gold
+      percent: getPercent(carbs || 0, 4)
+    },
+    {
+      label: "Total Fat",
+      value: fat,
+      unit: "g",
+      color: "#F47B5C", // Coral
+      percent: getPercent(fat || 0, 9)
+    },
+    {
+      label: "Protein",
+      value: protein,
+      unit: "g",
+      color: "#64748B", // Slate
+      percent: getPercent(protein || 0, 4)
+    },
+  ];
 
-      <div className="space-y-3">
-        <MacroItem
-          label="Protein"
-          value={protein}
-          unit="g"
-          color="#ef4444"
-          maxValue={dailyValues.protein}
-        />
-        <MacroItem
-          label="Carbohydrates"
-          value={carbs}
-          unit="g"
-          color="#f59e0b"
-          maxValue={dailyValues.carbs}
-        />
-        <MacroItem
-          label="Fat"
-          value={fat}
-          unit="g"
-          color="#3b82f6"
-          maxValue={dailyValues.fat}
-        />
+  const chartData = stats.map(s => ({ name: s.label, value: s.value, color: s.color }));
+
+  return (
+    <div className="flex flex-row items-center gap-8 py-4 px-2">
+      {/* Donut Chart */}
+      <div className="h-[100px] w-[100px] relative shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={38}
+              outerRadius={48}
+              paddingAngle={4}
+              cornerRadius={8}
+              dataKey="value"
+              stroke="none"
+              isAnimationActive={true}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+              <Label
+                content={({ viewBox }) => {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                      <text
+                        x={viewBox.cx}
+                        y={viewBox.cy}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                      >
+                        <tspan
+                          x={viewBox.cx}
+                          y={viewBox.cy}
+                          className="fill-foreground text-lg font-bold font-display"
+                        >
+                          {displayCals.toFixed(0)}
+                        </tspan>
+                        <tspan
+                          x={viewBox.cx}
+                          y={(viewBox.cy || 0) + 12}
+                          className="fill-muted-foreground text-[9px] uppercase tracking-wider"
+                        >
+                          cals
+                        </tspan>
+                      </text>
+                    );
+                  }
+                }}
+              />
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* Additional nutrients */}
-      {(fiber || sugar || sodium) && (
-        <div className="pt-3 border-t space-y-3">
-          <MacroItem
-            label="Fiber"
-            value={fiber}
-            unit="g"
-            color="#10b981"
-            maxValue={dailyValues.fiber}
-          />
-          <MacroItem
-            label="Sugar"
-            value={sugar}
-            unit="g"
-            color="#8b5cf6"
-            maxValue={dailyValues.sugar}
-          />
-          <MacroItem
-            label="Sodium"
-            value={sodium}
-            unit="mg"
-            color="#6b7280"
-            maxValue={dailyValues.sodium}
-          />
-        </div>
-      )}
-
-      <div className="pt-3 text-xs text-muted-foreground">
-        * Percent Daily Values are based on a 2,000 calorie diet
+      {/* Stats Columns */}
+      <div className="flex items-center gap-8 md:gap-12">
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex flex-col items-center gap-0.5">
+            <span className="text-xl font-bold font-display text-foreground">
+              {stat.value?.toFixed(0)} <span className="text-sm font-normal text-muted-foreground">{stat.unit}</span>
+            </span>
+            <span className="text-xs text-muted-foreground font-medium">
+              {stat.label}
+            </span>
+            <span
+              className="text-xs font-bold"
+              style={{ color: stat.color }}
+            >
+              {stat.percent}% cals
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

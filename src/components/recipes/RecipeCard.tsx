@@ -7,7 +7,7 @@ import { Heart, Clock, Users, Flame, ChefHat } from "lucide-react";
 import { CategoryIcon } from "./CategoryIcon";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toggleFavorite } from "@/actions/recipe";
 import { toast } from "sonner";
@@ -22,8 +22,8 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
   const t = useTranslations("recipes");
-  const pathname = usePathname();
-  const locale = pathname.split("/")[1];
+  const params = useParams();
+  const locale = params.locale as string;
   const [isPending, startTransition] = useTransition();
   const [isFavorited, setIsFavorited] = useState(recipe.favoritedBy.length > 0);
 
@@ -153,11 +153,11 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 "px-2.5 py-1 rounded-full text-xs font-medium",
                 "backdrop-blur-sm border",
                 recipe.difficulty === "easy" &&
-                  "bg-sage-500/90 text-white border-sage-400/50",
+                "bg-sage-500/90 text-white border-sage-400/50",
                 recipe.difficulty === "medium" &&
-                  "bg-gold-500/90 text-white border-gold-400/50",
+                "bg-gold-500/90 text-white border-gold-400/50",
                 recipe.difficulty === "hard" &&
-                  "bg-brand-500/90 text-white border-brand-400/50"
+                "bg-brand-500/90 text-white border-brand-400/50"
               )}
             >
               {t(`difficulty.${recipe.difficulty}`)}

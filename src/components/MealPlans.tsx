@@ -9,16 +9,7 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Label } from "./ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,22 +20,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { Separator } from "./ui/separator";
 import {
   Plus,
-  Share,
-  Copy,
-  Target,
-  Trash2,
-  Edit,
   CalendarDays,
-  Clock,
+  Sparkles,
+  ChefHat,
 } from "lucide-react";
 import { MealPlanCalendar } from "./meal-plans/MealPlanCalendar";
 import { MealPlanForm } from "./meal-plans/MealPlanForm";
-// import { MacroDisplay } from "./meal-plans/MacroDisplay";
+import { MealPlanOverview } from "./meal-plans/MealPlanOverview";
 import { SavedPlansCalendar } from "./meal-plans/SavedPlansCalendar";
-import { ArrowLeft, Edit2 } from "lucide-react";
+import { Edit2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   getMealPlans,
   getMealPlan,
@@ -62,8 +49,9 @@ import { useTranslations } from "next-intl";
 export default function MealPlans() {
   const t = useTranslations("mealPlans");
   const common = useTranslations("common");
-  const [activeTab, setActiveTab] = useState("templates");
+  const [activeTab, setActiveTab] = useState("planner");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   type TemplateWithMealsAndSchedules = Prisma.MealPlanTemplateGetPayload<{
     include: {
       days: { include: { meals: { include: { recipe: true } } } };
@@ -134,6 +122,11 @@ export default function MealPlans() {
         toast.error(result.error);
       } else {
         toast.success(t("planDeleted"));
+        // Clear selection if deleted plan was selected
+        if (selectedPlanId === id) {
+          setSelectedPlanId(null);
+          setEditingMealTemplate(null);
+        }
         loadTemplates();
       }
       setDeleteDialogOpen(false);
@@ -240,12 +233,106 @@ export default function MealPlans() {
         };
 
         setEditingMealTemplate(templateWithMacros);
-        setActiveTab("edit-meals");
+        setSelectedPlanId(templateId);
       }
     });
   };
 
-  // Handle switching between meal plans in Edit Meals tab
+  // Handle selecting a meal plan (combines selection and data loading)
+  const handleSelectPlan = useCallback(
+    (templateId: string) => {
+      setSelectedPlanId(templateId);
+      // Load the meal plan data
+      startTransition(async () => {
+        const result = await getMealPlan(templateId);
+        if (result.error) {
+          toast.error(result.error);
+        } else if (result.data) {
+          const data = result.data as TemplateWithMealsAndSchedules;
+          const days = data.days.map((day) => {
+            const meals = day.meals || [];
+            const macros = meals.reduce(
+              (acc, meal) => ({
+                calories:
+                  acc.calories + (meal.recipe?.calories || 0) * meal.servings,
+                protein:
+                  acc.protein + (meal.recipe?.protein || 0) * meal.servings,
+                carbs: acc.carbs + (meal.recipe?.carbs || 0) * meal.servings,
+                fat: acc.fat + (meal.recipe?.fat || 0) * meal.servings,
+              }),
+              { calories: 0, protein: 0, carbs: 0, fat: 0 }
+            );
+
+            return {
+              id: day.id,
+              dayNumber: day.dayNumber,
+              date: undefined,
+              macros,
+              meals: meals.map((meal) => ({
+                id: meal.id,
+                recipeId: meal.recipeId,
+                recipeName: meal.recipe?.title || t("calendar.unknownRecipe"),
+                recipeImage: meal.recipe?.imageUrl || undefined,
+                mealType: meal.mealType as unknown as MealType,
+                servings: meal.servings,
+                calories: (meal.recipe?.calories || 0) * meal.servings,
+                protein: (meal.recipe?.protein || 0) * meal.servings,
+                carbs: (meal.recipe?.carbs || 0) * meal.servings,
+                fat: (meal.recipe?.fat || 0) * meal.servings,
+              })),
+            };
+          });
+
+          const averageMacros = days.length
+            ? {
+                calories: Math.round(
+                  days.reduce((s, d) => s + d.macros.calories, 0) / days.length
+                ),
+                protein: Math.round(
+                  days.reduce((s, d) => s + d.macros.protein, 0) / days.length
+                ),
+                carbs: Math.round(
+                  days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
+                ),
+                fat: Math.round(
+                  days.reduce((s, d) => s + d.macros.fat, 0) / days.length
+                ),
+              }
+            : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+          const templateWithMacros: MealPlanTemplateDisplay = {
+            id: data.id,
+            name: data.name,
+            duration: data.duration,
+            mealSlots:
+              data.mealSlots as unknown as MealPlanTemplateDisplay["mealSlots"],
+            isPublic: data.isPublic,
+            shareToken: data.shareToken ?? undefined,
+            targets: {
+              calories: data.targetCalories ?? undefined,
+              protein: data.targetProtein ?? undefined,
+              carbs: data.targetCarbs ?? undefined,
+              fat: data.targetFat ?? undefined,
+            },
+            days,
+            averageMacros,
+          };
+
+          setEditingMealTemplate(templateWithMacros);
+        }
+      });
+    },
+    [t]
+  );
+
+  // Auto-select first plan when templates load
+  useEffect(() => {
+    if (templates.length > 0 && !selectedPlanId && !editingMealTemplate) {
+      handleSelectPlan(templates[0].id);
+    }
+  }, [templates, selectedPlanId, editingMealTemplate, handleSelectPlan]);
+
+  // Handle switching between meal plans (legacy - now using handleSelectPlan)
   const handleSwitchMealPlan = (templateId: string) => {
     startTransition(async () => {
       const result = await getMealPlan(templateId);
@@ -330,384 +417,191 @@ export default function MealPlans() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">{t("title")}</h2>
-          <p className="text-muted-foreground">{t("subtitle")}</p>
-        </div>
+    <div className="min-h-screen">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-100/30 dark:bg-brand-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
+      </div>
 
-        <div className="flex gap-2">
+      <div className="relative p-6 lg:p-8 space-y-8">
+        {/* Hero Header */}
+        <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20">
+                <ChefHat className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+              </div>
+              <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-widest">
+                {t("mealPlanner")}
+              </span>
+            </div>
+            <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
+              {t("title")}
+            </h1>
+            <p className="text-muted-foreground max-w-lg leading-relaxed">
+              {t("subtitle")}
+            </p>
+          </div>
+
           <Button
             onClick={() => setShowCreateDialog(true)}
-            className="gap-2"
+            className={cn(
+              "gap-2 h-11 px-6 shadow-lg shadow-brand-500/20",
+              "bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700",
+              "transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
+            )}
             disabled={isPending}
           >
-            <Plus className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
             {t("createPlan")}
           </Button>
         </div>
-      </div>
 
-      {/* Meal Plan Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="templates">
-            {t("myMealPlans", { count: templates.length })}
-          </TabsTrigger>
-          <TabsTrigger value="edit-meals">{t("editMeals")}</TabsTrigger>
-          <TabsTrigger value="calendar">{t("calendarView")}</TabsTrigger>
-        </TabsList>
+        {/* Meal Plan Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-muted/50 backdrop-blur-sm border border-border/50 p-1 h-auto">
+            <TabsTrigger
+              value="planner"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5 rounded-lg transition-all"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              {t("mealPlanner")}
+            </TabsTrigger>
+            <TabsTrigger
+              value="calendar"
+              className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5 rounded-lg transition-all"
+            >
+              <CalendarDays className="w-4 h-4 mr-2" />
+              {t("calendarView")}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Meal Plans Tab */}
-        <TabsContent value="templates" className="space-y-6">
-          {isPending && templates.length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                {t("loadingTemplates")}
-              </CardContent>
-            </Card>
-          )}
+          {/* Meal Planner Tab - Combined Overview + Editor */}
+          <TabsContent value="planner" className="space-y-6 mt-6">
+            {/* Compact Meal Plan Overview */}
+            <MealPlanOverview
+              templates={templates}
+              selectedId={selectedPlanId}
+              onSelectPlan={handleSelectPlan}
+              onCreatePlan={() => setShowCreateDialog(true)}
+              onEditDetails={handleEdit}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDelete}
+              onCopyShareLink={handleCopyShareLink}
+              isPending={isPending}
+            />
 
-          {!isPending && templates.length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">{t("noMealPlans")}</h3>
-                <p className="text-muted-foreground mb-4">
-                  {t("noMealPlansDescription")}
-                </p>
-                <Button
-                  onClick={() => setShowCreateDialog(true)}
-                  className="gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t("createFirstPlan")}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {templates.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {templates.map((template) => {
-                const activeSchedulesCount =
-                  template.schedules?.filter((s) => s.status === "active")
-                    .length || 0;
-
-                return (
-                  <Card
-                    key={template.id}
-                    className="hover:shadow-lg transition-shadow"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <CardTitle className="text-lg line-clamp-1">
-                              {template.name}
-                            </CardTitle>
-                            {template.isPublic && (
-                              <Badge
-                                variant="secondary"
-                                className="flex-shrink-0"
-                              >
-                                {t("public")}
-                              </Badge>
-                            )}
-                          </div>
-                          <CardDescription className="flex items-center gap-2">
-                            <Clock className="w-3 h-3" />
-                            {template.duration}{" "}
-                            {template.duration === 1
-                              ? t("calendar.day")
-                              : t("calendar.days")}
-                            {activeSchedulesCount > 0 && (
-                              <Badge variant="outline" className="ml-2">
-                                {activeSchedulesCount}{" "}
-                                {activeSchedulesCount === 1
-                                  ? t("calendar.schedule")
-                                  : t("calendar.schedules")}
-                              </Badge>
-                            )}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {template.targetCalories && (
-                        <div className="text-center">
-                          <p className="text-2xl font-medium">
-                            {Math.round(template.targetCalories)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("targetCalories")}
-                          </p>
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full gap-2 mb-2"
-                        onClick={() => handleEditMeals(template.id)}
-                        disabled={isPending}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                        {t("editMeals")}
-                      </Button>
-
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleEdit(template.id)}
-                          disabled={isPending}
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          {t("editDetails")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => handleDuplicate(template.id)}
-                          disabled={isPending}
-                        >
-                          <Copy className="w-3 h-3 mr-1" />
-                          {t("duplicate")}
-                        </Button>
-                      </div>
-
-                      {template.isPublic && template.shareToken && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-2"
-                          onClick={() =>
-                            handleCopyShareLink(template.shareToken!)
-                          }
-                        >
-                          <Share className="w-4 h-4" />
-                          {t("copyShareLink")}
-                        </Button>
-                      )}
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(template.id)}
-                        disabled={isPending}
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        {t("deleteMealPlan")}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Edit Meals Tab */}
-        <TabsContent value="edit-meals" className="space-y-6">
-          {editingMealTemplate ? (
-            <>
-              {/* Header with meal plan selector */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Edit2 className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                        <Select
-                          value={editingMealTemplate.id}
-                          onValueChange={handleSwitchMealPlan}
-                          disabled={isPending}
-                        >
-                          <SelectTrigger className="w-full max-w-md">
-                            <SelectValue placeholder={t("chooseMealPlan")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {templates.map((template) => (
-                              <SelectItem key={template.id} value={template.id}>
-                                {template.name} ({template.duration}{" "}
-                                {template.duration === 1
-                                  ? t("calendar.day")
-                                  : t("calendar.days")}
-                                )
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <CardDescription>
-                        {t("editMealsDescription")}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingMealTemplate(null);
-                        setActiveTab("templates");
-                      }}
-                      className="gap-2 flex-shrink-0"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      {t("backToMealPlans")}
-                    </Button>
+            {/* Meal Plan Calendar Editor */}
+            {editingMealTemplate ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <MealPlanCalendar
+                  mealPlan={editingMealTemplate}
+                  onUpdate={() => {
+                    handleSelectPlan(editingMealTemplate.id);
+                    loadTemplates();
+                  }}
+                />
+              </div>
+            ) : (
+              <Card className="border-2 border-dashed border-border/60 bg-gradient-to-br from-muted/30 to-transparent">
+                <CardContent className="py-16 text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-100/50 dark:bg-brand-500/10 mb-6">
+                    <Edit2 className="w-8 h-8 text-brand-500/70" />
                   </div>
-                </CardHeader>
+                  <h3 className="font-display font-semibold text-xl mb-3 text-foreground">
+                    {t("selectToEdit")}
+                  </h3>
+                  <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                    {t("selectToEditDescription")}
+                  </p>
+                </CardContent>
               </Card>
+            )}
+          </TabsContent>
 
-              {/* Meal Plan Calendar */}
-              <MealPlanCalendar
-                mealPlan={editingMealTemplate}
-                onUpdate={() => {
-                  // Reload the template to get updated data
-                  handleEditMeals(editingMealTemplate.id);
-                  // Also reload templates list to show updated meal counts
-                  loadTemplates();
-                }}
-              />
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Edit2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">
-                  {t("selectToEdit")}
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {t("selectToEditDescription")}
-                </p>
-
-                {templates.length > 0 ? (
-                  <div className="space-y-2 max-w-md mx-auto">
-                    <Label htmlFor="meal-plan-select">{t("mealPlan")}</Label>
-                    <Select
-                      onValueChange={handleSwitchMealPlan}
-                      disabled={isPending}
-                    >
-                      <SelectTrigger id="meal-plan-select">
-                        <SelectValue placeholder={t("chooseMealPlan")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.map((template) => (
-                          <SelectItem key={template.id} value={template.id}>
-                            {template.name} ({template.duration}{" "}
-                            {template.duration === 1
-                              ? t("calendar.day")
-                              : t("calendar.days")}
-                            )
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          {/* Calendar View Tab */}
+          <TabsContent value="calendar" className="space-y-6 mt-6">
+            <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-brand-100 dark:bg-brand-500/20">
+                    <CalendarDays className="w-5 h-5 text-brand-600 dark:text-brand-400" />
                   </div>
-                ) : (
-                  <div className="text-center space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      {t("noMealPlansYet")}
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setActiveTab("templates");
-                        setShowCreateDialog(true);
-                      }}
-                      className="gap-2"
-                    >
-                      <Plus className="w-4 h-4" />
-                      {t("createFirstPlan")}
-                    </Button>
+                  <div>
+                    <CardTitle className="font-display text-lg">
+                      {t("calendar.scheduleTitle")}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {t("calendar.scheduleDescription")}
+                    </CardDescription>
                   </div>
-                )}
-              </CardContent>
+                </div>
+              </CardHeader>
             </Card>
-          )}
-        </TabsContent>
 
-        {/* Calendar View Tab */}
-        <TabsContent value="calendar" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="w-5 h-5" />
-                {t("calendar.scheduleTitle")}
-              </CardTitle>
-              <CardDescription>
-                {t("calendar.scheduleDescription")}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+            <SavedPlansCalendar savedPlans={templates} onUpdate={loadTemplates} />
+          </TabsContent>
+        </Tabs>
 
-          <SavedPlansCalendar savedPlans={templates} onUpdate={loadTemplates} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Create Meal Plan Dialog */}
-      <MealPlanForm
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onSuccess={(createdTemplateId) => {
-          loadTemplates();
-          // If a new meal plan was created, automatically open it in Edit Meals tab
-          if (createdTemplateId) {
-            handleEditMeals(createdTemplateId);
-          }
-        }}
-      />
-
-      {/* Edit Meal Plan Dialog */}
-      {editingTemplate && (
+        {/* Create Meal Plan Dialog */}
         <MealPlanForm
-          open={showEditDialog}
-          onOpenChange={(open) => {
-            setShowEditDialog(open);
-            if (!open) setEditingTemplate(null);
-          }}
-          onSuccess={loadTemplates}
-          editMode
-          planId={editingTemplate.id}
-          defaultValues={{
-            name: editingTemplate.name,
-            duration: editingTemplate.duration,
-            mealSlots: editingTemplate.mealSlots as unknown as MealType[],
-            targetCalories: editingTemplate.targetCalories ?? undefined,
-            targetProtein: editingTemplate.targetProtein ?? undefined,
-            targetCarbs: editingTemplate.targetCarbs ?? undefined,
-            targetFat: editingTemplate.targetFat ?? undefined,
-            isPublic: editingTemplate.isPublic,
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onSuccess={(createdTemplateId) => {
+            loadTemplates();
+            // If a new meal plan was created, automatically select it
+            if (createdTemplateId) {
+              handleSelectPlan(createdTemplateId);
+            }
           }}
         />
-      )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("deleteConfirm")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("deleteDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{common("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {common("delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Edit Meal Plan Dialog */}
+        {editingTemplate && (
+          <MealPlanForm
+            open={showEditDialog}
+            onOpenChange={(open) => {
+              setShowEditDialog(open);
+              if (!open) setEditingTemplate(null);
+            }}
+            onSuccess={loadTemplates}
+            editMode
+            planId={editingTemplate.id}
+            defaultValues={{
+              name: editingTemplate.name,
+              duration: editingTemplate.duration,
+              mealSlots: editingTemplate.mealSlots as unknown as MealType[],
+              targetCalories: editingTemplate.targetCalories ?? undefined,
+              targetProtein: editingTemplate.targetProtein ?? undefined,
+              targetCarbs: editingTemplate.targetCarbs ?? undefined,
+              targetFat: editingTemplate.targetFat ?? undefined,
+              isPublic: editingTemplate.isPublic,
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display">{t("deleteConfirm")}</AlertDialogTitle>
+              <AlertDialogDescription className="leading-relaxed">
+                {t("deleteDescription")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-lg">{common("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-destructive hover:bg-destructive/90 rounded-lg"
+              >
+                {common("delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }

@@ -484,6 +484,7 @@
         "servings": "porcji",
         "serving": "porcja",
         "percentOfTarget": "% celu",
+        "mealPlanner": "Planista Posiłków",
         "myMealPlans": "Moje Plany Posiłków ({count})",
         "editMeals": "Edytuj Posiłki",
         "calendarView": "Widok Kalendarza",
