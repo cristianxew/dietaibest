@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   X,
@@ -29,13 +28,18 @@ import {
   Tag,
   ChefHat,
   Folder,
+  Heart,
+  SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
+// Tabs removed - using custom toggle buttons
 import { toast } from "sonner";
 import { Recipe, RecipeCategory, UserFavorite } from "@/generated/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const RECENT_SEARCHES_KEY = "DietAIbook-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -241,25 +245,42 @@ export function RecipesList() {
 
   if (loading && recipes.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Loading skeleton for filters */}
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <div className="flex gap-4">
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-10 w-40" />
-            <Skeleton className="h-10 w-40" />
+        <div
+          className={cn(
+            "p-5 rounded-2xl",
+            "bg-card border border-border/50",
+            "space-y-4"
+          )}
+        >
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <div className="flex flex-wrap gap-3">
+            <Skeleton className="h-10 w-36 rounded-lg" />
+            <Skeleton className="h-10 w-36 rounded-lg" />
+            <Skeleton className="h-10 w-36 rounded-lg" />
+            <Skeleton className="h-10 w-48 rounded-lg" />
           </div>
         </div>
 
         {/* Loading skeleton for recipe grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="aspect-video w-full" />
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-1/2" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="rounded-2xl overflow-hidden border border-border/50 bg-card"
+            >
+              <Skeleton className="aspect-[4/3] w-full" />
+              <div className="p-5 space-y-3">
+                <Skeleton className="h-4 w-20 rounded-full" />
+                <Skeleton className="h-6 w-4/5" />
+                <Skeleton className="h-4 w-full" />
+                <div className="pt-3 border-t border-border/30 flex justify-between">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -295,13 +316,34 @@ export function RecipesList() {
     }
   };
 
+  const hasActiveFilters =
+    searchTerm ||
+    selectedCategory !== "all" ||
+    selectedDifficulty !== "all" ||
+    showFavorites;
+
   return (
-    <div className="space-y-6">
-      {/* Search and filters */}
-      <div className="space-y-4">
+    <div className="space-y-8">
+      {/* Search and filters card */}
+      <div
+        className={cn(
+          "p-5 rounded-2xl",
+          "bg-card border border-border/50",
+          "shadow-sm"
+        )}
+      >
         {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative mb-5">
+          <div
+            className={cn(
+              "absolute left-4 top-1/2 -translate-y-1/2",
+              "flex items-center justify-center",
+              "h-8 w-8 rounded-full",
+              "bg-brand-100 dark:bg-brand-900/30"
+            )}
+          >
+            <Search className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+          </div>
           <Input
             ref={searchInputRef}
             placeholder={t("searchPlaceholder")}
@@ -316,17 +358,24 @@ export function RecipesList() {
               }
             }}
             onFocus={() => setShowSuggestions(true)}
-            className="pl-10 pr-10"
+            className={cn(
+              "h-14 pl-16 pr-12 text-base",
+              "rounded-xl border-border/50",
+              "bg-background",
+              "placeholder:text-muted-foreground/60",
+              "focus:border-brand-300 focus:ring-brand-200/50",
+              "transition-all duration-200"
+            )}
           />
           {searchInput && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => {
                 setSearchInput("");
                 setSearchTerm("");
               }}
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -336,11 +385,16 @@ export function RecipesList() {
           {showSuggestions && (searchInput || recentSearches.length > 0) && (
             <Card
               ref={suggestionsRef}
-              className="absolute top-full left-0 right-0 mt-1 z-50 max-h-80 overflow-auto shadow-lg"
+              className={cn(
+                "absolute top-full left-0 right-0 mt-2 z-50",
+                "max-h-80 overflow-auto",
+                "shadow-xl border-border/50 rounded-xl"
+              )}
             >
               {/* Loading state */}
               {loadingSuggestions && (
-                <div className="p-4 text-center text-sm text-muted-foreground">
+                <div className="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Sparkles className="h-4 w-4 animate-pulse text-brand-500" />
                   Searching...
                 </div>
               )}
@@ -348,20 +402,29 @@ export function RecipesList() {
               {/* Suggestions */}
               {!loadingSuggestions && suggestions.length > 0 && (
                 <div className="p-2">
-                  <div className="text-xs font-medium text-muted-foreground px-2 py-1">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
                     Suggestions
                   </div>
                   {suggestions.map((suggestion, idx) => (
                     <button
                       key={`${suggestion.type}-${idx}`}
                       onClick={() => applySearch(suggestion.value)}
-                      className="flex items-center gap-2 w-full px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors"
+                      className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
+                        "hover:bg-brand-50 dark:hover:bg-brand-950/30",
+                        "rounded-lg transition-colors"
+                      )}
                     >
-                      {getSuggestionIcon(suggestion.type)}
-                      <span className="flex-1 text-left">
+                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted">
+                        {getSuggestionIcon(suggestion.type)}
+                      </div>
+                      <span className="flex-1 text-left font-medium">
                         {suggestion.value}
                       </span>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] uppercase tracking-wider"
+                      >
                         {suggestion.type}
                       </Badge>
                     </button>
@@ -372,15 +435,15 @@ export function RecipesList() {
               {/* Recent searches */}
               {!searchInput && recentSearches.length > 0 && (
                 <div className="p-2">
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <span className="text-xs font-medium text-muted-foreground">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Recent Searches
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={clearRecentSearches}
-                      className="h-6 text-xs"
+                      className="h-6 text-xs text-muted-foreground hover:text-foreground"
                     >
                       Clear
                     </Button>
@@ -389,7 +452,10 @@ export function RecipesList() {
                     <button
                       key={idx}
                       onClick={() => applySearch(search)}
-                      className="flex items-center gap-2 w-full px-2 py-2 text-sm hover:bg-accent rounded-md transition-colors"
+                      className={cn(
+                        "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
+                        "hover:bg-muted/50 rounded-lg transition-colors"
+                      )}
                     >
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       <span className="flex-1 text-left">{search}</span>
@@ -402,7 +468,7 @@ export function RecipesList() {
               {!loadingSuggestions &&
                 searchInput &&
                 suggestions.length === 0 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="p-6 text-center text-sm text-muted-foreground">
                     No suggestions found
                   </div>
                 )}
@@ -410,11 +476,23 @@ export function RecipesList() {
           )}
         </div>
 
-        {/* Filter options */}
-        <div className="flex flex-wrap gap-4">
+        {/* Filter row */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filter icon label */}
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground pr-2 border-r border-border/50">
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="font-medium">Filters</span>
+          </div>
+
           {/* Category filter */}
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger
+              className={cn(
+                "w-[150px] h-10 rounded-lg border-border/50",
+                selectedCategory !== "all" &&
+                  "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
+              )}
+            >
               <SelectValue placeholder={t("allCategories")} />
             </SelectTrigger>
             <SelectContent>
@@ -432,7 +510,13 @@ export function RecipesList() {
             value={selectedDifficulty}
             onValueChange={setSelectedDifficulty}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger
+              className={cn(
+                "w-[150px] h-10 rounded-lg border-border/50",
+                selectedDifficulty !== "all" &&
+                  "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
+              )}
+            >
               <SelectValue placeholder={t("allDifficulties")} />
             </SelectTrigger>
             <SelectContent>
@@ -450,7 +534,7 @@ export function RecipesList() {
               setSortBy(v as "createdAt" | "title" | "calories" | "prepTime")
             }
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[150px] h-10 rounded-lg border-border/50">
               <SelectValue placeholder={t("sortBy")} />
             </SelectTrigger>
             <SelectContent>
@@ -461,24 +545,45 @@ export function RecipesList() {
             </SelectContent>
           </Select>
 
-          {/* Favorites toggle */}
-          <Tabs
-            value={showFavorites ? "favorites" : "all"}
-            onValueChange={(v) => setShowFavorites(v === "favorites")}
-          >
-            <TabsList>
-              <TabsTrigger value="all">{t("allRecipes")}</TabsTrigger>
-              <TabsTrigger value="favorites">{t("favorites")}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Divider */}
+          <div className="hidden sm:block h-6 w-px bg-border/50" />
+
+          {/* All / Favorites toggle buttons */}
+          <div className="flex rounded-lg border border-border/50 overflow-hidden">
+            <button
+              onClick={() => setShowFavorites(false)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors",
+                !showFavorites
+                  ? "bg-brand-500 text-white"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              {t("allRecipes")}
+            </button>
+            <button
+              onClick={() => setShowFavorites(true)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5",
+                showFavorites
+                  ? "bg-gold-500 text-white"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5",
+                  showFavorites && "fill-current"
+                )}
+              />
+              {t("favorites")}
+            </button>
+          </div>
 
           {/* Clear filters button */}
-          {(searchTerm ||
-            selectedCategory !== "all" ||
-            selectedDifficulty !== "all" ||
-            showFavorites) && (
+          {hasActiveFilters && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => {
                 setSearchTerm("");
@@ -488,68 +593,103 @@ export function RecipesList() {
                 setShowFavorites(false);
                 setPage(1);
               }}
-              className="flex items-center gap-2"
+              className="h-10 px-3 text-muted-foreground hover:text-foreground"
             >
-              <X className="h-4 w-4" />
-              Clear Filters
+              <X className="h-4 w-4 mr-1.5" />
+              Clear
             </Button>
           )}
         </div>
-
-        {/* Results summary */}
-        {!loading && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div>
-              {totalCount > 0 ? (
-                <>
-                  Showing {(page - 1) * itemsPerPage + 1}-
-                  {Math.min(page * itemsPerPage, totalCount)} of {totalCount}{" "}
-                  recipes
-                  {showFavorites && " in favorites"}
-                  {selectedCategory !== "all" &&
-                    categories.find((c) => c.id === selectedCategory) &&
-                    ` in ${
-                      categories.find((c) => c.id === selectedCategory)?.name
-                    }`}
-                  {selectedDifficulty !== "all" &&
-                    ` with ${selectedDifficulty} difficulty`}
-                </>
-              ) : (
-                "No recipes found"
-              )}
-            </div>
-
-            {/* Items per page selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs">Show:</span>
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => setItemsPerPage(Number(value))}
-              >
-                <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="6">6</SelectItem>
-                  <SelectItem value="12">12</SelectItem>
-                  <SelectItem value="24">24</SelectItem>
-                  <SelectItem value="48">48</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-xs">per page</span>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Results summary */}
+      {!loading && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            {totalCount > 0 ? (
+              <span>
+                Showing{" "}
+                <span className="font-medium text-foreground">
+                  {(page - 1) * itemsPerPage + 1}-
+                  {Math.min(page * itemsPerPage, totalCount)}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium text-foreground">{totalCount}</span>{" "}
+                recipes
+                {showFavorites && (
+                  <Badge variant="gold" className="ml-2 text-[10px]">
+                    Favorites
+                  </Badge>
+                )}
+                {selectedCategory !== "all" &&
+                  categories.find((c) => c.id === selectedCategory) && (
+                    <Badge variant="brand" className="ml-2 text-[10px]">
+                      {categories.find((c) => c.id === selectedCategory)?.name}
+                    </Badge>
+                  )}
+                {selectedDifficulty !== "all" && (
+                  <Badge variant="secondary" className="ml-2 text-[10px] capitalize">
+                    {selectedDifficulty}
+                  </Badge>
+                )}
+              </span>
+            ) : (
+              <span className="text-muted-foreground">No recipes found</span>
+            )}
+          </div>
+
+          {/* Items per page selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Show:</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => setItemsPerPage(Number(value))}
+            >
+              <SelectTrigger className="h-8 w-[70px] rounded-lg border-border/50">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="8">8</SelectItem>
+                <SelectItem value="12">12</SelectItem>
+                <SelectItem value="24">24</SelectItem>
+                <SelectItem value="48">48</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-xs text-muted-foreground">per page</span>
+          </div>
+        </div>
+      )}
 
       {/* Recipe grid */}
       {recipes.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">{t("noRecipes")}</p>
+        <div
+          className={cn(
+            "text-center py-16 px-8 rounded-2xl",
+            "bg-muted/30 border border-dashed border-border"
+          )}
+        >
+          <div className="flex justify-center mb-4">
+            <div
+              className={cn(
+                "h-16 w-16 rounded-full flex items-center justify-center",
+                "bg-brand-100 dark:bg-brand-900/30"
+              )}
+            >
+              <ChefHat className="h-8 w-8 text-brand-500" />
+            </div>
+          </div>
+          <p className="text-lg font-medium text-foreground mb-1">
+            {t("noRecipes")}
+          </p>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            {hasActiveFilters
+              ? "Try adjusting your filters or search terms"
+              : "Start by adding your first recipe to build your collection"}
+          </p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {recipes.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} />
             ))}
@@ -557,7 +697,12 @@ export function RecipesList() {
 
           {/* Enhanced Pagination */}
           {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-8">
+            <div
+              className={cn(
+                "flex flex-col sm:flex-row justify-center items-center gap-4 mt-10 pt-8",
+                "border-t border-border/30"
+              )}
+            >
               <div className="flex items-center gap-1">
                 {/* First page button */}
                 <Button
@@ -565,7 +710,7 @@ export function RecipesList() {
                   size="icon"
                   onClick={() => setPage(1)}
                   disabled={page === 1 || isPending}
-                  className="h-8 w-8"
+                  className="h-9 w-9 rounded-lg border-border/50"
                   title="First page"
                 >
                   <ChevronsLeft className="h-4 w-4" />
@@ -577,7 +722,7 @@ export function RecipesList() {
                   size="icon"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1 || isPending}
-                  className="h-8 w-8"
+                  className="h-9 w-9 rounded-lg border-border/50"
                   title="Previous page"
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -600,7 +745,12 @@ export function RecipesList() {
                         size="sm"
                         onClick={() => setPage(Number(pageNum))}
                         disabled={isPending}
-                        className="h-8 min-w-[2rem]"
+                        className={cn(
+                          "h-9 min-w-[2.25rem] rounded-lg",
+                          page === pageNum
+                            ? "bg-brand-500 hover:bg-brand-600 text-white border-transparent"
+                            : "border-border/50"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -614,7 +764,7 @@ export function RecipesList() {
                   size="icon"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages || isPending}
-                  className="h-8 w-8"
+                  className="h-9 w-9 rounded-lg border-border/50"
                   title="Next page"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -626,7 +776,7 @@ export function RecipesList() {
                   size="icon"
                   onClick={() => setPage(totalPages)}
                   disabled={page === totalPages || isPending}
-                  className="h-8 w-8"
+                  className="h-9 w-9 rounded-lg border-border/50"
                   title="Last page"
                 >
                   <ChevronsRight className="h-4 w-4" />
@@ -652,7 +802,7 @@ export function RecipesList() {
                         setPage(newPage);
                       }
                     }}
-                    className="h-8 w-16"
+                    className="h-9 w-16 rounded-lg border-border/50"
                     disabled={isPending}
                   />
                 </div>

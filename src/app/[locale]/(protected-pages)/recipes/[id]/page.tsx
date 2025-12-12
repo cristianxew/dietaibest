@@ -51,7 +51,7 @@ export default async function RecipeDetailPage({
   const isFavorited = recipe.favoritedBy.length > 0;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto py-8">
       {/* Header Navigation */}
       <div className="mb-6">
         <Link href={`/${locale}/recipes`}>

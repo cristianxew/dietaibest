@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Lato, Alice, Poppins } from "next/font/google";
+import { DM_Sans, Playfair_Display, Inter, Lato, Alice, Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-// Primary fonts for the new design system
+// Primary fonts for the "Culinary Elegance" design system
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-dm-sans",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-playfair",
+});
+
+// Keep Inter as fallback
 const inter = Inter({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-inter",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
 });
 
 // Geist Mono for code and technical content
@@ -76,8 +83,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`
+          ${dmSans.variable}
+          ${playfair.variable}
           ${inter.variable}
-          ${spaceGrotesk.variable}
           ${geistMono.variable}
           ${lato.variable}
           ${alice.variable}

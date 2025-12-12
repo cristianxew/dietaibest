@@ -66,7 +66,7 @@ export function MealSlot({
         ref={setDropNodeRef}
         className={cn(
           "p-3 border-2 border-dashed transition-colors min-h-[80px] flex items-center justify-center",
-          isOver && "border-primary bg-primary/5",
+          isOver && "border-brand-400 bg-brand-50/50 dark:bg-brand-500/10",
           "hover:border-muted-foreground/30"
         )}
       >
@@ -84,7 +84,7 @@ export function MealSlot({
       className={cn(
         "p-3 transition-all",
         isDraggingSelf && "opacity-50 cursor-grabbing",
-        isOver && "ring-2 ring-primary",
+        isOver && "ring-2 ring-brand-400",
         "hover:shadow-sm"
       )}
     >

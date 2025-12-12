@@ -21,7 +21,7 @@ function MacroCircle({ percentage, label, color }: MacroCircleProps) {
       >
         {percentage}%
       </div>
-      <div className="text-[0.6rem] text-muted-foreground mt-1 uppercase">
+      <div className="text-[0.6rem] text-muted-foreground mt-1 uppercase tracking-wide">
         {label}
       </div>
     </div>
@@ -47,7 +47,7 @@ function ActivityItem({ icon, label, status }: ActivityItemProps) {
         <span>{label}</span>
       </div>
       {status === "done" ? (
-        <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[0.6rem] font-medium">
+        <span className="text-sage-700 dark:text-sage-400 bg-sage-100 dark:bg-sage-500/15 px-1.5 py-0.5 rounded text-[0.6rem] font-medium">
           Done
         </span>
       ) : (
@@ -64,8 +64,8 @@ interface DashboardPreviewProps {
 export function DashboardPreview({ className }: DashboardPreviewProps) {
   return (
     <div className={cn("relative group", className)}>
-      {/* Decorative gradient background */}
-      <div className="absolute -inset-4 bg-gradient-to-tr from-primary/10 to-muted rounded-[2rem] -z-10 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
+      {/* Decorative gradient background - warm sunset tones */}
+      <div className="absolute -inset-4 bg-gradient-to-tr from-brand-200/40 via-gold-100/30 to-brand-100/40 dark:from-brand-500/10 dark:via-gold-500/5 dark:to-brand-500/10 rounded-[2rem] -z-10 blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
 
       {/* Main Card */}
       <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden relative">
@@ -74,7 +74,7 @@ export function DashboardPreview({ className }: DashboardPreviewProps) {
           <div className="flex gap-2">
             <div className="w-3 h-3 rounded-full bg-red-400/80" />
             <div className="w-3 h-3 rounded-full bg-amber-400/80" />
-            <div className="w-3 h-3 rounded-full bg-green-400/80" />
+            <div className="w-3 h-3 rounded-full bg-sage-400/80" />
           </div>
           <div className="text-[0.65rem] font-mono text-muted-foreground uppercase tracking-widest">
             Weekly_Plan.ai
@@ -100,17 +100,17 @@ export function DashboardPreview({ className }: DashboardPreviewProps) {
               <MacroCircle
                 percentage={45}
                 label="Carb"
-                color="border-primary"
+                color="border-gold-500"
               />
               <MacroCircle
                 percentage={30}
                 label="Prot"
-                color="border-blue-500"
+                color="border-slate-500"
               />
               <MacroCircle
                 percentage={25}
                 label="Fat"
-                color="border-orange-400"
+                color="border-brand-400"
               />
             </div>
           </div>
@@ -120,7 +120,7 @@ export function DashboardPreview({ className }: DashboardPreviewProps) {
             <div className="flex items-center gap-2 mb-3">
               <Icon
                 icon="solar:stars-minimalistic-bold-duotone"
-                className="text-purple-500"
+                className="text-gold-500"
               />
               <span className="text-xs font-semibold text-foreground">
                 Agent Activity
@@ -158,7 +158,7 @@ export function DashboardPreview({ className }: DashboardPreviewProps) {
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" defaultChecked className="sr-only peer" />
-              <div className="w-9 h-5 bg-background/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              <div className="w-9 h-5 bg-background/30 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500" />
             </label>
           </div>
         </div>

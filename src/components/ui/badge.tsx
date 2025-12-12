@@ -17,6 +17,13 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        // Brand variants for the Culinary Elegance design system
+        brand:
+          "border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-800/50 dark:bg-brand-950/50 dark:text-brand-400",
+        success:
+          "border-sage-200 bg-sage-50 text-sage-700 dark:border-sage-800/50 dark:bg-sage-950/50 dark:text-sage-400",
+        gold:
+          "border-gold-200 bg-gold-50 text-gold-700 dark:border-gold-700/50 dark:bg-gold-900/30 dark:text-gold-400",
       },
     },
     defaultVariants: {

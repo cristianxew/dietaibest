@@ -21,11 +21,11 @@ export function HeroSection({ className }: HeroSectionProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Hero Text */}
         <div className="flex flex-col gap-6 animate-fade-up">
-          <AnimatedBadge>AI Agent V2.0 Live</AnimatedBadge>
+          <AnimatedBadge variant="gold">AI Agent V2.0 Live</AnimatedBadge>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.1] font-display font-semibold text-foreground tracking-tight">
             Nutrition on{" "}
-            <span className="text-gradient bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400">
+            <span className="text-gradient bg-gradient-to-r from-brand-500 via-gold-500 to-brand-400">
               Autopilot
             </span>
           </h1>
@@ -40,14 +40,14 @@ export function HeroSection({ className }: HeroSectionProps) {
           <div className="flex flex-col sm:flex-row gap-3 mt-2">
             <Link
               href="/sign-up"
-              className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:-translate-y-0.5 transition-all duration-200"
+              className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 transition-all duration-200"
             >
-              <Icon icon="solar:wand-bold-duotone" width={18} />
+              <Icon icon="solar:chef-hat-bold-duotone" width={18} />
               Generate My Plan
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <button
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-foreground rounded-xl text-sm font-medium hover:bg-secondary hover:border-border/80 transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-foreground rounded-xl text-sm font-medium hover:bg-secondary hover:border-brand-200 transition-all duration-200"
             >
               <Play className="w-4 h-4" />
               Watch Demo
@@ -58,9 +58,9 @@ export function HeroSection({ className }: HeroSectionProps) {
           <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
             <div className="flex -space-x-2">
               {[
-                "bg-brand-200 text-brand-700",
-                "bg-amber-200 text-amber-700",
-                "bg-sky-200 text-sky-700",
+                "bg-brand-100 text-brand-700",
+                "bg-gold-100 text-gold-700",
+                "bg-sage-100 text-sage-700",
                 "bg-violet-200 text-violet-700"
               ].map((colors, i) => (
                 <div

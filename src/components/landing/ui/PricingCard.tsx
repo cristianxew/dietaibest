@@ -33,14 +33,19 @@ export function PricingCard({
       className={cn(
         "p-8 rounded-2xl border transition-all duration-300 relative",
         highlighted
-          ? "bg-primary border-primary text-primary-foreground shadow-2xl shadow-primary/25 md:-translate-y-4"
-          : "bg-card border-border hover:shadow-xl hover:border-primary/30",
+          ? "bg-gradient-to-br from-brand-500 to-brand-600 border-brand-400 text-white shadow-2xl shadow-brand-500/30 md:-translate-y-4"
+          : "bg-card border-border hover:shadow-xl hover:border-brand-200 dark:hover:border-brand-500/30",
         className
       )}
     >
       {/* Badge */}
       {badge && (
-        <div className="absolute top-0 right-0 bg-accent text-accent-foreground text-[0.6rem] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl rounded-tr-xl">
+        <div className={cn(
+          "absolute top-0 right-0 text-[0.6rem] font-bold uppercase tracking-widest px-3 py-1 rounded-bl-xl rounded-tr-xl",
+          highlighted
+            ? "bg-gold-400 text-gold-900"
+            : "bg-gold-100 text-gold-700 dark:bg-gold-500/20 dark:text-gold-400"
+        )}>
           {badge}
         </div>
       )}
@@ -49,7 +54,7 @@ export function PricingCard({
       <h3
         className={cn(
           "font-display font-semibold text-xl mb-2",
-          highlighted ? "text-primary-foreground" : "text-foreground"
+          highlighted ? "text-white" : "text-foreground"
         )}
       >
         {name}
@@ -59,7 +64,7 @@ export function PricingCard({
       <div
         className={cn(
           "text-4xl font-display font-semibold mb-6",
-          highlighted ? "text-primary-foreground" : "text-foreground"
+          highlighted ? "text-white" : "text-foreground"
         )}
       >
         {price}
@@ -67,7 +72,7 @@ export function PricingCard({
           <span
             className={cn(
               "text-lg font-normal",
-              highlighted ? "text-primary-foreground/70" : "text-muted-foreground"
+              highlighted ? "text-white/70" : "text-muted-foreground"
             )}
           >
             {period}
@@ -82,13 +87,13 @@ export function PricingCard({
             key={index}
             className={cn(
               "flex gap-3",
-              highlighted ? "text-primary-foreground/80" : "text-muted-foreground"
+              highlighted ? "text-white/90" : "text-muted-foreground"
             )}
           >
             <Check
               className={cn(
                 "w-5 h-5 shrink-0",
-                highlighted ? "text-primary-foreground" : "text-primary"
+                highlighted ? "text-gold-300" : "text-sage-500"
               )}
             />
             {feature}
@@ -102,8 +107,8 @@ export function PricingCard({
         className={cn(
           "block w-full py-3 rounded-lg text-sm font-semibold transition-all text-center",
           highlighted
-            ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            : "bg-primary text-primary-foreground hover:bg-primary/90"
+            ? "bg-white text-brand-600 hover:bg-white/90 shadow-lg"
+            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-brand-500/20"
         )}
       >
         {buttonText}

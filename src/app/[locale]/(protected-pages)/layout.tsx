@@ -1,6 +1,8 @@
 import { getMessages } from "next-intl/server";
 import { ClientProviders } from "@/providers/ClientProviders";
 import { AppSidebar } from "@/components/navigation/AppSidebar";
+import { TopHeaderBar } from "@/components/navigation/TopHeaderBar";
+import { MobileSidebarTrigger } from "@/components/navigation/MobileSidebarTrigger";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -9,7 +11,8 @@ interface ProtectedLayoutProps {
 
 /**
  * Layout for protected pages (dashboard, recipes, meal-plans, etc.)
- * Uses sidebar navigation instead of top header
+ * Uses sidebar navigation with shadcn sidebar primitives
+ * TopHeaderBar provides theme, language, and user controls
  */
 export default async function ProtectedLayout({
   children,
@@ -20,22 +23,21 @@ export default async function ProtectedLayout({
 
   return (
     <ClientProviders messages={messages} locale={locale} timeZone="UTC">
-      <div className="flex min-h-screen bg-background">
-        {/* Sidebar Navigation */}
-        <AppSidebar />
-
-        {/* Main Content */}
+      {/* AppSidebar includes SidebarProvider, Sidebar, and SidebarInset */}
+      <AppSidebar>
+        {/* Mobile trigger for sidebar */}
+        <MobileSidebarTrigger />
+        {/* Floating header bar with theme, language, user controls */}
+        <TopHeaderBar />
         <main
           id="main-content"
           className="flex-1 overflow-auto"
           tabIndex={-1}
           aria-label="Main content"
         >
-          <div className="container mx-auto p-6 md:p-8 pt-16 md:pt-8">
-            {children}
-          </div>
+          {children}
         </main>
-      </div>
+      </AppSidebar>
     </ClientProviders>
   );
 }

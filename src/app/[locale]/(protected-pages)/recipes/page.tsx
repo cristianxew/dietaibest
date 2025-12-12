@@ -28,27 +28,47 @@ export default async function RecipesPage({
   const t = await getTranslations({ locale, namespace: "recipes" });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="mt-2 text-muted-foreground">{t("description")}</p>
+    <div className="min-h-screen">
+      {/* Hero Header Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-background to-gold-50/30 dark:from-brand-950/30 dark:via-background dark:to-gold-950/20">
+        {/* Decorative blobs */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-200/30 dark:bg-brand-800/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold-200/40 dark:bg-gold-800/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+
+        <div className="container mx-auto px-4 py-10 relative z-10">
+          {/* Top row: Title + Add button */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-8">
+            <div className="space-y-2">
+              <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight text-foreground">
+                {t("title")}
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-xl">
+                {t("description")}
+              </p>
+            </div>
+
+            <Button
+              asChild
+              size="lg"
+              className="bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 transition-all duration-300 hover:-translate-y-0.5 rounded-xl"
+            >
+              <Link href={`/${locale}/recipes/new`}>
+                <Plus className="mr-2 h-5 w-5" />
+                {t("addRecipe")}
+              </Link>
+            </Button>
+          </div>
+
+          {/* Stats bar */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <RecipeStats />
+          </div>
         </div>
-        <Button asChild>
-          <Link href={`/${locale}/recipes/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t("addRecipe")}
-          </Link>
-        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3">
-          <RecipesList />
-        </div>
-        <div className="lg:col-span-1">
-          <RecipeStats />
-        </div>
+      {/* Main Content */}
+      <div className="container mx-auto py-8">
+        <RecipesList />
       </div>
     </div>
   );

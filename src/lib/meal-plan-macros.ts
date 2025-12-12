@@ -151,33 +151,35 @@ export function compareMacros(
 
 /**
  * Get color class for macro status (for Tailwind CSS)
+ * Uses the Culinary Elegance design system colors
  */
 export function getMacroStatusColor(
   status: "under" | "on-track" | "over"
 ): string {
   switch (status) {
     case "under":
-      return "text-yellow-600 bg-yellow-50 border-yellow-200";
+      return "text-gold-700 bg-gold-50 border-gold-200 dark:text-gold-400 dark:bg-gold-500/10 dark:border-gold-500/30";
     case "on-track":
-      return "text-green-600 bg-green-50 border-green-200";
+      return "text-sage-700 bg-sage-50 border-sage-200 dark:text-sage-400 dark:bg-sage-500/10 dark:border-sage-500/30";
     case "over":
-      return "text-red-600 bg-red-50 border-red-200";
+      return "text-brand-700 bg-brand-50 border-brand-200 dark:text-brand-400 dark:bg-brand-500/10 dark:border-brand-500/30";
   }
 }
 
 /**
  * Get progress bar color class for macro status
+ * Uses the Culinary Elegance design system colors
  */
 export function getMacroProgressColor(
   status: "under" | "on-track" | "over"
 ): string {
   switch (status) {
     case "under":
-      return "bg-yellow-500";
+      return "bg-gold-500";
     case "on-track":
-      return "bg-green-500";
+      return "bg-sage-500";
     case "over":
-      return "bg-red-500";
+      return "bg-brand-500";
   }
 }
 

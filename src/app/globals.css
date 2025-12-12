@@ -4,12 +4,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DietAI Design System: "Botanical Precision"
+   DietAI Design System: "Culinary Elegance"
 
-   A refined, production-grade design system that balances clean minimalism
-   with organic warmth. Green as the dominant brand color represents health,
-   growth, and vitality. Every element serves purpose with intentional spacing,
-   typography, and color.
+   A sophisticated, premium design system inspired by editorial food magazines
+   and high-end culinary experiences. Warm terracotta and coral tones evoke
+   appetite and warmth, while sage green is reserved for health indicators.
+   Gold accents add a touch of luxury.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
@@ -46,8 +46,10 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
 
-  /* Brand Colors */
+  /* Brand Colors - Coral/Terracotta Primary */
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
   --color-brand-200: var(--brand-200);
@@ -59,6 +61,28 @@
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
   --color-brand-950: var(--brand-950);
+
+  /* Sage Green - For success/health states */
+  --color-sage-50: var(--sage-50);
+  --color-sage-100: var(--sage-100);
+  --color-sage-200: var(--sage-200);
+  --color-sage-300: var(--sage-300);
+  --color-sage-400: var(--sage-400);
+  --color-sage-500: var(--sage-500);
+  --color-sage-600: var(--sage-600);
+  --color-sage-700: var(--sage-700);
+  --color-sage-800: var(--sage-800);
+  --color-sage-900: var(--sage-900);
+
+  /* Gold - For premium accents */
+  --color-gold-50: var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
 
   /* Surface Colors */
   --color-surface: var(--surface);
@@ -79,14 +103,14 @@
   --radius-3xl: 1.5rem;
   --radius-full: 9999px;
 
-  /* Shadow System */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 6px 10px -2px rgb(0 0 0 / 0.06), 0 3px 6px -3px rgb(0 0 0 / 0.06);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+  /* Shadow System - Warmer tones */
+  --shadow-xs: 0 1px 2px 0 rgb(28 26 23 / 0.03);
+  --shadow-sm: 0 1px 3px 0 rgb(28 26 23 / 0.04), 0 1px 2px -1px rgb(28 26 23 / 0.04);
+  --shadow: 0 4px 6px -1px rgb(28 26 23 / 0.05), 0 2px 4px -2px rgb(28 26 23 / 0.05);
+  --shadow-md: 0 6px 10px -2px rgb(28 26 23 / 0.06), 0 3px 6px -3px rgb(28 26 23 / 0.06);
+  --shadow-lg: 0 10px 15px -3px rgb(28 26 23 / 0.07), 0 4px 6px -4px rgb(28 26 23 / 0.07);
+  --shadow-xl: 0 20px 25px -5px rgb(28 26 23 / 0.08), 0 8px 10px -6px rgb(28 26 23 / 0.08);
+  --shadow-2xl: 0 25px 50px -12px rgb(28 26 23 / 0.18);
 
   /* Animation Timing */
   --duration-fast: 150ms;
@@ -97,133 +121,185 @@
 
 :root {
   /* ═══════════════════════════════════════════════════════════════════════
-     LIGHT MODE - Warm, inviting, natural with stone undertones
+     LIGHT MODE - Warm, appetizing, refined with cream undertones
      ═══════════════════════════════════════════════════════════════════════ */
 
-  /* Core Semantic Colors - Green-based primary with warm stone neutrals */
-  --background: #FAFAF9;
-  --foreground: #1C1917;
+  /* Core Semantic Colors - Coral/Terracotta primary with warm stone neutrals */
+  --background: #FAF9F7;
+  --foreground: #1C1A17;
   --card: #FFFFFF;
-  --card-foreground: #1C1917;
+  --card-foreground: #1C1A17;
   --popover: #FFFFFF;
-  --popover-foreground: #1C1917;
-  --primary: #16A34A;
+  --popover-foreground: #1C1A17;
+  --primary: #E07A5F;
   --primary-foreground: #FFFFFF;
-  --secondary: #F5F5F4;
-  --secondary-foreground: #44403C;
-  --muted: #F5F5F4;
-  --muted-foreground: #78716C;
-  --accent: #ECFDF5;
-  --accent-foreground: #14532D;
+  --secondary: #F5F3EF;
+  --secondary-foreground: #5C574D;
+  --muted: #F5F3EF;
+  --muted-foreground: #7A7367;
+  --accent: #FEF3C7;
+  --accent-foreground: #92400E;
   --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #E7E5E4;
-  --input: #E7E5E4;
-  --ring: #16A34A;
+  --border: #E8E4DD;
+  --input: #E8E4DD;
+  --ring: #E07A5F;
 
-  /* Chart Colors - Green gradient */
-  --chart-1: #14532D;
-  --chart-2: #16A34A;
-  --chart-3: #22C55E;
-  --chart-4: #4ADE80;
-  --chart-5: #86EFAC;
+  /* Success - Sage Green for health indicators */
+  --success: #4A7C59;
+  --success-foreground: #FFFFFF;
+
+  /* Chart Colors - Diverse, appetizing palette */
+  --chart-1: #E07A5F;
+  --chart-2: #4A7C59;
+  --chart-3: #D4A017;
+  --chart-4: #64748B;
+  --chart-5: #8B6914;
 
   /* Sidebar */
-  --sidebar: #FAFAF9;
-  --sidebar-foreground: #1C1917;
-  --sidebar-primary: #16A34A;
+  --sidebar: #FAF9F7;
+  --sidebar-foreground: #1C1A17;
+  --sidebar-primary: #E07A5F;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F5F5F4;
-  --sidebar-accent-foreground: #1C1917;
-  --sidebar-border: #E7E5E4;
-  --sidebar-ring: #16A34A;
+  --sidebar-accent: #F5F3EF;
+  --sidebar-accent-foreground: #1C1A17;
+  --sidebar-border: #E8E4DD;
+  --sidebar-ring: #E07A5F;
 
-  /* Brand Green Palette */
-  --brand-50: #F0FDF4;
-  --brand-100: #DCFCE7;
-  --brand-200: #BBF7D0;
-  --brand-300: #86EFAC;
-  --brand-400: #4ADE80;
-  --brand-500: #22C55E;
-  --brand-600: #16A34A;
-  --brand-700: #15803D;
-  --brand-800: #166534;
-  --brand-900: #14532D;
-  --brand-950: #052E16;
+  /* Brand Coral/Terracotta Palette */
+  --brand-50: #FEF3F0;
+  --brand-100: #FDE4DC;
+  --brand-200: #FBC6B8;
+  --brand-300: #F8A08A;
+  --brand-400: #F47B5C;
+  --brand-500: #E07A5F;
+  --brand-600: #C96A52;
+  --brand-700: #A85544;
+  --brand-800: #874337;
+  --brand-900: #6B352C;
+  --brand-950: #3D1D18;
+
+  /* Sage Green Palette - For success/health */
+  --sage-50: #F4F7F4;
+  --sage-100: #E6EDE6;
+  --sage-200: #C9D9C9;
+  --sage-300: #9FBC9F;
+  --sage-400: #6B9B6B;
+  --sage-500: #4A7C59;
+  --sage-600: #3D6B4A;
+  --sage-700: #32573C;
+  --sage-800: #2A4632;
+  --sage-900: #233A2A;
+
+  /* Gold/Amber Palette - Premium accents */
+  --gold-50: #FFFBEB;
+  --gold-100: #FEF3C7;
+  --gold-200: #FDE68A;
+  --gold-300: #FCD34D;
+  --gold-400: #FBBF24;
+  --gold-500: #D4A017;
+  --gold-600: #B8860B;
+  --gold-700: #92400E;
 
   /* Surface Layers */
   --surface: #FFFFFF;
   --surface-elevated: #FFFFFF;
-  --surface-sunken: #F5F5F4;
+  --surface-sunken: #F5F3EF;
 
   /* Typography Stack */
-  --font-sans-stack: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans-stack: var(--font-dm-sans), var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono-stack: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
-  --font-display-stack: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display-stack: var(--font-playfair), Georgia, "Times New Roman", serif;
 
   --radius: 0.625rem;
 }
 
 .dark {
   /* ═══════════════════════════════════════════════════════════════════════
-     DARK MODE - Deep, sophisticated, restful with warm undertones
+     DARK MODE - Deep charcoal with warm gold accents, sophisticated
      ═══════════════════════════════════════════════════════════════════════ */
 
   /* Core Semantic Colors */
-  --background: #0C0A09;
-  --foreground: #FAFAF9;
-  --card: #1C1917;
-  --card-foreground: #FAFAF9;
-  --popover: #1C1917;
-  --popover-foreground: #FAFAF9;
-  --primary: #22C55E;
-  --primary-foreground: #052E16;
-  --secondary: #292524;
-  --secondary-foreground: #D6D3D1;
-  --muted: #292524;
-  --muted-foreground: #A8A29E;
-  --accent: #14532D;
-  --accent-foreground: #DCFCE7;
+  --background: #0F0E0D;
+  --foreground: #FAF9F7;
+  --card: #1A1918;
+  --card-foreground: #FAF9F7;
+  --popover: #1A1918;
+  --popover-foreground: #FAF9F7;
+  --primary: #F47B5C;
+  --primary-foreground: #1C1A17;
+  --secondary: #262422;
+  --secondary-foreground: #D4CEC4;
+  --muted: #262422;
+  --muted-foreground: #A8A092;
+  --accent: #D4A017;
+  --accent-foreground: #FAF9F7;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #292524;
-  --input: #292524;
-  --ring: #22C55E;
+  --border: #3D3A36;
+  --input: #3D3A36;
+  --ring: #F47B5C;
 
-  /* Chart Colors */
-  --chart-1: #22C55E;
-  --chart-2: #4ADE80;
-  --chart-3: #86EFAC;
-  --chart-4: #BBF7D0;
-  --chart-5: #DCFCE7;
+  /* Success - Sage Green */
+  --success: #6B9B6B;
+  --success-foreground: #1C1A17;
+
+  /* Chart Colors - Bright for visibility */
+  --chart-1: #F47B5C;
+  --chart-2: #6B9B6B;
+  --chart-3: #FBBF24;
+  --chart-4: #94A3B8;
+  --chart-5: #FCD34D;
 
   /* Sidebar */
-  --sidebar: #0C0A09;
-  --sidebar-foreground: #FAFAF9;
-  --sidebar-primary: #22C55E;
-  --sidebar-primary-foreground: #052E16;
-  --sidebar-accent: #1C1917;
-  --sidebar-accent-foreground: #FAFAF9;
-  --sidebar-border: #292524;
-  --sidebar-ring: #22C55E;
+  --sidebar: #0F0E0D;
+  --sidebar-foreground: #FAF9F7;
+  --sidebar-primary: #F47B5C;
+  --sidebar-primary-foreground: #1C1A17;
+  --sidebar-accent: #1A1918;
+  --sidebar-accent-foreground: #FAF9F7;
+  --sidebar-border: #3D3A36;
+  --sidebar-ring: #F47B5C;
 
-  /* Brand Green Palette - Adjusted for dark mode visibility */
-  --brand-50: #052E16;
-  --brand-100: #14532D;
-  --brand-200: #166534;
-  --brand-300: #15803D;
-  --brand-400: #16A34A;
-  --brand-500: #22C55E;
-  --brand-600: #4ADE80;
-  --brand-700: #86EFAC;
-  --brand-800: #BBF7D0;
-  --brand-900: #DCFCE7;
-  --brand-950: #F0FDF4;
+  /* Brand Coral Palette - Adjusted for dark mode visibility */
+  --brand-50: #3D1D18;
+  --brand-100: #6B352C;
+  --brand-200: #874337;
+  --brand-300: #A85544;
+  --brand-400: #C96A52;
+  --brand-500: #E07A5F;
+  --brand-600: #F47B5C;
+  --brand-700: #F8A08A;
+  --brand-800: #FBC6B8;
+  --brand-900: #FDE4DC;
+  --brand-950: #FEF3F0;
+
+  /* Sage Green - Adjusted for dark */
+  --sage-50: #233A2A;
+  --sage-100: #2A4632;
+  --sage-200: #32573C;
+  --sage-300: #3D6B4A;
+  --sage-400: #4A7C59;
+  --sage-500: #6B9B6B;
+  --sage-600: #9FBC9F;
+  --sage-700: #C9D9C9;
+  --sage-800: #E6EDE6;
+  --sage-900: #F4F7F4;
+
+  /* Gold - Adjusted for dark */
+  --gold-50: #92400E;
+  --gold-100: #B8860B;
+  --gold-200: #D4A017;
+  --gold-300: #FBBF24;
+  --gold-400: #FCD34D;
+  --gold-500: #FDE68A;
+  --gold-600: #FEF3C7;
+  --gold-700: #FFFBEB;
 
   /* Surface Layers */
-  --surface: #1C1917;
-  --surface-elevated: #292524;
-  --surface-sunken: #0C0A09;
+  --surface: #1A1918;
+  --surface-elevated: #262422;
+  --surface-sunken: #0F0E0D;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -373,16 +449,32 @@
   }
 
   .text-gradient-brand {
-    background-image: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-400) 100%);
+    background-image: linear-gradient(135deg, var(--brand-500) 0%, var(--gold-500) 50%, var(--brand-400) 100%);
   }
 
-  /* Glow Effects */
+  .text-gradient-warm {
+    background-image: linear-gradient(135deg, #E07A5F 0%, #D4A017 100%);
+  }
+
+  .text-gradient-sunset {
+    background-image: linear-gradient(135deg, #F47B5C 0%, #FBBF24 50%, #E07A5F 100%);
+  }
+
+  /* Glow Effects - Warm coral */
   .glow-brand {
     box-shadow: 0 0 20px -5px var(--brand-500);
   }
 
   .glow-brand-lg {
     box-shadow: 0 0 40px -10px var(--brand-500);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px -5px var(--gold-500);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px -5px var(--sage-500);
   }
 
   /* Scrollbar */
@@ -448,7 +540,7 @@
     opacity: 0.04;
   }
 
-  /* Gradient Blobs - Refined */
+  /* Gradient Blobs - Warm Culinary */
   .blob {
     position: absolute;
     border-radius: 50%;
@@ -458,15 +550,23 @@
   }
 
   .blob-brand {
-    background: linear-gradient(135deg, var(--brand-200), var(--brand-400));
+    background: linear-gradient(135deg, var(--brand-100), var(--brand-300));
   }
 
   .blob-warm {
-    background: linear-gradient(135deg, #FED7AA, #FDBA74);
+    background: linear-gradient(135deg, #FDE4DC, #FBC6B8);
+  }
+
+  .blob-gold {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+  }
+
+  .blob-sunset {
+    background: linear-gradient(135deg, #FDE4DC 0%, #FEF3C7 50%, #FBC6B8 100%);
   }
 
   .dark .blob {
-    opacity: 0.2;
+    opacity: 0.15;
   }
 
   /* Animation Utilities */
@@ -557,12 +657,13 @@
 }
 
 .card-interactive:hover {
-  @apply border-brand-300 shadow-lg;
+  @apply shadow-lg;
+  border-color: rgba(224, 122, 95, 0.3);
   transform: translateY(-2px);
 }
 
 .dark .card-interactive:hover {
-  @apply border-brand-700;
+  border-color: rgba(244, 123, 92, 0.4);
 }
 
 /* Button Glow on Hover */
@@ -574,7 +675,7 @@
   content: "";
   position: absolute;
   inset: -2px;
-  background: linear-gradient(135deg, var(--brand-400), var(--brand-600));
+  background: linear-gradient(135deg, var(--brand-300), var(--brand-500));
   border-radius: inherit;
   opacity: 0;
   z-index: -1;
@@ -586,15 +687,37 @@
   opacity: 0.4;
 }
 
-/* Badge Styles */
+/* Badge Styles - Coral Brand */
 .badge-brand {
   @apply bg-brand-100 text-brand-700 border border-brand-200;
 }
 
 .dark .badge-brand {
-  background-color: rgba(22, 163, 74, 0.15);
-  color: var(--brand-500);
-  border-color: rgba(22, 163, 74, 0.3);
+  background-color: rgba(224, 122, 95, 0.15);
+  color: var(--brand-600);
+  border-color: rgba(224, 122, 95, 0.3);
+}
+
+/* Badge Styles - Success/Health */
+.badge-success {
+  @apply bg-sage-100 text-sage-700 border border-sage-200;
+}
+
+.dark .badge-success {
+  background-color: rgba(74, 124, 89, 0.15);
+  color: var(--sage-500);
+  border-color: rgba(74, 124, 89, 0.3);
+}
+
+/* Badge Styles - Gold/Premium */
+.badge-gold {
+  @apply bg-gold-100 text-gold-700 border border-gold-200;
+}
+
+.dark .badge-gold {
+  background-color: rgba(212, 160, 23, 0.15);
+  color: var(--gold-400);
+  border-color: rgba(212, 160, 23, 0.3);
 }
 
 /* Terminal Style */

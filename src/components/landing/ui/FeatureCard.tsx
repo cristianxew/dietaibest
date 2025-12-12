@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface FeatureCardProps {
   icon: string;
   iconColor?: string;
+  iconBg?: string;
   title: string;
   description: string;
   className?: string;
@@ -13,7 +14,8 @@ interface FeatureCardProps {
 
 export function FeatureCard({
   icon,
-  iconColor = "text-primary",
+  iconColor = "text-brand-600 dark:text-brand-400",
+  iconBg = "bg-brand-50 border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/20",
   title,
   description,
   className,
@@ -23,7 +25,7 @@ export function FeatureCard({
       className={cn(
         "group relative p-6 rounded-2xl",
         "bg-card border border-border",
-        "hover:border-primary/30 hover:shadow-lg transition-all duration-300",
+        "hover:border-brand-200 dark:hover:border-brand-500/30 hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300",
         className
       )}
     >
@@ -31,9 +33,9 @@ export function FeatureCard({
       <div
         className={cn(
           "w-12 h-12 rounded-xl mb-4",
-          "bg-primary/10 border border-primary/20",
-          "flex items-center justify-center",
-          "group-hover:bg-primary/15 transition-colors",
+          "border flex items-center justify-center",
+          "group-hover:scale-105 transition-transform duration-300",
+          iconBg,
           iconColor
         )}
       >

@@ -1,16 +1,9 @@
 "use client";
 
 import { Recipe, RecipeCategory, UserFavorite } from "@/generated/prisma";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Clock, Utensils, Flame } from "lucide-react";
+import { Heart, Clock, Users, Flame, ChefHat } from "lucide-react";
 import { CategoryIcon } from "./CategoryIcon";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -34,7 +27,9 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   const [isPending, startTransition] = useTransition();
   const [isFavorited, setIsFavorited] = useState(recipe.favoritedBy.length > 0);
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     startTransition(async () => {
       try {
         const result = await toggleFavorite(recipe.id);
@@ -53,143 +48,239 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
   };
 
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+  const hasMacros = recipe.protein || recipe.carbs || recipe.fat;
 
   return (
-    <Card className="group relative overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Favorite button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute right-2 top-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={handleToggleFavorite}
-        disabled={isPending}
+    <Link href={`/${locale}/recipes/${recipe.id}`} className="block group">
+      <article
+        className={cn(
+          "relative overflow-hidden rounded-2xl",
+          "bg-card border border-border",
+          "transition-all duration-500 ease-out",
+          "hover:shadow-xl hover:shadow-brand-500/8 dark:hover:shadow-brand-500/5",
+          "hover:border-brand-200 dark:hover:border-brand-500/30",
+          "hover:-translate-y-1"
+        )}
       >
-        <Heart
-          className={cn("h-5 w-5", isFavorited && "fill-red-500 text-red-500")}
-        />
-        <span className="sr-only">
-          {isFavorited ? t("removeFavorite") : t("addFavorite")}
-        </span>
-      </Button>
-
-      <Link href={`/${locale}/recipes/${recipe.id}`}>
-        {/* Recipe image */}
-        <div style={{ marginTop: "-25px" }} className="aspect-video w-full overflow-hidden">
+        {/* Image Container */}
+        <div className="relative aspect-[4/3] overflow-hidden">
           {recipe.imageUrl ? (
-            <img
-              src={recipe.imageUrl}
-              alt={recipe.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            <>
+              <img
+                src={recipe.imageUrl}
+                alt={recipe.title}
+                className={cn(
+                  "h-full w-full object-cover",
+                  "transition-transform duration-700 ease-out",
+                  "group-hover:scale-110"
+                )}
+              />
+              {/* Gradient Overlay */}
+              <div
+                className={cn(
+                  "absolute inset-0",
+                  "bg-gradient-to-t from-black/60 via-black/20 to-transparent",
+                  "opacity-60 group-hover:opacity-70 transition-opacity duration-500"
+                )}
+              />
+            </>
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-              <Utensils className="h-12 w-12 opacity-20" />
+            <div
+              className={cn(
+                "h-full w-full flex items-center justify-center",
+                "bg-gradient-to-br from-brand-50 to-brand-100",
+                "dark:from-brand-950 dark:to-brand-900"
+              )}
+            >
+              <ChefHat className="h-16 w-16 text-brand-300 dark:text-brand-700" />
+            </div>
+          )}
+
+          {/* Favorite Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute right-3 top-3 z-10",
+              "h-10 w-10 rounded-full",
+              "bg-white/90 dark:bg-black/50 backdrop-blur-sm",
+              "border border-white/20",
+              "opacity-0 group-hover:opacity-100",
+              "translate-y-2 group-hover:translate-y-0",
+              "transition-all duration-300",
+              "hover:bg-white dark:hover:bg-black/70",
+              "hover:scale-110",
+              isFavorited && "opacity-100 translate-y-0"
+            )}
+            onClick={handleToggleFavorite}
+            disabled={isPending}
+          >
+            <Heart
+              className={cn(
+                "h-5 w-5 transition-all duration-300",
+                isFavorited
+                  ? "fill-brand-500 text-brand-500 scale-110"
+                  : "text-stone-600 dark:text-stone-300"
+              )}
+            />
+            <span className="sr-only">
+              {isFavorited ? t("removeFavorite") : t("addFavorite")}
+            </span>
+          </Button>
+
+          {/* Time Badge on Image */}
+          {totalTime > 0 && (
+            <div
+              className={cn(
+                "absolute left-3 bottom-3",
+                "flex items-center gap-1.5 px-2.5 py-1",
+                "rounded-full text-xs font-medium",
+                "bg-white/90 dark:bg-black/60 backdrop-blur-sm",
+                "text-stone-700 dark:text-stone-200",
+                "border border-white/20"
+              )}
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span>{totalTime} min</span>
+            </div>
+          )}
+
+          {/* Difficulty Badge */}
+          {recipe.difficulty && (
+            <div
+              className={cn(
+                "absolute right-3 bottom-3",
+                "px-2.5 py-1 rounded-full text-xs font-medium",
+                "backdrop-blur-sm border",
+                recipe.difficulty === "easy" &&
+                  "bg-sage-500/90 text-white border-sage-400/50",
+                recipe.difficulty === "medium" &&
+                  "bg-gold-500/90 text-white border-gold-400/50",
+                recipe.difficulty === "hard" &&
+                  "bg-brand-500/90 text-white border-brand-400/50"
+              )}
+            >
+              {t(`difficulty.${recipe.difficulty}`)}
             </div>
           )}
         </div>
 
-
-        <CardHeader>
-          <CardTitle className="line-clamp-2 py-3">{recipe.title}</CardTitle>
-          {recipe.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {recipe.description}
-            </p>
-          )}
-        </CardHeader>
-
-        <CardContent className="space-y-3">
+        {/* Content */}
+        <div className="p-5">
           {/* Categories */}
           {recipe.categories.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {recipe.categories.map((category) => (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {recipe.categories.slice(0, 2).map((category) => (
                 <Badge
                   key={category.id}
                   variant="secondary"
-                  className="text-xs flex items-center gap-1"
+                  className={cn(
+                    "text-[10px] uppercase tracking-wider font-semibold",
+                    "bg-brand-50 text-brand-600 border-brand-100",
+                    "dark:bg-brand-950/50 dark:text-brand-400 dark:border-brand-800/50",
+                    "px-2 py-0.5"
+                  )}
                 >
                   <CategoryIcon
                     iconName={category.iconName || undefined}
-                    className="h-3 w-3"
+                    className="h-2.5 w-2.5 mr-1"
                   />
                   {category.name}
                 </Badge>
               ))}
+              {recipe.categories.length > 2 && (
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5"
+                >
+                  +{recipe.categories.length - 2}
+                </Badge>
+              )}
             </div>
           )}
 
-          {/* Quick stats */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
-            {totalTime > 0 && (
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{totalTime}m</span>
-              </div>
+          {/* Title */}
+          <h3
+            className={cn(
+              "font-display text-lg font-semibold leading-snug",
+              "text-foreground line-clamp-2 mb-2",
+              "group-hover:text-brand-600 dark:group-hover:text-brand-400",
+              "transition-colors duration-300"
             )}
-            <div className="flex items-center gap-1">
-              <Utensils className="h-4 w-4" />
+          >
+            {recipe.title}
+          </h3>
+
+          {/* Description */}
+          {recipe.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+              {recipe.description}
+            </p>
+          )}
+
+          {/* Stats Row */}
+          <div
+            className={cn(
+              "flex items-center gap-4 text-xs text-muted-foreground",
+              "pt-4 border-t border-border/50"
+            )}
+          >
+            <div className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5 text-brand-400" />
               <span>
                 {recipe.servings} {t("servings")}
               </span>
             </div>
             {recipe.calories && (
-              <div className="flex items-center gap-1">
-                <Flame className="h-4 w-4" />
-                <span>
-                  {Math.round(recipe.calories)} {t("cal")}
+              <div className="flex items-center gap-1.5">
+                <Flame className="h-3.5 w-3.5 text-brand-500" />
+                <span className="font-medium text-foreground">
+                  {Math.round(recipe.calories)}
                 </span>
+                <span>{t("cal")}</span>
               </div>
             )}
           </div>
 
-          {/* Difficulty badge */}
-          {recipe.difficulty && (
-            <Badge
-              variant={
-                recipe.difficulty === "easy"
-                  ? "default"
-                  : recipe.difficulty === "medium"
-                    ? "secondary"
-                    : "destructive"
-              }
-            >
-              {t(`difficulty.${recipe.difficulty}`)}
-            </Badge>
-          )}
-        </CardContent>
-
-        <CardFooter>
-          {/* Macro nutrients */}
-          {(recipe.protein || recipe.carbs || recipe.fat) && (
-            <div className="flex justify-between w-full text-xs">
-              {recipe.protein && (
-                <div>
-                  <span className="text-muted-foreground">
-                    {t("protein")}:{" "}
-                  </span>
-                  <span className="font-medium">
-                    {Math.round(recipe.protein)}g
-                  </span>
-                </div>
-              )}
-              {recipe.carbs && (
-                <div>
-                  <span className="text-muted-foreground">{t("carbs")}: </span>
-                  <span className="font-medium">
-                    {Math.round(recipe.carbs)}g
-                  </span>
-                </div>
-              )}
-              {recipe.fat && (
-                <div>
-                  <span className="text-muted-foreground">{t("fat")}: </span>
-                  <span className="font-medium">{Math.round(recipe.fat)}g</span>
-                </div>
-              )}
+          {/* Macros Bar */}
+          {hasMacros && (
+            <div className="mt-4 pt-3 border-t border-border/30">
+              <div className="flex justify-between items-center text-[11px]">
+                {recipe.protein && (
+                  <div className="flex flex-col items-center">
+                    <span className="font-semibold text-foreground">
+                      {Math.round(recipe.protein)}g
+                    </span>
+                    <span className="text-muted-foreground uppercase tracking-wider">
+                      {t("protein")}
+                    </span>
+                  </div>
+                )}
+                {recipe.carbs && (
+                  <div className="flex flex-col items-center">
+                    <span className="font-semibold text-foreground">
+                      {Math.round(recipe.carbs)}g
+                    </span>
+                    <span className="text-muted-foreground uppercase tracking-wider">
+                      {t("carbs")}
+                    </span>
+                  </div>
+                )}
+                {recipe.fat && (
+                  <div className="flex flex-col items-center">
+                    <span className="font-semibold text-foreground">
+                      {Math.round(recipe.fat)}g
+                    </span>
+                    <span className="text-muted-foreground uppercase tracking-wider">
+                      {t("fat")}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </CardFooter>
-      </Link>
-    </Card>
+        </div>
+      </article>
+    </Link>
   );
 }

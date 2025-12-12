@@ -29,15 +29,16 @@ export function TerminalCard({
         className
       )}
     >
-      {/* Glow effect */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      {/* Warm glow effect */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/15 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gold-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
       <div className="relative z-10">
         {/* Window controls */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <div className="w-3 h-3 rounded-full bg-amber-500" />
-          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <div className="w-3 h-3 rounded-full bg-red-500/80" />
+          <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+          <div className="w-3 h-3 rounded-full bg-sage-500/80" />
           <div className="ml-auto text-xs font-mono text-muted-foreground">
             {title}
           </div>
@@ -47,7 +48,7 @@ export function TerminalCard({
         <div className="space-y-6 font-mono text-sm">
           {lines.map((line, index) => (
             <div key={index}>
-              <span className="text-primary">{line.prefix || "➜"}</span>{" "}
+              <span className="text-brand-400">{line.prefix || "➜"}</span>{" "}
               {line.label && (
                 <span className="text-muted-foreground">{line.label}:</span>
               )}{" "}
@@ -90,7 +91,7 @@ interface TerminalRowProps {
 export function TerminalRow({
   label,
   value,
-  valueColor = "text-primary",
+  valueColor = "text-brand-400",
 }: TerminalRowProps) {
   return (
     <div className="flex items-center justify-between">
