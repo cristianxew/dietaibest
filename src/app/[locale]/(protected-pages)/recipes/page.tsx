@@ -67,7 +67,7 @@ export default async function RecipesPage({
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto py-8">
+      <div className="relative p-6 lg:p-8 space-y-8">
         <RecipesList />
       </div>
     </div>

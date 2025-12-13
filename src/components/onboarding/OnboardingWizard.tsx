@@ -42,14 +42,6 @@ function OnboardingWizardContent() {
     setSubmitting(true);
 
     try {
-      // Call server action to save onboarding data
-      console.log("OnboardingWizard - Starting completion with data:", {
-        demographics: state.demographics,
-        goals: state.goals,
-        preferences: state.preferences,
-        familyMembers: state.familyMembers,
-      });
-
       const result = await completeOnboarding({
         demographics: state.demographics,
         goals: state.goals,
@@ -57,17 +49,10 @@ function OnboardingWizardContent() {
         familyMembers: state.familyMembers,
       });
 
-      console.log("OnboardingWizard - Server response:", result);
-
       if (result.error) {
-        console.error(
-          "OnboardingWizard - Server returned error:",
-          result.error
-        );
         throw new Error(result.error);
       }
 
-      console.log("OnboardingWizard - Success! Profile created:", result.data);
       toast.success("Your profile has been created successfully!");
 
       // Clear the onboarding state
@@ -75,8 +60,7 @@ function OnboardingWizardContent() {
 
       // Redirect to dashboard
       router.push("/dashboard");
-    } catch (error) {
-      console.error("OnboardingWizard - Caught error:", error);
+    } catch {
       toast.error("Failed to complete onboarding. Please try again.");
       setSubmitting(false);
     }
@@ -91,7 +75,7 @@ function OnboardingWizardContent() {
       case 1:
         return <GoalsStep />;
       case 2:
-        return <PreferencesStep onFinish={handleFinish} />;
+        return <PreferencesStep onFinish={handleFinish} isSubmitting={state.isSubmitting} />;
       default:
         return <DemographicsStep />;
     }

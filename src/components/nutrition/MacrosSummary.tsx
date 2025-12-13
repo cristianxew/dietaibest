@@ -1,7 +1,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "@/components/custom-ui/styled-tabs";
 import type { Macro } from "@/lib/fdc";
 
 interface MacrosSummaryProps {
@@ -44,7 +49,7 @@ export function MacrosSummary({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="per-serving" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="mb-4">
             <TabsTrigger value="per-serving">Per Serving</TabsTrigger>
             <TabsTrigger value="total">Total Recipe</TabsTrigger>
           </TabsList>

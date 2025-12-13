@@ -9,7 +9,12 @@ import {
   CardTitle,
 } from "./ui/card";
 import { Button } from "./ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "./custom-ui/styled-tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -199,19 +204,19 @@ export default function MealPlans() {
 
         const averageMacros = days.length
           ? {
-              calories: Math.round(
-                days.reduce((s, d) => s + d.macros.calories, 0) / days.length
-              ),
-              protein: Math.round(
-                days.reduce((s, d) => s + d.macros.protein, 0) / days.length
-              ),
-              carbs: Math.round(
-                days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
-              ),
-              fat: Math.round(
-                days.reduce((s, d) => s + d.macros.fat, 0) / days.length
-              ),
-            }
+            calories: Math.round(
+              days.reduce((s, d) => s + d.macros.calories, 0) / days.length
+            ),
+            protein: Math.round(
+              days.reduce((s, d) => s + d.macros.protein, 0) / days.length
+            ),
+            carbs: Math.round(
+              days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
+            ),
+            fat: Math.round(
+              days.reduce((s, d) => s + d.macros.fat, 0) / days.length
+            ),
+          }
           : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
         const templateWithMacros: MealPlanTemplateDisplay = {
@@ -285,19 +290,19 @@ export default function MealPlans() {
 
           const averageMacros = days.length
             ? {
-                calories: Math.round(
-                  days.reduce((s, d) => s + d.macros.calories, 0) / days.length
-                ),
-                protein: Math.round(
-                  days.reduce((s, d) => s + d.macros.protein, 0) / days.length
-                ),
-                carbs: Math.round(
-                  days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
-                ),
-                fat: Math.round(
-                  days.reduce((s, d) => s + d.macros.fat, 0) / days.length
-                ),
-              }
+              calories: Math.round(
+                days.reduce((s, d) => s + d.macros.calories, 0) / days.length
+              ),
+              protein: Math.round(
+                days.reduce((s, d) => s + d.macros.protein, 0) / days.length
+              ),
+              carbs: Math.round(
+                days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
+              ),
+              fat: Math.round(
+                days.reduce((s, d) => s + d.macros.fat, 0) / days.length
+              ),
+            }
             : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
           const templateWithMacros: MealPlanTemplateDisplay = {
@@ -377,19 +382,19 @@ export default function MealPlans() {
 
         const averageMacros = days.length
           ? {
-              calories: Math.round(
-                days.reduce((s, d) => s + d.macros.calories, 0) / days.length
-              ),
-              protein: Math.round(
-                days.reduce((s, d) => s + d.macros.protein, 0) / days.length
-              ),
-              carbs: Math.round(
-                days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
-              ),
-              fat: Math.round(
-                days.reduce((s, d) => s + d.macros.fat, 0) / days.length
-              ),
-            }
+            calories: Math.round(
+              days.reduce((s, d) => s + d.macros.calories, 0) / days.length
+            ),
+            protein: Math.round(
+              days.reduce((s, d) => s + d.macros.protein, 0) / days.length
+            ),
+            carbs: Math.round(
+              days.reduce((s, d) => s + d.macros.carbs, 0) / days.length
+            ),
+            fat: Math.round(
+              days.reduce((s, d) => s + d.macros.fat, 0) / days.length
+            ),
+          }
           : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
         const templateWithMacros: MealPlanTemplateDisplay = {
@@ -460,18 +465,12 @@ export default function MealPlans() {
 
         {/* Meal Plan Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-muted/50 backdrop-blur-sm border border-border/50 p-1 h-auto">
-            <TabsTrigger
-              value="planner"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5 rounded-lg transition-all"
-            >
+          <TabsList>
+            <TabsTrigger value="planner">
               <Edit2 className="w-4 h-4 mr-2" />
               {t("mealPlanner")}
             </TabsTrigger>
-            <TabsTrigger
-              value="calendar"
-              className="data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 py-2.5 rounded-lg transition-all"
-            >
+            <TabsTrigger value="calendar">
               <CalendarDays className="w-4 h-4 mr-2" />
               {t("calendarView")}
             </TabsTrigger>

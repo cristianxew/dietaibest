@@ -15,7 +15,12 @@ import {
 import { NutritionResults } from "./NutritionResults";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { IngredientAutocomplete } from "@/components/recipes/IngredientAutocomplete";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "@/components/custom-ui/styled-tabs";
 
 const EXAMPLE_RECIPE = `1 cup cooked rice
 150 g chicken breast
@@ -152,7 +157,7 @@ export function NutritionCalculator() {
               setInputMode(value as "text" | "structured")
             }
           >
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="mb-4">
               <TabsTrigger value="structured">
                 <List className="mr-2 h-4 w-4" />
                 Structured Input

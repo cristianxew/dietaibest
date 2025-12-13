@@ -9,7 +9,12 @@ import { RecipeFormData, recipeFormSchema } from "@/types/recipe";
 import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "@/components/custom-ui/styled-tabs";
 import { toast } from "sonner";
 import { Loader2, TestTube2 } from "lucide-react";
 import type { RecipeCategory } from "@/generated/prisma";
@@ -184,7 +189,7 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Tabs defaultValue="basics" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="mb-4">
             <TabsTrigger value="basics">Basic Info</TabsTrigger>
             <TabsTrigger value="ingredients">Ingredients & Steps</TabsTrigger>
             <TabsTrigger value="nutrition">

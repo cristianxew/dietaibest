@@ -86,8 +86,6 @@ export function FamilyMemberForm({
   const [customNeed, setCustomNeed] = useState("");
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log("FamilyMemberForm - Form submitted with values:", values);
-
     const familyMemberData: FamilyMemberData = {
       name: values.name,
       relationship: values.relationship,
@@ -98,10 +96,6 @@ export function FamilyMemberForm({
       dietaryNeeds: values.dietaryNeeds,
     };
 
-    console.log(
-      "FamilyMemberForm - Calling onSubmit with data:",
-      familyMemberData
-    );
     onSubmit(familyMemberData);
   };
 

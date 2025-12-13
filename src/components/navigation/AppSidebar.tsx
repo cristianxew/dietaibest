@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,6 +12,7 @@ import {
   ShoppingCart,
   PanelLeftClose,
   PanelLeft,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { Icon } from "@iconify/react";
@@ -30,12 +32,14 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { checkOnboardingStatus } from "@/actions/onboarding";
 
 interface NavItem {
   id: string;
   label: string;
   href: string;
   icon: LucideIcon;
+  showWhen?: "always" | "onboarding-incomplete";
 }
 
 interface AppSidebarProps {
@@ -49,14 +53,31 @@ interface AppSidebarProps {
 function NavMenu() {
   const pathname = usePathname();
   const t = useTranslations("navigation");
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
 
-  const navItems: NavItem[] = [
-    { id: "dashboard", label: t("dashboard"), href: "/dashboard", icon: Home },
-    { id: "recipes", label: t("recipes"), href: "/recipes", icon: BookOpen },
-    { id: "meal-plans", label: t("mealPlans"), href: "/meal-plans", icon: Calendar },
-    { id: "nutrition", label: t("nutrition"), href: "/nutrition", icon: Calculator },
-    { id: "shopping", label: t("shopping"), href: "/shopping", icon: ShoppingCart },
+  useEffect(() => {
+    async function fetchStatus() {
+      const status = await checkOnboardingStatus();
+      setOnboardingCompleted(status.completed);
+    }
+    fetchStatus();
+  }, []);
+
+  const allNavItems: NavItem[] = [
+    { id: "dashboard", label: t("dashboard"), href: "/dashboard", icon: Home, showWhen: "always" },
+    { id: "recipes", label: t("recipes"), href: "/recipes", icon: BookOpen, showWhen: "always" },
+    { id: "meal-plans", label: t("mealPlans"), href: "/meal-plans", icon: Calendar, showWhen: "always" },
+    { id: "nutrition", label: t("nutrition"), href: "/nutrition", icon: Calculator, showWhen: "always" },
+    { id: "shopping", label: t("shopping"), href: "/shopping", icon: ShoppingCart, showWhen: "always" },
+    { id: "onboarding", label: t("onboarding"), href: "/onboarding", icon: UserPlus, showWhen: "onboarding-incomplete" },
   ];
+
+  // Filter nav items based on onboarding status
+  const navItems = allNavItems.filter((item) => {
+    if (item.showWhen === "always") return true;
+    if (item.showWhen === "onboarding-incomplete" && onboardingCompleted === false) return true;
+    return false;
+  });
 
   const isActiveItem = (href: string): boolean => {
     const pathSegments = pathname.split("/").filter(Boolean);
