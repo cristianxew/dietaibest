@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/custom-ui/date-picker";
 import {
   Form,
   FormControl,
@@ -64,23 +64,23 @@ export function FamilyMemberForm({
     resolver: zodResolver(formSchema),
     defaultValues: member
       ? {
-          name: member.name,
-          relationship: member.relationship,
-          dateOfBirth: new Date(member.dateOfBirth),
-          gender: member.gender,
-          heightCm: member.heightCm || null,
-          weightKg: member.weightKg || null,
-          dietaryNeeds: member.dietaryNeeds,
-        }
+        name: member.name,
+        relationship: member.relationship,
+        dateOfBirth: new Date(member.dateOfBirth),
+        gender: member.gender,
+        heightCm: member.heightCm || null,
+        weightKg: member.weightKg || null,
+        dietaryNeeds: member.dietaryNeeds,
+      }
       : {
-          name: "",
-          relationship: "",
-          dateOfBirth: undefined,
-          gender: undefined,
-          heightCm: null,
-          weightKg: null,
-          dietaryNeeds: [],
-        },
+        name: "",
+        relationship: "",
+        dateOfBirth: undefined,
+        gender: undefined,
+        heightCm: null,
+        weightKg: null,
+        dietaryNeeds: [],
+      },
   });
 
   const [customNeed, setCustomNeed] = useState("");
@@ -174,37 +174,15 @@ export function FamilyMemberForm({
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Date of Birth</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <DatePicker
+                    date={field.value}
+                    onDateChange={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

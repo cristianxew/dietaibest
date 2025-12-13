@@ -13,6 +13,8 @@ import {
   StyledTabsList as TabsList,
   StyledTabsTrigger as TabsTrigger,
 } from "@/components/custom-ui/styled-tabs";
+import { DatePicker } from "@/components/custom-ui/date-picker";
+import { format } from "date-fns";
 import {
   Card,
   CardContent,
@@ -364,10 +366,16 @@ export function ProfilePageContent({ initialData }: ProfilePageContentProps) {
                       control={personalForm.control}
                       name="dateOfBirth"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col">
                           <FormLabel>{t("fields.dateOfBirth")}</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <DatePicker
+                              date={field.value ? new Date(field.value + "T00:00:00") : undefined}
+                              onDateChange={(date) => {
+                                field.onChange(date ? format(date, "yyyy-MM-dd") : "");
+                              }}
+                              disabled={isSubmitting}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

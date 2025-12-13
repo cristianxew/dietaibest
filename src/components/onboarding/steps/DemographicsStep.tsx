@@ -7,7 +7,8 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/custom-ui/date-picker";
 import {
   Form,
   FormControl,
@@ -83,19 +84,19 @@ export function DemographicsStep() {
     mode: "onChange", // Enable real-time validation
     defaultValues: state.demographics
       ? {
-          dateOfBirth: new Date(state.demographics.dateOfBirth),
-          gender: state.demographics.gender,
-          heightCm: state.demographics.heightCm,
-          weightKg: state.demographics.weightKg,
-          activityLevel: state.demographics.activityLevel,
-        }
+        dateOfBirth: new Date(state.demographics.dateOfBirth),
+        gender: state.demographics.gender,
+        heightCm: state.demographics.heightCm,
+        weightKg: state.demographics.weightKg,
+        activityLevel: state.demographics.activityLevel,
+      }
       : {
-          dateOfBirth: undefined,
-          gender: undefined,
-          heightCm: undefined,
-          weightKg: undefined,
-          activityLevel: undefined,
-        },
+        dateOfBirth: undefined,
+        gender: undefined,
+        heightCm: undefined,
+        weightKg: undefined,
+        activityLevel: undefined,
+      },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -123,37 +124,16 @@ export function DemographicsStep() {
               <FormLabel>
                 {t("steps.demographics.fields.dateOfBirth")}
               </FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <FormControl>
+                <DatePicker
+                  date={field.value}
+                  onDateChange={field.onChange}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                  placeholder="Pick a date"
+                />
+              </FormControl>
               <FormDescription>
                 Used to calculate your nutritional needs
               </FormDescription>
@@ -290,7 +270,7 @@ export function DemographicsStep() {
         <NavigationButtons
           currentStep={0}
           totalSteps={3}
-          onBack={() => {}}
+          onBack={() => { }}
           onNext={form.handleSubmit(onSubmit)}
           canGoNext={form.formState.isValid}
         />
