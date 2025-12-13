@@ -6,6 +6,16 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "taskmaster-ai": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "--package=task-master-ai",
+        "task-master-ai"
+      ],
+      "env": {}
     }
   }
 }
