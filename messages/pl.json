@@ -549,18 +549,47 @@
         }
     },
     "shopping": {
-        "title": "Listy Zakupów",
-        "subtitle": "Inteligentne zakupy stały się łatwe",
-        "comingSoon": "Wkrótce",
-        "description": "Rewolucyjne doświadczenie zakupowe wspierane przez AI. Ta funkcja będzie obejmować:",
-        "features": {
-            "smartLists": "Inteligentne listy zakupów z Twoich planów posiłków",
-            "priceComparison": "Porównywanie cen między sklepami",
-            "autoOrdering": "Automatyczne zamawianie artykułów spożywczych",
-            "nutritionLabels": "Informacje o wartościach odżywczych dla wszystkich produktów",
-            "budgetTracking": "Śledzenie i optymalizacja budżetu"
+        "title": "Lista Zakupów",
+        "subtitle": "Wygeneruj listę zakupów z planów posiłków",
+        "generate": "Generuj",
+        "downloadPdf": "Pobierz PDF",
+        "viewByCategory": "Według Kategorii",
+        "viewByRecipe": "Według Przepisu",
+        "items": "produktów",
+        "itemsChecked": "produktów zaznaczonych",
+        "recipes": "przepisów",
+        "servings": "porcji",
+        "ingredientsFrom": "Składniki z {recipe}",
+        "noSchedules": "Brak zaplanowanych planów posiłków",
+        "noSchedulesDescription": "Zaplanuj plan posiłków dla wybranego zakresu dat, aby wygenerować listę zakupów.",
+        "selectDateRange": "Wygeneruj listę zakupów",
+        "selectDateRangeDescription": "Wybierz zakres dat i kliknij Generuj, aby utworzyć listę zakupów z zaplanowanych planów posiłków.",
+        "categories": {
+            "fruits": "Owoce",
+            "vegetables": "Warzywa",
+            "proteins": "Białka",
+            "dairy": "Nabiał",
+            "grains": "Zboża",
+            "pantry": "Spiżarnia",
+            "other": "Inne"
         },
-        "backToDashboard": "Powrót do Pulpitu"
+        "backToDashboard": "Powrót do Pulpitu",
+        "pdf": {
+            "title": "Lista Zakupów",
+            "exportTitle": "Eksportuj Listę Zakupów",
+            "exportDescription": "Wybierz opcje eksportu i pobierz listę zakupów jako PDF.",
+            "generatedBy": "Wygenerowano przez DietAIbook",
+            "page": "Strona",
+            "of": "z",
+            "viewModeLabel": "Tryb Widoku",
+            "categoryView": "Według Kategorii",
+            "recipeView": "Według Przepisu",
+            "includeChecked": "Uwzględnij zaznaczone",
+            "includeCheckedDescription": "Pokaż produkty już oznaczone jako kupione z przekreśleniem.",
+            "cancel": "Anuluj",
+            "export": "Eksportuj PDF",
+            "generating": "Generowanie..."
+        }
     },
     "onboarding": {
         "title": "Witamy w DietAIbook",

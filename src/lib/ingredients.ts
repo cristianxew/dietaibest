@@ -835,7 +835,7 @@ export function normalizeUnit(unit: string): string {
  * @param name - Ingredient name
  * @returns Cleaned name without state words
  */
-function stripStateWords(name: string): string {
+export function stripStateWords(name: string): string {
   let result = name;
   for (const word of STATE_WORDS) {
     // Use word boundaries to avoid partial matches
@@ -851,7 +851,7 @@ function stripStateWords(name: string): string {
  * @param name - Ingredient name
  * @returns Name with synonyms applied
  */
-function applySynonyms(name: string): string {
+export function applySynonyms(name: string): string {
   const lower = name.toLowerCase();
   for (const [synonym, standard] of Object.entries(SYNONYMS)) {
     if (lower.includes(synonym)) {
@@ -942,4 +942,197 @@ export function parseIngredientLine(line: string): ParsedIngredient {
   name = name.trim();
 
   return { original, name, qty: 1, unit: "piece" };
+}
+
+// ============================================================================
+// Unit Conversion System
+// ============================================================================
+
+/**
+ * Unit type classification for consolidation
+ */
+export type UnitType = "volume" | "weight" | "count" | "other";
+
+/**
+ * Volume units converted to milliliters (ml)
+ */
+export const VOLUME_TO_ML: Record<string, number> = {
+  ml: 1,
+  l: 1000,
+  cup: 236.588,
+  tbsp: 14.787,
+  tsp: 4.929,
+  "fl oz": 29.574,
+  pint: 473.176,
+  quart: 946.353,
+  gallon: 3785.41,
+};
+
+/**
+ * Weight units converted to grams (g)
+ */
+export const WEIGHT_TO_G: Record<string, number> = {
+  g: 1,
+  kg: 1000,
+  oz: 28.3495,
+  lb: 453.592,
+};
+
+/**
+ * Units that represent countable items (not convertible to volume/weight)
+ */
+export const COUNT_UNITS: string[] = [
+  "piece",
+  "clove",
+  "slice",
+  "can",
+  "package",
+  "bunch",
+  "box",
+  "pinch",
+  "dash",
+];
+
+/**
+ * Determine the type of a unit for consolidation purposes
+ *
+ * @param unit - Normalized unit string
+ * @returns The unit type classification
+ */
+export function getUnitType(unit: string): UnitType {
+  const normalizedUnit = normalizeUnit(unit);
+
+  if (VOLUME_TO_ML[normalizedUnit] !== undefined) {
+    return "volume";
+  }
+  if (WEIGHT_TO_G[normalizedUnit] !== undefined) {
+    return "weight";
+  }
+  if (COUNT_UNITS.includes(normalizedUnit)) {
+    return "count";
+  }
+  return "other";
+}
+
+/**
+ * Convert an amount to base units (ml for volume, g for weight)
+ *
+ * @param amount - The amount to convert
+ * @param unit - The unit of the amount
+ * @returns The amount in base units, or null if conversion not possible
+ */
+export function convertToBaseUnit(
+  amount: number,
+  unit: string
+): { amount: number; baseUnit: "ml" | "g" } | null {
+  const normalizedUnit = normalizeUnit(unit);
+  const unitType = getUnitType(normalizedUnit);
+
+  if (unitType === "volume") {
+    const factor = VOLUME_TO_ML[normalizedUnit];
+    if (factor !== undefined) {
+      return { amount: amount * factor, baseUnit: "ml" };
+    }
+  }
+
+  if (unitType === "weight") {
+    const factor = WEIGHT_TO_G[normalizedUnit];
+    if (factor !== undefined) {
+      return { amount: amount * factor, baseUnit: "g" };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convert an amount from base units to a target unit
+ *
+ * @param amount - The amount in base units (ml or g)
+ * @param baseUnit - The base unit ('ml' or 'g')
+ * @param targetUnit - The target unit to convert to
+ * @returns The converted amount, or null if conversion not possible
+ */
+export function convertFromBaseUnit(
+  amount: number,
+  baseUnit: "ml" | "g",
+  targetUnit: string
+): number | null {
+  const normalizedTarget = normalizeUnit(targetUnit);
+
+  if (baseUnit === "ml") {
+    const factor = VOLUME_TO_ML[normalizedTarget];
+    if (factor !== undefined) {
+      return amount / factor;
+    }
+  }
+
+  if (baseUnit === "g") {
+    const factor = WEIGHT_TO_G[normalizedTarget];
+    if (factor !== undefined) {
+      return amount / factor;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Select the best display unit based on the amount
+ * Chooses user-friendly units (e.g., cups instead of ml for cooking)
+ *
+ * @param baseAmount - The amount in base units (ml or g)
+ * @param unitType - The unit type ('volume' or 'weight')
+ * @returns The best display unit and converted amount
+ */
+export function getBestDisplayUnit(
+  baseAmount: number,
+  unitType: "volume" | "weight"
+): { amount: number; unit: string } {
+  if (unitType === "volume") {
+    // For very small amounts, use tsp
+    if (baseAmount < 15) {
+      return {
+        amount: Math.round((baseAmount / VOLUME_TO_ML.tsp) * 100) / 100,
+        unit: "tsp",
+      };
+    }
+    // For small amounts, use tbsp
+    if (baseAmount < 60) {
+      return {
+        amount: Math.round((baseAmount / VOLUME_TO_ML.tbsp) * 100) / 100,
+        unit: "tbsp",
+      };
+    }
+    // For medium amounts, use cups
+    if (baseAmount < 1500) {
+      return {
+        amount: Math.round((baseAmount / VOLUME_TO_ML.cup) * 100) / 100,
+        unit: "cup",
+      };
+    }
+    // For large amounts, use liters
+    return {
+      amount: Math.round((baseAmount / VOLUME_TO_ML.l) * 100) / 100,
+      unit: "l",
+    };
+  }
+
+  if (unitType === "weight") {
+    // For amounts under 1kg, use grams
+    if (baseAmount < 1000) {
+      return {
+        amount: Math.round(baseAmount * 100) / 100,
+        unit: "g",
+      };
+    }
+    // For larger amounts, use kg
+    return {
+      amount: Math.round((baseAmount / WEIGHT_TO_G.kg) * 100) / 100,
+      unit: "kg",
+    };
+  }
+
+  // Fallback (shouldn't reach here)
+  return { amount: baseAmount, unit: "g" };
 }

@@ -171,6 +171,55 @@ function CustomMonthCaption({ calendarMonth }: { calendarMonth: { date: Date } }
     )
 }
 
+// Simple month caption without dropdowns - just arrows and month/year text
+function SimpleMonthCaption({ calendarMonth }: { calendarMonth: { date: Date } }) {
+    const { goToMonth, previousMonth, nextMonth } = useDayPicker()
+
+    const handlePreviousClick = () => {
+        if (previousMonth) {
+            goToMonth(previousMonth)
+        }
+    }
+
+    const handleNextClick = () => {
+        if (nextMonth) {
+            goToMonth(nextMonth)
+        }
+    }
+
+    return (
+        <div className="flex items-center justify-between w-full h-10 px-1">
+            <Button
+                variant="outline"
+                className={cn(
+                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-muted border-border/50"
+                )}
+                disabled={!previousMonth}
+                onClick={handlePreviousClick}
+                aria-label="Go to previous month"
+            >
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            <span className="text-sm font-medium">
+                {format(calendarMonth.date, "MMMM yyyy")}
+            </span>
+
+            <Button
+                variant="outline"
+                className={cn(
+                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-muted border-border/50"
+                )}
+                disabled={!nextMonth}
+                onClick={handleNextClick}
+                aria-label="Go to next month"
+            >
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
+    )
+}
+
 export function DatePicker({
     date,
     onDateChange,
@@ -234,6 +283,118 @@ export function DatePicker({
                     }}
                     {...props}
                 />
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+// ============================================================================
+// Date Range Picker
+// ============================================================================
+
+export interface DateRange {
+    from: Date | undefined
+    to?: Date | undefined
+}
+
+export type DateRangePickerProps = {
+    dateRange?: DateRange
+    onDateRangeChange: (range: DateRange | undefined) => void
+    placeholder?: string
+    id?: string
+    className?: string
+    disabled?: boolean
+    numberOfMonths?: number
+}
+
+export function DateRangePicker({
+    dateRange,
+    onDateRangeChange,
+    className,
+    placeholder = "Select date range",
+    id,
+    disabled,
+    numberOfMonths = 1,
+}: DateRangePickerProps) {
+    const formatDateRange = () => {
+        if (!dateRange?.from) return placeholder
+        if (!dateRange.to) return format(dateRange.from, "MMM d, yyyy")
+        return `${format(dateRange.from, "MMM d")} - ${format(dateRange.to, "MMM d, yyyy")}`
+    }
+
+    const handleReset = () => {
+        onDateRangeChange(undefined)
+    }
+
+    const hasSelection = dateRange?.from || dateRange?.to
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button
+                    id={id}
+                    variant={"outline"}
+                    className={cn(
+                        "justify-start text-left font-normal bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80 transition-colors",
+                        !dateRange?.from && "text-muted-foreground",
+                        className
+                    )}
+                    disabled={disabled}
+                >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formatDateRange()}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-card/95 backdrop-blur-md border-border/50" align="start">
+                <DayPicker
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={onDateRangeChange}
+                    numberOfMonths={numberOfMonths}
+                    startMonth={new Date(1900, 0)}
+                    endMonth={new Date(2100, 11)}
+                    showOutsideDays={true}
+                    className={cn("p-3")}
+                    classNames={{
+                        months: "flex flex-col gap-2",
+                        month: "flex flex-col gap-4",
+                        month_caption: "w-full",
+                        nav: "hidden",
+                        month_grid: "w-full border-collapse",
+                        weekdays: "flex",
+                        weekday: "text-muted-foreground w-9 font-normal text-[0.8rem] text-center",
+                        week: "flex w-full mt-2",
+                        day: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
+                        day_button: cn(
+                            buttonVariants({ variant: "ghost" }),
+                            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground"
+                        ),
+                        selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                        today: "bg-accent text-accent-foreground rounded-md",
+                        outside: "text-muted-foreground opacity-50",
+                        disabled: "text-muted-foreground opacity-50",
+                        hidden: "invisible",
+                        range_start: "bg-primary text-primary-foreground rounded-l-md",
+                        range_end: "bg-primary text-primary-foreground rounded-r-md",
+                        range_middle: "bg-primary/20 text-foreground",
+                    }}
+                    components={{
+                        Nav: CustomNav,
+                        MonthCaption: SimpleMonthCaption,
+                    }}
+                />
+                {hasSelection && (
+                    <div className="border-t border-border/50 p-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleReset}
+                            className="w-full text-muted-foreground hover:text-foreground"
+                        >
+                            Reset selection
+                        </Button>
+                    </div>
+                )}
             </PopoverContent>
         </Popover>
     )

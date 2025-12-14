@@ -549,18 +549,47 @@
         }
     },
     "shopping": {
-        "title": "Listas de Compras",
-        "subtitle": "Compras inteligentes hechas fáciles",
-        "comingSoon": "Próximamente",
-        "description": "Experiencia revolucionaria de compras impulsada por IA. Esta función incluirá:",
-        "features": {
-            "smartLists": "Listas de compras inteligentes de tus planes de comidas",
-            "priceComparison": "Comparación de precios entre tiendas",
-            "autoOrdering": "Pedidos automatizados de comestibles",
-            "nutritionLabels": "Información nutricional para todos los artículos",
-            "budgetTracking": "Seguimiento y optimización del presupuesto"
+        "title": "Lista de Compras",
+        "subtitle": "Genera tu lista de compras desde los planes de comidas",
+        "generate": "Generar",
+        "downloadPdf": "Descargar PDF",
+        "viewByCategory": "Por Categoría",
+        "viewByRecipe": "Por Receta",
+        "items": "artículos",
+        "itemsChecked": "artículos marcados",
+        "recipes": "recetas",
+        "servings": "porciones",
+        "ingredientsFrom": "Ingredientes de {recipe}",
+        "noSchedules": "No hay planes de comidas programados",
+        "noSchedulesDescription": "Programa un plan de comidas para el rango de fechas seleccionado para generar tu lista de compras.",
+        "selectDateRange": "Genera tu lista de compras",
+        "selectDateRangeDescription": "Selecciona un rango de fechas y haz clic en Generar para crear tu lista de compras desde los planes programados.",
+        "categories": {
+            "fruits": "Frutas",
+            "vegetables": "Verduras",
+            "proteins": "Proteínas",
+            "dairy": "Lácteos",
+            "grains": "Granos",
+            "pantry": "Despensa",
+            "other": "Otros"
         },
-        "backToDashboard": "Volver al Panel"
+        "backToDashboard": "Volver al Panel",
+        "pdf": {
+            "title": "Lista de Compras",
+            "exportTitle": "Exportar Lista de Compras",
+            "exportDescription": "Elige tus opciones de exportación y descarga tu lista de compras como PDF.",
+            "generatedBy": "Generado por DietAIbook",
+            "page": "Página",
+            "of": "de",
+            "viewModeLabel": "Modo de Vista",
+            "categoryView": "Por Categoría",
+            "recipeView": "Por Receta",
+            "includeChecked": "Incluir artículos marcados",
+            "includeCheckedDescription": "Mostrar artículos que ya has marcado como comprados con tachado.",
+            "cancel": "Cancelar",
+            "export": "Exportar PDF",
+            "generating": "Generando..."
+        }
     },
     "onboarding": {
         "title": "Bienvenido a DietAIbook",
