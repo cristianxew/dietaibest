@@ -6,7 +6,7 @@
 # Description: Integrate with the Browser-Use cloud API service to automate grocery shopping. The Browser-Use service provides AI agents that handle all browser interactions, including navigating grocery store websites, searching for products, and adding items to shopping carts. The integration should send shopping list data to the Browser-Use API, track progress, and handle responses, including errors and substitutions.
 # Details:
 1. Integrate with Browser-Use cloud API for automated grocery shopping
-2. Create store preference selection interface (to select supported stores for Browser-Use agents)
+2. Create store preference selection interface (to select supported stores for Browser-Use agents) (in user settings)
 3. Build shopping list payload generator for Browser-Use API
 4. Implement endpoint connection to send shopping list and preferences to Browser-Use
 5. Create polling mechanism (every 3s) to fetch status updates from Browser-Use API
