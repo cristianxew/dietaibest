@@ -28,6 +28,7 @@ const PROTECTED_API_ROUTES = [
   "/api/meals",
   "/api/recipes",
   "/api/shopping-lists",
+  "/api/shopping",
   "/api/profiles",
   "/api/nutrition",
 ];

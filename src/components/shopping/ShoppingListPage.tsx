@@ -7,6 +7,8 @@ import { ShoppingListHeader } from "./ShoppingListHeader";
 import { CategoryView } from "./CategoryView";
 import { RecipeView } from "./RecipeView";
 import { EmptyState } from "./EmptyState";
+import { StorePreferencesPreview } from "./StorePreferencesPreview";
+import { ShoppingAutomationButton } from "./ShoppingAutomationButton";
 import { generateShoppingList } from "@/actions/shopping-list";
 import type {
   ShoppingListResult,
@@ -318,6 +320,9 @@ export function ShoppingListPage() {
           </div>
         </div>
 
+        {/* Store Preferences Preview */}
+        <StorePreferencesPreview />
+
         {/* Header with Date Range and Actions */}
         <ShoppingListHeader
           dateRange={dateRange}
@@ -371,15 +376,23 @@ export function ShoppingListPage() {
           shoppingList &&
           shoppingList.metadata.totalMeals > 0 && (
             <>
-              {/* Stats Bar */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>
-                  {checkedCount}/{totalItems} {t("itemsChecked")}
-                </span>
-                <span className="text-border">|</span>
-                <span>
-                  {filteredRecipes.length} {t("recipes")}
-                </span>
+              {/* Stats Bar with Automation Button */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>
+                    {checkedCount}/{totalItems} {t("itemsChecked")}
+                  </span>
+                  <span className="text-border">|</span>
+                  <span>
+                    {filteredRecipes.length} {t("recipes")}
+                  </span>
+                </div>
+
+                {/* Shopping Automation Button */}
+                <ShoppingAutomationButton
+                  ingredients={filteredIngredients}
+                  disabled={isLoading || filteredIngredients.length === 0}
+                />
               </div>
 
               {/* Two-Column Layout */}
