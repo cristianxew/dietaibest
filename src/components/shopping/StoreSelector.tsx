@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Store, Loader2, Save } from "lucide-react";
+import { Store, Loader2, Save, KeyRound } from "lucide-react";
 
 import {
   Card,
@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { StoreCard } from "./StoreCard";
 import { ShoppingPreferencesForm } from "./ShoppingPreferencesForm";
+import { StoreCredentialsForm } from "./StoreCredentialsForm";
 
 import {
   shoppingPreferencesFormSchema,
@@ -191,6 +192,31 @@ export function StoreSelector() {
             </div>
           </form>
         </Form>
+
+        {/* Store Credentials Section - Outside the preferences form */}
+        {selectedStore && (
+          <>
+            <Separator className="my-6" />
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">
+                  {t("storeSelector.storeCredentials")}
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t("storeSelector.storeCredentialsDesc")}
+              </p>
+              <StoreCredentialsForm
+                store={selectedStore}
+                storeName={
+                  stores.find((s) => s.id === selectedStore)?.name ||
+                  selectedStore
+                }
+              />
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -627,7 +627,32 @@
             "maxPricePerItem": "Max price per item (PLN)",
             "maxPricePerItemDesc": "Skip items above this price",
             "savePreferences": "Save preferences",
-            "preferencesSaved": "Preferences saved successfully"
+            "preferencesSaved": "Preferences saved successfully",
+            "storeCredentials": "Store Login (Optional)",
+            "storeCredentialsDesc": "Save your store login to enable automatic authentication during shopping automation. Your credentials are encrypted and stored securely."
+        },
+        "credentials": {
+            "title": "Store Login Credentials",
+            "credentials": "Login",
+            "credentialsSaved": "Saved",
+            "email": "Email",
+            "emailPlaceholder": "your@email.com",
+            "password": "Password",
+            "passwordPlaceholder": "Enter your store password",
+            "passwordPlaceholderExisting": "Enter new password to update",
+            "passwordHint": "Your password is encrypted and stored securely",
+            "encryptionNote": "Credentials are encrypted with AES-256",
+            "saveCredentials": "Save Credentials",
+            "updateCredentials": "Update Credentials",
+            "saved": "Credentials saved",
+            "deleted": "Credentials removed",
+            "saveError": "Failed to save credentials",
+            "deleteError": "Failed to delete credentials",
+            "loading": "Loading credentials...",
+            "deleteConfirmTitle": "Delete Credentials?",
+            "deleteConfirmDescription": "This will remove your saved login credentials for this store. You will need to enter them again to enable auto-login.",
+            "cancel": "Cancel",
+            "delete": "Delete"
         },
         "automation": {
             "title": "Shopping Automation",

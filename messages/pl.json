@@ -623,7 +623,32 @@
             "maxPricePerItem": "Maksymalna cena za produkt (PLN)",
             "maxPricePerItemDesc": "Pomijaj produkty powyżej tej ceny",
             "savePreferences": "Zapisz preferencje",
-            "preferencesSaved": "Preferencje zapisane pomyślnie"
+            "preferencesSaved": "Preferencje zapisane pomyślnie",
+            "storeCredentials": "Logowanie do Sklepu (Opcjonalne)",
+            "storeCredentialsDesc": "Zapisz dane logowania do sklepu, aby włączyć automatyczne uwierzytelnianie podczas automatyzacji zakupów. Twoje dane są szyfrowane i przechowywane bezpiecznie."
+        },
+        "credentials": {
+            "title": "Dane Logowania do Sklepu",
+            "credentials": "Logowanie",
+            "credentialsSaved": "Zapisano",
+            "email": "Email",
+            "emailPlaceholder": "twoj@email.com",
+            "password": "Hasło",
+            "passwordPlaceholder": "Wpisz hasło do sklepu",
+            "passwordPlaceholderExisting": "Wpisz nowe hasło, aby zaktualizować",
+            "passwordHint": "Twoje hasło jest szyfrowane i bezpiecznie przechowywane",
+            "encryptionNote": "Dane szyfrowane AES-256",
+            "saveCredentials": "Zapisz Dane Logowania",
+            "updateCredentials": "Aktualizuj Dane Logowania",
+            "saved": "Dane logowania zapisane",
+            "deleted": "Dane logowania usunięte",
+            "saveError": "Nie udało się zapisać danych logowania",
+            "deleteError": "Nie udało się usunąć danych logowania",
+            "loading": "Ładowanie danych logowania...",
+            "deleteConfirmTitle": "Usunąć Dane Logowania?",
+            "deleteConfirmDescription": "Spowoduje to usunięcie zapisanych danych logowania do tego sklepu. Będziesz musiał je ponownie wprowadzić, aby włączyć automatyczne logowanie.",
+            "cancel": "Anuluj",
+            "delete": "Usuń"
         },
         "automation": {
             "title": "Automatyzacja Zakupów",

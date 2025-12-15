@@ -11,6 +11,7 @@ export { StoreSelector } from "./StoreSelector";
 export { StoreCard } from "./StoreCard";
 export { ShoppingPreferencesForm } from "./ShoppingPreferencesForm";
 export { StorePreferencesPreview } from "./StorePreferencesPreview";
+export { StoreCredentialsForm } from "./StoreCredentialsForm";
 
 // Shopping Automation (Task 11.4 & 11.5)
 export { ShoppingProgressModal } from "./ShoppingProgressModal";

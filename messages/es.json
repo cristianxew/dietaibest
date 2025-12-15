@@ -623,7 +623,32 @@
             "maxPricePerItem": "Precio máximo por artículo (PLN)",
             "maxPricePerItemDesc": "Omitir artículos por encima de este precio",
             "savePreferences": "Guardar preferencias",
-            "preferencesSaved": "Preferencias guardadas exitosamente"
+            "preferencesSaved": "Preferencias guardadas exitosamente",
+            "storeCredentials": "Inicio de Sesión de Tienda (Opcional)",
+            "storeCredentialsDesc": "Guarda tu inicio de sesión de la tienda para habilitar la autenticación automática durante la automatización de compras. Tus credenciales están encriptadas y almacenadas de forma segura."
+        },
+        "credentials": {
+            "title": "Credenciales de Inicio de Sesión",
+            "credentials": "Inicio de Sesión",
+            "credentialsSaved": "Guardado",
+            "email": "Correo electrónico",
+            "emailPlaceholder": "tu@email.com",
+            "password": "Contraseña",
+            "passwordPlaceholder": "Ingresa tu contraseña de la tienda",
+            "passwordPlaceholderExisting": "Ingresa nueva contraseña para actualizar",
+            "passwordHint": "Tu contraseña está encriptada y almacenada de forma segura",
+            "encryptionNote": "Credenciales encriptadas con AES-256",
+            "saveCredentials": "Guardar Credenciales",
+            "updateCredentials": "Actualizar Credenciales",
+            "saved": "Credenciales guardadas",
+            "deleted": "Credenciales eliminadas",
+            "saveError": "Error al guardar credenciales",
+            "deleteError": "Error al eliminar credenciales",
+            "loading": "Cargando credenciales...",
+            "deleteConfirmTitle": "¿Eliminar Credenciales?",
+            "deleteConfirmDescription": "Esto eliminará tus credenciales de inicio de sesión guardadas para esta tienda. Deberás ingresarlas nuevamente para habilitar el inicio de sesión automático.",
+            "cancel": "Cancelar",
+            "delete": "Eliminar"
         },
         "automation": {
             "title": "Automatización de Compras",

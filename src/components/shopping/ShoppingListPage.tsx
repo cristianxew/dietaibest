@@ -293,6 +293,14 @@ export function ShoppingListPage() {
     return purchased >= ing.baseAmount;
   }).length;
 
+  // Filter out purchased items for automation (only send unchecked items)
+  const uncheckedIngredients = useMemo(() => {
+    return filteredIngredients.filter((ing) => {
+      const purchased = purchasedAmounts[ing.id] || 0;
+      return purchased < ing.baseAmount;
+    });
+  }, [filteredIngredients, purchasedAmounts]);
+
   return (
     <div className="min-h-screen relative">
       {/* Decorative Background */}
@@ -390,8 +398,8 @@ export function ShoppingListPage() {
 
                 {/* Shopping Automation Button */}
                 <ShoppingAutomationButton
-                  ingredients={filteredIngredients}
-                  disabled={isLoading || filteredIngredients.length === 0}
+                  ingredients={uncheckedIngredients}
+                  disabled={isLoading || uncheckedIngredients.length === 0}
                 />
               </div>
 

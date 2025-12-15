@@ -113,3 +113,41 @@ export const defaultShoppingPreferencesFormState: ShoppingPreferencesFormState =
   allowSubstitutions: true,
   maxPricePerItem: "",
 };
+
+// ============================================================================
+// Store Credentials (for auto-login during shopping automation)
+// ============================================================================
+
+/**
+ * Store credential as returned to the client
+ * Note: Password is NEVER sent to client, only hasPassword flag
+ */
+export interface StoreCredential {
+  id: string;
+  store: SupportedStore;
+  email: string;
+  /** Indicates if credentials are saved (password never exposed) */
+  hasPassword: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Input for saving store credentials
+ */
+export interface StoreCredentialInput {
+  store: SupportedStore;
+  email: string;
+  password: string;
+}
+
+/**
+ * Validation schema for store credentials
+ */
+export const storeCredentialSchema = z.object({
+  store: supportedStoreEnum,
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export type StoreCredentialFormValues = z.infer<typeof storeCredentialSchema>;

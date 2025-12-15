@@ -268,6 +268,12 @@ export interface ShoppingAutomationRequest {
     email?: string;
     // Password handled via secrets parameter if provided
   };
+  /**
+   * Indicates if user has stored credentials for this store.
+   * When true, the agent will attempt to log in using credentials
+   * passed via the secrets parameter before shopping.
+   */
+  hasStoredCredentials?: boolean;
 }
 
 /**
@@ -707,9 +713,13 @@ export class BrowserUseClient {
    * Uses a persistent browser session created FIRST so users can access the cart
    * via liveUrl after automation completes. The session stays active for up to
    * 15 minutes on free tier, allowing users to continue shopping or checkout.
+   *
+   * @param request - Shopping automation request with items and preferences
+   * @param secrets - Optional secrets for authentication (store_email, store_password)
    */
   async startShoppingAutomation(
-    request: ShoppingAutomationRequest
+    request: ShoppingAutomationRequest,
+    secrets?: Record<string, string>
   ): Promise<{ taskId: string; sessionId: string; liveUrl: string; browserSessionId: string }> {
     const storeConfig = SUPPORTED_STORES[request.store];
 
@@ -724,7 +734,9 @@ export class BrowserUseClient {
     // Step 1: Create a session FIRST with the store's start URL
     // This gives us the liveUrl immediately, which will be the access point
     // for users to continue shopping after automation completes
-    console.log("[BrowserUse] Creating session for store:", storeConfig.name);
+    console.log("[BrowserUse] Creating session for store:", storeConfig.name, {
+      hasCredentials: request.hasStoredCredentials,
+    });
 
     const session = await this.createSession({
       startUrl: storeConfig.startUrl,
@@ -738,15 +750,6 @@ export class BrowserUseClient {
 
     const taskPrompt = this.buildShoppingPrompt(request, storeConfig);
     const structuredOutputSchema = this.buildShoppingOutputSchema();
-
-    // Build secrets object for credentials ONLY if provided (authentication is optional)
-    const secrets: Record<string, string> | undefined = request.credentials
-      ?.email
-      ? {
-          store_email: request.credentials.email,
-          // Password would be added here if provided via a secure mechanism
-        }
-      : undefined;
 
     // Step 2: Create task attached to the existing session
     // By using sessionId, the task runs in our pre-created session
@@ -762,7 +765,7 @@ export class BrowserUseClient {
       flashMode: true,
       highlightElements: false,
       allowedDomains: storeConfig.domains,
-      secrets, // undefined if no credentials provided (guest mode)
+      secrets, // Contains store_email and store_password if user has stored credentials
       sessionId: session.id, // Attach to pre-created session
     });
 
@@ -770,6 +773,7 @@ export class BrowserUseClient {
       taskId: taskResponse.id,
       sessionId: session.id,
       liveUrl: session.liveUrl,
+      hasCredentials: request.hasStoredCredentials,
     });
 
     return {
@@ -879,6 +883,7 @@ export class BrowserUseClient {
   /**
    * Build an intelligent prompt for shopping automation
    * Uses transformed items with clear quantities for better search results
+   * Includes conditional login instructions when user has stored credentials
    */
   private buildShoppingPrompt(
     request: ShoppingAutomationRequest,
@@ -912,25 +917,57 @@ export class BrowserUseClient {
       preferenceNotes.push(`Skip items over ${preferences.maxPricePerItem} PLN`);
     }
 
-    return `You are a shopping assistant for ${storeConfig.name} grocery store in Poland.
+    // Conditional authentication instructions
+    const authSection = request.hasStoredCredentials
+      ? `AUTHENTICATION (REQUIRED FIRST):
+1. Look for "Zaloguj" (Login) or "Moje konto" (My Account) button in the header
+2. Click to open the login form
+3. Enter email: {{store_email}}
+4. Enter password: {{store_password}}
+5. Submit the login form and wait for it to complete
+6. Verify login was successful (look for account name or "Wyloguj" button)
+7. If login fails after 2 attempts, continue as guest
 
-SHOPPING LIST:
-${itemsList}
+`
+      : "";
 
-YOUR TASK:
+    // Conditional login rule
+    const loginRule = request.hasStoredCredentials
+      ? "- You MUST log in first using the credentials provided above"
+      : "- Do NOT log in - browse as guest";
+
+    // Adjust step numbers based on whether auth is required
+    const taskSteps = request.hasStoredCredentials
+      ? `YOUR TASK:
 1. Accept any cookie banners or popups first
-2. For each item above:
+2. Log in to your account using the credentials above
+3. For each item in the shopping list:
    - Search for the item using the store's search (translate to Polish if needed)
    - Find the best matching product
    - If the exact quantity (e.g., 50g) is not available, add the smallest available package size (e.g., 500g pack)
    - Add 1 unit to cart
-   - Wait 1-2 seconds between actions
+4. After all items, go to cart page (koszyk)
+5. Get the cart URL and total price`
+      : `YOUR TASK:
+1. Accept any cookie banners or popups first
+2. For each item in the shopping list:
+   - Search for the item using the store's search (translate to Polish if needed)
+   - Find the best matching product
+   - If the exact quantity (e.g., 50g) is not available, add the smallest available package size (e.g., 500g pack)
+   - Add 1 unit to cart
 3. After all items, go to cart page (koszyk)
-4. Get the cart URL and total price
+4. Get the cart URL and total price`;
+
+    return `You are a shopping assistant for ${storeConfig.name} grocery store in Poland.
+
+${authSection}SHOPPING LIST:
+${itemsList}
+
+${taskSteps}
 
 ${preferenceNotes.length > 0 ? `PREFERENCES:\n${preferenceNotes.map((p) => `- ${p}`).join("\n")}\n` : ""}
 IMPORTANT RULES:
-- Do NOT log in - browse as guest
+${loginRule}
 - If an item is not found after 2 search attempts, skip it
 - ${preferences.allowSubstitutions ? "If exact item unavailable, pick a similar alternative" : "Do not substitute items"}
 - Do NOT proceed to checkout/payment
@@ -940,6 +977,9 @@ POLISH STORE TERMS:
 - Dodaj do koszyka = Add to cart
 - Koszyk = Cart
 - Suma = Total
+- Zaloguj = Login
+- Wyloguj = Logout
+- Moje konto = My Account
 
 OUTPUT: Return JSON with status ("success"/"partial"/"failed"), cartUrl, foundItems, notFoundItems, totalPrice, itemCount.`;
   }
