@@ -33,8 +33,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import {
   Select,
   SelectContent,
@@ -70,6 +69,7 @@ import {
   deleteFamilyMember,
 } from "@/actions/profile";
 import { calculateMacros } from "@/utils/macroCalculator";
+import { PreferenceCard } from "./PreferenceCard";
 
 // Validation schemas
 const personalInfoSchema = z.object({
@@ -598,30 +598,21 @@ export function ProfilePageContent({ initialData }: ProfilePageContentProps) {
             <CardContent>
               <Form {...preferencesForm}>
                 <form onSubmit={preferencesForm.handleSubmit(handlePreferencesSubmit)} className="space-y-6">
-                  {/* Dietary Types */}
                   <FormField
                     control={preferencesForm.control}
                     name="dietaryType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("fields.dietaryTypes")}</FormLabel>
+                        <FormLabel className="text-base font-semibold">{t("fields.dietaryTypes")}</FormLabel>
                         <FormDescription>{t("fields.dietaryTypesDescription")}</FormDescription>
-                        <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-4">
                           {DIETARY_TYPES.map((type) => (
-                            <FormItem
+                            <PreferenceCard
                               key={type}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(type)}
-                                  onCheckedChange={() => toggleArrayValue(field, type)}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                {type}
-                              </FormLabel>
-                            </FormItem>
+                              label={type}
+                              isSelected={field.value?.includes(type)}
+                              onClick={() => toggleArrayValue(field, type)}
+                            />
                           ))}
                         </div>
                         <FormMessage />
@@ -629,30 +620,21 @@ export function ProfilePageContent({ initialData }: ProfilePageContentProps) {
                     )}
                   />
 
-                  {/* Allergies */}
                   <FormField
                     control={preferencesForm.control}
                     name="allergies"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("fields.allergies")}</FormLabel>
+                        <FormLabel className="text-base font-semibold">{t("fields.allergies")}</FormLabel>
                         <FormDescription>{t("fields.allergiesDescription")}</FormDescription>
-                        <div className="grid grid-cols-3 gap-3 mt-3">
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-4">
                           {COMMON_ALLERGIES.map((allergy) => (
-                            <FormItem
+                            <PreferenceCard
                               key={allergy}
-                              className="flex flex-row items-start space-x-3 space-y-0"
-                            >
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(allergy)}
-                                  onCheckedChange={() => toggleArrayValue(field, allergy)}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal cursor-pointer">
-                                {allergy}
-                              </FormLabel>
-                            </FormItem>
+                              label={allergy}
+                              isSelected={field.value?.includes(allergy)}
+                              onClick={() => toggleArrayValue(field, allergy)}
+                            />
                           ))}
                         </div>
                         <FormMessage />
@@ -660,34 +642,23 @@ export function ProfilePageContent({ initialData }: ProfilePageContentProps) {
                     )}
                   />
 
-                  {/* Cuisine Preferences */}
                   <FormField
                     control={preferencesForm.control}
                     name="cuisinePrefs"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("fields.cuisines")}</FormLabel>
+                        <FormLabel className="text-base font-semibold">{t("fields.cuisines")}</FormLabel>
                         <FormDescription>{t("fields.cuisinesDescription")}</FormDescription>
-                        <ScrollArea className="h-[120px] w-full rounded-md border p-4 mt-3">
-                          <div className="grid grid-cols-2 gap-3">
-                            {CUISINE_PREFERENCES.map((cuisine) => (
-                              <FormItem
-                                key={cuisine}
-                                className="flex flex-row items-start space-x-3 space-y-0"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(cuisine)}
-                                    onCheckedChange={() => toggleArrayValue(field, cuisine)}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {cuisine}
-                                </FormLabel>
-                              </FormItem>
-                            ))}
-                          </div>
-                        </ScrollArea>
+                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-4">
+                          {CUISINE_PREFERENCES.map((cuisine) => (
+                            <PreferenceCard
+                              key={cuisine}
+                              label={cuisine}
+                              isSelected={field.value?.includes(cuisine)}
+                              onClick={() => toggleArrayValue(field, cuisine)}
+                            />
+                          ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
