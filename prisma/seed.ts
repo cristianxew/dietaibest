@@ -3,12 +3,38 @@ import { recipes } from "../src/lib/recipe-mocks";
 
 const prisma = new PrismaClient();
 
+// Default recipe categories
+const defaultCategories = [
+  { name: "Breakfast", slug: "breakfast", description: "Morning meals", iconName: "sunrise" },
+  { name: "Lunch", slug: "lunch", description: "Midday meals", iconName: "sun" },
+  { name: "Dinner", slug: "dinner", description: "Evening meals", iconName: "moon" },
+  { name: "Snacks", slug: "snacks", description: "Quick bites", iconName: "cookie" },
+  { name: "Desserts", slug: "desserts", description: "Sweet treats", iconName: "cake" },
+];
+
+async function seedCategories() {
+  console.log("Creating default categories...");
+  let created = 0;
+  for (const category of defaultCategories) {
+    await prisma.recipeCategory.upsert({
+      where: { slug: category.slug },
+      update: {},
+      create: category,
+    });
+    created++;
+  }
+  console.log(`  ✓ ${created} categories ready\n`);
+}
+
 async function main() {
+  // Always seed categories first (even without user)
+  await seedCategories();
+
   const userId = process.env.SEED_USER_ID;
   if (!userId) {
-    console.error("Error: SEED_USER_ID environment variable is required");
-    console.error("Usage: SEED_USER_ID=your-uuid bun prisma db seed");
-    process.exit(1);
+    console.log("Note: SEED_USER_ID not provided, skipping recipe seeding");
+    console.log("Usage: SEED_USER_ID=your-uuid bun prisma db seed");
+    return;
   }
 
   // Verify user exists

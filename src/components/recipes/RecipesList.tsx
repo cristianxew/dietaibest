@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import {
   getRecipes,
+  getPublicRecipes,
   getCategories,
   getRecipeSearchSuggestions,
 } from "@/actions/recipe";
@@ -31,6 +32,7 @@ import {
   Heart,
   SlidersHorizontal,
   Sparkles,
+  Globe,
 } from "lucide-react";
 // Tabs removed - using custom toggle buttons
 import { toast } from "sonner";
@@ -52,7 +54,11 @@ type SearchSuggestion = {
 export function RecipesList() {
   const t = useTranslations("recipes");
   const [recipes, setRecipes] = useState<
-    (Recipe & { categories: RecipeCategory[]; favoritedBy: UserFavorite[] })[]
+    (Recipe & {
+      categories: RecipeCategory[];
+      favoritedBy: UserFavorite[];
+      user?: { id: string; email: string };
+    })[]
   >([]);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +66,7 @@ export function RecipesList() {
   const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [activeTab, setActiveTab] = useState<"my" | "public" | "favorites">("my");
   const [sortBy, setSortBy] = useState<
     "createdAt" | "title" | "calories" | "prepTime"
   >("createdAt");
@@ -153,23 +159,41 @@ export function RecipesList() {
     fetchCategories();
   }, []);
 
-  // Fetch recipes
+  // Fetch recipes based on active tab
   useEffect(() => {
     const fetchRecipes = async () => {
       setLoading(true);
       try {
-        const result = await getRecipes({
-          search: searchTerm || undefined,
-          categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
-          difficulty:
-            selectedDifficulty !== "all"
-              ? (selectedDifficulty as "easy" | "medium" | "hard")
-              : undefined,
-          favorites: showFavorites || undefined,
-          sortBy,
-          page,
-          limit: itemsPerPage,
-        });
+        let result;
+
+        if (activeTab === "public") {
+          // Fetch public recipes from other users
+          result = await getPublicRecipes({
+            search: searchTerm || undefined,
+            categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
+            difficulty:
+              selectedDifficulty !== "all"
+                ? (selectedDifficulty as "easy" | "medium" | "hard")
+                : undefined,
+            sortBy,
+            page,
+            limit: itemsPerPage,
+          });
+        } else {
+          // Fetch user's own recipes (my recipes or favorites)
+          result = await getRecipes({
+            search: searchTerm || undefined,
+            categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
+            difficulty:
+              selectedDifficulty !== "all"
+                ? (selectedDifficulty as "easy" | "medium" | "hard")
+                : undefined,
+            favorites: activeTab === "favorites" || undefined,
+            sortBy,
+            page,
+            limit: itemsPerPage,
+          });
+        }
 
         if (result.error) {
           toast.error(result.error);
@@ -193,7 +217,7 @@ export function RecipesList() {
     searchTerm,
     selectedCategory,
     selectedDifficulty,
-    showFavorites,
+    activeTab,
     sortBy,
     page,
     itemsPerPage,
@@ -238,7 +262,7 @@ export function RecipesList() {
     searchTerm,
     selectedCategory,
     selectedDifficulty,
-    showFavorites,
+    activeTab,
     sortBy,
     itemsPerPage,
   ]);
@@ -320,7 +344,7 @@ export function RecipesList() {
     searchTerm ||
     selectedCategory !== "all" ||
     selectedDifficulty !== "all" ||
-    showFavorites;
+    activeTab !== "my";
 
   return (
     <div className="space-y-8">
@@ -548,13 +572,13 @@ export function RecipesList() {
           {/* Divider */}
           <div className="hidden sm:block h-6 w-px bg-border/50" />
 
-          {/* All / Favorites toggle buttons */}
+          {/* Recipe source tabs - My Recipes / Public / Favorites */}
           <div className="flex rounded-lg border border-border/50 overflow-hidden">
             <button
-              onClick={() => setShowFavorites(false)}
+              onClick={() => setActiveTab("my")}
               className={cn(
                 "px-4 py-2 text-sm font-medium transition-colors",
-                !showFavorites
+                activeTab === "my"
                   ? "bg-brand-500 text-white"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
@@ -562,10 +586,22 @@ export function RecipesList() {
               {t("allRecipes")}
             </button>
             <button
-              onClick={() => setShowFavorites(true)}
+              onClick={() => setActiveTab("public")}
               className={cn(
                 "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5",
-                showFavorites
+                activeTab === "public"
+                  ? "bg-sage-500 text-white"
+                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {t("publicRecipes")}
+            </button>
+            <button
+              onClick={() => setActiveTab("favorites")}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5",
+                activeTab === "favorites"
                   ? "bg-gold-500 text-white"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
@@ -573,7 +609,7 @@ export function RecipesList() {
               <Heart
                 className={cn(
                   "h-3.5 w-3.5",
-                  showFavorites && "fill-current"
+                  activeTab === "favorites" && "fill-current"
                 )}
               />
               {t("favorites")}
@@ -590,7 +626,7 @@ export function RecipesList() {
                 setSearchInput("");
                 setSelectedCategory("all");
                 setSelectedDifficulty("all");
-                setShowFavorites(false);
+                setActiveTab("my");
                 setPage(1);
               }}
               className="h-10 px-3 text-muted-foreground hover:text-foreground"
@@ -616,9 +652,14 @@ export function RecipesList() {
                 of{" "}
                 <span className="font-medium text-foreground">{totalCount}</span>{" "}
                 recipes
-                {showFavorites && (
+                {activeTab === "favorites" && (
                   <Badge variant="gold" className="ml-2 text-[10px]">
-                    Favorites
+                    {t("favorites")}
+                  </Badge>
+                )}
+                {activeTab === "public" && (
+                  <Badge variant="secondary" className="ml-2 text-[10px]">
+                    {t("publicRecipes")}
                   </Badge>
                 )}
                 {selectedCategory !== "all" &&
@@ -691,7 +732,7 @@ export function RecipesList() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
+              <RecipeCard key={recipe.id} recipe={recipe} showAuthor={activeTab === "public"} />
             ))}
           </div>
 

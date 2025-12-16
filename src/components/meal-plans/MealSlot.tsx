@@ -3,7 +3,8 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GripVertical, X, Utensils, Flame } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GripVertical, X, Utensils, Flame, Loader2 } from "lucide-react";
 import type { MealDisplay, MealType } from "@/types/meal-plan";
 import { formatMacroValue } from "@/lib/meal-plan-macros";
 import { cn } from "@/lib/utils";
@@ -16,6 +17,7 @@ interface MealSlotProps {
   mealType: MealType;
   onRemove?: (mealId: string) => void;
   isDragging?: boolean;
+  isPending?: boolean;
 }
 
 export function MealSlot({
@@ -23,6 +25,7 @@ export function MealSlot({
   dayId,
   mealType,
   onRemove,
+  isPending,
 }: MealSlotProps) {
   const t = useTranslations("mealPlans");
 
@@ -58,13 +61,32 @@ export function MealSlot({
     setDropNodeRef(node);
   };
 
+  // Loading state - show skeleton when operation is pending
+  if (isPending) {
+    return (
+      <Card
+        className={cn(
+          "relative p-4 border border-brand-200 dark:border-brand-500/30 transition-all duration-200 min-h-[100px]",
+          "bg-brand-50/30 dark:bg-brand-500/5 flex items-center justify-center"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-5 h-5 text-brand-500 animate-spin" />
+          <span className="text-sm text-brand-600 dark:text-brand-400 font-medium">
+            Adding recipe...
+          </span>
+        </div>
+      </Card>
+    );
+  }
+
   // Empty slot
   if (!meal) {
     return (
       <Card
         ref={setDropNodeRef}
         className={cn(
-          "relative p-4 border-2 border-dashed transition-all duration-200 min-h-[90px] flex items-center justify-center",
+          "relative p-4 border-2 border-dashed transition-all duration-200 min-h-[100px] flex items-center justify-center",
           "bg-muted/20 hover:bg-muted/30",
           "border-border/40 hover:border-brand-300/50 dark:hover:border-brand-500/30",
           isOver && "border-brand-400 bg-brand-50/50 dark:bg-brand-500/10 scale-[1.02] shadow-md"
@@ -87,7 +109,7 @@ export function MealSlot({
     <Card
       ref={setNodeRef}
       className={cn(
-        "group relative p-3 transition-all duration-200 overflow-hidden",
+        "group relative p-3 transition-all duration-200 overflow-hidden min-h-[100px] flex items-center",
         "border-border/60 bg-card/80",
         "hover:border-brand-200/60 dark:hover:border-brand-500/30 hover:shadow-md",
         isDraggingSelf && "opacity-50 scale-95 cursor-grabbing",
@@ -97,12 +119,12 @@ export function MealSlot({
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-gradient-to-br from-brand-50/0 to-gold-50/0 group-hover:from-brand-50/30 group-hover:to-gold-50/20 dark:group-hover:from-brand-500/5 dark:group-hover:to-gold-500/5 transition-all duration-300 pointer-events-none" />
 
-      <div className="relative flex items-start gap-2.5">
+      <div className="relative flex items-center gap-2 w-full flex-auto">
         {/* Drag Handle */}
         <button
           {...dragAttributes}
           {...dragListeners}
-          className="cursor-grab active:cursor-grabbing touch-none mt-1 p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors"
+          className="cursor-grab active:cursor-grabbing touch-none p-1 -ml-1 rounded-lg hover:bg-muted/50 transition-colors"
           aria-label={t("slot.dragToMove")}
         >
           <GripVertical className="w-4 h-4 text-muted-foreground/40 group-hover:text-muted-foreground/60" />

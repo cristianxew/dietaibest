@@ -443,6 +443,93 @@ export async function getRecipes(filter?: RecipeFilter) {
   }
 }
 
+// Get public recipes from all users (excluding current user's recipes)
+export async function getPublicRecipes(filter?: RecipeFilter) {
+  try {
+    const user = await getAuthenticatedUser();
+    const validatedFilter = recipeFilterSchema.parse(filter || {});
+
+    const {
+      search,
+      categoryId,
+      difficulty,
+      tags,
+      minCalories,
+      maxCalories,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      page = 1,
+      limit = 12,
+    } = validatedFilter;
+
+    // Build where clause - only public recipes, excluding user's own
+    const where: Prisma.RecipeWhereInput = {
+      isPublic: true,
+      userId: { not: user.id },
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+          { tags: { hasSome: [search] } },
+        ],
+      }),
+      ...(categoryId && {
+        categories: { some: { id: categoryId } },
+      }),
+      ...(difficulty && { difficulty }),
+      ...(tags &&
+        tags.length > 0 && {
+          tags: { hasSome: tags },
+        }),
+      ...(minCalories && { calories: { gte: minCalories } }),
+      ...(maxCalories && { calories: { lte: maxCalories } }),
+    };
+
+    // Get total count
+    const totalCount = await prisma.recipe.count({ where });
+
+    // Get recipes with pagination
+    const recipes = await prisma.recipe.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        categories: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    return {
+      data: {
+        recipes,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Get public recipes error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to get public recipes",
+    };
+  }
+}
+
 // Get a single recipe by ID
 export async function getRecipe(id: string) {
   try {

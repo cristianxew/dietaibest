@@ -17,10 +17,12 @@ interface RecipeCardProps {
   recipe: Recipe & {
     categories: RecipeCategory[];
     favoritedBy: UserFavorite[];
+    user?: { id: string; email: string };
   };
+  showAuthor?: boolean;
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({ recipe, showAuthor = false }: RecipeCardProps) {
   const t = useTranslations("recipes");
   const params = useParams();
   const locale = params.locale as string;
@@ -213,8 +215,15 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
           {/* Description */}
           {recipe.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
               {recipe.description}
+            </p>
+          )}
+
+          {/* Author (for public recipes) */}
+          {showAuthor && recipe.user && (
+            <p className="text-xs text-muted-foreground mb-3">
+              {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
             </p>
           )}
 

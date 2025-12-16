@@ -43,6 +43,7 @@ import {
   duplicateMealPlan,
   deleteMealPlan,
 } from "@/actions/meal-plan";
+import { getUserProfile } from "@/actions/profile";
 import { toast } from "sonner";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import type { Prisma } from "@/generated/prisma";

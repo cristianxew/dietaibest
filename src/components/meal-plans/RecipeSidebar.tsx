@@ -84,7 +84,7 @@ export function RecipeSidebar() {
       {/* Header with gradient accent */}
       <div className="relative flex-shrink-0">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-100/50 to-gold-100/30 dark:from-brand-500/10 dark:to-gold-500/5" />
-        <CardHeader className="relative pb-4">
+        <CardHeader className="relative py-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20">
               <ChefHat className="w-5 h-5 text-brand-600 dark:text-brand-400" />
