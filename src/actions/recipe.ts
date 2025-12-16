@@ -688,6 +688,34 @@ export async function getRecipeSearchSuggestions(query: string) {
   }
 }
 
+// Get recent recipes for dashboard
+export async function getRecentRecipes(limit: number = 6) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const recipes = await prisma.recipe.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        categories: true,
+        favoritedBy: {
+          where: { userId: user.id },
+        },
+      },
+    });
+
+    return { data: recipes, error: null };
+  } catch (error) {
+    console.error("Get recent recipes error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to get recent recipes",
+    };
+  }
+}
+
 // Create default categories (run once)
 export async function createDefaultCategories() {
   try {

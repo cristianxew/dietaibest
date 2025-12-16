@@ -152,45 +152,122 @@
         }
     },
     "dashboard": {
-        "welcome": "Witamy w DietAIbook!",
-        "subtitle": "Twój asystent planowania posiłków oparty na AI. Zacznij planować swoją zdrową podróż już dziś.",
-        "quickActions": {
-            "createMealPlan": "Utwórz Plan Posiłków",
-            "browseRecipes": "Przeglądaj Przepisy",
-            "shoppingList": "Lista Zakupów",
-            "profile": "Profil",
-            "newPlan": "Nowy Plan",
-            "explore": "Eksploruj",
-            "viewList": "Zobacz Listę",
-            "settings": "Ustawienia"
+        "greeting": {
+            "morning": "Dzień dobry",
+            "afternoon": "Dzień dobry",
+            "evening": "Dobry wieczór",
+            "default": "Witaj ponownie"
         },
-        "recentActivity": {
-            "title": "Ostatnia Aktywność",
-            "description": "Twoje najnowsze działania związane z planowaniem posiłków",
-            "welcome": "Witamy w DietAIbook!",
-            "getStarted": "Zacznij od utworzenia swojego pierwszego planu posiłków lub przeglądania naszej kolekcji przepisów."
+        "subtitle": {
+            "new": "Zacznijmy Twoją podróż żywieniową już dziś",
+            "returning": "Twój spersonalizowany panel planowania posiłków"
+        },
+        "todaysMacros": {
+            "title": "Dzisiejsze Odżywianie",
+            "noTarget": "Ustaw cele",
+            "viewPlan": "Zobacz Pełny Plan",
+            "calories": "Kalorie",
+            "protein": "Białko",
+            "carbs": "Węglowodany",
+            "fat": "Tłuszcz",
+            "onTrack": "W Normie",
+            "under": "Poniżej",
+            "over": "Powyżej",
+            "noData": "Brak zaplanowanych posiłków na dziś",
+            "noTargets": "Ustaw swoje cele żywieniowe w ustawieniach profilu",
+            "setupTargets": "Ustaw Cele",
+            "planned": "Zaplanowane",
+            "remaining": "pozostało",
+            "ofTarget": "z celu"
+        },
+        "activePlan": {
+            "title": "Aktywny Plan Posiłków",
+            "day": "Dzień {current} z {total}",
+            "daysRemaining": "{count} dni pozostało",
+            "todaysMeals": "Dzisiejsze Posiłki",
+            "noActivePlan": "Brak Aktywnego Planu",
+            "noActivePlanDescription": "Zaplanuj plan, aby zobaczyć tutaj swoje codzienne posiłki",
+            "schedulePlan": "Zaplanuj Plan",
+            "viewPlan": "Zobacz Plan",
+            "viewAllPlans": "Zobacz Wszystkie Plany"
+        },
+        "recentRecipes": {
+            "title": "Ostatnie Przepisy",
+            "viewAll": "Zobacz Wszystkie",
+            "noRecipes": "Zacznij Budować Swoją Kolekcję",
+            "noRecipesDescription": "Dodaj swój pierwszy przepis, aby zacząć",
+            "createRecipe": "Utwórz Przepis",
+            "importRecipe": "Importuj z URL",
+            "kcal": "kcal"
         },
         "quickStats": {
-            "title": "Szybkie Statystyki",
-            "description": "Przegląd Twojego odżywiania",
+            "title": "Twoje Statystyki",
+            "totalRecipes": "Łączna Liczba Przepisów",
+            "favorites": "Ulubione",
             "mealPlans": "Plany Posiłków",
-            "savedRecipes": "Zapisane Przepisy",
-            "shoppingLists": "Listy Zakupów"
+            "activeSchedules": "Aktywne Harmonogramy"
+        },
+        "categories": {
+            "title": "Kategorie Przepisów",
+            "seeAll": "Zobacz Wszystkie Kategorie",
+            "noRecipes": "Brak przepisów",
+            "recipes": "przepisów"
+        },
+        "weeklyChart": {
+            "title": "Trendy Planu",
+            "subtitle": "Na podstawie zaplanowanych posiłków",
+            "noData": "Brak dostępnych danych o posiłkach",
+            "noDataDescription": "Zaplanuj plan posiłków, aby zobaczyć swoje tygodniowe trendy żywieniowe",
+            "avgDaily": "Średnia",
+            "onTarget": "W Celu",
+            "trend": "Trend",
+            "trendUp": "Wzrost",
+            "trendDown": "Spadek",
+            "trendStable": "Stabilny",
+            "targetLabel": "Cel"
+        },
+        "smartActions": {
+            "addFirstRecipe": "Dodaj Swój Pierwszy Przepis",
+            "addFirstRecipeDesc": "Zacznij budować swoją kolekcję",
+            "importFromUrl": "Importuj z URL",
+            "importFromUrlDesc": "Pobierz przepisy z dowolnej strony",
+            "browseTemplates": "Przeglądaj Szablony",
+            "browseTemplatesDesc": "Zacznij od gotowego planu",
+            "createMealPlan": "Utwórz Plan Posiłków",
+            "createMealPlanDesc": "Zorganizuj swoje tygodniowe posiłki",
+            "browseRecipes": "Przeglądaj Przepisy",
+            "browseRecipesDesc": "Eksploruj swoją kolekcję",
+            "schedulePlan": "Zaplanuj Plan",
+            "schedulePlanDesc": "Aktywuj plan posiłków",
+            "todaysPlan": "Dzisiejszy Plan",
+            "todaysPlanDesc": "Zobacz zaplanowane posiłki",
+            "addRecipe": "Dodaj Przepis",
+            "addRecipeDesc": "Rozszerz swoją kolekcję",
+            "shoppingList": "Lista Zakupów",
+            "shoppingListDesc": "Wygeneruj listę zakupów",
+            "viewAllPlans": "Zobacz Wszystkie Plany",
+            "viewAllPlansDesc": "Zarządzaj swoimi planami posiłków"
         },
         "gettingStarted": {
             "title": "Pierwsze Kroki",
-            "description": "Oto jak najlepiej wykorzystać DietAIbook",
+            "description": "Wykonaj te kroki, aby w pełni wykorzystać DietAIbook",
             "step1": {
-                "title": "1. Skonfiguruj Swój Profil",
-                "description": "Opowiedz nam o swoich preferencjach żywieniowych i celach zdrowotnych."
+                "title": "Skonfiguruj Swój Profil",
+                "description": "Opowiedz nam o swoich preferencjach żywieniowych i celach zdrowotnych",
+                "cta": "Uzupełnij Profil",
+                "completed": "Profil Ukończony"
             },
             "step2": {
-                "title": "2. Eksploruj Przepisy",
-                "description": "Odkryj pyszne przepisy dostosowane do Twoich preferencji."
+                "title": "Dodaj Swój Pierwszy Przepis",
+                "description": "Utwórz, zaimportuj lub przeglądaj przepisy, aby zbudować kolekcję",
+                "cta": "Dodaj Przepis",
+                "completed": "Przepisy Dodane"
             },
             "step3": {
-                "title": "3. Planuj Swoje Posiłki",
-                "description": "Twórz tygodniowe plany posiłków z pomocą AI."
+                "title": "Utwórz Plan Posiłków",
+                "description": "Planuj swoje tygodniowe posiłki i śledź odżywianie",
+                "cta": "Utwórz Plan",
+                "completed": "Plany Utworzone"
             }
         }
     },

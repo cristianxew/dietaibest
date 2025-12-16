@@ -56,12 +56,12 @@ export function StoreCard({ store, isSelected }: StoreCardProps) {
       <FormLabel
         htmlFor={store.id}
         className={cn(
-          "flex flex-col items-center justify-between rounded-xl border-2 bg-popover p-4 cursor-pointer",
+          "flex flex-col items-center justify-between rounded-xl border bg-card p-4 cursor-pointer relative",
           "transition-all duration-200 ease-out",
-          "hover:bg-accent hover:text-accent-foreground hover:-translate-y-0.5 hover:shadow-md",
-          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5",
-          "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5",
-          "border-muted"
+          "hover:border-primary/50 hover:bg-accent/50 hover:shadow-sm",
+          "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 peer-data-[state=checked]:shadow-sm peer-data-[state=checked]:border-2",
+          "[&:has([data-state=checked])]:border-primary [&:has([data-state=checked])]:bg-primary/5 [&:has([data-state=checked])]:border-2",
+          "border-border/50"
         )}
       >
         {/* Selected indicator */}
@@ -90,7 +90,7 @@ export function StoreCard({ store, isSelected }: StoreCardProps) {
             className={cn(
               "text-xs",
               store.automationSupport === "full" &&
-                "bg-sage-500 hover:bg-sage-600 text-white"
+              "bg-sage-500 hover:bg-sage-600 text-white"
             )}
           >
             {store.automationSupport === "full"

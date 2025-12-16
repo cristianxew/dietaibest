@@ -149,48 +149,130 @@
             "screenReaderOnly": "Screen reader only content",
             "authenticatedUser": "Authenticated user controls",
             "authenticationOptions": "Authentication options"
+        },
+        "settingsHeader": {
+            "title": "Settings",
+            "subtitle": "Manage your application preferences and automations",
+            "section": "Preferences"
         }
     },
     "dashboard": {
-        "welcome": "Welcome to DietAIbook!",
-        "subtitle": "Your AI-powered meal planning companion. Start planning your healthy journey today.",
-        "quickActions": {
-            "createMealPlan": "Create Meal Plan",
-            "browseRecipes": "Browse Recipes",
-            "shoppingList": "Shopping List",
-            "profile": "Profile",
-            "newPlan": "New Plan",
-            "explore": "Explore",
-            "viewList": "View List",
-            "settings": "Settings"
+        "greeting": {
+            "morning": "Good morning",
+            "afternoon": "Good afternoon",
+            "evening": "Good evening",
+            "default": "Welcome back"
         },
-        "recentActivity": {
-            "title": "Recent Activity",
-            "description": "Your latest meal planning activities",
-            "welcome": "Welcome to DietAIbook!",
-            "getStarted": "Start by creating your first meal plan or browsing our recipe collection."
+        "subtitle": {
+            "new": "Let's start your nutrition journey today",
+            "returning": "Your personalized meal planning dashboard"
+        },
+        "todaysMacros": {
+            "title": "Today's Nutrition",
+            "noTarget": "Set up targets",
+            "viewPlan": "View Full Plan",
+            "calories": "Calories",
+            "protein": "Protein",
+            "carbs": "Carbs",
+            "fat": "Fat",
+            "onTrack": "On Track",
+            "under": "Under",
+            "over": "Over",
+            "noData": "No meals planned today",
+            "noTargets": "Set up your nutrition targets in profile settings",
+            "setupTargets": "Set Up Targets",
+            "planned": "Planned",
+            "remaining": "remaining",
+            "ofTarget": "of target"
+        },
+        "activePlan": {
+            "title": "Active Meal Plan",
+            "day": "Day {current} of {total}",
+            "daysRemaining": "{count} days remaining",
+            "todaysMeals": "Today's Meals",
+            "noActivePlan": "No Active Meal Plan",
+            "noActivePlanDescription": "Schedule a plan to see your daily meals here",
+            "schedulePlan": "Schedule a Plan",
+            "viewPlan": "View Plan",
+            "viewAllPlans": "View All Plans"
+        },
+        "recentRecipes": {
+            "title": "Recent Recipes",
+            "viewAll": "View All",
+            "noRecipes": "Start Building Your Collection",
+            "noRecipesDescription": "Add your first recipe to get started",
+            "createRecipe": "Create Recipe",
+            "importRecipe": "Import from URL",
+            "kcal": "kcal"
         },
         "quickStats": {
-            "title": "Quick Stats",
-            "description": "Your nutrition overview",
+            "title": "Your Stats",
+            "totalRecipes": "Total Recipes",
+            "favorites": "Favorites",
             "mealPlans": "Meal Plans",
-            "savedRecipes": "Saved Recipes",
-            "shoppingLists": "Shopping Lists"
+            "activeSchedules": "Active Schedules"
+        },
+        "categories": {
+            "title": "Recipe Categories",
+            "seeAll": "See All Categories",
+            "noRecipes": "No recipes yet",
+            "recipes": "recipes"
+        },
+        "weeklyChart": {
+            "title": "Meal Plan Trends",
+            "subtitle": "Based on your scheduled meals",
+            "noData": "No meal data available",
+            "noDataDescription": "Schedule a meal plan to see your weekly nutrition trends",
+            "avgDaily": "Avg Daily",
+            "onTarget": "On Target",
+            "trend": "Trend",
+            "trendUp": "Up",
+            "trendDown": "Down",
+            "trendStable": "Stable",
+            "targetLabel": "Target"
+        },
+        "smartActions": {
+            "addFirstRecipe": "Add Your First Recipe",
+            "addFirstRecipeDesc": "Start building your collection",
+            "importFromUrl": "Import from URL",
+            "importFromUrlDesc": "Grab recipes from any website",
+            "browseTemplates": "Browse Templates",
+            "browseTemplatesDesc": "Start with a pre-made plan",
+            "createMealPlan": "Create Meal Plan",
+            "createMealPlanDesc": "Organize your weekly meals",
+            "browseRecipes": "Browse Recipes",
+            "browseRecipesDesc": "Explore your collection",
+            "schedulePlan": "Schedule a Plan",
+            "schedulePlanDesc": "Activate a meal plan",
+            "todaysPlan": "Today's Plan",
+            "todaysPlanDesc": "View your scheduled meals",
+            "addRecipe": "Add Recipe",
+            "addRecipeDesc": "Expand your collection",
+            "shoppingList": "Shopping List",
+            "shoppingListDesc": "Generate your grocery list",
+            "viewAllPlans": "View All Plans",
+            "viewAllPlansDesc": "Manage your meal plans"
         },
         "gettingStarted": {
             "title": "Getting Started",
-            "description": "Here's how to make the most of DietAIbook",
+            "description": "Complete these steps to make the most of DietAIbook",
             "step1": {
-                "title": "1. Set Up Your Profile",
-                "description": "Tell us about your dietary preferences and health goals."
+                "title": "Set Up Your Profile",
+                "description": "Tell us about your dietary preferences and health goals",
+                "cta": "Complete Profile",
+                "completed": "Profile Complete"
             },
             "step2": {
-                "title": "2. Explore Recipes",
-                "description": "Discover delicious recipes tailored to your preferences."
+                "title": "Add Your First Recipe",
+                "description": "Create, import, or browse recipes to build your collection",
+                "cta": "Add Recipe",
+                "completed": "Recipes Added"
             },
             "step3": {
-                "title": "3. Plan Your Meals",
-                "description": "Create weekly meal plans with AI assistance."
+                "title": "Create a Meal Plan",
+                "description": "Plan your weekly meals and track your nutrition",
+                "cta": "Create Plan",
+                "completed": "Plans Created"
             }
         }
     },
@@ -568,6 +650,7 @@
         "noSchedules": "No meal plans scheduled",
         "noSchedulesDescription": "Schedule a meal plan for the selected date range to generate your shopping list.",
         "selectDateRange": "Generate your shopping list",
+        "dateRangePlaceholder": "Select dates",
         "selectDateRangeDescription": "Select a date range and click Generate to create your shopping list from scheduled meal plans.",
         "categories": {
             "fruits": "Fruits",

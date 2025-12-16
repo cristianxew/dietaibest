@@ -52,7 +52,7 @@ export function ShoppingListHeader({
           dateRange={dateRange}
           onDateRangeChange={onDateRangeChange}
           className="h-9"
-          placeholder={t("selectDateRange")}
+          placeholder={t("dateRangePlaceholder")}
         />
 
         {/* Generate Button */}

@@ -128,7 +128,7 @@ export function StoreSelector() {
   }
 
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Store className="h-5 w-5 text-primary" />

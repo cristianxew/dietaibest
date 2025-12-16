@@ -55,13 +55,18 @@ export function StorePreferencesPreview() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-56 mt-1" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-10 w-full" />
+      <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+            <div className="ml-auto">
+              <Skeleton className="h-9 w-24 rounded-lg" />
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -71,78 +76,76 @@ export function StorePreferencesPreview() {
     ? SUPPORTED_STORES[selectedStore]?.name || selectedStore
     : null;
 
-  // Store logo colors
-  const storeColors: Record<string, string> = {
-    auchan: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
-    frisco: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
-    carrefour: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+  // Store visual accents - background colors for the icon container
+  const storeStyles: Record<string, string> = {
+    auchan: "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 border-red-100 dark:border-red-900/30",
+    frisco: "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border-green-100 dark:border-green-900/30",
+    carrefour: "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border-blue-100 dark:border-blue-900/30",
   };
 
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">
-              {t("storeSelector.title")}
-            </CardTitle>
-          </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/settings" className="flex items-center gap-1">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("storeSelector.editPreferences")}</span>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-        <CardDescription className="text-sm">
-          {selectedStore
-            ? t("storeSelector.previewDescription")
-            : t("storeSelector.noStoreSelected")}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {selectedStore ? (
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Store Badge */}
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                storeColors[selectedStore] || "bg-muted"
-              }`}
-            >
-              <span className="font-semibold text-sm">{storeName}</span>
-            </div>
+  const currentStoreStyle = selectedStore && storeStyles[selectedStore]
+    ? storeStyles[selectedStore]
+    : "bg-brand-50 text-brand-600 dark:bg-brand-950/30 dark:text-brand-400 border-brand-100 dark:border-brand-900/30";
 
-            {/* Preference Badges */}
-            {preferences?.preferOrganic && (
-              <Badge variant="outline" className="gap-1">
-                <Leaf className="h-3 w-3 text-sage-500" />
-                {t("storeSelector.preferOrganic")}
-              </Badge>
-            )}
-            {preferences?.preferStoreBrand && (
-              <Badge variant="outline" className="gap-1">
-                <Tag className="h-3 w-3 text-gold-500" />
-                {t("storeSelector.preferStoreBrand")}
-              </Badge>
-            )}
-            {preferences?.allowSubstitutions && (
-              <Badge variant="outline" className="gap-1">
-                <RefreshCw className="h-3 w-3 text-brand-500" />
-                {t("storeSelector.allowSubstitutions")}
-              </Badge>
-            )}
+  return (
+
+    <div className="group relative flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm">
+      {selectedStore ? (
+        <>
+          {/* Compact Store Icon */}
+          <div className={`flex items-center justify-center p-2 rounded-lg border ${currentStoreStyle} shrink-0`}>
+            <Store className="w-4 h-4" />
           </div>
-        ) : (
-          <Button variant="outline" asChild className="w-full">
-            <Link href="/settings" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              {t("storeSelector.selectStore")}
+
+          {/* Compact Content */}
+          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <h3 className="text-sm font-semibold text-foreground tracking-tight truncate">
+              {storeName}
+            </h3>
+            <div className="hidden sm:block h-3 w-px bg-border" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Active
+              </span>
+              {(preferences?.preferOrganic || preferences?.preferStoreBrand) && (
+                <>
+                  <span className="opacity-50">•</span>
+                  <span>
+                    {[
+                      preferences?.preferOrganic && "Organic",
+                      preferences?.preferStoreBrand && "Store Brand"
+                    ].filter(Boolean).join(", ")}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Icon-only Action Button */}
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 opacity-70 group-hover:opacity-100" asChild>
+            <Link href="/settings">
+              <Settings className="w-4 h-4" />
+              <span className="sr-only">{t("storeSelector.editPreferences")}</span>
             </Link>
           </Button>
-        )}
-      </CardContent>
-    </Card>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-center p-2 rounded-lg bg-muted shrink-0">
+            <Store className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="flex-1 text-sm text-muted-foreground">
+            {t("storeSelector.noStoreSelected")}
+          </div>
+          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" asChild>
+            <Link href="/settings">
+              {t("storeSelector.selectStore")}
+              <ChevronRight className="w-3 h-3 opacity-50" />
+            </Link>
+          </Button>
+        </>
+      )}
+    </div>
   );
 }

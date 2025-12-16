@@ -149,48 +149,130 @@
             "screenReaderOnly": "Contenido solo para lector de pantalla",
             "authenticatedUser": "Controles de usuario autenticado",
             "authenticationOptions": "Opciones de autenticación"
+        },
+        "settingsHeader": {
+            "title": "Configuración",
+            "subtitle": "Gestiona tus preferencias y automatizaciones de la aplicación",
+            "section": "Preferencias"
         }
     },
     "dashboard": {
-        "welcome": "¡Bienvenido a DietAIbook!",
-        "subtitle": "Tu compañero de planificación de comidas impulsado por IA. Comienza a planificar tu viaje saludable hoy.",
-        "quickActions": {
-            "createMealPlan": "Crear Plan de Comidas",
-            "browseRecipes": "Explorar Recetas",
-            "shoppingList": "Lista de Compras",
-            "profile": "Perfil",
-            "newPlan": "Nuevo Plan",
-            "explore": "Explorar",
-            "viewList": "Ver Lista",
-            "settings": "Configuración"
+        "greeting": {
+            "morning": "Buenos días",
+            "afternoon": "Buenas tardes",
+            "evening": "Buenas noches",
+            "default": "Bienvenido de nuevo"
         },
-        "recentActivity": {
-            "title": "Actividad Reciente",
-            "description": "Tus últimas actividades de planificación de comidas",
-            "welcome": "¡Bienvenido a DietAIbook!",
-            "getStarted": "Comienza creando tu primer plan de comidas o explorando nuestra colección de recetas."
+        "subtitle": {
+            "new": "Comencemos tu viaje nutricional hoy",
+            "returning": "Tu panel personalizado de planificación de comidas"
+        },
+        "todaysMacros": {
+            "title": "Nutrición de Hoy",
+            "noTarget": "Establecer objetivos",
+            "viewPlan": "Ver Plan Completo",
+            "calories": "Calorías",
+            "protein": "Proteína",
+            "carbs": "Carbohidratos",
+            "fat": "Grasa",
+            "onTrack": "En Objetivo",
+            "under": "Por Debajo",
+            "over": "Por Encima",
+            "noData": "Sin comidas planificadas hoy",
+            "noTargets": "Configura tus objetivos nutricionales en ajustes de perfil",
+            "setupTargets": "Configurar Objetivos",
+            "planned": "Planificado",
+            "remaining": "restante",
+            "ofTarget": "del objetivo"
+        },
+        "activePlan": {
+            "title": "Plan de Comidas Activo",
+            "day": "Día {current} de {total}",
+            "daysRemaining": "{count} días restantes",
+            "todaysMeals": "Comidas de Hoy",
+            "noActivePlan": "Sin Plan Activo",
+            "noActivePlanDescription": "Programa un plan para ver tus comidas diarias aquí",
+            "schedulePlan": "Programar un Plan",
+            "viewPlan": "Ver Plan",
+            "viewAllPlans": "Ver Todos los Planes"
+        },
+        "recentRecipes": {
+            "title": "Recetas Recientes",
+            "viewAll": "Ver Todas",
+            "noRecipes": "Comienza a Construir Tu Colección",
+            "noRecipesDescription": "Añade tu primera receta para comenzar",
+            "createRecipe": "Crear Receta",
+            "importRecipe": "Importar desde URL",
+            "kcal": "kcal"
         },
         "quickStats": {
-            "title": "Estadísticas Rápidas",
-            "description": "Resumen de tu nutrición",
+            "title": "Tus Estadísticas",
+            "totalRecipes": "Total de Recetas",
+            "favorites": "Favoritos",
             "mealPlans": "Planes de Comidas",
-            "savedRecipes": "Recetas Guardadas",
-            "shoppingLists": "Listas de Compras"
+            "activeSchedules": "Programaciones Activas"
+        },
+        "categories": {
+            "title": "Categorías de Recetas",
+            "seeAll": "Ver Todas las Categorías",
+            "noRecipes": "Sin recetas aún",
+            "recipes": "recetas"
+        },
+        "weeklyChart": {
+            "title": "Tendencias del Plan",
+            "subtitle": "Basado en tus comidas programadas",
+            "noData": "Sin datos de comidas disponibles",
+            "noDataDescription": "Programa un plan de comidas para ver tus tendencias nutricionales semanales",
+            "avgDaily": "Promedio",
+            "onTarget": "En Meta",
+            "trend": "Tendencia",
+            "trendUp": "Subiendo",
+            "trendDown": "Bajando",
+            "trendStable": "Estable",
+            "targetLabel": "Meta"
+        },
+        "smartActions": {
+            "addFirstRecipe": "Añade Tu Primera Receta",
+            "addFirstRecipeDesc": "Comienza a construir tu colección",
+            "importFromUrl": "Importar desde URL",
+            "importFromUrlDesc": "Obtén recetas de cualquier sitio web",
+            "browseTemplates": "Explorar Plantillas",
+            "browseTemplatesDesc": "Comienza con un plan prediseñado",
+            "createMealPlan": "Crear Plan de Comidas",
+            "createMealPlanDesc": "Organiza tus comidas semanales",
+            "browseRecipes": "Explorar Recetas",
+            "browseRecipesDesc": "Explora tu colección",
+            "schedulePlan": "Programar un Plan",
+            "schedulePlanDesc": "Activa un plan de comidas",
+            "todaysPlan": "Plan de Hoy",
+            "todaysPlanDesc": "Ver tus comidas programadas",
+            "addRecipe": "Añadir Receta",
+            "addRecipeDesc": "Amplía tu colección",
+            "shoppingList": "Lista de Compras",
+            "shoppingListDesc": "Genera tu lista de compras",
+            "viewAllPlans": "Ver Todos los Planes",
+            "viewAllPlansDesc": "Gestiona tus planes de comidas"
         },
         "gettingStarted": {
             "title": "Primeros Pasos",
-            "description": "Así es como aprovechar al máximo DietAIbook",
+            "description": "Completa estos pasos para aprovechar al máximo DietAIbook",
             "step1": {
-                "title": "1. Configura Tu Perfil",
-                "description": "Cuéntanos sobre tus preferencias dietéticas y objetivos de salud."
+                "title": "Configura Tu Perfil",
+                "description": "Cuéntanos sobre tus preferencias dietéticas y objetivos de salud",
+                "cta": "Completar Perfil",
+                "completed": "Perfil Completo"
             },
             "step2": {
-                "title": "2. Explora Recetas",
-                "description": "Descubre deliciosas recetas adaptadas a tus preferencias."
+                "title": "Añade Tu Primera Receta",
+                "description": "Crea, importa o explora recetas para construir tu colección",
+                "cta": "Añadir Receta",
+                "completed": "Recetas Añadidas"
             },
             "step3": {
-                "title": "3. Planifica Tus Comidas",
-                "description": "Crea planes semanales de comidas con asistencia de IA."
+                "title": "Crea un Plan de Comidas",
+                "description": "Planifica tus comidas semanales y rastrea tu nutrición",
+                "cta": "Crear Plan",
+                "completed": "Planes Creados"
             }
         }
     },

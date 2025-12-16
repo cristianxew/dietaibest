@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { ShoppingCart, LayoutGrid, UtensilsCrossed, Loader2 } from "lucide-react";
+import { LayoutGrid, UtensilsCrossed, Loader2 } from "lucide-react";
 import { ShoppingListHeader } from "./ShoppingListHeader";
 import { CategoryView } from "./CategoryView";
 import { RecipeView } from "./RecipeView";
@@ -302,221 +302,195 @@ export function ShoppingListPage() {
   }, [filteredIngredients, purchasedAmounts]);
 
   return (
-    <div className="min-h-screen relative">
-      {/* Decorative Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand-100/30 dark:bg-brand-500/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
-      </div>
+    <div className="space-y-6">
+      {/* Store Preferences Preview */}
+      <StorePreferencesPreview />
 
-      <div className="relative p-6 lg:p-8 space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div
-            className={cn(
-              "p-2.5 rounded-xl",
-              "bg-brand-500/10 border border-brand-200/50 dark:border-brand-500/20"
-            )}
-          >
-            <ShoppingCart className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">
-              {t("title")}
-            </h1>
-            <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
-          </div>
+      {/* Header with Date Range and Actions */}
+      <ShoppingListHeader
+        dateRange={dateRange}
+        onDateRangeChange={handleDateRangeChange}
+        onGenerate={handleGenerate}
+        isLoading={isLoading}
+        pdfData={
+          shoppingList && filteredIngredients.length > 0
+            ? {
+              ingredients: filteredIngredients,
+              recipes: filteredRecipes,
+              dateRange: shoppingList.dateRange,
+              metadata: {
+                totalRecipes: filteredRecipes.length,
+                totalMeals: shoppingList.metadata.totalMeals,
+              },
+              purchasedAmounts,
+            }
+            : undefined
+        }
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          {error}
         </div>
+      )}
 
-        {/* Store Preferences Preview */}
-        <StorePreferencesPreview />
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+        </div>
+      )}
 
-        {/* Header with Date Range and Actions */}
-        <ShoppingListHeader
-          dateRange={dateRange}
-          onDateRangeChange={handleDateRangeChange}
-          onGenerate={handleGenerate}
-          isLoading={isLoading}
-          pdfData={
-            shoppingList && filteredIngredients.length > 0
-              ? {
-                  ingredients: filteredIngredients,
-                  recipes: filteredRecipes,
-                  dateRange: shoppingList.dateRange,
-                  metadata: {
-                    totalRecipes: filteredRecipes.length,
-                    totalMeals: shoppingList.metadata.totalMeals,
-                  },
-                  purchasedAmounts,
-                }
-              : undefined
-          }
-        />
+      {/* Empty State */}
+      {!isLoading && !shoppingList && !error && (
+        <EmptyState type="no-data" onGenerate={handleGenerate} />
+      )}
 
-        {/* Error State */}
-        {error && (
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-            {error}
-          </div>
+      {/* No Schedules State */}
+      {!isLoading &&
+        shoppingList &&
+        shoppingList.metadata.totalMeals === 0 && (
+          <EmptyState type="no-schedules" />
         )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
-          </div>
-        )}
+      {/* Shopping List Content */}
+      {!isLoading &&
+        shoppingList &&
+        shoppingList.metadata.totalMeals > 0 && (
+          <>
+            {/* Stats Bar with Automation Button */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>
+                  {checkedCount}/{totalItems} {t("itemsChecked")}
+                </span>
+                <span className="text-border">|</span>
+                <span>
+                  {filteredRecipes.length} {t("recipes")}
+                </span>
+              </div>
 
-        {/* Empty State */}
-        {!isLoading && !shoppingList && !error && (
-          <EmptyState type="no-data" onGenerate={handleGenerate} />
-        )}
+              {/* Shopping Automation Button */}
+              <ShoppingAutomationButton
+                ingredients={uncheckedIngredients}
+                disabled={isLoading || uncheckedIngredients.length === 0}
+              />
+            </div>
 
-        {/* No Schedules State */}
-        {!isLoading &&
-          shoppingList &&
-          shoppingList.metadata.totalMeals === 0 && (
-            <EmptyState type="no-schedules" />
-          )}
-
-        {/* Shopping List Content */}
-        {!isLoading &&
-          shoppingList &&
-          shoppingList.metadata.totalMeals > 0 && (
-            <>
-              {/* Stats Bar with Automation Button */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>
-                    {checkedCount}/{totalItems} {t("itemsChecked")}
-                  </span>
-                  <span className="text-border">|</span>
-                  <span>
-                    {filteredRecipes.length} {t("recipes")}
-                  </span>
+            {/* Two-Column Layout */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Category View Column */}
+              <section
+                className={cn(
+                  "flex flex-col rounded-2xl overflow-hidden",
+                  "bg-gradient-to-b from-card/80 to-card",
+                  "border border-border/60",
+                  "shadow-sm"
+                )}
+              >
+                {/* Sticky Header */}
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-5 py-4",
+                    "bg-card/95 backdrop-blur-sm",
+                    "border-b border-border/40"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "p-2 rounded-xl",
+                      "bg-sage-500/15 dark:bg-sage-500/20",
+                      "ring-1 ring-sage-500/20"
+                    )}
+                  >
+                    <LayoutGrid className="w-4 h-4 text-sage-600 dark:text-sage-400" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-foreground tracking-tight">
+                      {t("viewByCategory")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {filteredIngredients.length} {t("items")}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Shopping Automation Button */}
-                <ShoppingAutomationButton
-                  ingredients={uncheckedIngredients}
-                  disabled={isLoading || uncheckedIngredients.length === 0}
-                />
-              </div>
-
-              {/* Two-Column Layout */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Category View Column */}
-                <section
+                {/* Scrollable Content */}
+                <div
                   className={cn(
-                    "flex flex-col rounded-2xl overflow-hidden",
-                    "bg-gradient-to-b from-card/80 to-card",
-                    "border border-border/60",
-                    "shadow-sm"
+                    "flex-1 overflow-y-auto",
+                    "px-4 py-4",
+                    "max-h-[60vh] xl:max-h-[65vh]",
+                    "scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent"
                   )}
                 >
-                  {/* Sticky Header */}
-                  <div
-                    className={cn(
-                      "flex items-center gap-3 px-5 py-4",
-                      "bg-card/95 backdrop-blur-sm",
-                      "border-b border-border/40"
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "p-2 rounded-xl",
-                        "bg-sage-500/15 dark:bg-sage-500/20",
-                        "ring-1 ring-sage-500/20"
-                      )}
-                    >
-                      <LayoutGrid className="w-4 h-4 text-sage-600 dark:text-sage-400" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-foreground tracking-tight">
-                        {t("viewByCategory")}
-                      </h2>
-                      <p className="text-xs text-muted-foreground">
-                        {filteredIngredients.length} {t("items")}
-                      </p>
-                    </div>
-                  </div>
+                  <CategoryView
+                    ingredients={filteredIngredients}
+                    purchasedAmounts={purchasedAmounts}
+                    onToggleItem={handleCategoryToggle}
+                  />
+                </div>
+              </section>
 
-                  {/* Scrollable Content */}
-                  <div
-                    className={cn(
-                      "flex-1 overflow-y-auto",
-                      "px-4 py-4",
-                      "max-h-[60vh] xl:max-h-[65vh]",
-                      "scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent"
-                    )}
-                  >
-                    <CategoryView
-                      ingredients={filteredIngredients}
-                      purchasedAmounts={purchasedAmounts}
-                      onToggleItem={handleCategoryToggle}
-                    />
-                  </div>
-                </section>
-
-                {/* Recipe View Column */}
-                <section
+              {/* Recipe View Column */}
+              <section
+                className={cn(
+                  "flex flex-col rounded-2xl overflow-hidden",
+                  "bg-gradient-to-b from-card/80 to-card",
+                  "border border-border/60",
+                  "shadow-sm"
+                )}
+              >
+                {/* Sticky Header */}
+                <div
                   className={cn(
-                    "flex flex-col rounded-2xl overflow-hidden",
-                    "bg-gradient-to-b from-card/80 to-card",
-                    "border border-border/60",
-                    "shadow-sm"
+                    "flex items-center gap-3 px-5 py-4",
+                    "bg-card/95 backdrop-blur-sm",
+                    "border-b border-border/40"
                   )}
                 >
-                  {/* Sticky Header */}
                   <div
                     className={cn(
-                      "flex items-center gap-3 px-5 py-4",
-                      "bg-card/95 backdrop-blur-sm",
-                      "border-b border-border/40"
+                      "p-2 rounded-xl",
+                      "bg-gold-500/15 dark:bg-gold-500/20",
+                      "ring-1 ring-gold-500/20"
                     )}
                   >
-                    <div
-                      className={cn(
-                        "p-2 rounded-xl",
-                        "bg-gold-500/15 dark:bg-gold-500/20",
-                        "ring-1 ring-gold-500/20"
-                      )}
-                    >
-                      <UtensilsCrossed className="w-4 h-4 text-gold-600 dark:text-gold-400" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-foreground tracking-tight">
-                        {t("viewByRecipe")}
-                      </h2>
-                      <p className="text-xs text-muted-foreground">
-                        {filteredRecipes.length} {t("recipes")}
-                      </p>
-                    </div>
+                    <UtensilsCrossed className="w-4 h-4 text-gold-600 dark:text-gold-400" />
                   </div>
+                  <div>
+                    <h2 className="font-semibold text-foreground tracking-tight">
+                      {t("viewByRecipe")}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {filteredRecipes.length} {t("recipes")}
+                    </p>
+                  </div>
+                </div>
 
-                  {/* Scrollable Content */}
-                  <div
-                    className={cn(
-                      "flex-1 overflow-y-auto",
-                      "px-4 py-4",
-                      "max-h-[60vh] xl:max-h-[65vh]",
-                      "scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent"
-                    )}
-                  >
-                    <RecipeView
-                      recipes={filteredRecipes}
-                      toggledRecipeIngredients={toggledRecipeIngredients}
-                      servingsOverrides={servingsOverrides}
-                      onToggleItem={handleRecipeIngredientToggle}
-                      onServingsChange={handleServingsChange}
-                      onRemoveRecipe={handleRemoveRecipe}
-                    />
-                  </div>
-                </section>
-              </div>
-            </>
-          )}
-      </div>
+                {/* Scrollable Content */}
+                <div
+                  className={cn(
+                    "flex-1 overflow-y-auto",
+                    "px-4 py-4",
+                    "max-h-[60vh] xl:max-h-[65vh]",
+                    "scrollbar-thin scrollbar-thumb-border/50 scrollbar-track-transparent"
+                  )}
+                >
+                  <RecipeView
+                    recipes={filteredRecipes}
+                    toggledRecipeIngredients={toggledRecipeIngredients}
+                    servingsOverrides={servingsOverrides}
+                    onToggleItem={handleRecipeIngredientToggle}
+                    onServingsChange={handleServingsChange}
+                    onRemoveRecipe={handleRemoveRecipe}
+                  />
+                </div>
+              </section>
+            </div>
+          </>
+        )}
     </div>
   );
 }

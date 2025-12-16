@@ -1018,3 +1018,133 @@ export async function overwriteActivePlan(templateId: string, startDate: Date) {
   // Just schedule the template as active
   return scheduleMealPlan(templateId, startDate);
 }
+
+// ============================================================================
+// Get Active Meal Plan Schedule (for Dashboard)
+// ============================================================================
+
+export async function getActiveMealPlanSchedule() {
+  try {
+    const user = await getAuthenticatedUser();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find active schedule that covers today
+    const activeSchedule = await prisma.mealPlanSchedule.findFirst({
+      where: {
+        userId: user.id,
+        status: "active",
+      },
+      include: {
+        template: {
+          include: {
+            days: {
+              include: {
+                meals: {
+                  include: { recipe: true },
+                  orderBy: { sortOrder: "asc" },
+                },
+              },
+              orderBy: { dayNumber: "asc" },
+            },
+          },
+        },
+      },
+      orderBy: { startDate: "desc" },
+    });
+
+    if (!activeSchedule) {
+      return { data: null, error: null };
+    }
+
+    // Calculate current day number in the plan
+    const startDate = new Date(activeSchedule.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    const daysSinceStart = Math.floor(
+      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Check if we're still within the plan duration
+    if (daysSinceStart >= activeSchedule.template.duration) {
+      // Plan has ended, mark as completed
+      await prisma.mealPlanSchedule.update({
+        where: { id: activeSchedule.id },
+        data: { status: "completed" },
+      });
+      return { data: null, error: null };
+    }
+
+    const currentDayNumber = daysSinceStart + 1;
+    const currentDay = activeSchedule.template.days.find(
+      (d) => d.dayNumber === currentDayNumber
+    );
+
+    return {
+      data: {
+        id: activeSchedule.id,
+        templateId: activeSchedule.templateId,
+        templateName: activeSchedule.template.name,
+        startDate: activeSchedule.startDate,
+        duration: activeSchedule.template.duration,
+        currentDayNumber,
+        daysRemaining: activeSchedule.template.duration - currentDayNumber,
+        todaysMeals: currentDay?.meals || [],
+        template: activeSchedule.template,
+        mealSlots: activeSchedule.template.mealSlots,
+        targetCalories: activeSchedule.template.targetCalories,
+        targetProtein: activeSchedule.template.targetProtein,
+        targetCarbs: activeSchedule.template.targetCarbs,
+        targetFat: activeSchedule.template.targetFat,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Get active meal plan schedule error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get active meal plan schedule",
+    };
+  }
+}
+
+// ============================================================================
+// Get Meal Plan Stats (for Dashboard)
+// ============================================================================
+
+export async function getMealPlanStats() {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const [totalTemplates, activeSchedules] = await Promise.all([
+      prisma.mealPlanTemplate.count({
+        where: { userId: user.id },
+      }),
+      prisma.mealPlanSchedule.count({
+        where: {
+          userId: user.id,
+          status: "active",
+        },
+      }),
+    ]);
+
+    return {
+      data: {
+        totalTemplates,
+        activeSchedules,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error("Get meal plan stats error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to get meal plan stats",
+    };
+  }
+}
