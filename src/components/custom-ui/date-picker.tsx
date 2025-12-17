@@ -43,11 +43,11 @@ function DatePickerDropdown({ value, onChange, options, children, className }: D
         // Parse children (options) if options prop is not provided
         const opts: { value: string | number; label: string; disabled?: boolean }[] = []
         React.Children.forEach(children, (child) => {
-            if (React.isValidElement(child) && (child.type === 'option' || (child.props as any)?.value !== undefined)) {
+            if (React.isValidElement<{ value?: string | number; children?: string; disabled?: boolean }>(child) && (child.type === 'option' || child.props?.value !== undefined)) {
                 opts.push({
-                    value: (child.props as any)?.value,
-                    label: (child.props as any)?.children,
-                    disabled: (child.props as any)?.disabled
+                    value: child.props?.value ?? '',
+                    label: child.props?.children ?? '',
+                    disabled: child.props?.disabled
                 })
             }
         })

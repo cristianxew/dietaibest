@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Calendar, LayoutDashboard } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface WelcomeHeaderProps {
   hasRecipes: boolean;

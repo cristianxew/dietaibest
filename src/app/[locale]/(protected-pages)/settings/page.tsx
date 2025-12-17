@@ -1,7 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import { StoreSelector } from "@/components/shopping";
-import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const t = useTranslations("navigation.settingsHeader");

@@ -237,7 +237,7 @@ export function useShoppingAutomation(): UseShoppingAutomationReturn {
         }
       };
 
-      eventSource.onerror = (event) => {
+      eventSource.onerror = () => {
         if (!isMountedRef.current) return;
 
         // EventSource errors don't contain much info, check readyState

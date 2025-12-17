@@ -116,8 +116,8 @@ export function ShoppingAutomationButton({
     });
   }, [selectedStore, ingredients, preferences, startAutomation]);
 
-  // Handle retry failed items
-  const handleRetryFailed = useCallback(async () => {
+  // Handle retry failed items (reserved for future use)
+  const _handleRetryFailed = useCallback(async () => {
     if (state.result?.notFoundItems) {
       await retryFailedItems(state.result.notFoundItems);
     }

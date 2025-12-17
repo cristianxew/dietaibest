@@ -82,7 +82,7 @@ export function HowItWorks({ className }: HowItWorksProps) {
           ))}
 
           <TerminalSection>
-            <div className="text-muted-foreground mb-2">// Generating Plan...</div>
+            <div className="text-muted-foreground mb-2">{`// Generating Plan...`}</div>
             {mealPlan.map((item, index) => (
               <TerminalRow
                 key={index}

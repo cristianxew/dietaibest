@@ -22,7 +22,7 @@ const demoMessages: ChatMessage[] = [
     type: "bot",
     content: (
       <>
-        I noticed your protein intake was low yesterday. I've adjusted today's
+        I noticed your protein intake was low yesterday. I&apos;ve adjusted today&apos;s
         dinner to include{" "}
         <span className="font-medium text-neutral-900 dark:text-neutral-100">
           Grilled Salmon (32g Protein)

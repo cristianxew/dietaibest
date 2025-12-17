@@ -130,7 +130,7 @@ export function StoreCredentialsForm({
         setSavedEmail(data.email);
         form.setValue("password", ""); // Clear password field after save
       }
-    } catch (error) {
+    } catch {
       toast.error(t("saveError"));
     } finally {
       setIsSaving(false);
@@ -148,7 +148,7 @@ export function StoreCredentialsForm({
         setSavedEmail(null);
         form.reset({ store, email: "", password: "" });
       }
-    } catch (error) {
+    } catch {
       toast.error(t("deleteError"));
     } finally {
       setIsDeleting(false);

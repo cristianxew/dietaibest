@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -16,7 +16,6 @@ import {
   ShoppingCart,
   Package,
   ArrowRight,
-  Sparkles,
   BadgeCheck,
   Replace,
   Ban,
@@ -49,7 +48,7 @@ interface ShoppingCompletionViewProps {
   onClose: () => void;
 }
 
-interface SubstitutionCardProps {
+interface _SubstitutionCardProps {
   item: ShoppingItemResult;
   onAccept: () => void;
   onReject: () => void;
@@ -402,7 +401,7 @@ function SubstitutionCard({ item }: { item: ShoppingItemResult }) {
           {/* Reason */}
           {item.substitution.reason && (
             <p className="text-xs text-muted-foreground italic">
-              "{item.substitution.reason}"
+              &ldquo;{item.substitution.reason}&rdquo;
             </p>
           )}
         </div>
@@ -585,7 +584,7 @@ export function ShoppingCompletionView({
 
   const hasSubstitutions = result.substitutions.length > 0;
   const hasSkipped = result.notFoundItems.length > 0;
-  const isFullSuccess = result.status === "success";
+  const _isFullSuccess = result.status === "success";
 
   return (
     <motion.div

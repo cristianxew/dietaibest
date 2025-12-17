@@ -9,7 +9,6 @@ import { RecipeForm } from "../../../../../components/recipes/RecipeForm";
 import { RecipeImport } from "../../../../../components/recipes/RecipeImport";
 import { useLocale } from "next-intl";
 import { RecipeFormData } from "@/types/recipe";
-import { cn } from "@/lib/utils";
 
 interface ImportedRecipeData {
   title: string;

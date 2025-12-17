@@ -26,7 +26,6 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog";
 import {
-  Plus,
   CalendarDays,
   Sparkles,
   ChefHat,
@@ -43,7 +42,6 @@ import {
   duplicateMealPlan,
   deleteMealPlan,
 } from "@/actions/meal-plan";
-import { getUserProfile } from "@/actions/profile";
 import { toast } from "sonner";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import type { Prisma } from "@/generated/prisma";
@@ -161,7 +159,7 @@ export default function MealPlans() {
   };
 
   // Handle editing meals in template
-  const handleEditMeals = (templateId: string) => {
+  const _handleEditMeals = (templateId: string) => {
     startTransition(async () => {
       const result = await getMealPlan(templateId);
       if (result.error) {
@@ -339,7 +337,7 @@ export default function MealPlans() {
   }, [templates, selectedPlanId, editingMealTemplate, handleSelectPlan]);
 
   // Handle switching between meal plans (legacy - now using handleSelectPlan)
-  const handleSwitchMealPlan = (templateId: string) => {
+  const _handleSwitchMealPlan = (templateId: string) => {
     startTransition(async () => {
       const result = await getMealPlan(templateId);
       if (result.error) {

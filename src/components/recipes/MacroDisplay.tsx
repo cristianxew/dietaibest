@@ -16,7 +16,7 @@ export function MacroDisplay({
   protein,
   carbs,
   fat,
-  fiber,
+  fiber: _fiber,
 }: MacroDisplayProps) {
   // Filter out invalid data
   if (

@@ -122,7 +122,7 @@ export async function analyzeRecipeNutrition(
     const fingerprint = generateRecipeFingerprint(edamamInput);
 
     // Check cache unless force refresh
-    let cachedRecipe: any = null;
+    let cachedRecipe: Awaited<ReturnType<typeof prisma.edamamRecipeCache.findUnique>> = null;
     let storedETag: string | undefined;
 
     if (!options.forceRefresh) {
@@ -249,11 +249,12 @@ export async function analyzeRecipeNutrition(
       retryable: false,
       details: "Received unexpected status code from Edamam API",
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[EdamamService] Analysis failed:", error);
 
     // Categorize error
-    if (error.status === 429) {
+    const err = error as { status?: number; message?: string };
+    if (err.status === 429) {
       return {
         error: "Rate limit exceeded. Please try again later.",
         code: "RATE_LIMIT",
@@ -261,16 +262,16 @@ export async function analyzeRecipeNutrition(
       };
     }
 
-    if (error.status === 422 || error.status === 555) {
+    if (err.status === 422 || err.status === 555) {
       return {
         error: "Could not parse recipe or extract nutritional information",
         code: "PARSE_ERROR",
         retryable: false,
-        details: error.message,
+        details: err.message,
       };
     }
 
-    if (error.status === 0 || !error.status) {
+    if (err.status === 0 || !err.status) {
       return {
         error: "Network error. Please check your connection.",
         code: "NETWORK_ERROR",
@@ -279,10 +280,10 @@ export async function analyzeRecipeNutrition(
     }
 
     return {
-      error: error.message || "Failed to analyze recipe nutrition",
+      error: err.message || "Failed to analyze recipe nutrition",
       code: "API_ERROR",
-      retryable: error.retryable || false,
-      details: error.message,
+      retryable: false,
+      details: err.message,
     };
   }
 }

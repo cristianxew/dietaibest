@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { StoreInfo } from "@/types/shopping-preferences";
 import { useTranslations } from "next-intl";
-import { Store, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 interface StoreCardProps {
   store: StoreInfo;

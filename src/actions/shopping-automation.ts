@@ -171,7 +171,7 @@ export async function startShoppingTask(input: ShoppingAutomationInput) {
  * the format required by the Browser-Use shopping automation
  * Note: This is a private helper - not exported as server actions must be async
  */
-function convertToShoppingItems(
+function _convertToShoppingItems(
   ingredients: ShoppingListIngredient[]
 ): ShoppingAutomationInput["items"] {
   return ingredients.map((ing) => ({

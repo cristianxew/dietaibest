@@ -17,7 +17,7 @@ import { checkOnboardingStatus } from "@/actions/onboarding";
 const DISMISS_KEY = "DietAIbook_onboarding_prompt_dismissed";
 
 export function OnboardingPrompt() {
-  const t = useTranslations("dashboard");
+  const _t = useTranslations("dashboard");
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 

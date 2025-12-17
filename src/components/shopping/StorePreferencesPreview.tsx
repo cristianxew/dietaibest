@@ -3,21 +3,17 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Store, Settings, ChevronRight, Leaf, RefreshCw, Tag } from "lucide-react";
+import { Store, Settings, ChevronRight } from "lucide-react";
 
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { getShoppingPreferences } from "@/actions/shopping-automation";
-import { SupportedStore, SUPPORTED_STORE_LIST } from "@/types/shopping-preferences";
+import { SupportedStore } from "@/types/shopping-preferences";
 import { SUPPORTED_STORES } from "@/lib/browser-use";
 
 export function StorePreferencesPreview() {

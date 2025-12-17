@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,11 +10,9 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  ExternalLink,
   RefreshCw,
   Search,
   Package,
-  ArrowRight,
   Sparkles,
   Clock,
   Store,

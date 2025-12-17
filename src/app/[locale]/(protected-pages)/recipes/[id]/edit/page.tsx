@@ -62,8 +62,6 @@ export default async function EditRecipePage({
     carbs: recipe.carbs || undefined,
     fat: recipe.fat || undefined,
     fiber: recipe.fiber || undefined,
-    sugar: recipe.sugar || undefined,
-    sodium: recipe.sodium || undefined,
   };
 
   return (

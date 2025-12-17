@@ -3,7 +3,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { GripVertical, X, Utensils, Flame, Loader2 } from "lucide-react";
 import type { MealDisplay, MealType } from "@/types/meal-plan";
 import { formatMacroValue } from "@/lib/meal-plan-macros";

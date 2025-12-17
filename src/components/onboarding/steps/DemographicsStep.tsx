@@ -3,10 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/custom-ui/date-picker";
 import {
   Form,
@@ -26,11 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useOnboardingState } from "../hooks/useOnboardingState";
 import { NavigationButtons } from "../components/NavigationButtons";
 import { ACTIVITY_LEVELS, type DemographicsData } from "@/types/onboarding";

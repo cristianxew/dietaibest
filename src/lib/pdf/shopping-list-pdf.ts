@@ -64,9 +64,9 @@ export async function generateShoppingListPDF(
 
   // Render content based on view mode
   if (options.viewMode === "category") {
-    yPos = renderCategoryView(doc, input, options, translations, yPos);
+    renderCategoryView(doc, input, options, translations, yPos);
   } else {
-    yPos = renderRecipeView(doc, input, options, translations, yPos);
+    renderRecipeView(doc, input, options, translations, yPos);
   }
 
   // Add page numbers to all pages
