@@ -421,6 +421,8 @@ export class BrowserUseClient {
         servings: { type: "number" },
         difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
         imageUrl: { type: "string" },
+        recipeUrl: { type: "string" },
+        category: { type: "string" },
         ingredients: {
           type: "array",
           items: {

@@ -135,13 +135,27 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ### Task Documentation
 
-Currently no feature-specific PRDs. This section will contain:
-- Feature PRDs (Product Requirement Documents)
-- Implementation plans
-- Technical specifications for specific features
-- User stories and acceptance criteria
+#### [Deployment Guide](./Tasks/deployment.md)
+**Purpose:** Complete deployment documentation for Hostinger VPS with Dokploy
 
-**Example future documents:**
+**Contains:**
+- Architecture overview (Docker + PostgreSQL + Traefik)
+- Dokploy setup steps (project, compose, env vars, domain)
+- CI/CD pipeline configuration (GitHub webhooks)
+- Database management (backup, restore, migrations)
+- Troubleshooting guide
+- Security checklist
+- Monitoring recommendations
+
+**When to read:**
+- Setting up production deployment
+- Configuring CI/CD pipeline
+- Managing production database
+- Troubleshooting deployment issues
+
+---
+
+**Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD
 - `shopping_list_automation.md` - Shopping list AI automation PRD
