@@ -14,9 +14,9 @@ echo "=========================================="
 echo "[1/3] Waiting for database connection..."
 sleep 2
 
-# Run Prisma migrations
+# Run Prisma migrations (use local version)
 echo "[2/3] Running database migrations..."
-npx prisma db push --accept-data-loss
+./node_modules/.bin/prisma db push --accept-data-loss
 
 echo "[3/3] Starting Next.js application..."
 echo "=========================================="

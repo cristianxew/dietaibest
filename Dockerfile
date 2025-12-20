@@ -30,8 +30,8 @@ RUN apk add --no-cache libc6-compat openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
-RUN bunx prisma generate
+# Generate Prisma client (use local version from node_modules)
+RUN ./node_modules/.bin/prisma generate
 
 # Set environment for build
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -71,6 +71,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 # Copy entrypoint script
 COPY --chmod=755 scripts/docker-entrypoint.sh ./docker-entrypoint.sh
