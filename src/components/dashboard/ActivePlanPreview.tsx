@@ -102,9 +102,9 @@ export function ActivePlanPreview({
   return (
     <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm overflow-hidden">
       {/* Accent stripe */}
-      <div className="h-1 bg-gradient-to-r from-brand-500 via-gold-400 to-sage-500" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 via-gold-400 to-sage-500" />
 
-      <CardHeader className="pb-3">
+      <CardHeader className="pt-6 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 min-w-0">
             <CardTitle className="text-lg font-display font-semibold tracking-tight truncate">

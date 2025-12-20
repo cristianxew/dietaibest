@@ -1,5 +1,4 @@
 export { WelcomeHeader } from "./WelcomeHeader";
-export { SmartQuickActions } from "./SmartQuickActions";
 export { DashboardStats } from "./DashboardStats";
 export { TodaysMacroProgress } from "./TodaysMacroProgress";
 export { CalorieRingChart } from "./CalorieRingChart";

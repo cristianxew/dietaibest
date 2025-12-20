@@ -106,7 +106,7 @@ export function WeeklyMacroChart({
 
   return (
     <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pb-3">
+      <CardHeader className="pt-6 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle className="text-lg font-display font-semibold tracking-tight">

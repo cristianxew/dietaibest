@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { getDashboardData, getTodaysMacros } from "@/actions/dashboard";
 import { OnboardingPrompt } from "@/components/dashboard/OnboardingPrompt";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
-import { SmartQuickActions } from "@/components/dashboard/SmartQuickActions";
 import {
   ActivePlanPreview,
   ActivePlanEmpty,
@@ -92,7 +91,7 @@ async function DashboardContent() {
           <Card className="border-stone-200/70 dark:border-stone-800/70 bg-white/60 dark:bg-stone-900/60 backdrop-blur-xl overflow-hidden shadow-lg shadow-stone-200/20 dark:shadow-none">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 via-gold-400 to-sage-500 opacity-80" />
 
-            <CardHeader className="pb-3">
+            <CardHeader className="pt-6 pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-display font-semibold tracking-tight">
                 <span className="bg-gradient-to-br from-brand-500 to-gold-500 bg-clip-text text-transparent">
                   Today&apos;s Nutrition
@@ -101,12 +100,6 @@ async function DashboardContent() {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {/* Quick Actions - Compact pills on top */}
-              <SmartQuickActions
-                hasRecipes={hasRecipes}
-                hasMealPlans={hasMealPlans}
-                hasActivePlan={hasActivePlan}
-              />
 
               {/* Divider */}
               <div className="h-px bg-stone-200/60 dark:bg-stone-800/60" />
