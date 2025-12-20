@@ -2,7 +2,7 @@
 
 **DietAIbook - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2025-11-09
+Last Updated: 2025-12-11
 
 ---
 
@@ -76,6 +76,29 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Design System](./System/design_system.md)
+**Purpose:** Comprehensive styling guidelines for the "Botanical Precision" design system
+
+**Contains:**
+- Design philosophy and aesthetic principles
+- Color system (brand palette, warm stone neutrals)
+- Typography (Inter, Space Grotesk, Geist Mono)
+- Semantic color tokens for light/dark modes
+- Component styling patterns (cards, buttons, forms)
+- Landing page component guidelines
+- Utility classes (glass effect, animations)
+- Dark mode implementation
+- Migration guide from old design system
+
+**When to read:**
+- Creating new UI components
+- Updating existing component styles
+- Ensuring dark mode compatibility
+- Understanding the design language
+- Working on landing page components
+
+---
+
 #### [Database Schema](./System/database_schema.md)
 **Purpose:** Complete database design documentation with entity relationships
 
@@ -112,13 +135,27 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ### Task Documentation
 
-Currently no feature-specific PRDs. This section will contain:
-- Feature PRDs (Product Requirement Documents)
-- Implementation plans
-- Technical specifications for specific features
-- User stories and acceptance criteria
+#### [Deployment Guide](./Tasks/deployment.md)
+**Purpose:** Complete deployment documentation for Hostinger VPS with Dokploy
 
-**Example future documents:**
+**Contains:**
+- Architecture overview (Docker + PostgreSQL + Traefik)
+- Dokploy setup steps (project, compose, env vars, domain)
+- CI/CD pipeline configuration (GitHub webhooks)
+- Database management (backup, restore, migrations)
+- Troubleshooting guide
+- Security checklist
+- Monitoring recommendations
+
+**When to read:**
+- Setting up production deployment
+- Configuring CI/CD pipeline
+- Managing production database
+- Troubleshooting deployment issues
+
+---
+
+**Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD
 - `shopping_list_automation.md` - Shopping list AI automation PRD
@@ -185,6 +222,12 @@ bun dev
 **Tech Stack Questions**
 - Next.js / React patterns � [Project Architecture - Tech Stack](./System/project_architecture.md#tech-stack)
 - Database / Prisma � [Database Schema](./System/database_schema.md)
+
+**UI & Styling**
+- Design system overview � [Design System](./System/design_system.md)
+- Color tokens & theming � [Design System - Semantic Tokens](./System/design_system.md#semantic-tokens)
+- Landing page components � [Design System - Landing Page Components](./System/design_system.md#landing-page-components)
+- Dark mode implementation � [Design System - Dark Mode](./System/design_system.md#dark-mode-implementation)
 
 **Feature Implementation**
 - Recipe management � [Project Architecture - Core Features](./System/project_architecture.md#core-features)

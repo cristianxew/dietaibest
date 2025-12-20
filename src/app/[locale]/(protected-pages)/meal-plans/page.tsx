@@ -20,7 +20,7 @@ export default async function MealPlansPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  const { locale } = await params;
+  await params; // Required for Next.js params resolution
 
   return (
     <div className="min-h-screen bg-background">

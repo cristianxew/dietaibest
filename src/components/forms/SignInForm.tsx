@@ -13,7 +13,12 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "@/components/custom-ui/styled-tabs";
 import {
   Form,
   FormControl,
@@ -129,9 +134,8 @@ export function SignInForm({
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
-          emailRedirectTo: `${
-            window.location.origin
-          }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
+          emailRedirectTo: `${window.location.origin
+            }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
         },
       });
 
@@ -182,7 +186,7 @@ export function SignInForm({
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="mb-4">
           <TabsTrigger value="email">{t("auth.emailAndPassword")}</TabsTrigger>
           <TabsTrigger value="magic">{t("auth.magicLink")}</TabsTrigger>
         </TabsList>

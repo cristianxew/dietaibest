@@ -1,10 +1,11 @@
 # DietAIbook - Project Architecture
 
-**Last Updated:** 2025-11-09
+**Last Updated:** 2025-12-11
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
 - [Recipe Import System](./recipe_import_system.md)
+- [Design System](./design_system.md)
 - [README Index](../README.md)
 
 ---
@@ -52,12 +53,14 @@
 - **Bun** (exclusive package manager, no npm/yarn)
 
 ### UI & Design System
+- **"Botanical Precision" Design System** - Custom design language with warm stone neutrals and green brand accents
 - **ShadCN UI** - Pre-built accessible component library
-- **Tailwind CSS 4** - Utility-first styling
+- **Tailwind CSS 4** - Utility-first styling with CSS variables
 - **Radix UI** - Unstyled accessible primitives
 - **Framer Motion** - Animation library
-- **Lucide React** - Icon system
-- **next-themes** - Dark mode support
+- **Lucide React + Iconify** - Icon systems (Lucide for general, Iconify Solar for landing)
+- **next-themes** - Dark mode support with full semantic token system
+- See [Design System Documentation](./design_system.md) for comprehensive styling guidelines
 
 ### Database & ORM
 - **Supabase PostgreSQL** - Managed PostgreSQL with row-level security

@@ -28,6 +28,23 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      // Allow underscore-prefixed unused variables (common pattern for intentionally unused vars)
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+      // Allow explicit any in existing code (should be fixed incrementally)
+      "@typescript-eslint/no-explicit-any": "warn",
+      // React unescaped entities - warn instead of error
+      "react/no-unescaped-entities": "warn",
+    },
+  },
 ];
 
 export default eslintConfig;

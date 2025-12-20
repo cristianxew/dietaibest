@@ -716,7 +716,7 @@ export function URLUpload({
   );
 
   // Handle form errors
-  const onFormError = useCallback((errors: any) => {
+  const onFormError = useCallback((errors: { url?: { message?: string } }) => {
     if (errors.url?.message) {
       toast.error(errors.url.message);
     }

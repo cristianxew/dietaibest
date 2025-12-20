@@ -9,7 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  StyledTabs as Tabs,
+  StyledTabsContent as TabsContent,
+  StyledTabsList as TabsList,
+  StyledTabsTrigger as TabsTrigger,
+} from "@/components/custom-ui/styled-tabs";
 import { Button } from "@/components/ui/button";
 import { Link2, Image, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -176,7 +181,7 @@ export function RecipeImport({
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="mb-6">
             <TabsTrigger value="url" className="flex items-center gap-2">
               <Link2 className="h-4 w-4" />
               URL

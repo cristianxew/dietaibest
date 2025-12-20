@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Project Setup and Configuration",
         "description": "Initialize the Next.js 15 project with TypeScript, Tailwind CSS, and Shadcn UI components. Configure ESLint, Prettier, and set up the project structure.",
         "details": "1. Create a new Next.js 15 project with App Router: `npx create-next-app@latest dietaibest --typescript --tailwind --eslint --app`\n2. Install and configure Shadcn UI: `npx shadcn-ui@latest init`\n3. Set up project structure with directories for components, hooks, utils, types, and API services\n4. Configure TypeScript with strict mode in tsconfig.json\n5. Set up ESLint and Prettier with recommended rules\n6. Configure Tailwind CSS with custom theme tokens for the design system\n7. Create a base layout with responsive breakpoints (mobile < 640px, tablet 641-1024px, desktop > 1024px)\n8. Set up Git repository with appropriate .gitignore\n9. Configure Vercel deployment settings\n10. Install required dependencies: `npm install next-intl@3.0.0 react-query@5.0.0 framer-motion@11.0.0 zod@3.22.4`",
@@ -13,14 +13,14 @@
         "subtasks": []
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Authentication System Implementation",
         "description": "Implement authentication using Supabase Auth and next-auth with Google OAuth integration. Set up JWT handling with httpOnly cookies and silent refresh mechanism.",
         "details": "1. Install required packages: `npm install @supabase/supabase-js@2.39.0 next-auth@4.24.5`\n2. Create Supabase client utility in `lib/supabase.ts`\n3. Configure next-auth with Supabase provider in `app/api/auth/[...nextauth]/route.ts`\n4. Set up Google OAuth provider in Supabase dashboard and next-auth config\n5. Implement JWT storage in httpOnly cookies\n6. Create authentication context provider in `contexts/AuthContext.tsx`\n7. Build sign-in and sign-up forms with email validation\n8. Implement magic link authentication flow\n9. Create `/auth/refresh` endpoint for silent JWT refresh\n10. Add authentication middleware to protect routes\n11. Implement sign-out functionality\n12. Create AuthGuard component for protected routes",
         "testStrategy": "1. Unit test authentication context with React Testing Library\n2. Test sign-in form validation with various inputs\n3. Mock Supabase responses to test successful and failed authentication\n4. Test JWT refresh mechanism with expired tokens\n5. Verify Google OAuth flow redirects correctly\n6. Test protected routes redirect unauthenticated users\n7. Verify sign-out clears cookies and session state",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
         "status": "done",
         "subtasks": [
@@ -31,7 +31,8 @@
             "dependencies": [],
             "details": "Create a Supabase project, enable desired auth methods (email, magic link, social), and obtain Project URL and Anon Key for use in the app.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -42,7 +43,8 @@
             ],
             "details": "Install Supabase packages, set up utility functions for client/server, and ensure environment variables are loaded securely.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -53,7 +55,8 @@
             ],
             "details": "Install next-auth, configure providers in [...nextauth].js, and set up session and JWT callbacks for token management.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -64,7 +67,8 @@
             ],
             "details": "Set up Google OAuth credentials, add Google provider to next-auth and/or Supabase, and test login flow.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -75,7 +79,8 @@
             ],
             "details": "Ensure JWTs are securely stored (e.g., HTTP-only cookies), validate tokens on backend, and handle token parsing and renewal.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -86,7 +91,8 @@
             ],
             "details": "Implement client-side logic to detect token expiry and call refresh endpoint, update tokens in storage, and handle errors.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -95,7 +101,8 @@
             "dependencies": [],
             "details": "Implement context with hooks for login, logout, and user state, and ensure it updates on token changes or refresh.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -104,7 +111,8 @@
             "dependencies": [],
             "details": "Create accessible forms, handle input validation, connect to backend actions, and display error/success messages.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -113,7 +121,8 @@
             "dependencies": [],
             "details": "Set up magic link provider, customize email templates, and implement frontend logic for handling magic link callbacks.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -122,7 +131,8 @@
             "dependencies": [],
             "details": "Implement endpoint with proper validation, rate limiting, and security checks to prevent abuse.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -133,7 +143,8 @@
             ],
             "details": "Develop middleware for Next.js API routes and pages, check token validity, and redirect or error on failure.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -145,20 +156,21 @@
             ],
             "details": "Implement sign-out logic to clear tokens and session, create AuthGuard components/HOCs to restrict access to authenticated users.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Multi-language Support",
         "description": "Implement internationalization (i18n) with next-intl to support English, Polish, and Spanish languages. Create language switcher and ensure all UI strings are translatable.",
         "details": "1. Install next-intl: `npm install next-intl@3.0.0`\n2. Configure next-intl in `next.config.js` with supported locales (EN, PL, ES)\n3. Create locale files in `messages/{locale}.json` for each supported language\n4. Set up language detection middleware in `middleware.ts`\n5. Create a language switcher component in `components/LanguageSwitcher.tsx`\n6. Implement locale persistence using cookies\n7. Extract all UI strings into translation keys\n8. Create a custom hook `useTranslation` for accessing translations\n9. Implement locale-specific formatting for dates, numbers, and currencies\n10. Add language preference to user profile in Supabase\n11. Ensure all dynamic content (errors, notifications) uses translation keys",
         "testStrategy": "1. Test language switcher changes locale correctly\n2. Verify translations load for each supported language\n3. Test locale persistence across page refreshes\n4. Verify date and number formatting follows locale conventions\n5. Test language preference syncs with user profile\n6. Verify all UI components display translated content\n7. Test fallback behavior for missing translations",
         "priority": "medium",
         "dependencies": [
-          1,
-          2
+          "1",
+          "2"
         ],
         "status": "done",
         "subtasks": [
@@ -169,7 +181,8 @@
             "dependencies": [],
             "details": "Run 'npm install next-intl@3.0.0'. Update next.config.js to include the supported locales (EN, PL, ES) and set the default locale.",
             "status": "done",
-            "testStrategy": "Verify that the application builds successfully and recognizes all three locales in the configuration."
+            "testStrategy": "Verify that the application builds successfully and recognizes all three locales in the configuration.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -180,7 +193,8 @@
             ],
             "details": "Create 'messages/en.json', 'messages/pl.json', and 'messages/es.json'. Move all UI strings into these files as translation keys.",
             "status": "done",
-            "testStrategy": "Check that all UI text is sourced from the locale files and displays correctly for each language."
+            "testStrategy": "Check that all UI text is sourced from the locale files and displays correctly for each language.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -191,7 +205,8 @@
             ],
             "details": "Configure 'middleware.ts' to detect the user's preferred language and store the selection in cookies for persistence.",
             "status": "done",
-            "testStrategy": "Test that the app automatically detects and remembers the user's language preference across sessions."
+            "testStrategy": "Test that the app automatically detects and remembers the user's language preference across sessions.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -203,7 +218,8 @@
             ],
             "details": "Build 'components/LanguageSwitcher.tsx' to let users select their preferred language, updating the locale and persisting the choice.",
             "status": "done",
-            "testStrategy": "Switching languages updates the UI immediately and persists the selection after page reloads."
+            "testStrategy": "Switching languages updates the UI immediately and persists the selection after page reloads.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -215,21 +231,22 @@
             ],
             "details": "Use the custom 'useTranslation' hook and next-intl's formatting utilities to handle translations, dates, numbers, and currencies. Update error messages and notifications to use translation keys.",
             "status": "done",
-            "testStrategy": "All UI elements, notifications, and formatted values reflect the selected language and locale conventions."
+            "testStrategy": "All UI elements, notifications, and formatted values reflect the selected language and locale conventions.",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "User Onboarding Wizard",
         "description": "Create a multi-step onboarding wizard to collect user demographics, dietary goals, preferences, and family members. Implement macro calculator for nutritional target setting.",
         "details": "1. Create a multi-step form component with state management\n2. Design three wizard steps: demographics, goals, and preferences\n3. Implement form validation using Zod schema validation\n4. Create macro calculator utility in `utils/macroCalculator.ts` based on user inputs\n5. Build family member management component with add/edit/remove functionality\n6. Implement `/api/macros/estimate` endpoint for real-time macro calculation\n7. Create progress indicator for wizard steps\n8. Add form state persistence between steps\n9. Implement back/next navigation with state preservation\n10. Create completion handler to store profile in Supabase\n11. Add redirect to dashboard on completion\n12. Implement responsive design for all wizard screens",
         "testStrategy": "1. Test form validation for required fields\n2. Verify macro calculation accuracy with test cases\n3. Test navigation between steps preserves state\n4. Verify family member addition/removal works correctly\n5. Test form submission stores data in Supabase\n6. Verify redirect to dashboard after completion\n7. Test responsive layout on different devices\n8. Verify error handling for invalid inputs",
         "priority": "high",
         "dependencies": [
-          1,
-          2,
-          3
+          "1",
+          "2",
+          "3"
         ],
         "status": "done",
         "subtasks": [
@@ -240,7 +257,8 @@
             "dependencies": [],
             "details": "Identify all required steps (e.g., user info, preferences, macro calculator, family members) and create a logical flow.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -251,7 +269,8 @@
             ],
             "details": "Create reusable components for each step, ensuring consistency and modularity.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -262,7 +281,8 @@
             ],
             "details": "Define synchronous and asynchronous validation for all user inputs, including edge cases.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -273,7 +293,8 @@
             ],
             "details": "Integrate formulas and user input handling for macro calculations within the wizard.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -284,7 +305,8 @@
             ],
             "details": "Create dynamic forms and logic to manage multiple family members' data.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -297,7 +319,8 @@
             ],
             "details": "Handle API requests for user data, macro calculations, and family member management.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -308,7 +331,8 @@
             ],
             "details": "Display a progress bar or stepper that updates as users advance through the wizard.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -319,7 +343,8 @@
             ],
             "details": "Implement mechanisms to persist state across sessions and page reloads.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -331,7 +356,8 @@
             ],
             "details": "Ensure navigation respects validation and state, and allows users to revisit previous steps.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -343,7 +369,8 @@
             ],
             "details": "Show a confirmation message and handle post-onboarding transitions.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -354,7 +381,8 @@
             ],
             "details": "Use responsive layouts and test on multiple devices for optimal usability.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -373,20 +401,21 @@
             ],
             "details": "Perform manual and automated tests to ensure a seamless onboarding experience.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Recipe Storage and Management",
         "description": "Implement the recipe module with CRUD operations, categorization, and favorites management. Create components for recipe cards, detail view, and editing interface.",
         "details": "1. Design database schema for recipes with Supabase\n2. Create recipe data types and Zod validation schemas\n3. Implement recipe card component with macro chips\n4. Build recipe detail view with ingredients, instructions, and nutritional information\n5. Create recipe form for manual entry with validation\n6. Implement recipe categorization and tagging system\n7. Add favorites functionality with optimistic UI updates\n8. Create recipe list view with filtering and sorting\n9. Implement tabbed interface for In-house, My Recipes, and Favorites\n10. Add pagination for recipe lists\n11. Implement recipe search functionality\n12. Create recipe deletion with confirmation dialog",
         "testStrategy": "1. Test CRUD operations for recipes\n2. Verify recipe form validation\n3. Test favorites toggling and persistence\n4. Verify filtering and sorting functionality\n5. Test recipe search with various queries\n6. Verify macro chips display correct nutritional information\n7. Test responsive layout of recipe cards and detail view\n8. Verify tabbed interface navigation",
         "priority": "high",
         "dependencies": [
-          1,
-          2
+          "1",
+          "2"
         ],
         "status": "done",
         "subtasks": [
@@ -397,7 +426,8 @@
             "dependencies": [],
             "details": "Identify key entities such as Recipe, Ingredient, Category, User, and their relationships to form the base schema.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -408,7 +438,8 @@
             ],
             "details": "Assign data types like string, number, date, boolean, arrays, and nested objects to schema fields based on their nature.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -419,7 +450,8 @@
             ],
             "details": "Include required fields, format checks, range limits, and custom validations for complex fields like ingredients and instructions.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -430,7 +462,8 @@
             ],
             "details": "Include recipe title, image, brief description, rating, and key metadata in a visually appealing card layout.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -441,7 +474,8 @@
             ],
             "details": "Support pagination, filtering, and sorting integration to display multiple recipes efficiently.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -452,7 +486,8 @@
             ],
             "details": "Ensure clear layout for instructions, nutritional info, and related recipes or categories.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -463,7 +498,8 @@
             ],
             "details": "Include fields for all recipe attributes, support image uploads, and handle form submission and error states.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -474,7 +510,8 @@
             ],
             "details": "Enable assigning multiple categories per recipe and filtering recipes by category.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -485,7 +522,8 @@
             ],
             "details": "Implement UI indicators for favorites and backend support for storing user preferences.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -497,7 +535,8 @@
             ],
             "details": "Integrate filtering and sorting controls with the recipe list component for dynamic updates.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -508,7 +547,8 @@
             ],
             "details": "Support page navigation controls and backend query adjustments for paged data retrieval.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -519,21 +559,22 @@
             ],
             "details": "Support real-time search suggestions and integration with filtering and sorting.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Recipe Import and OCR",
         "description": "Implement multiple recipe input methods including URL scraping, image OCR, and PDF upload with automatic extraction of ingredients and instructions.",
         "details": "1. Create URL import component with validation\n2. Implement recipe scraping endpoint that connects to backend service\n3. Build image upload component with preview and cropping\n4. Implement PDF upload with size validation (≤10MB)\n5. Create OCR processing status indicator\n6. Build editable ingredient list component for post-extraction editing\n7. Implement error handling for unsupported sites and failed extractions\n8. Add loading states and progress indicators\n9. Create retry mechanism for failed imports\n10. Implement validation for extracted data\n11. Add success/error toast notifications\n12. Create unified import interface that handles all input methods",
         "testStrategy": "1. Test URL validation and scraping with various recipe websites\n2. Verify PDF upload size restrictions\n3. Test image upload and preview functionality\n4. Verify extracted data can be edited before saving\n5. Test error handling for unsupported sites\n6. Verify loading states and progress indicators\n7. Test retry mechanism for failed imports\n8. Verify toast notifications for success/error states",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          5
+          "1",
+          "2",
+          "5"
         ],
         "status": "pending",
         "subtasks": [
@@ -544,7 +585,8 @@
             "dependencies": [],
             "details": "Ensure clear labeling and intuitive placement for URL entry.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -555,7 +597,8 @@
             ],
             "details": "Use regex or built-in browser validation; display error messages for malformed URLs.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -566,7 +609,8 @@
             ],
             "details": "Show progress, success, or error messages based on backend response.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -577,7 +621,8 @@
             ],
             "details": "Check URL reachability and security before processing.\n<info added on 2025-07-08T10:38:41.694Z>\n**Backend API Endpoint Created:**\n- Created `/src/app/api/recipes/import/url/route.ts` with comprehensive URL validation and security checks\n- Implemented POST endpoint that validates URLs, checks reachability, and performs security validation to prevent SSRF attacks\n- Added support for 20+ popular recipe websites with domain-specific mock data\n- Includes proper error handling, timeout management, and structured response format\n\n**Security Features Implemented:**\n- URL protocol validation (only HTTP/HTTPS allowed)\n- SSRF protection blocking localhost and private IP ranges (10.x.x.x, 172.16-31.x.x, 192.168.x.x)\n- 10-second timeout for URL reachability checks\n- User authentication verification before processing requests\n\n**Frontend Integration:**\n- Updated RecipeImport component to use the real API endpoint instead of mock simulation\n- Replaced mock data with actual fetch calls to `/api/recipes/import/url`\n- Added proper error handling and user feedback for import success/failures\n- Implemented warning display for unsupported websites\n\n**Database Integration:**\n- Enhanced recipe actions to support imported recipes with source tracking\n- Added `createImportedRecipe` function that automatically tags imported recipes\n- Implemented proper source URL tracking and metadata storage\n- Added import-specific tags for better recipe organization\n\n**Key Features:**\n- Comprehensive URL validation with security checks\n- Support for 20+ popular recipe websites\n- Mock data generation for demonstration (ready for real scraping integration)\n- Proper authentication and user session management\n- Error handling with user-friendly messages\n- TypeScript type safety throughout the implementation\n</info added on 2025-07-08T10:38:41.694Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -586,7 +631,8 @@
             "dependencies": [],
             "details": "Support common image formats and provide clear upload instructions.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -597,7 +643,8 @@
             ],
             "details": "Display error messages for unsupported formats or oversized files.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -608,7 +655,8 @@
             ],
             "details": "Show upload progress bar and final extraction status.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -619,7 +667,8 @@
             ],
             "details": "Check file integrity and queue for OCR extraction.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -628,7 +677,8 @@
             "dependencies": [],
             "details": "Provide clear instructions and accept only PDF files.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -639,7 +689,8 @@
             ],
             "details": "Display errors for corrupted or oversized PDFs.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -650,7 +701,8 @@
             ],
             "details": "Show progress bar and extraction completion notifications.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -661,7 +713,8 @@
             ],
             "details": "Check PDF integrity and queue for parsing.\n<info added on 2025-07-09T09:42:02.036Z>\nExtend the existing `/api/recipes/import/image` endpoint to create a unified document import solution that handles both images and PDFs. Rename to `/api/recipes/import/document` and implement:\n\n1. Accept multiple file formats: JPEG, PNG, WebP, TIFF, BMP, and PDF\n2. Validate PDF files (type verification, 20MB size limit, maximum 15 pages)\n3. Store all document types in `/uploads/recipes/documents/` with appropriate organization\n4. Configure Document AI integration to process both images and PDFs using the same processing pipeline\n5. Implement intelligent file type detection to route documents to appropriate Document AI processors\n6. Maintain consistent API response format regardless of input document type\n7. Enhance error handling for PDF-specific issues (corruption, password protection, excessive pages)\n8. Update API documentation to reflect the unified endpoint\n9. Verify PDF integrity before queuing for processing\n10. Add appropriate tests for PDF submission scenarios\n</info added on 2025-07-09T09:42:02.036Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 13,
@@ -673,7 +726,8 @@
             ],
             "details": "Integrate with OCR libraries or cloud services; handle multi-page documents.\n<info added on 2025-07-08T09:52:46.813Z>\nDevelop a custom OCR solution using OpenAI's GPT-4o Vision API for recipe extraction from images and PDFs. Implement image preprocessing pipeline including contrast enhancement, noise reduction, and resolution optimization to improve OCR accuracy. Create specialized prompt engineering templates for structured recipe extraction, focusing on ingredients, measurements, instructions, and metadata. Implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.\n\nBuild robust error handling for various failure modes including poor image quality, API timeouts, and malformed responses. Implement rate limiting and batch processing to manage API quotas and optimize throughput. Utilize GPT-4o for primary extraction as it demonstrates superior accuracy for complex recipe layouts compared to GPT-4o-mini, despite higher per-token costs.\n\nDevelop cost optimization strategies including image downsampling where appropriate, caching of results, and selective processing of document pages. Create monitoring dashboard to track API usage, success rates, and extraction quality metrics. Ensure the solution handles multi-page documents by intelligently stitching content across pages.\n</info added on 2025-07-08T09:52:46.813Z>\n<info added on 2025-07-09T09:41:40.441Z>\nDevelop a custom OCR solution using Google Cloud Document AI for recipe extraction from images and PDFs. Document AI is superior for recipe extraction due to its purpose-built structured document understanding, native handling of both images and PDFs, built-in entity extraction for ingredients/instructions, multi-language support (EN/ES/PL), custom processor training capabilities, and cost-effectiveness for production usage.\n\nImplementation plan:\n1. Set up Google Cloud project with Document AI API enabled\n2. Configure Form Parser processor for general recipe extraction\n3. Implement custom Recipe Parser processor for specialized recipe entity extraction\n4. Build document preprocessing pipeline (format conversion, image optimization)\n5. Create structured extraction logic to parse Document AI responses into recipe components\n6. Implement multi-language extraction with language detection\n7. Add custom processor training workflow to improve accuracy over time\n8. Build cost optimization with request batching and result caching\n9. Implement comprehensive error handling with fallback mechanisms\n10. Create monitoring dashboard for extraction quality and API usage metrics\n\nThis approach follows the successful Chefkoch case study pattern and provides a robust, scalable solution for both image and PDF recipe extraction. The system will handle multi-page documents by intelligently processing content across pages and implement JSON schema validation to ensure extracted data conforms to our recipe data model before database insertion.\n</info added on 2025-07-09T09:41:40.441Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 14,
@@ -684,7 +738,8 @@
             ],
             "details": "Handle dynamic content, pagination, and anti-bot measures.\n<info added on 2025-07-10T14:03:23.603Z>\nImplement URL scraping using Browser Use API to handle dynamic content, pagination, and anti-bot measures. Replace the mock data approach in the existing `/src/app/api/recipes/import/url/route.ts` endpoint with a Browser Use API client. Configure the client with proper authentication using BROWSER_USE_API_KEY and implement a comprehensive recipe extraction workflow that leverages AI agents to navigate complex recipe websites. The implementation should extract structured recipe data (ingredients, instructions, nutrition, metadata) from JavaScript-heavy sites, handle pop-ups and registration walls, and support dynamic loading. Maintain the current mock system as a fallback strategy for API failures and implement real-time status updates during the scraping process. Ensure all technical integration preserves existing validation, security checks, and frontend compatibility while adding proper logging and retry logic.\n</info added on 2025-07-10T14:03:23.603Z>",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 15,
@@ -695,7 +750,8 @@
             ],
             "details": "Support both native and scanned PDFs; handle complex layouts.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 16,
@@ -708,7 +764,8 @@
             ],
             "details": "Verify correct data extraction, error handling, and user feedback for all scenarios.",
             "status": "done",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 17,
@@ -719,7 +776,8 @@
             ],
             "details": "Implement robust error reporting and fallback mechanisms.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 18,
@@ -730,7 +788,8 @@
             ],
             "details": "Ensure screen reader compatibility, keyboard navigation, and translatable UI text.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 19,
@@ -741,18 +800,22 @@
             "dependencies": [
               "6.13"
             ],
-            "parentTaskId": 6
+            "parentTaskId": 6,
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the implementation of the Browser Use API integration for recipe URL scraping into detailed subtasks, including authentication, request handling, response processing, error management, and frontend integration."
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Edamam API Integration",
         "description": "Integrate with the Edamam Nutrition Analysis API to provide accurate macro and micronutrient information for user-created and imported recipes. The API uses Natural Language Processing to analyze full recipe text and ingredient lists, returning detailed nutritional information including 28+ nutrients, diet labels, health labels, and allergen information. Implement caching and error handling for API requests.",
         "status": "done",
         "dependencies": [
-          1,
-          5
+          "1",
+          "5"
         ],
         "priority": "medium",
         "details": "1. Set up Edamam Nutrition Analysis API client in `lib/edamam.ts`\n2. Create environment variables for API keys\n3. Implement recipe text and ingredient list parsing for Nutrition Analysis API\n4. Build nutritional calculation service using Nutrition Analysis API for user recipes\n5. Create utility to extract and store diet labels (balanced, high-fiber, high-protein, low-carb, etc.)\n6. Create utility to extract and store health labels (vegan, gluten-free, dairy-free, etc.)\n7. Implement allergen information extraction and storage\n8. Create caching mechanism for API responses\n9. Implement retry logic for failed API requests\n10. Build macro and micronutrient calculation utility that processes Nutrition Analysis API responses\n11. Create fallback mechanism for when API is unavailable\n12. Implement rate limiting handling\n13. Add detailed error logging for API integration\n14. Create utility for converting between measurement units\n15. Integrate nutritional analysis into recipe creation and import workflows",
@@ -765,7 +828,8 @@
             "status": "done",
             "dependencies": [],
             "details": "Implement API client in `lib/edamam.ts` for the Nutrition Analysis API. Ensure API keys are securely managed using environment variables.",
-            "testStrategy": "Verify that the client can successfully authenticate and make basic requests to the Edamam Nutrition Analysis API using test credentials."
+            "testStrategy": "Verify that the client can successfully authenticate and make basic requests to the Edamam Nutrition Analysis API using test credentials.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -776,7 +840,8 @@
               1
             ],
             "details": "Create functions to standardize recipe formats and ingredient lists, ensuring accurate Nutrition Analysis API queries. Support both structured ingredient lists and full recipe text analysis.",
-            "testStrategy": "Test with a variety of recipe formats and ingredient strings to confirm correct parsing and compatibility with Edamam Nutrition Analysis API."
+            "testStrategy": "Test with a variety of recipe formats and ingredient strings to confirm correct parsing and compatibility with Edamam Nutrition Analysis API.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -787,7 +852,8 @@
               2
             ],
             "details": "Implement API calls for nutritional analysis of user recipes via Nutrition Analysis API. Extract macro and micronutrient information, diet labels, health labels, and allergen information from API responses. Create data structures to store this information with recipes.",
-            "testStrategy": "Validate that the service returns accurate nutritional data for sample recipes, including all 28+ nutrients, diet labels, health labels, and allergen information."
+            "testStrategy": "Validate that the service returns accurate nutritional data for sample recipes, including all 28+ nutrients, diet labels, health labels, and allergen information.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -798,7 +864,8 @@
               3
             ],
             "details": "Store frequently requested nutritional data and implement mechanisms to respect API rate limits, reducing redundant calls. Ensure cache invalidation when recipes are updated.",
-            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded."
+            "testStrategy": "Simulate repeated and high-frequency requests to ensure caching works and rate limits are not exceeded.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -809,7 +876,8 @@
               4
             ],
             "details": "Ensure the system gracefully handles errors from the API, logs issues for debugging, and provides fallback responses when needed.",
-            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended."
+            "testStrategy": "Force API errors and outages to confirm retries, logging, and fallback mechanisms operate as intended.",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -822,22 +890,26 @@
               5
             ],
             "details": "Modify recipe creation and import processes to trigger nutritional analysis when recipes are created or imported. Store the resulting nutritional data, diet labels, health labels, and allergen information with the recipe in the database.",
-            "testStrategy": "Test the complete workflow of creating and importing recipes to verify nutritional data is automatically calculated and stored correctly."
+            "testStrategy": "Test the complete workflow of creating and importing recipes to verify nutritional data is automatically calculated and stored correctly.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the implementation of diet and health label extraction and storage from Edamam API responses into detailed subtasks, including data modeling, extraction logic, and UI integration."
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Meal Plan Calendar Interface",
         "description": "Create a weekly meal plan calendar with drag-and-drop functionality, real-time macro calculation, and plan persistence.",
         "details": "1. Build responsive calendar grid component\n2. Implement drag-and-drop using Framer Motion with spring physics\n3. Create meal slot component for calendar cells\n4. Build macro calculation service for meal plans\n5. Implement real-time macro updates on plan changes\n6. Create visual indicators for macro balance\n7. Add undo functionality (Ctrl+Z) for drag operations\n8. Implement plan saving to Supabase\n9. Create plan loading from saved plans\n10. Build plan sharing functionality\n11. Implement PDF export for meal plans\n12. Add responsive design for mobile, tablet, and desktop views",
         "testStrategy": "1. Test drag-and-drop functionality\n2. Verify macro calculations update in real-time\n3. Test undo functionality reverts last action\n4. Verify plan saving and loading\n5. Test PDF export generates correct output\n6. Verify responsive layout on different devices\n7. Test plan sharing functionality\n8. Verify visual indicators reflect macro balance accurately",
         "priority": "high",
         "dependencies": [
-          1,
-          2,
-          5,
-          7
+          "1",
+          "2",
+          "5",
+          "7"
         ],
         "status": "pending",
         "subtasks": [
@@ -848,7 +920,8 @@
             "dependencies": [],
             "details": "Focus on intuitive layout, clear navigation, and support for different calendar views (day, week, month).",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -859,7 +932,8 @@
             ],
             "details": "Test and optimize for mobile, tablet, and desktop experiences.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -870,7 +944,8 @@
             ],
             "details": "Allow users to view and interact with meal slots within each day.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -882,7 +957,8 @@
             ],
             "details": "Ensure smooth interactions and visual feedback during drag-and-drop operations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -893,7 +969,8 @@
             ],
             "details": "Display macro totals in each calendar cell and update dynamically as meals are added or changed.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -905,7 +982,8 @@
             ],
             "details": "Utilize state management and, if applicable, real-time backend updates.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -917,7 +995,8 @@
             ],
             "details": "Use visual cues to enhance clarity and help users quickly interpret calendar data.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -929,7 +1008,8 @@
             ],
             "details": "Maintain a history stack for reversible actions and provide an intuitive undo interface.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -938,7 +1018,8 @@
             "dependencies": [],
             "details": "Support both local storage and optional cloud sync for user data.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -947,7 +1028,8 @@
             "dependencies": [],
             "details": "Enhance user experience by preventing confusion during asynchronous operations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -956,7 +1038,8 @@
             "dependencies": [],
             "details": "Implement permission controls and sharing options for collaborative planning.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -965,21 +1048,25 @@
             "dependencies": [],
             "details": "Ensure exported PDFs include all relevant meal, macro, and visual indicator information.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the implementation of the drag-and-drop functionality with Framer Motion into detailed subtasks, including drag source configuration, drop target handling, animation physics, and state management."
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "AI-Powered Meal Plan Generation",
         "description": "Integrate Edamam's Meal Planner API to automate meal plan generation based on user preferences, dietary restrictions, and nutritional targets. Build an interface for user input, source selection, and plan customization, leveraging Edamam's features such as multi-week planning, nutrient personalization, diet/health labels, shopping list generation, and AI Assistant support.",
         "status": "pending",
         "dependencies": [
-          1,
-          2,
-          5,
-          7,
-          8
+          "1",
+          "2",
+          "5",
+          "7",
+          "8"
         ],
         "priority": "high",
         "details": "1. Build user input interface to collect preferences, dietary restrictions, and nutritional targets\n2. Implement source selection (in-house recipes, favorites, Edamam API, or mixed)\n3. Integrate with Edamam Meal Planner API endpoints for meal plan generation\n4. Construct and validate API request payloads based on user input\n5. Handle API responses and display generated meal plans, including up to 2 weeks of planning and 28 nutrients\n6. Display and manage diet/health labels (up to 40 supported by Edamam)\n7. Show automatically generated shopping lists from Edamam\n8. Provide plan adjustment and fine-tuning interface (e.g., swap meals, adjust servings)\n9. Implement plan regeneration for specific days/meals via Edamam API\n10. Add loading states, skeleton UI, and progress tracking (SSE if supported by Edamam)\n11. Implement robust error handling for API failures and invalid responses\n12. Create success/error toast notifications\n13. Enable plan saving and export after generation\n14. Build tolerance checking (±5% of target macros, using Edamam's nutrient data)",
@@ -992,7 +1079,8 @@
             "dependencies": [],
             "details": "Follow Edamam's documentation to set up API access and ensure secure handling of app_id and app_key for all API requests.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1001,7 +1089,8 @@
             "dependencies": [],
             "details": "Ensure the UI supports all Edamam-supported filters, including diet/health labels, calorie/nutrient targets, and meal frequency.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1012,7 +1101,8 @@
             ],
             "details": "Transform frontend data into the format specified in Edamam's Meal Planner API documentation, including all necessary fields.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1024,7 +1114,8 @@
             ],
             "details": "Ensure endpoints handle authentication, input validation, and error propagation from Edamam.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1035,7 +1126,8 @@
             ],
             "details": "Notify users of request status, including loading, partial results, or completion.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1047,7 +1139,8 @@
             ],
             "details": "Display meal plans in a user-friendly format, including recipe links, nutrition breakdowns, and meal timing.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1056,7 +1149,8 @@
             "dependencies": [],
             "details": "Highlight discrepancies and provide feedback if targets are not met.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1068,7 +1162,8 @@
             ],
             "details": "Provide UI controls for plan editing and trigger backend regeneration as required.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1077,7 +1172,8 @@
             "dependencies": [],
             "details": "Support exporting or sharing shopping lists and ensure ingredient deduplication.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1088,7 +1184,8 @@
             ],
             "details": "Implement backend logic to log requests and enforce rate limits or quotas.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1101,7 +1198,8 @@
             ],
             "details": "Display actionable error messages and suggest corrective actions.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -1113,24 +1211,28 @@
             ],
             "details": "Support plan export (PDF, CSV), persistent storage, and AI chat integration for meal plan advice.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the implementation of the AI Assistant integration for meal plan customization into detailed subtasks, including conversation flow design, context management, plan modification commands, and UI integration."
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Shopping List Generation",
         "description": "Create shopping list generation from meal plans with ingredient consolidation, quantity adjustment, and category organization.",
         "details": "1. Build shopping list data model\n2. Implement ingredient extraction from meal plans\n3. Create ingredient consolidation algorithm\n4. Build category-based organization\n5. Implement quantity adjustment interface with debounce\n6. Create real-time macro recalculation on quantity changes\n7. Implement pantry management to exclude owned items\n8. Build PDF export functionality\n9. Create shopping list persistence in Supabase\n10. Implement date-range selection for list generation\n11. Add loading states and error handling\n12. Create responsive design for shopping list view",
         "testStrategy": "1. Test ingredient extraction from various meal plans\n2. Verify consolidation algorithm combines similar ingredients\n3. Test quantity adjustment updates totals correctly\n4. Verify category organization groups items properly\n5. Test PDF export generates correct output\n6. Verify shopping list persistence\n7. Test date-range selection generates correct lists\n8. Verify responsive layout on different devices",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          5,
-          8
+          "1",
+          "2",
+          "5",
+          "8"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -1138,8 +1240,10 @@
             "description": "Design and implement a data model to represent shopping lists, including ingredients, quantities, categories, and metadata such as dates and pantry status.",
             "dependencies": [],
             "details": "Define entities and relationships for ingredients, meal plans, categories, quantities, and user pantry items to support efficient data handling and future extensions.",
-            "status": "pending",
-            "testStrategy": "Unit test data model integrity and CRUD operations; validate schema against sample meal plan inputs."
+            "status": "done",
+            "testStrategy": "Unit test data model integrity and CRUD operations; validate schema against sample meal plan inputs.",
+            "updatedAt": "2025-12-13T12:51:16.561Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1149,8 +1253,10 @@
               1
             ],
             "details": "Create parsers or algorithms to identify and extract ingredients from structured or unstructured meal plan data, ensuring accuracy and completeness.",
-            "status": "pending",
-            "testStrategy": "Test extraction accuracy with diverse meal plan samples; verify correct ingredient identification and quantity capture."
+            "status": "done",
+            "testStrategy": "Test extraction accuracy with diverse meal plan samples; verify correct ingredient identification and quantity capture.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-13T21:49:00.096Z"
           },
           {
             "id": 3,
@@ -1160,8 +1266,10 @@
               2
             ],
             "details": "Implement logic to merge ingredients by name and category, convert units where necessary, and produce a unified list with adjusted quantities.",
-            "status": "pending",
-            "testStrategy": "Validate consolidation with overlapping ingredient sets; test unit conversions and quantity summations."
+            "status": "done",
+            "testStrategy": "Validate consolidation with overlapping ingredient sets; test unit conversions and quantity summations.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-13T22:17:24.277Z"
           },
           {
             "id": 4,
@@ -1171,8 +1279,10 @@
               3
             ],
             "details": "Assign ingredients to predefined categories for better shopping navigation and filter out pantry items to avoid redundant purchases.",
-            "status": "pending",
-            "testStrategy": "Check correct category assignments; verify pantry exclusion logic with sample pantry inventories."
+            "status": "done",
+            "testStrategy": "Check correct category assignments; verify pantry exclusion logic with sample pantry inventories.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-13T22:30:07.190Z"
           },
           {
             "id": 5,
@@ -1183,19 +1293,24 @@
             ],
             "details": "Develop interactive UI components for quantity editing, implement debounce to limit update frequency, and recalculate macros dynamically as quantities change.",
             "status": "pending",
-            "testStrategy": "Perform UI usability testing; verify debounce effectiveness; confirm accurate macro recalculations on quantity changes."
+            "testStrategy": "Perform UI usability testing; verify debounce effectiveness; confirm accurate macro recalculations on quantity changes.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the implementation of shopping list persistence, export functionality, and date-range selection into detailed subtasks, including data modeling, UI components, and integration with the meal plan system.",
+        "updatedAt": "2025-12-13T22:30:07.190Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "One-Click Shopping Automation",
         "description": "Integrate with the Browser-Use cloud API service to automate grocery shopping. The Browser-Use service provides AI agents that handle all browser interactions, including navigating grocery store websites, searching for products, and adding items to shopping carts. The integration should send shopping list data to the Browser-Use API, track progress, and handle responses, including errors and substitutions.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
-          1,
-          2,
-          10
+          "1",
+          "2",
+          "10"
         ],
         "priority": "medium",
         "details": "1. Integrate with Browser-Use cloud API for automated grocery shopping\n2. Create store preference selection interface (to select supported stores for Browser-Use agents)\n3. Build shopping list payload generator for Browser-Use API\n4. Implement endpoint connection to send shopping list and preferences to Browser-Use\n5. Create polling mechanism (every 3s) to fetch status updates from Browser-Use API\n6. Build progress tracking UI with detailed status from Browser-Use responses\n7. Implement error handling for unavailable items as reported by Browser-Use\n8. Create item substitution interface based on Browser-Use suggestions\n9. Build cart completion handler that opens the store URL provided by Browser-Use\n10. Implement partial success handling with skipped items list from Browser-Use\n11. Add loading states and cancel functionality for the shopping process\n12. Create detailed logging for API requests, responses, and errors\n13. Implement retry mechanism for failed API operations",
@@ -1203,125 +1318,83 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "API Setup and Authentication",
-            "description": "Register for a Browser-Use Cloud account, obtain an API key, and configure authentication headers for secure API access.",
+            "title": "Extend Browser-Use Client for Shopping Automation Tasks",
+            "description": "Extend the existing BrowserUseClient class in src/lib/browser-use.ts to support shopping automation tasks, including new interfaces, task request builders, and store-specific configurations.",
             "dependencies": [],
-            "details": "Follow the documentation to create an account and retrieve the API key. Implement secure storage and retrieval of the API key for all API requests.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create ShoppingAutomationRequest interface with store preference, shopping list payload, and user credentials handling. Add startShoppingAutomation() method that builds an intelligent shopping prompt with itemized ingredient list, quantities, and units. Define structured output schema for shopping results including: items found, items not found, substitution suggestions, cart URL, and price totals. Add store configuration interface with supported stores (e.g., Walmart, Instacart, Amazon Fresh) and their domain patterns for allowedDomains parameter. Reuse existing task polling infrastructure (getTaskStatus, cancelTask) from recipe extraction. Add ShoppingAutomationResult interface with cartUrl, foundItems, notFoundItems, substitutions, and totalPrice fields.",
+            "status": "done",
+            "testStrategy": "Unit test the shopping prompt builder with various ingredient lists. Test the structured output schema validation with mock API responses. Verify store configuration mapping works correctly for different store selections.",
+            "updatedAt": "2025-12-14T21:08:05.259Z",
+            "parentId": "undefined"
           },
           {
             "id": 2,
-            "title": "Shopping List Data Transformation",
-            "description": "Transform the user’s shopping list into the format required by the Browser-Use Cloud API for cart automation.",
+            "title": "Create Shopping Automation Server Actions and API Endpoints",
+            "description": "Build server actions and API endpoints for initiating shopping tasks, polling status via SSE, and handling task cancellation following the existing recipe import patterns.",
             "dependencies": [
               1
             ],
-            "details": "Map shopping list items to the expected API payload structure, handling product names, quantities, and any metadata needed for automation.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create src/actions/shopping-automation.ts with startShoppingTask() server action that validates user session, constructs Browser-Use payload from ShoppingListResult, and returns taskId. Create POST /api/shopping/automate endpoint to initiate shopping automation task with store preference and shopping list data. Create GET /api/shopping/automate/status SSE endpoint following the pattern from /api/recipes/import/url/status with 3-second polling interval, progress calculation based on steps, and automatic connection cleanup. Create DELETE /api/shopping/automate/[taskId] endpoint for task cancellation. Implement proper error handling for unavailable items as reported by Browser-Use with categorized error types. Add detailed request/response logging for debugging API interactions.",
+            "status": "done",
+            "testStrategy": "Test SSE endpoint connection and event streaming. Verify status updates are received correctly. Test cancellation flow terminates task and closes connections. Test error handling for various failure scenarios including network errors and API failures.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-14T21:43:38.312Z"
           },
           {
             "id": 3,
-            "title": "Store Selection UI Implementation",
-            "description": "Design and implement a user interface for selecting preferred stores before initiating automation.",
-            "dependencies": [
-              1
-            ],
-            "details": "Provide a list of supported stores, allow users to select one or more, and pass the selection to the automation workflow.",
-            "status": "pending",
-            "testStrategy": ""
+            "title": "Build Store Selection and Shopping Preferences UI",
+            "description": "Create a store preference selection interface allowing users to choose their preferred grocery store from Browser-Use supported stores, with saved preferences and store-specific settings.",
+            "dependencies": [],
+            "details": "Create src/components/shopping/StoreSelector.tsx component with grid of supported store options, using store logos and names. Add store preference persistence in user profile (extend UserProfile Prisma model if needed) or localStorage for quick iteration. Build ShoppingPreferences interface with selectedStore, deliveryPreference (pickup/delivery), and zipCode fields. Create StoreCard subcomponent with store logo, name, availability status, and selection state. Add translations for store names and UI text in en.json, es.json, pl.json. Include loading state while checking store availability. Show which stores support full automation vs partial support. Follow the 'Botanical Precision' design system with warm stone neutrals and green accents.",
+            "status": "done",
+            "testStrategy": "Test store selection UI renders correctly with all store options. Verify preference persistence saves and retrieves correctly. Test accessibility of store selection grid with keyboard navigation. Verify responsive design on mobile devices.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-14T23:00:27.594Z"
           },
           {
             "id": 4,
-            "title": "API Endpoint Integration for Cart Filling",
-            "description": "Integrate with Browser-Use Cloud API endpoints to initiate and manage cart filling tasks based on the transformed shopping list and selected store.",
+            "title": "Implement Shopping Progress Tracking UI with Real-Time Status",
+            "description": "Build a comprehensive progress tracking interface that displays real-time status updates from Browser-Use API during shopping automation, including current action, items processed, and error states.",
             "dependencies": [
               2,
               3
             ],
-            "details": "Use the API to create a browser automation agent, send the shopping list and store data, and start the cart filling process.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create src/components/shopping/ShoppingProgressModal.tsx as a full-screen modal or drawer showing automation progress. Implement useShoppingAutomation custom hook in src/hooks/use-shopping-automation.ts managing SSE connection lifecycle, state updates, and cleanup following the isMountedRef pattern from URLUpload.tsx. Display progress bar with percentage based on items processed. Show current action text from Browser-Use nextGoal field (e.g., 'Searching for chicken breast...', 'Adding to cart...'). Create ShoppingProgressItem component showing each ingredient with status: pending, searching, found, not found, substituted. Add cancel button with confirmation dialog. Implement retry mechanism for failed items with 'Retry Failed Items' button. Show partial success summary with items added vs skipped. Add loading states during connection establishment and between updates.",
+            "status": "done",
+            "testStrategy": "Test SSE connection establishment and event handling. Verify progress updates render correctly in UI. Test cancellation flow closes modal and terminates task. Test partial success display with mixed found/not-found items. Verify cleanup on component unmount prevents memory leaks.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-14T23:12:56.974Z"
           },
           {
             "id": 5,
-            "title": "Status Polling and Progress Tracking",
-            "description": "Implement polling of the API for real-time task status and progress updates, displaying them to the user.",
+            "title": "Build Cart Completion Handler and Substitution Interface",
+            "description": "Create the final step UI for handling shopping automation completion, including cart review link, item substitution interface for unavailable products, and error recovery options.",
             "dependencies": [
               4
             ],
-            "details": "Use the API’s real-time feedback endpoints to fetch and display progress, including live preview URLs if available.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Error and Substitution Handling",
-            "description": "Detect and handle errors or product substitutions during automation, providing user feedback and options.",
-            "dependencies": [
-              5
-            ],
-            "details": "Monitor API responses for errors or substitution events, notify users, and allow them to accept, reject, or modify substitutions.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 7,
-            "title": "Completion Handler Implementation",
-            "description": "Implement logic to handle successful or failed completion of the automation task, including final user notifications.",
-            "dependencies": [],
-            "details": "On task completion, summarize results, handle any remaining actions, and inform the user of the outcome.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 8,
-            "title": "Loading and Cancel Functionality",
-            "description": "Add UI and backend support for loading indicators and task cancellation during automation.",
-            "dependencies": [
-              4
-            ],
-            "details": "Show loading states while tasks are running and provide a cancel button that sends a cancellation request to the API.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 9,
-            "title": "Logging and Audit Trail",
-            "description": "Implement logging of all API interactions, user actions, and automation events for debugging and audit purposes.",
-            "dependencies": [
-              4
-            ],
-            "details": "Store logs securely, including timestamps, API requests/responses, and user decisions on errors or substitutions.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 10,
-            "title": "Retry Mechanisms for Failed Steps",
-            "description": "Develop robust retry logic for failed API calls or automation steps, with configurable retry limits and user notifications.",
-            "dependencies": [
-              6,
-              9
-            ],
-            "details": "Automatically retry transient failures, escalate persistent errors to the user, and log all retry attempts.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "Create src/components/shopping/ShoppingCompletionView.tsx showing automation results summary with success/partial/failure states. Display cart total price if available from Browser-Use response. Add 'Open Cart in Store' button that opens the store URL (provided by Browser-Use) in a new tab for user to complete checkout. Build SubstitutionCard component for each unavailable item showing: original item requested, suggested substitution from Browser-Use, accept/reject buttons, and manual search option. Create SkippedItemsList component showing items that couldn't be added with reasons (out of stock, not found, etc.). Add 'Add Manually' action for skipped items that copies item name to clipboard. Implement 'Start Over' button to restart automation with adjusted list (excluding already-added items). Add success celebration animation (confetti or checkmark) for fully successful automation. Store automation history in database for user reference (optional: create ShoppingAutomationLog Prisma model).",
+            "status": "done",
+            "testStrategy": "Test completion view renders correctly for success, partial, and failure states. Verify 'Open Cart' button opens correct store URL. Test substitution accept/reject updates the UI correctly. Verify skipped items list displays with proper formatting. Test 'Start Over' flow excludes already-added items.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-14T23:12:57.037Z"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "The current 10 subtasks provide comprehensive coverage of the Browser-Use API integration for shopping automation. No additional subtasks are needed at this time.",
+        "updatedAt": "2025-12-14T23:12:57.037Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Settings and Profile Management",
         "description": "Create settings interface for profile editing, family member management, store preferences, and subscription billing through Stripe integration.",
         "details": "1. Build settings page with tabbed interface\n2. Implement profile editing form with validation\n3. Create family member management interface\n4. Build store preference configuration\n5. Implement Stripe billing portal integration\n6. Create subscription management interface\n7. Implement real-time macro recalculation on profile changes\n8. Build theme toggle with persistence\n9. Create language preference management\n10. Implement settings synchronization with Supabase\n11. Add form validation and error handling\n12. Create responsive design for settings interface",
         "testStrategy": "1. Test profile editing updates user data\n2. Verify family member management adds/removes members\n3. Test store preference configuration\n4. Verify Stripe billing portal integration\n5. Test theme toggle persists preference\n6. Verify language preference changes application language\n7. Test settings synchronization with Supabase\n8. Verify form validation prevents invalid inputs",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          3
+          "1",
+          "2",
+          "3"
         ],
         "status": "pending",
         "subtasks": [
@@ -1332,7 +1405,8 @@
             "dependencies": [],
             "details": "The interface should be visually clear, mobile-friendly, and allow users to easily switch between different settings sections.",
             "status": "pending",
-            "testStrategy": "Verify tab navigation works on all devices and that each tab displays the correct content."
+            "testStrategy": "Verify tab navigation works on all devices and that each tab displays the correct content.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1343,7 +1417,8 @@
             ],
             "details": "Forms must validate input such as email, phone, and required fields, providing real-time feedback and clear error messages to users[2][3][4].",
             "status": "pending",
-            "testStrategy": "Test form validation with valid and invalid inputs, ensuring errors are caught and displayed immediately."
+            "testStrategy": "Test form validation with valid and invalid inputs, ensuring errors are caught and displayed immediately.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1354,7 +1429,8 @@
             ],
             "details": "Ensure user selections are saved and persist across sessions, and that changes are reflected immediately in the UI.",
             "status": "pending",
-            "testStrategy": "Change preferences and verify persistence after reload; check UI updates in real time."
+            "testStrategy": "Change preferences and verify persistence after reload; check UI updates in real time.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1365,7 +1441,8 @@
             ],
             "details": "Allow users to view, update, or cancel subscriptions securely through Stripe, and display current subscription status.",
             "status": "pending",
-            "testStrategy": "Simulate subscription changes and verify updates in both the app and Stripe dashboard."
+            "testStrategy": "Simulate subscription changes and verify updates in both the app and Stripe dashboard.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1378,22 +1455,26 @@
             ],
             "details": "Implement robust error handling for sync failures and ensure that profile changes trigger immediate macro recalculation.",
             "status": "pending",
-            "testStrategy": "Change settings and verify data consistency in Supabase; test macro recalculation and error scenarios."
+            "testStrategy": "Change settings and verify data consistency in Supabase; test macro recalculation and error scenarios.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the implementation of Stripe billing portal integration and subscription management into detailed subtasks, including API setup, webhook handling, subscription status display, and payment method management."
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Offline Support and Service Worker",
         "description": "Implement service worker for offline read-only access to saved recipes and meal plans. Create IndexedDB storage and offline UI indicators.",
         "details": "1. Create service worker registration in `app/layout.tsx`\n2. Implement asset caching strategy\n3. Build IndexedDB storage for recipes and meal plans\n4. Create data synchronization between Supabase and IndexedDB\n5. Implement offline detection\n6. Build offline banner component\n7. Create read-only mode for offline access\n8. Implement queue for pending changes when offline\n9. Build sync mechanism for when connection is restored\n10. Add error handling for failed synchronization\n11. Create offline-first data fetching strategy\n12. Implement graceful degradation for unavailable features",
         "testStrategy": "1. Test service worker installation and activation\n2. Verify asset caching works correctly\n3. Test IndexedDB storage and retrieval\n4. Verify offline detection shows banner\n5. Test read-only mode disables editing\n6. Verify sync mechanism processes pending changes\n7. Test offline-first data fetching\n8. Verify graceful degradation for unavailable features",
         "priority": "low",
         "dependencies": [
-          1,
-          2,
-          5,
-          8
+          "1",
+          "2",
+          "5",
+          "8"
         ],
         "status": "pending",
         "subtasks": [
@@ -1404,7 +1485,8 @@
             "dependencies": [],
             "details": "Add registration logic in the main JavaScript entry point. Handle registration success and failure with appropriate logging.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1415,7 +1497,8 @@
             ],
             "details": "Implement event listeners for 'install' and 'activate' events in the service worker file.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1426,7 +1509,8 @@
             ],
             "details": "Use the Cache Storage API to store HTML, CSS, JS, images, and initial data payloads.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1437,7 +1521,8 @@
             ],
             "details": "Implement fetch event handler to prioritize cache, then network, and update cache as needed.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1448,7 +1533,8 @@
             ],
             "details": "Create and manage an IndexedDB database for storing application data that needs to be available offline.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1457,7 +1543,8 @@
             "dependencies": [],
             "details": "Use the Navigator API and listen for 'online' and 'offline' events to track connectivity status.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1466,7 +1553,8 @@
             "dependencies": [],
             "details": "Show banners, icons, or notifications when offline or reconnecting, and update them dynamically.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1478,7 +1566,8 @@
             ],
             "details": "Disable or hide features that require connectivity, and provide user feedback about limitations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1490,7 +1579,8 @@
             ],
             "details": "Store queued actions in IndexedDB or local storage, ensuring they persist across reloads.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1502,7 +1592,8 @@
             ],
             "details": "Listen for 'online' events and attempt to replay queued actions, handling conflicts and errors.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1515,7 +1606,8 @@
             ],
             "details": "Provide user feedback on errors, retry mechanisms, and fallback strategies for failed operations.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -1530,24 +1622,28 @@
             ],
             "details": "Detect lack of support and provide alternative flows or messaging to maintain a baseline user experience.",
             "status": "pending",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "The current 12 subtasks provide comprehensive coverage of the offline support implementation. No additional subtasks are needed at this time."
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Accessibility Implementation",
         "description": "Ensure WCAG 2.1 AA compliance with proper ARIA attributes, keyboard navigation, focus management, and screen reader support.",
         "status": "pending",
         "dependencies": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          8,
-          10,
-          12
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "8",
+          "10",
+          "12"
         ],
         "priority": "high",
         "details": "1. Audit all components for accessibility issues\n2. Implement proper ARIA attributes on interactive elements\n3. Create focus management system\n4. Build skip-to-main link\n5. Implement keyboard navigation for all interactive components\n6. Create high-contrast mode toggle\n7. Build live regions for status updates\n8. Implement proper heading hierarchy\n9. Create accessible form labels and error messages\n10. Build focus rings for keyboard navigation\n11. Implement proper alt text for images\n12. Create screen reader announcements for dynamic content",
@@ -1560,7 +1656,8 @@
             "status": "pending",
             "dependencies": [],
             "details": "Use automated tools and manual testing, including assistive technology, to document issues related to navigation, labeling, contrast, and dynamic content.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1571,7 +1668,8 @@
               1
             ],
             "details": "Ensure all interactive elements and dynamic regions are properly described for screen readers and other AT.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1582,7 +1680,8 @@
               1
             ],
             "details": "Test navigation using only the keyboard and address any focus traps or inaccessible controls.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1593,7 +1692,8 @@
               3
             ],
             "details": "Ensure focus is programmatically set after dynamic updates and that users never lose track of their position.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1604,7 +1704,8 @@
               3
             ],
             "details": "Ensure skip links are visible on focus and function correctly with keyboard navigation.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1615,7 +1716,8 @@
               1
             ],
             "details": "Test with system high-contrast settings and verify all content remains readable and usable.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1626,7 +1728,8 @@
               2
             ],
             "details": "Mark notifications, alerts, and other dynamic updates with appropriate ARIA live attributes.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1637,7 +1740,8 @@
               1
             ],
             "details": "Ensure headings are not skipped and reflect the document structure accurately.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1648,7 +1752,8 @@
               1
             ],
             "details": "Use <label> elements or ARIA labeling techniques as appropriate.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1659,7 +1764,8 @@
               4
             ],
             "details": "Test across browsers and platforms to confirm consistent focus visibility.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1670,7 +1776,8 @@
               1
             ],
             "details": "Review all images and ensure alt attributes are present and contextually accurate.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -1679,7 +1786,8 @@
             "status": "pending",
             "dependencies": [],
             "details": "Test with multiple screen readers to verify announcements are timely and clear.",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 13,
@@ -1692,25 +1800,29 @@
               12
             ],
             "details": "1. Ensure loading states during Browser Use API calls are properly announced to screen readers\n2. Implement accessible error messages for failed scraping attempts\n3. Add proper ARIA attributes to progress indicators during scraping\n4. Ensure keyboard focus is managed appropriately during the scraping process\n5. Test the entire URL scraping workflow with screen readers and keyboard navigation",
-            "testStrategy": "1. Test the URL scraping process with screen readers to verify announcements\n2. Verify keyboard navigation works during the scraping process\n3. Ensure error states are properly communicated to assistive technologies\n4. Test focus management during and after scraping operations"
+            "testStrategy": "1. Test the URL scraping process with screen readers to verify announcements\n2. Verify keyboard navigation works during the scraping process\n3. Ensure error states are properly communicated to assistive technologies\n4. Test focus management during and after scraping operations",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "The current 13 subtasks provide comprehensive coverage of the accessibility implementation. No additional subtasks are needed at this time."
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Performance Optimization and Analytics",
         "description": "Optimize application performance with code splitting, lazy loading, and implement Plausible analytics for tracking user journeys and conversion funnels.",
         "details": "1. Implement code splitting for large components\n2. Create lazy loading for non-critical components\n3. Optimize image loading with next/image\n4. Implement Plausible analytics\n5. Create custom events for user journey tracking\n6. Build conversion funnel tracking (plan→cart)\n7. Implement performance monitoring\n8. Create error boundary components\n9. Build retry mechanisms for failed requests\n10. Implement skeleton loaders for all data-dependent components\n11. Create toast notification system\n12. Optimize bundle size to keep main chunk ≤ 200 kB",
         "testStrategy": "1. Measure bundle size with `next build`\n2. Test code splitting reduces initial load size\n3. Verify lazy loading defers non-critical components\n4. Test Plausible events fire correctly\n5. Verify error boundaries catch and display errors\n6. Test retry mechanisms recover from failures\n7. Verify skeleton loaders display during data fetching\n8. Test toast notifications for various states",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          5,
-          8,
-          9,
-          10,
-          11
+          "1",
+          "2",
+          "5",
+          "8",
+          "9",
+          "10",
+          "11"
         ],
         "status": "pending",
         "subtasks": [
@@ -1721,7 +1833,8 @@
             "dependencies": [],
             "details": "Identify large components and routes that can be split, use dynamic import() and React.lazy to load them only when needed, and ensure critical components remain in the main bundle for optimal user experience.",
             "status": "pending",
-            "testStrategy": "Verify that code chunks are generated as expected, initial bundle size is reduced, and all split components load correctly during navigation."
+            "testStrategy": "Verify that code chunks are generated as expected, initial bundle size is reduced, and all split components load correctly during navigation.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1732,7 +1845,8 @@
             ],
             "details": "Identify non-critical components (e.g., modals, secondary widgets) and implement React.lazy and Suspense to load them on demand, ensuring that essential UI remains unaffected.",
             "status": "pending",
-            "testStrategy": "Check that non-critical components are not included in the initial bundle and load seamlessly when triggered by user interaction."
+            "testStrategy": "Check that non-critical components are not included in the initial bundle and load seamlessly when triggered by user interaction.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1741,7 +1855,8 @@
             "dependencies": [],
             "details": "Install and configure Plausible analytics, ensuring privacy compliance and accurate event tracking across the application.",
             "status": "pending",
-            "testStrategy": "Validate that analytics events are sent to Plausible, user journeys are tracked, and conversion funnel data is accurately recorded."
+            "testStrategy": "Validate that analytics events are sent to Plausible, user journeys are tracked, and conversion funnel data is accurately recorded.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1752,7 +1867,8 @@
             ],
             "details": "Map out the user journey and conversion funnel steps, implement event triggers in the codebase, and ensure events are sent to Plausible for analysis.",
             "status": "pending",
-            "testStrategy": "Simulate user flows and confirm that all custom events are logged correctly in Plausible analytics."
+            "testStrategy": "Simulate user flows and confirm that all custom events are logged correctly in Plausible analytics.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1764,18 +1880,22 @@
             ],
             "details": "Use build tools and performance monitoring solutions (e.g., Lighthouse, Webpack Bundle Analyzer) to track bundle size and loading metrics, making further adjustments as needed.",
             "status": "pending",
-            "testStrategy": "Run performance audits before and after optimizations, verify main chunk size, and ensure no regressions in user experience."
+            "testStrategy": "Run performance audits before and after optimizations, verify main chunk size, and ensure no regressions in user experience.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the implementation of error boundary components and retry mechanisms into detailed subtasks, including component design, error capturing, retry logic, and user feedback."
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Fix Google OAuth Sign-In Integration",
         "description": "Resolve the redirect_uri_mismatch error in Google OAuth sign-in by configuring Google Cloud Console OAuth settings to match the NextAuth callback URL and ensuring proper user creation flow for Google-authenticated users.",
         "status": "done",
         "dependencies": [
-          1,
-          3
+          "1",
+          "3"
         ],
         "priority": "medium",
         "details": "1. Diagnose the current redirect_uri_mismatch error by checking logs and authentication flow\n2. Access Google Cloud Console and navigate to the project's OAuth consent screen\n3. Verify and update the authorized JavaScript origins to match the application's domain(s)\n4. Configure authorized redirect URIs to include the correct NextAuth callback URL: http://localhost:3000/api/auth/callback/google\n5. Add production/staging URLs to Google Cloud Console for deployment environments\n6. Update environment variables with correct Google OAuth client ID and secret\n7. Verify the NextAuth configuration in src/app/api/auth/[...nextauth]/route.ts is properly set up\n8. Confirm NEXTAUTH_URL environment variable is set to http://localhost:3000 for development\n9. Validate the user creation flow in signIn callback:\n   - Check if user exists in database after successful Google authentication\n   - If not, create new user record with data from Google profile\n   - Map Google profile fields to user database schema\n   - Set appropriate default values for required fields not provided by Google\n10. Verify JWT and session handling configuration\n11. Add error handling for OAuth failures with descriptive error messages\n12. Create proper sign-out flow that handles both local and Google sessions\n13. Add logging for OAuth process to facilitate debugging\n14. Update frontend components to properly handle Google authentication state",
@@ -1788,7 +1908,8 @@
             "status": "done",
             "dependencies": [],
             "details": "",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1797,7 +1918,8 @@
             "status": "done",
             "dependencies": [],
             "details": "",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1806,7 +1928,8 @@
             "status": "done",
             "dependencies": [],
             "details": "",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1815,21 +1938,22 @@
             "status": "done",
             "dependencies": [],
             "details": "",
-            "testStrategy": ""
+            "testStrategy": "",
+            "parentId": "undefined"
           }
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Header Navigation System Implementation",
         "description": "Create a comprehensive header navigation system for DietaiBest that integrates with authentication, internationalization, and routing architecture, providing different navigation options based on user authentication status.",
         "details": "1. Create a responsive header component structure:\n   - Create `components/navigation/Header.tsx` as a server component\n   - Implement `components/navigation/MobileMenu.tsx` for small screens\n   - Build `components/navigation/UserDropdown.tsx` for authenticated users\n   - Develop `components/navigation/MainNav.tsx` for primary navigation links\n\n2. Implement authentication-aware navigation:\n   - Use existing `useAuth` hook to determine user authentication status\n   - Create conditional rendering logic for authenticated vs guest navigation options\n   - Implement user profile dropdown with avatar and account management options\n   - Add sign in/sign up CTAs for unauthenticated users\n\n3. Integrate with existing internationalization:\n   - Import and use the LanguageSwitcher component\n   - Ensure all navigation labels use next-intl translation keys\n   - Add translations for all navigation items in locale files\n\n4. Implement responsive design:\n   - Create mobile-first layout with hamburger menu for small screens\n   - Use ShadCN UI Sheet component for mobile navigation drawer\n   - Implement collapsible sections for nested navigation\n   - Ensure proper z-index management for dropdowns and overlays\n\n5. Build navigation structure:\n   - Add routes to Dashboard, Recipes, Meal Plans, Shopping Lists\n   - Implement NavigationMenu component from ShadCN UI\n   - Create hover states and active indicators for current route\n   - Add proper aria attributes for accessibility\n\n6. Modify layout structure:\n   - Update `app/[locale]/layout.tsx` to include the header component\n   - Ensure header is positioned correctly with proper z-index\n   - Implement sticky header behavior with smooth scroll effects\n\n7. Implement TypeScript integration:\n   - Create navigation item type definitions in `types/navigation.ts`\n   - Add proper typing for all component props\n   - Ensure type safety for authentication-dependent UI elements\n\n8. Ensure accessibility compliance:\n   - Add proper ARIA roles and attributes\n   - Implement keyboard navigation support\n   - Ensure focus management for dropdowns and mobile menu\n   - Test with screen readers for proper announcements",
         "testStrategy": "1. Test responsive behavior:\n   - Verify header collapses to hamburger menu on mobile devices\n   - Test mobile menu opens and closes correctly\n   - Ensure dropdowns position correctly at all viewport sizes\n   - Verify z-index management prevents overlay issues\n\n2. Test authentication-aware navigation:\n   - Verify authenticated users see profile dropdown and appropriate navigation\n   - Confirm unauthenticated users see sign in/sign up buttons\n   - Test user dropdown opens and displays correct account options\n   - Verify navigation updates immediately after authentication state changes\n\n3. Test internationalization:\n   - Verify all navigation labels display in the selected language\n   - Test language switcher works correctly within the header\n   - Ensure RTL language support functions properly\n   - Verify translations are complete for all navigation items\n\n4. Test accessibility:\n   - Verify keyboard navigation works for all menu items\n   - Test screen reader announces navigation items correctly\n   - Ensure focus indicators are visible for keyboard users\n   - Verify ARIA attributes are correctly implemented\n\n5. Test integration with routing:\n   - Verify active state indicators show current route\n   - Test navigation links direct to correct routes\n   - Ensure route changes update header state appropriately\n   - Verify protected routes handle authentication correctly\n\n6. Cross-browser testing:\n   - Test in Chrome, Firefox, Safari, and Edge\n   - Verify mobile functionality on iOS and Android\n   - Ensure consistent appearance across browsers",
         "status": "pending",
         "dependencies": [
-          1,
-          2,
-          3
+          "1",
+          "2",
+          "3"
         ],
         "priority": "high",
         "subtasks": [
@@ -1840,7 +1964,8 @@
             "dependencies": [],
             "details": "Create `components/navigation/Header.tsx` as a server component. Define the component structure with appropriate props interface. Include placeholder sections for logo, main navigation, language switcher, and authentication controls. Set up responsive container with proper styling using Tailwind CSS.",
             "status": "done",
-            "testStrategy": "Verify component renders without errors and has proper structure for child components."
+            "testStrategy": "Verify component renders without errors and has proper structure for child components.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1851,7 +1976,8 @@
             ],
             "details": "Develop `components/navigation/MainNav.tsx` component. Create a navigation item type definition in `types/navigation.ts`. Implement NavigationMenu from ShadCN UI. Add routes to Dashboard, Recipes, Meal Plans, and Shopping Lists. Include active state indicators for current route. Ensure proper aria attributes for accessibility.",
             "status": "pending",
-            "testStrategy": "Test navigation links with correct routing and active state indicators."
+            "testStrategy": "Test navigation links with correct routing and active state indicators.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1862,7 +1988,8 @@
             ],
             "details": "Build `components/navigation/UserDropdown.tsx` component. Use ShadCN UI DropdownMenu component. Include user avatar display. Add menu items for profile, settings, and logout. Implement proper focus management. Ensure keyboard navigation support.",
             "status": "done",
-            "testStrategy": "Test dropdown opens/closes correctly and all menu items function properly."
+            "testStrategy": "Test dropdown opens/closes correctly and all menu items function properly.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1873,7 +2000,8 @@
             ],
             "details": "Implement `components/navigation/MobileMenu.tsx`. Use ShadCN UI Sheet component for slide-out drawer. Create hamburger menu toggle button. Implement collapsible sections for nested navigation. Ensure proper z-index management. Add smooth animations for opening/closing.",
             "status": "done",
-            "testStrategy": "Test mobile menu on various screen sizes and verify all navigation options are accessible."
+            "testStrategy": "Test mobile menu on various screen sizes and verify all navigation options are accessible.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1886,7 +2014,8 @@
             ],
             "details": "Import and use the existing `useAuth` hook to determine user authentication status. Implement conditional rendering logic in Header component. Show UserDropdown for authenticated users. Display sign in/sign up buttons for unauthenticated users. Ensure proper type safety for authentication-dependent UI elements.\n<info added on 2025-06-30T22:17:20.585Z>\n✅ **IMPLEMENTATION COMPLETED** - Authentication Status Integration\n\n**Achievement**: Successfully connected header navigation with authentication system to show different options based on user status.\n\n**Files Created/Modified**:\n- ✅ `src/components/navigation/AuthControls.tsx` - New client component for authentication-aware controls\n- ✅ `src/components/navigation/Header.tsx` - Updated to integrate AuthControls component\n\n**Features Implemented**:\n- ✅ **Conditional Rendering**: Shows UserDropdown for authenticated users, sign-in/sign-up buttons for unauthenticated users\n- ✅ **Loading States**: Proper skeleton loading while checking authentication status\n- ✅ **Responsive Design**: Full version for desktop, compact version for mobile menu\n- ✅ **Type Safety**: Complete TypeScript integration with proper prop interfaces\n- ✅ **Internationalization**: Uses existing translation keys for sign-in/sign-up buttons\n- ✅ **Accessibility**: Proper ARIA labels and semantic HTML structure\n- ✅ **Integration**: Seamless integration with existing useAuth hook and UserDropdown component\n\n**Technical Achievements**:\n- ✅ **Server/Client Component Architecture**: Maintained Header as server component while adding client-side auth logic\n- ✅ **Suspense Integration**: Proper fallback loading states for authentication checks\n- ✅ **UserDropdown Integration**: Leveraged existing UserDropdown component for authenticated users\n- ✅ **Mobile Support**: Added compact AuthControls to mobile menu section\n- ✅ **Translation Support**: Utilized existing auth translation keys for consistent UX\n\n**Testing Verification Needed**:\n- Authentication state changes update navigation immediately\n- UserDropdown displays correctly for authenticated users\n- Sign-in/Sign-up buttons work for unauthenticated users\n- Loading states display properly during authentication checks\n- Mobile menu shows compact authentication controls\n\n**Next Ready**: Task 17.6 - Implement Internationalization for Navigation (all translation keys already exist)\n</info added on 2025-06-30T22:17:20.585Z>",
             "status": "done",
-            "testStrategy": "Test both authenticated and unauthenticated states to verify correct UI elements are displayed."
+            "testStrategy": "Test both authenticated and unauthenticated states to verify correct UI elements are displayed.",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1899,7 +2028,8 @@
             ],
             "details": "Import and integrate the LanguageSwitcher component. Replace all hardcoded text with next-intl translation keys. Add translations for all navigation items in locale files (en.json, etc.). Ensure proper fallback for missing translations.\n<info added on 2025-06-30T22:20:58.039Z>\n✅ **IMPLEMENTATION COMPLETED** - Internationalization Support for Navigation\n\n**Achievement**: Successfully implemented full internationalization for all navigation text and labels.\n\n**Changes Made**:\n- ✅ **Header Component Conversion**: Changed from server to client component to support useTranslations hook\n- ✅ **Mobile Menu Translation**: Added translation support for mobile menu button using `navigation.mobileMenu.openMenu` key\n- ✅ **Complete Translation Coverage**: All navigation components now use next-intl translation keys\n- ✅ **Existing Integration Verified**: LanguageSwitcher, MainNav, AuthControls, and UserDropdown all properly internationalized\n\n**Translation Integration Status**:\n- ✅ **MainNav Component**: Uses `navigation` namespace for dashboard, recipes, mealPlans, shopping\n- ✅ **AuthControls Component**: Uses `auth` namespace for signIn, signUp buttons\n- ✅ **UserDropdown Component**: Uses `navigation.userMenu` namespace for account options\n- ✅ **LanguageSwitcher**: Already integrated and working in both desktop and mobile layouts\n- ✅ **Mobile Menu Button**: Now uses `navigation.mobileMenu.openMenu` translation key\n\n**Technical Implementation**:\n- ✅ **Client Component**: Header converted to support useTranslations hook\n- ✅ **Translation Keys**: All hardcoded text replaced with proper translation keys\n- ✅ **Fallback Support**: next-intl provides automatic fallback for missing translations\n- ✅ **Multi-language Ready**: English, Spanish, and Polish translations already exist\n\n**Translation Coverage Confirmed**:\n- Dashboard, Recipes, Meal Plans, Shopping navigation items\n- Sign In, Sign Up authentication buttons  \n- User menu options (Profile, Settings, Sign Out)\n- Mobile menu controls (Open Menu, Language switcher)\n\nTask 17.6 is now fully complete with comprehensive internationalization support.\n</info added on 2025-06-30T22:20:58.039Z>",
             "status": "done",
-            "testStrategy": "Test language switching and verify all navigation text changes appropriately."
+            "testStrategy": "Test language switching and verify all navigation text changes appropriately.",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1913,7 +2043,8 @@
             ],
             "details": "Implement responsive layout using Tailwind CSS breakpoints. Show/hide appropriate components based on screen size. Create smooth transitions between desktop and mobile views. Test and adjust layout for common device sizes. Ensure no horizontal overflow on small screens.\n<info added on 2025-06-30T22:23:36.558Z>\n**IMPLEMENTATION COMPLETED** - Responsive Design for Header\n\n**Achievement**: Successfully enhanced header responsive design with comprehensive breakpoint management, smooth transitions, and optimized layouts for all screen sizes.\n\n**Responsive Design Improvements**:\n\n**1. Enhanced Breakpoint Strategy**:\n- **Desktop (lg+)**: Full navigation menu centered with auth controls\n- **Tablet (md-lg)**: Compact auth controls, hidden main nav, shown mobile toggle\n- **Mobile (sm)**: Brand name visible, language switcher shown, mobile-first design\n- **Extra Small (<sm)**: Ultra-compact layout, essential elements only\n\n**2. Smooth Transitions & Animations**:\n- **Transition Effects**: Added `transition-all duration-200` for smooth state changes\n- **Backdrop Blur**: Enhanced sticky header with `backdrop-blur-sm` and progressive enhancement\n- **Interactive States**: Improved hover and focus transitions for all clickable elements\n- **Progressive Enhancement**: Support detection for backdrop-filter with fallbacks\n\n**3. Layout Optimizations**:\n- **Flexible Container**: Max-width constraints with `max-w-7xl` and responsive padding\n- **Overflow Prevention**: Added `overflow-hidden` and `min-w-0` to prevent horizontal scroll\n- **Responsive Heights**: Progressive header height (h-14 sm:h-16) for different screen sizes\n- **Flex Layout**: Proper flex behavior with `flex-1`, `flex-shrink-0`, and `min-w-0`\n\n**4. Component-Specific Responsive Features**:\n- **Logo Section**: Responsive sizing (w-7 h-7 sm:w-8 sm:h-8) with truncation support\n- **Main Navigation**: Centered layout with proper constraints and flex behavior\n- **Auth Controls**: Tablet-specific layout (md:flex lg:hidden) for intermediate screen sizes\n- **Mobile Menu**: Enhanced spacing and backdrop effects with proper typography\n\n**5. Progressive Spacing & Sizing**:\n- **Responsive Padding**: `px-3 sm:px-4 md:px-6 lg:px-8` for container\n- **Element Spacing**: Progressive spacing `space-x-2 sm:space-x-3 md:space-x-4`\n- **Icon Sizing**: Responsive icons `h-5 w-5 sm:h-6 sm:w-6` for different contexts\n- **Button Padding**: Adaptive padding `p-1.5 sm:p-2` for touch targets\n\n**6. Mobile Menu Enhancements**:\n- **Improved Layout**: Better spacing with `space-y-4` and sectioned organization\n- **Backdrop Effects**: Consistent backdrop blur and background transparency\n- **Progressive Disclosure**: Language switcher hidden on smallest screens (sm:hidden)\n- **Visual Hierarchy**: Clear section divisions with borders and typography\n\n**Technical Implementation**:\n- **No Horizontal Overflow**: Comprehensive overflow prevention on all screen sizes\n- **Smooth Breakpoint Transitions**: Seamless component visibility changes\n- **Performance Optimized**: Efficient CSS with minimal layout shifts\n- **Accessibility Maintained**: Proper touch targets and focus management across all breakpoints\n\n**Testing Coverage**:\n- **Breakpoint Testing**: 320px to 1920px+ screen width coverage\n- **Layout Stability**: No horizontal scroll or layout breaks on any device\n- **Interactive States**: All hover, focus, and active states work on different screen sizes\n- **Mobile Menu**: Proper functionality and layout on touch devices\n</info added on 2025-06-30T22:23:36.558Z>",
             "status": "done",
-            "testStrategy": "Test on multiple screen sizes and verify correct component visibility and layout."
+            "testStrategy": "Test on multiple screen sizes and verify correct component visibility and layout.",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1926,7 +2057,8 @@
             ],
             "details": "Add proper tabIndex attributes to all interactive elements. Implement keyboard shortcuts for common actions. Ensure focus trapping in dropdowns and mobile menu. Add visible focus indicators. Test tab order for logical navigation flow.",
             "status": "done",
-            "testStrategy": "Test complete navigation using only keyboard to verify all functions are accessible."
+            "testStrategy": "Test complete navigation using only keyboard to verify all functions are accessible.",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1940,7 +2072,8 @@
             ],
             "details": "Add aria-label, aria-expanded, aria-controls attributes where appropriate. Implement aria-current for active navigation items. Add proper role attributes to navigation elements. Ensure screen reader announcements for dynamic content changes. Add aria-hidden to decorative elements.",
             "status": "done",
-            "testStrategy": "Test with screen readers to verify proper announcements and navigation."
+            "testStrategy": "Test with screen readers to verify proper announcements and navigation.",
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1952,7 +2085,8 @@
             ],
             "details": "Update `app/[locale]/layout.tsx` to include the Header component. Implement sticky header behavior with smooth scroll effects. Ensure proper z-index management. Add appropriate spacing between header and main content. Handle potential layout shifts during navigation.\n<info added on 2025-06-30T23:29:07.573Z>\n✅ **INTEGRATION COMPLETED** - Header Successfully Integrated with Layout\n\n**Files Modified**:\n- `src/app/[locale]/layout.tsx` - Successfully integrated Header component replacing standalone language switcher\n\n**Implementation Details**:\n- ✅ **Header Integration**: Added Header component import and placement in layout\n- ✅ **Semantic Structure**: Implemented proper `main` element with `id=\"main-content\"` for accessibility  \n- ✅ **Sticky Behavior**: Header positioned with sticky behavior and backdrop blur effects\n- ✅ **Layout Spacing**: Proper flex layout with `flex-1` and `relative` positioning for main content\n- ✅ **Z-index Management**: Ensured proper layering without conflicts\n- ✅ **Accessibility**: Added proper ARIA attributes and semantic HTML structure\n\n**Key Features Achieved**:\n- Header appears on all pages with consistent positioning\n- Sticky header behavior with smooth backdrop blur effects  \n- Proper semantic structure for screen readers\n- No layout shifts or positioning issues\n- Integration maintains existing responsive design patterns\n\n**Testing Verified**:\n- Header displays correctly across all page routes\n- Sticky positioning works during scroll\n- No layout conflicts or z-index issues\n- Accessibility compliance maintained\n- Responsive behavior preserved across breakpoints\n</info added on 2025-06-30T23:29:07.573Z>",
             "status": "done",
-            "testStrategy": "Verify header appears correctly on all pages and maintains position during scrolling."
+            "testStrategy": "Verify header appears correctly on all pages and maintains position during scrolling.",
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1966,7 +2100,8 @@
             ],
             "details": "Implement hover effects for navigation items using Tailwind CSS. Add transition animations for smooth state changes. Create active indicators for current route. Ensure sufficient color contrast for all states. Implement loading states for asynchronous actions.",
             "status": "pending",
-            "testStrategy": "Test all interactive elements to verify proper visual feedback for all states."
+            "testStrategy": "Test all interactive elements to verify proper visual feedback for all states.",
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -1983,7 +2118,8 @@
             ],
             "details": "Test integration with authentication system. Verify internationalization works correctly. Test responsive behavior across device sizes. Validate accessibility compliance. Check performance for animations and transitions. Ensure consistent behavior across browsers. Document any edge cases or known limitations.",
             "status": "pending",
-            "testStrategy": "Create a test matrix covering all features, states, and device sizes to ensure complete coverage."
+            "testStrategy": "Create a test matrix covering all features, states, and device sizes to ensure complete coverage.",
+            "parentId": "undefined"
           },
           {
             "id": 13,
@@ -1994,12 +2130,16 @@
             "dependencies": [
               "17.10"
             ],
-            "parentTaskId": 17
+            "parentTaskId": 17,
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 0,
+        "expansionPrompt": "The current 13 subtasks provide comprehensive coverage of the header navigation implementation. No additional subtasks are needed at this time."
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "USDA-Powered Nutrition Calculator Implementation",
         "description": "Build a complete USDA FoodData Central-powered nutrition calculator that parses recipe ingredients, searches USDA FDC, resolves portions to grams, computes accurate macros, and caches results in Supabase for performance.",
         "details": "Implement a production-ready nutrition calculator with the following key features:\n- Parse free-text recipe ingredients into {name, qty, unit}\n- Search USDA FDC and pick best food match per ingredient (Foundation > FNDDS > SR Legacy > Branded)\n- Resolve household measures (foodPortions[]) to grams with fallback to brand serving or density\n- Compute accurate macros (kcal, protein, fat, carbs, fiber) per ingredient, sum totals and per-serving\n- Cache FDC food details in Supabase to minimize API calls and improve speed\n- All FDC calls must be server-side only (never from browser)\n- Include type safety, error handling, tests, and inline documentation\n\nTechnical Stack:\n- Next.js 15 (App Router) with React 18 + TypeScript 5\n- Prisma ORM connected to Supabase Postgres\n- ShadCN UI + Tailwind CSS\n- Bun runtime & package manager\n- USDA_API_KEY already set in server environment\n\nData Type Priority: Foundation > FNDDS > SR Legacy > Branded (unless brand specified)\nTTL Strategy: Foundation/FNDDS/SR = 180 days, Branded = 30 days",
@@ -2015,7 +2155,8 @@
             "details": "Add the following models to prisma/schema.prisma:\n\n```prisma\nmodel FdcCache {\n  fdcId          Int       @id\n  description    String\n  dataType       String\n  brandOwner     String?   @db.VarChar(255)\n  foodPortions   Json?     // from FDC\n  foodNutrients  Json?     // from FDC (abridged or full)\n  labelNutrients Json?     // Branded foods per serving info if present\n  lastFetchedAt  DateTime  @default(now())\n\n  @@index([dataType])\n  @@index([description])\n}\n\nmodel Recipe {\n  id          String   @id @default(cuid())\n  title       String\n  servings    Int      @default(1)\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n  ingredients RecipeIngredient[]\n}\n\nmodel RecipeIngredient {\n  id            String  @id @default(cuid())\n  recipeId      String\n  originalText  String\n  nameNorm      String\n  qty           Float\n  unit          String\n  fdcId         Int?\n  gramWeight    Float?   // resolved grams for ONE unit\n  confidence    Float?   // 0..1\n  debugJson     Json?\n\n  recipe        Recipe   @relation(fields: [recipeId], references: [id])\n\n  @@index([recipeId])\n  @@index([nameNorm])\n}\n```\n\nAfter adding models, run:\n```bash\nbunx prisma generate\nbunx prisma migrate dev --name add_fdc_nutrition\n```",
             "status": "done",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -2026,7 +2167,8 @@
             "dependencies": [
               1
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -2038,7 +2180,8 @@
               1,
               2
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -2047,7 +2190,8 @@
             "details": "Create src/lib/ingredients.ts with complete implementation including:\n\nParsedIngredient Type:\n- original: string\n- name: string (normalized)\n- qty: number\n- unit: string (normalized)\n\nConstants:\n- FRACTIONS map (½, ¼, ¾, ⅓, ⅔, ⅛)\n- UNIT_ALIASES map (grams→g, cup→cup, tablespoon→tbsp, etc.)\n- STATE_WORDS array (chopped, diced, minced, boiled, cooked, raw, etc.)\n- SYNONYMS map (aubergine→eggplant, courgette→zucchini, etc.)\n- DENSITY_FALLBACK_G_PER_UNIT map (onion:cup→160, rice cooked:cup→158, etc.)\n\nFunctions:\n- toNumber(): Parse \"1 1/2\" or \"1½\" to 1.5\n- normalizeUnit(): Convert unit variations to standard forms\n- parseIngredientLine(): Main parser with regex patterns\n\nParsing Logic:\n1. Try pattern: \"<qty> <unit> <name...>\"\n2. Fallback to: \"<name...> <qty> <unit>\"\n3. Strip state words from name\n4. Apply synonym substitutions\n5. Normalize to lowercase\n6. Return ParsedIngredient object\n\nHandle edge cases:\n- Fractions and decimals\n- Missing units (default to \"piece\")\n- Various spacing formats\n- Plural forms",
             "status": "done",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -2060,7 +2204,8 @@
               3,
               4
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -2071,7 +2216,8 @@
             "dependencies": [
               2
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -2082,7 +2228,8 @@
             "dependencies": [
               5
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -2091,7 +2238,8 @@
             "details": "Create or verify src/lib/prisma.ts exists with:\n\n```typescript\nimport { PrismaClient } from \"@prisma/client\";\n\ndeclare global {\n  // allow global `var` declarations\n  // eslint-disable-next-line no-var\n  var prisma: PrismaClient | undefined;\n}\n\nexport const prisma = globalThis.prisma ?? new PrismaClient();\n\nif (process.env.NODE_ENV !== \"production\") globalThis.prisma = prisma;\n```\n\nPurpose:\n- Prevents multiple Prisma client instances in development (hot reload)\n- Single instance in production for connection pooling\n- Accessible throughout server-side code\n\nVerification:\n- Check if similar pattern already exists in project\n- Ensure all server actions import from this singleton\n- Verify Supabase connection string in .env\n- Test with a simple Prisma query\n\nIf the project already has a Prisma singleton in a different location (e.g., @/server/prisma), use that instead and update imports in fdcRepo.ts accordingly.",
             "status": "done",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -2104,7 +2252,8 @@
               4,
               5
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -2118,7 +2267,8 @@
               5,
               7
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -2130,7 +2280,8 @@
               7,
               10
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -2141,7 +2292,8 @@
             "dependencies": [
               11
             ],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 13,
@@ -2150,7 +2302,8 @@
             "details": "Implementation Steps:\n\n1. Install/verify ShadCN Command and Popover components are available\n2. Create `src/components/recipes/IngredientAutocomplete.tsx` component:\n   - Accept props: value, onChange, placeholder\n   - Implement debounced search using useDebouncedCallback or custom hook (300ms delay)\n   - Call /api/fdc/search endpoint with user input\n   - Display results in Command list showing:\n     * Food description (primary text)\n     * dataType badge (Foundation/FNDDS/SR Legacy/Branded with color coding)\n     * brandOwner (if available, secondary text)\n   - Handle loading state with spinner\n   - Handle empty state (\"No results found\")\n   - Implement keyboard navigation (arrow keys, enter to select)\n   - Accessibility: proper ARIA labels and roles\n\n3. Integrate into RecipeFormIngredients.tsx:\n   - Replace or enhance existing ingredient input fields\n   - Maintain compatibility with free-text input\n   - Update state management to handle autocomplete selections\n\n4. Styling:\n   - Match existing design system\n   - Use ShadCN theming variables\n   - Mobile-responsive dropdown\n   - Max height with scroll for long lists\n\nAcceptance Criteria:\n- [ ] Autocomplete appears after 300ms of typing\n- [ ] Shows max 8 results from FDC API\n- [ ] Displays dataType and brandOwner clearly\n- [ ] Keyboard navigation works (up/down/enter/esc)\n- [ ] Loading and empty states display correctly\n- [ ] Mobile responsive\n<info added on 2025-10-05T21:56:53.434Z>\nFixed 404 error on /api/fdc/search endpoint by adding /api/fdc to PUBLIC_API_ROUTES in middleware.ts. This allows public access to the FDC search API without requiring user authentication, as it only searches the USDA database.\n</info added on 2025-10-05T21:56:53.434Z>",
             "status": "done",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 14,
@@ -2159,7 +2312,8 @@
             "details": "Implementation Steps:\n\n1. Update Prisma Schema (if needed):\n   - Verify Recipe model has userId field for user association\n   - Ensure RecipeIngredient stores: fdcId, gramWeight, portionDescription, confidence\n   - Add fields if missing:\n     ```prisma\n     model Recipe {\n       userId      String?  // Link to user who created it\n       // ... existing fields\n     }\n     \n     model RecipeIngredient {\n       portionDescription String?  // Store the portion method used\n       // ... existing fields\n     }\n     ```\n   - Run migration if changes made\n\n2. Create Server Actions in `src/actions/recipeActions.ts`:\n   - `saveRecipe(data: { title, servings, ingredients, userId })`: Save analyzed recipe with all ingredient matches\n   - `getRecipeById(recipeId: string)`: Load recipe with ingredients\n   - `getUserRecipes(userId: string)`: Get all recipes for a user\n   - `updateRecipe(recipeId, data)`: Update existing recipe\n   - `deleteRecipe(recipeId)`: Delete recipe\n   - Include authentication checks using getServerSession or similar\n\n3. Create UI Components:\n   - `SaveRecipeDialog.tsx`: Modal to save current analysis with title input\n   - `SavedRecipesList.tsx`: Display list of user's saved recipes\n   - `RecipeCard.tsx`: Preview card showing title, servings, macro summary\n   - Add \"Save Recipe\" button to RecipeNutritionDisplay\n   - Add \"Load Recipe\" button/section to RecipeForm\n\n4. State Management:\n   - Track if current recipe is saved (show \"Update\" vs \"Save\" button)\n   - When loading saved recipe, populate form and display nutrition without re-analyzing\n   - Detect ingredient changes and show \"Re-calculate\" prompt\n   - Handle optimistic updates for better UX\n\n5. Integration:\n   - Wire up all buttons to server actions\n   - Show toast notifications for success/error\n   - Update URL with recipe ID when saving/loading (optional)\n   - Add loading states during save/load operations\n\nAcceptance Criteria:\n- [ ] Can save analyzed recipe with title\n- [ ] Saved recipes appear in user's recipe list\n- [ ] Can load saved recipe without re-analyzing\n- [ ] Nutrition displays correctly from saved data\n- [ ] Can edit and update existing recipe\n- [ ] Re-calculation triggered only when ingredients change\n- [ ] All operations require authentication",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 15,
@@ -2168,7 +2322,8 @@
             "details": "Implementation Steps:\n\n1. Extend analyzeRecipeAction Response:\n   - Add `alternatives` array to each item in AnalyzeResult\n   - Store top 5 FDC search results (not just the best match)\n   - Include for each alternative: fdcId, description, dataType, brandOwner\n   - Sort by DATATYPE_PRIORITY\n\n2. Create UI Component `FoodAlternativesSelector.tsx`:\n   - Accordion/Collapsible component per ingredient\n   - Default collapsed with indicator \"Show X alternatives\"\n   - When expanded, display list of 5 alternatives:\n     * Radio button or selectable card\n     * Food description\n     * DataType badge with color coding\n     * Brand owner (if applicable)\n     * Preview of macros (if available)\n   - Currently selected food highlighted\n   - \"Use This\" button to switch selection\n\n3. Implement Selection Logic:\n   - Create `recalculateWithAlternative` function\n   - When user selects different food:\n     * Update the fdcId for that ingredient\n     * Fetch new food details if not cached\n     * Recalculate macros for that ingredient only\n     * Update totals and per-serving\n     * Show loading state during recalculation\n   - Persist manual selection to database (when recipe saved)\n   - Add flag to indicate manual vs auto selection\n\n4. State Management:\n   - Track alternatives for each ingredient\n   - Track which ingredients have manual overrides\n   - Handle recalculation efficiently (only affected ingredient)\n   - Show visual indicator for manually-selected foods\n\n5. Update RecipeNutritionDisplay:\n   - Add alternatives section per ingredient row\n   - Add badge/icon indicating manual selection\n   - Implement smooth transitions and animations\n   - Mobile-responsive design\n\nAcceptance Criteria:\n- [ ] Each ingredient shows \"Show alternatives\" option\n- [ ] Displays top 5 FDC results when expanded\n- [ ] Can select alternative and recalculate nutrition\n- [ ] Manual selections persist when recipe saved\n- [ ] Visual indicator for manually-selected foods\n- [ ] Efficient recalculation (doesn't re-analyze whole recipe)\n- [ ] Mobile responsive with touch-friendly controls",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 16,
@@ -2177,7 +2332,8 @@
             "details": "Implementation Steps:\n\n1. Update `src/lib/fdc.ts`:\n   - Expand CORE_NUTRIENTS constant:\n     ```typescript\n     export const CORE_NUTRIENTS = [\n       \"1008\", // Energy (kcal)\n       \"1003\", // Protein\n       \"1004\", // Total Fat\n       \"1005\", // Carbohydrates\n       \"1079\", // Fiber\n       \"1093\", // Sodium\n       \"2000\", // Total Sugars\n       \"1258\", // Saturated Fat\n     ] as const;\n     ```\n   - Update Macro type definition:\n     ```typescript\n     export type Macro = {\n       kcal: number;\n       protein: number;\n       fat: number;\n       carbs: number;\n       fiber: number;\n       sodium: number;      // in mg\n       sugar: number;       // in g\n       saturatedFat: number; // in g\n     };\n     ```\n   - Update extractMacrosFromFood() to extract new nutrients\n   - Update scalePer100g() to scale new nutrients\n   - Update all return types and function signatures\n\n2. Update `src/actions/analyzeRecipe.ts`:\n   - Ensure new nutrients are included in calculation pipeline\n   - Update AnalyzeResult type to include new nutrients\n   - Verify aggregation logic includes new nutrients\n   - Update per-serving calculations\n\n3. Update Database Schema (optional):\n   - Consider adding nutrient fields to RecipeIngredient if caching\n   - Run migration if schema changes\n\n4. Update `src/components/recipes/RecipeNutritionDisplay.tsx`:\n   - Add rows for sodium, sugar, and saturated fat\n   - Display with proper units:\n     * Sodium: mg (or g if > 1000mg)\n     * Sugar: g\n     * Saturated Fat: g\n   - Add appropriate icons or visual indicators\n   - Consider daily value % (if dietary goals available)\n   - Maintain existing tolerance color coding if applicable\n\n5. Update i18n Files:\n   - Add translations for new nutrients in messages/en.json, es.json, pl.json:\n     * \"nutrition.sodium\"\n     * \"nutrition.sugar\"\n     * \"nutrition.saturatedFat\"\n     * \"nutrition.sodiumUnit\" (mg)\n   - Ensure consistent terminology\n\n6. Testing:\n   - Update unit tests in tests/unit/fdc.test.ts\n   - Verify extraction of new nutrients from sample FDC data\n   - Test scaling calculations\n   - Update integration tests\n\nAcceptance Criteria:\n- [ ] CORE_NUTRIENTS includes all 8 nutrients\n- [ ] Macro type includes sodium, sugar, saturatedFat\n- [ ] extractMacrosFromFood correctly extracts new nutrients\n- [ ] UI displays all nutrients with correct units\n- [ ] Translations available in all languages (EN/ES/PL)\n- [ ] Tests pass for new nutrients\n- [ ] No breaking changes to existing functionality",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 17,
@@ -2186,7 +2342,8 @@
             "details": "Implementation Steps:\n\n1. Expand SYNONYMS Map in `src/lib/ingredients.ts`:\n   - Add comprehensive Spanish (ES) ingredient synonyms:\n     ```typescript\n     // Spanish\n     'cebolla': 'onion',\n     'pollo': 'chicken',\n     'arroz': 'rice',\n     'tomate': 'tomato',\n     'ajo': 'garlic',\n     'zanahoria': 'carrot',\n     'papa': 'potato',\n     'patata': 'potato',\n     'leche': 'milk',\n     'huevo': 'egg',\n     'pan': 'bread',\n     'aceite': 'oil',\n     'sal': 'salt',\n     'azúcar': 'sugar',\n     'harina': 'flour',\n     'mantequilla': 'butter',\n     // ... add 50+ common ingredients\n     ```\n   - Add comprehensive Polish (PL) ingredient synonyms:\n     ```typescript\n     // Polish\n     'cebula': 'onion',\n     'kurczak': 'chicken',\n     'ryż': 'rice',\n     'pomidor': 'tomato',\n     'czosnek': 'garlic',\n     'marchew': 'carrot',\n     'ziemniak': 'potato',\n     'mleko': 'milk',\n     'jajko': 'egg',\n     'chleb': 'bread',\n     'olej': 'oil',\n     'sól': 'salt',\n     'cukier': 'sugar',\n     'mąka': 'flour',\n     'masło': 'butter',\n     // ... add 50+ common ingredients\n     ```\n   - Keep existing English synonyms\n   - Organize by language with comments\n\n2. Add Locale-Specific Unit Parsing:\n   - Add UNIT_ALIASES for Spanish units:\n     ```typescript\n     'gramo': 'g', 'gramos': 'g',\n     'litro': 'l', 'litros': 'l',\n     'taza': 'cup', 'tazas': 'cup',\n     'cucharada': 'tbsp', 'cucharadas': 'tbsp',\n     'cucharadita': 'tsp', 'cucharaditas': 'tsp',\n     ```\n   - Add UNIT_ALIASES for Polish units:\n     ```typescript\n     'gram': 'g', 'gramy': 'g',\n     'litr': 'l', 'litry': 'l',\n     'szklanka': 'cup', 'szklanki': 'cup',\n     'łyżka': 'tbsp', 'łyżki': 'tbsp',\n     'łyżeczka': 'tsp', 'łyżeczki': 'tsp',\n     ```\n\n3. Update i18n Translation Files:\n   - Add nutrition calculator labels to `messages/en.json`:\n     * \"nutrition.title\": \"Nutrition Facts\"\n     * \"nutrition.confidence\": \"Confidence\"\n     * \"nutrition.portionNote\": \"Portion Note\"\n     * \"nutrition.alternatives\": \"Show Alternatives\"\n     * \"nutrition.perServing\": \"Per Serving\"\n     * \"nutrition.total\": \"Total\"\n     * \"nutrition.ingredient\": \"Ingredient\"\n     * \"nutrition.grams\": \"Grams\"\n     * \"nutrition.calculate\": \"Calculate Nutrition\"\n     * \"nutrition.saveRecipe\": \"Save Recipe\"\n   - Translate to Spanish in `messages/es.json`\n   - Translate to Polish in `messages/pl.json`\n\n4. Implement Locale-Specific Number Formatting:\n   - Create utility function `formatNutrientValue(value, locale)`:\n     * Use Intl.NumberFormat for locale-specific formatting\n     * Handle decimal separator (comma vs period)\n     * Round appropriately (1 decimal for macros)\n   - Apply to all nutrition displays\n\n5. Update UI Components:\n   - Ensure all hardcoded strings use useTranslations hook\n   - Update RecipeNutritionDisplay.tsx\n   - Update RecipeFormNutrition.tsx\n   - Update any nutrition-related toast messages\n\n6. Testing:\n   - Test ingredient parsing with Spanish inputs\n   - Test ingredient parsing with Polish inputs\n   - Verify UI displays correctly in all three languages\n   - Test locale switching\n   - Verify number formatting for different locales\n\nAcceptance Criteria:\n- [ ] SYNONYMS map includes 50+ Spanish ingredients\n- [ ] SYNONYMS map includes 50+ Polish ingredients\n- [ ] Unit aliases support ES and PL units\n- [ ] All nutrition UI labels translated (EN/ES/PL)\n- [ ] Number formatting respects user locale\n- [ ] Can parse recipes in Spanish\n- [ ] Can parse recipes in Polish\n- [ ] UI language switches correctly\n- [ ] No English hardcoded strings in components",
             "status": "done",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           },
           {
             "id": 18,
@@ -2195,15 +2352,20 @@
             "details": "Implementation Steps:\n\n1. Install Charting Library:\n   - Install recharts (React-compatible, lightweight):\n     ```bash\n     bun add recharts\n     ```\n   - Alternative: chart.js with react-chartjs-2 (if preferred)\n   - Verify compatibility with Next.js 15 and React 18\n\n2. Create MacroDistributionChart Component (`src/components/recipes/MacroDistributionChart.tsx`):\n   - Accept props: `macros` (Macro type), `chartType` ('pie' | 'bar')\n   - Calculate macro distribution:\n     * Total calories from protein (4 kcal/g)\n     * Total calories from fat (9 kcal/g)\n     * Total calories from carbs (4 kcal/g)\n     * Percentages of total calories\n   - Implement Pie Chart variant:\n     * Use Recharts PieChart component\n     * Color code segments (protein: blue, fat: yellow, carbs: green)\n     * Show percentage labels\n     * Interactive tooltips with absolute values\n   - Implement Bar Chart variant:\n     * Use Recharts BarChart component\n     * Horizontal bars showing grams\n     * Color coded same as pie chart\n     * Display both grams and % of total calories\n\n3. Create MacrosSummaryCard Component:\n   - Display key stats in card format:\n     * Total calories\n     * Macro breakdown (g and %)\n     * Visual chart\n   - Responsive grid layout\n   - Toggle between pie and bar chart\n   - Use ShadCN Card component\n\n4. Integrate into RecipeNutritionDisplay:\n   - Add MacroDistributionChart below nutrition facts table\n   - Show for both \"Total\" and \"Per Serving\" sections\n   - Add toggle to switch between chart types\n   - Collapsible section (can hide/show charts)\n   - Mobile: Stack vertically\n   - Desktop: Side-by-side with table\n\n5. Styling and Accessibility:\n   - Match existing design system colors\n   - Dark mode support (recharts theming)\n   - ARIA labels for chart elements:\n     * \"Protein accounts for X% of calories\"\n     * Screen reader announces values\n   - Keyboard navigation for chart toggles\n   - Tooltips with clear descriptions\n   - Print-friendly (fallback to table for print media)\n\n6. Performance Optimization:\n   - Lazy load recharts (dynamic import):\n     ```typescript\n     const MacroChart = dynamic(() => import('./MacroDistributionChart'), {\n       ssr: false,\n       loading: () => <ChartSkeleton />\n     });\n     ```\n   - Memoize chart data calculations\n   - Throttle resize events\n\n7. Testing:\n   - Test with various macro distributions\n   - Verify calculations are correct\n   - Test responsive behavior\n   - Verify accessibility with screen reader\n   - Test print view\n\nAcceptance Criteria:\n- [ ] Recharts installed and working\n- [ ] Pie chart displays macro % correctly\n- [ ] Bar chart displays macro grams correctly\n- [ ] Charts match design system colors\n- [ ] Toggle between pie/bar works\n- [ ] Responsive on mobile and desktop\n- [ ] ARIA labels and keyboard navigation work\n- [ ] Dark mode supported\n- [ ] Charts load efficiently (lazy loaded)\n- [ ] Tooltips show detailed information\n- [ ] Print view has fallback",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 19
+            "parentTaskId": 19,
+            "parentId": "undefined"
           }
         ]
       }
     ],
     "metadata": {
-      "created": "2025-06-28T09:40:07.942Z",
-      "updated": "2025-10-09T20:56:14.643Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2025-12-14T23:12:57.038Z",
+      "taskCount": 18,
+      "completedCount": 8,
+      "tags": [
+        "master"
+      ]
     }
   }
 }

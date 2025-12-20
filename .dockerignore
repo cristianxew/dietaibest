@@ -1,0 +1,74 @@
+# ===========================================
+# Docker Ignore File
+# Excludes files from Docker build context
+# ===========================================
+
+# Dependencies (installed fresh in container)
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+.nyc_output
+tests
+playwright-report
+test-results
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Next.js build output (rebuilt in container)
+.next
+out
+build
+
+# Environment files (configured via Dokploy)
+.env
+.env.*
+!.env.production.example
+
+# IDE and editors
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation (not needed in container)
+.agent
+*.md
+!README.md
+
+# Deployment configs
+.vercel
+vercel.json
+netlify.toml
+
+# Security
+*.pem
+*.key
+*.crt
+secrets/
+
+# Misc
+.turbo
+.cache
+.husky

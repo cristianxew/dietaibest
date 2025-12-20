@@ -46,9 +46,10 @@ const formSchema = z.object({
 
 interface PreferencesStepProps {
   onFinish?: () => Promise<void>;
+  isSubmitting?: boolean;
 }
 
-export function PreferencesStep({ onFinish }: PreferencesStepProps = {}) {
+export function PreferencesStep({ onFinish, isSubmitting }: PreferencesStepProps = {}) {
   const t = useTranslations("onboarding");
   const {
     state,
@@ -308,6 +309,7 @@ export function PreferencesStep({ onFinish }: PreferencesStepProps = {}) {
           onNext={() => form.handleSubmit(onSubmit)()}
           onFinish={() => form.handleSubmit(onSubmit)()}
           canGoNext={true} // Preferences are optional
+          isSubmitting={isSubmitting}
         />
       </form>
     </Form>

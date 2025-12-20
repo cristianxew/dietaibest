@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
-import { CalendarIcon, Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/custom-ui/date-picker";
 import {
   Form,
   FormControl,
@@ -26,11 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { RELATIONSHIP_TYPES, type FamilyMemberData } from "@/types/onboarding";
 
@@ -64,30 +57,28 @@ export function FamilyMemberForm({
     resolver: zodResolver(formSchema),
     defaultValues: member
       ? {
-          name: member.name,
-          relationship: member.relationship,
-          dateOfBirth: new Date(member.dateOfBirth),
-          gender: member.gender,
-          heightCm: member.heightCm || null,
-          weightKg: member.weightKg || null,
-          dietaryNeeds: member.dietaryNeeds,
-        }
+        name: member.name,
+        relationship: member.relationship,
+        dateOfBirth: new Date(member.dateOfBirth),
+        gender: member.gender,
+        heightCm: member.heightCm || null,
+        weightKg: member.weightKg || null,
+        dietaryNeeds: member.dietaryNeeds,
+      }
       : {
-          name: "",
-          relationship: "",
-          dateOfBirth: undefined,
-          gender: undefined,
-          heightCm: null,
-          weightKg: null,
-          dietaryNeeds: [],
-        },
+        name: "",
+        relationship: "",
+        dateOfBirth: undefined,
+        gender: undefined,
+        heightCm: null,
+        weightKg: null,
+        dietaryNeeds: [],
+      },
   });
 
   const [customNeed, setCustomNeed] = useState("");
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log("FamilyMemberForm - Form submitted with values:", values);
-
     const familyMemberData: FamilyMemberData = {
       name: values.name,
       relationship: values.relationship,
@@ -98,10 +89,6 @@ export function FamilyMemberForm({
       dietaryNeeds: values.dietaryNeeds,
     };
 
-    console.log(
-      "FamilyMemberForm - Calling onSubmit with data:",
-      familyMemberData
-    );
     onSubmit(familyMemberData);
   };
 
@@ -180,37 +167,15 @@ export function FamilyMemberForm({
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Date of Birth</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <DatePicker
+                    date={field.value}
+                    onDateChange={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

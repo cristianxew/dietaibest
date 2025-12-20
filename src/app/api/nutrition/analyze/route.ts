@@ -87,7 +87,7 @@ export async function POST(
     let body: AnalyzeRequest;
     try {
       body = await request.json();
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         {
           success: false,

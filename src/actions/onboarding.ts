@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { calculateMacros } from "@/utils/macroCalculator";
 
 // Validation schemas
 const demographicsSchema = z.object({
@@ -44,33 +43,6 @@ const onboardingSchema = z.object({
   preferences: preferencesSchema,
   familyMembers: z.array(familyMemberSchema),
 });
-
-export async function estimateMacros(
-  data: z.infer<typeof demographicsSchema> & { dietaryGoal: string }
-) {
-  try {
-    // Validate input
-    const validatedDemographics = demographicsSchema.parse({
-      ...data,
-      dietaryGoal: undefined,
-    });
-
-    // Calculate macros
-    const macros = calculateMacros({
-      dateOfBirth: new Date(validatedDemographics.dateOfBirth),
-      gender: validatedDemographics.gender,
-      heightCm: validatedDemographics.heightCm,
-      weightKg: validatedDemographics.weightKg,
-      activityLevel: validatedDemographics.activityLevel,
-      dietaryGoal: data.dietaryGoal,
-    });
-
-    return { data: macros, error: null };
-  } catch (error) {
-    console.error("Error calculating macros:", error);
-    return { data: null, error: "Failed to calculate macros" };
-  }
-}
 
 export async function completeOnboarding(
   data: z.infer<typeof onboardingSchema>
@@ -200,22 +172,7 @@ export async function completeOnboarding(
     }
 
     return { data: { profileId: profile.id }, error: null };
-  } catch (error) {
-    console.error("Error completing onboarding - Full error details:", error);
-
-    // More detailed error logging
-    if (error instanceof Error) {
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-    }
-
-    // Handle Prisma-specific errors
-    if (error && typeof error === "object" && "code" in error) {
-      const prismaError = error as { code?: string; meta?: unknown };
-      console.error("Prisma error code:", prismaError.code);
-      console.error("Prisma error meta:", prismaError.meta);
-    }
-
+  } catch {
     return { data: null, error: "Failed to complete onboarding" };
   }
 }
@@ -240,8 +197,7 @@ export async function checkOnboardingStatus() {
       completed: user.profile?.onboardingCompleted || false,
       error: null,
     };
-  } catch (error) {
-    console.error("Error checking onboarding status:", error);
+  } catch {
     return { completed: false, error: "Failed to check status" };
   }
 }

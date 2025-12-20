@@ -5,14 +5,11 @@ import {
   type ExtendedTaskStatus,
 } from "@/lib/browser-use";
 
-interface RouteParams {
-  params: {
-    taskId: string;
-  };
-}
-
 // Get task status and result
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ taskId: string }> }
+) {
   try {
     // Check authentication
     const session = await getServerSession();
@@ -20,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
 
     if (!taskId) {
       return NextResponse.json(
@@ -231,7 +228,10 @@ function getCurrentUrl(taskStatus: ExtendedTaskStatus): string | undefined {
 }
 
 // Delete endpoint for task cancellation
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ taskId: string }> }
+) {
   try {
     // Check authentication
     const session = await getServerSession();
@@ -239,7 +239,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } = params;
+    const { taskId } = await params;
 
     if (!taskId) {
       return NextResponse.json(

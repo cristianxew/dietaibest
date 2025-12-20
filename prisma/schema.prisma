@@ -10,17 +10,19 @@ datasource db {
 }
 
 model User {
-  id                 String                 @id @default(uuid())
-  email              String                 @unique
-  password           String
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  profile            UserProfile?
-  recipes            Recipe[]
-  favorites          UserFavorite[]
-  edamamMacroCache   EdamamUserMacroCache[] // Cached macros per Edamam policy
-  mealPlanTemplates  MealPlanTemplate[] // User's meal plan templates
-  mealPlanSchedules  MealPlanSchedule[] // User's scheduled meal plans
+  id                  String                 @id @default(uuid())
+  email               String                 @unique
+  password            String
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  profile             UserProfile?
+  recipes             Recipe[]
+  favorites           UserFavorite[]
+  edamamMacroCache    EdamamUserMacroCache[] // Cached macros per Edamam policy
+  mealPlanTemplates   MealPlanTemplate[] // User's meal plan templates
+  mealPlanSchedules   MealPlanSchedule[] // User's scheduled meal plans
+  shoppingPreferences ShoppingPreferences? // User's shopping automation preferences
+  storeCredentials    StoreCredential[] // Per-store encrypted credentials for auto-login
 }
 
 model UserProfile {
@@ -290,4 +292,47 @@ model MealPlanMeal {
   @@index([mealPlanDayId])
   @@index([recipeId])
   @@index([mealPlanDayId, mealType])
+}
+
+// ============================================================================
+// Shopping Automation Preferences
+// ============================================================================
+
+// ShoppingPreferences: User's preferred store and shopping automation settings
+model ShoppingPreferences {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  selectedStore      String?  // "auchan" | "frisco" | "carrefour"
+  deliveryPreference String   @default("delivery") // "delivery" | "pickup"
+  zipCode            String?
+  preferOrganic      Boolean  @default(false)
+  preferStoreBrand   Boolean  @default(false)
+  allowSubstitutions Boolean  @default(true)
+  maxPricePerItem    Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// StoreCredential: Per-store encrypted credentials for auto-login during shopping automation
+model StoreCredential {
+  id                String   @id @default(uuid())
+  userId            String
+  store             String   // "auchan" | "frisco" | "carrefour"
+  email             String
+  encryptedPassword String   // AES-256-GCM encrypted
+  iv                String   // Initialization vector for decryption
+  authTag           String   // Authentication tag for GCM verification
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, store]) // One credential per store per user
+  @@index([userId])
 }
