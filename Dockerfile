@@ -11,7 +11,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 
 # Copy dependency files
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies for build)
