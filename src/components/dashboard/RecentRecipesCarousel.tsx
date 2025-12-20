@@ -87,12 +87,20 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
           <CardTitle className="text-lg font-display font-semibold tracking-tight">
             {t("title")}
           </CardTitle>
-          <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
-            <Link href="/recipes">
-              {t("viewAll")}
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="text-xs gap-1 h-8">
+              <Link href="/recipes/new">
+                <Plus className="h-3 w-3" />
+                {t("createRecipe")}
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
+              <Link href="/recipes">
+                {t("viewAll")}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardHeader>
 

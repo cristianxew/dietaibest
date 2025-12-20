@@ -114,12 +114,12 @@ export function ActivePlanPreview({
               {t("day", { current: currentDayNumber, total: duration })}
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className="flex-shrink-0 bg-sage-50 dark:bg-sage-950/50 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-800"
-          >
-            {t("daysRemaining", { count: daysRemaining })}
-          </Badge>
+          <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
+            <Link href="/meal-plans">
+              {t("viewAllPlans")}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
         </div>
       </CardHeader>
 
@@ -150,8 +150,8 @@ export function ActivePlanPreview({
                   day.isToday
                     ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30"
                     : day.isWithinPlan
-                    ? "bg-stone-100 dark:bg-stone-800 text-foreground"
-                    : "text-muted-foreground/50"
+                      ? "bg-stone-100 dark:bg-stone-800 text-foreground"
+                      : "text-muted-foreground/50"
                 )}
               >
                 {day.dayOfMonth}

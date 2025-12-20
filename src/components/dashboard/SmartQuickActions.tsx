@@ -113,36 +113,14 @@ export function SmartQuickActions({
     }
 
     // Full user - has everything
-    return [
-      {
-        href: "/meal-plans",
-        icon: <CalendarCheck className="h-4 w-4" />,
-        label: t("todaysPlan"),
-        primary: true,
-        color: "brand",
-      },
-      {
-        href: "/recipes/new",
-        icon: <Plus className="h-4 w-4" />,
-        label: t("addRecipe"),
-        color: "sage",
-      },
-      {
-        href: "/shopping",
-        icon: <ShoppingCart className="h-4 w-4" />,
-        label: t("shoppingList"),
-        color: "gold",
-      },
-      {
-        href: "/meal-plans",
-        icon: <LayoutGrid className="h-4 w-4" />,
-        label: t("viewAllPlans"),
-        color: "slate",
-      },
-    ];
+    return [];
   };
 
   const actions = getActions();
+
+  if (actions.length === 0) {
+    return null;
+  }
 
   const getColorClasses = (color: QuickAction["color"], primary?: boolean) => {
     const colors = {

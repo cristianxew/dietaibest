@@ -72,7 +72,7 @@ export default async function RecipeDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
 
           {/* Image Column */}
-          <div className="lg:col-span-5 relative">
+          <div className="lg:col-span-4 relative">
             {recipe.imageUrl ? (
               <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-2xl shadow-stone-900/5 border border-black/5 dark:border-white/10">
                 <Image
@@ -91,7 +91,7 @@ export default async function RecipeDetailPage({
           </div>
 
           {/* Details Column */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-8 space-y-8">
             <div className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
