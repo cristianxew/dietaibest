@@ -67,13 +67,14 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma files for runtime migrations
+# Copy Prisma schema for runtime migrations
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-# Copy prisma binary AND its WASM files (prisma_schema_build_bg.wasm, etc.)
-COPY --from=builder /app/node_modules/.bin/prisma* ./node_modules/.bin/
+
+# Copy generated Prisma client from custom output location
+COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
+
+# Install Prisma CLI globally for migrations (ensures WASM files are correct)
+RUN npm install -g prisma@6.9.0
 
 # Copy entrypoint script
 COPY --chmod=755 scripts/docker-entrypoint.sh ./docker-entrypoint.sh

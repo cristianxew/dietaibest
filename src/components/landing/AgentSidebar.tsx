@@ -41,7 +41,7 @@ const demoMessages: ChatMessage[] = [
     type: "bot",
     content: (
       <>
-        Understood. I've updated your calorie budget for tomorrow's lunch to{" "}
+        Understood. I&apos;ve updated your calorie budget for tomorrow&apos;s lunch to{" "}
         <span className="font-medium text-neutral-900 dark:text-neutral-100">
           800 kcal
         </span>{" "}

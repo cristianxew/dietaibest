@@ -14,9 +14,9 @@ echo "=========================================="
 echo "[1/3] Waiting for database connection..."
 sleep 2
 
-# Run Prisma migrations (use local version)
+# Run Prisma migrations (use globally installed CLI)
 echo "[2/3] Running database migrations..."
-./node_modules/.bin/prisma migrate deploy
+prisma migrate deploy --schema=./prisma/schema.prisma
 
 echo "[3/3] Starting Next.js application..."
 echo "=========================================="

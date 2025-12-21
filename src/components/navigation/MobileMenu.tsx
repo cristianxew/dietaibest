@@ -50,6 +50,51 @@ export function MobileMenu({ className }: MobileMenuProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   /**
+   * Focus trapping implementation
+   */
+  const trapFocus = useCallback((event: KeyboardEvent) => {
+    if (!contentRef.current) return;
+
+    const focusableElements = contentRef.current.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+    );
+
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[
+      focusableElements.length - 1
+    ] as HTMLElement;
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement?.focus();
+    } else if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement?.focus();
+    }
+  }, []);
+
+  /**
+   * Close the menu and restore focus
+   */
+  const closeMenu = useCallback(() => {
+    setIsOpen(false);
+
+    // Announce closure to screen readers
+    const announcement = document.createElement("div");
+    announcement.setAttribute("aria-live", "polite");
+    announcement.setAttribute("aria-atomic", "true");
+    announcement.className = "sr-only";
+    announcement.textContent = tA11y("menuClosed");
+    document.body.appendChild(announcement);
+
+    // Restore focus to trigger button after closing
+    setTimeout(() => {
+      triggerRef.current?.focus();
+      document.body.removeChild(announcement);
+    }, 100);
+  }, [tA11y]);
+
+  /**
    * Handle keyboard shortcuts and focus trapping
    */
   useEffect(() => {
@@ -88,31 +133,7 @@ export function MobileMenu({ className }: MobileMenuProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, tA11y]);
-
-  /**
-   * Focus trapping implementation
-   */
-  const trapFocus = useCallback((event: KeyboardEvent) => {
-    if (!contentRef.current) return;
-
-    const focusableElements = contentRef.current.querySelectorAll(
-      'a[href], button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), input[type="radio"]:not([disabled]), input[type="checkbox"]:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
-    );
-
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[
-      focusableElements.length - 1
-    ] as HTMLElement;
-
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement?.focus();
-    } else if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement?.focus();
-    }
-  }, []);
+  }, [isOpen, tA11y, closeMenu, trapFocus]);
 
   /**
    * Handle menu toggle
@@ -133,26 +154,7 @@ export function MobileMenu({ className }: MobileMenuProps) {
     setTimeout(() => document.body.removeChild(announcement), 1000);
   };
 
-  /**
-   * Close the menu and restore focus
-   */
-  const closeMenu = useCallback(() => {
-    setIsOpen(false);
 
-    // Announce closure to screen readers
-    const announcement = document.createElement("div");
-    announcement.setAttribute("aria-live", "polite");
-    announcement.setAttribute("aria-atomic", "true");
-    announcement.className = "sr-only";
-    announcement.textContent = tA11y("menuClosed");
-    document.body.appendChild(announcement);
-
-    // Restore focus to trigger button after closing
-    setTimeout(() => {
-      triggerRef.current?.focus();
-      document.body.removeChild(announcement);
-    }, 100);
-  }, [tA11y]);
 
   /**
    * Handle navigation link click (close menu)
@@ -207,9 +209,8 @@ export function MobileMenu({ className }: MobileMenuProps) {
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-describedby="mobile-menu-trigger-description"
-            title={`${
-              isOpen ? tMobile("closeMenu") : tMobile("openMenu")
-            } - Alt+M`}
+            title={`${isOpen ? tMobile("closeMenu") : tMobile("openMenu")
+              } - Alt+M`}
           >
             {isOpen ? (
               <X className="h-5 w-5" aria-hidden="true" role="presentation" />
