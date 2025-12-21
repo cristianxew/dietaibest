@@ -1,26 +1,39 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { prisma } from "@/lib/prisma";
 
 // This is the Next.js route handler for next-auth. It configures authentication providers and session handling.
 // Providers are configured using environment variables for security and flexibility.
 
-// Validate required environment variables
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("Missing required Google OAuth environment variables");
+// Helper functions to get env vars at runtime (not build time)
+function getGoogleCredentials() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("Missing required Google OAuth environment variables");
+  }
+  return { clientId, clientSecret };
 }
 
-if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("Missing NEXTAUTH_SECRET environment variable");
+function getNextAuthSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("Missing NEXTAUTH_SECRET environment variable");
+  }
+  return secret;
 }
 
-const handler = NextAuth({
+// Create NextAuth handler lazily to avoid build-time initialization
+function createHandler() {
+  const { clientId, clientSecret } = getGoogleCredentials();
+
+  return NextAuth({
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId,
+      clientSecret,
     }),
     CredentialsProvider({
       id: "credentials",
@@ -39,7 +52,7 @@ const handler = NextAuth({
           const {
             data: { user },
             error,
-          } = await supabase.auth.getUser(credentials.supabaseToken);
+          } = await getSupabase().auth.getUser(credentials.supabaseToken);
 
           if (error || !user) {
             console.error("Supabase auth verification failed:", error);
@@ -177,7 +190,25 @@ const handler = NextAuth({
     error: "/auth/error",
   },
   // Add more next-auth options as needed
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: getNextAuthSecret(),
 });
+}
 
-export { handler as GET, handler as POST };
+// Lazy handler initialization - created on first request
+let _handler: ReturnType<typeof NextAuth> | null = null;
+
+function getHandler() {
+  if (!_handler) {
+    _handler = createHandler();
+  }
+  return _handler;
+}
+
+// Export wrapped handlers that defer initialization to runtime
+export async function GET(request: Request) {
+  return getHandler()(request);
+}
+
+export async function POST(request: Request) {
+  return getHandler()(request);
+}
