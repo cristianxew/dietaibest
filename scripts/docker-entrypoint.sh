@@ -16,7 +16,7 @@ sleep 2
 
 # Run Prisma migrations (use local version)
 echo "[2/3] Running database migrations..."
-./node_modules/.bin/prisma db push --accept-data-loss
+./node_modules/.bin/prisma migrate deploy
 
 echo "[3/3] Starting Next.js application..."
 echo "=========================================="
