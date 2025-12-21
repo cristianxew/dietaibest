@@ -8,9 +8,17 @@
 import "server-only";
 
 const API_BASE = "https://api.nal.usda.gov/fdc/v1";
-const KEY = process.env.FDC_API_KEY!;
 
-if (!KEY) throw new Error("FDC_API_KEY not set in environment variables.");
+/**
+ * Get API key at runtime (not build time)
+ */
+function getApiKey(): string {
+  const key = process.env.FDC_API_KEY;
+  if (!key) {
+    throw new Error("FDC_API_KEY not set in environment variables.");
+  }
+  return key;
+}
 
 /**
  * Core nutrient numbers we track from USDA FDC API
@@ -133,7 +141,7 @@ export async function fdcSearch(
   query: string,
   dataTypes = ["Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"]
 ): Promise<FdcSearchResult> {
-  const res = await fetch(`${API_BASE}/foods/search?api_key=${KEY}`, {
+  const res = await fetch(`${API_BASE}/foods/search?api_key=${getApiKey()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     // no-store to avoid Next caching; we do our own DB cache
@@ -162,7 +170,7 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  const url = `${API_BASE}/foods?api_key=${KEY}&format=abridged&nutrients=${CORE_NUTRIENTS.join(
+  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${CORE_NUTRIENTS.join(
     ","
   )}`;
 
