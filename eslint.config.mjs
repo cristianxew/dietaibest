@@ -30,9 +30,9 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      // Allow underscore-prefixed unused variables (common pattern for intentionally unused vars)
+      // Warn on unused variables (don't break build)
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

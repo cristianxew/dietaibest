@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Calendar,
   ArrowRight,
@@ -63,7 +62,7 @@ export function ActivePlanPreview({
   templateName,
   duration,
   currentDayNumber,
-  daysRemaining,
+  daysRemaining: _daysRemaining,
   todaysMeals,
 }: ActivePlanPreviewProps) {
   const t = useTranslations("dashboard.activePlan");
