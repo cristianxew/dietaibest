@@ -67,6 +67,9 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy ws module (required by @supabase/realtime-js, not always traced by Next.js)
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules/ws ./node_modules/ws
+
 # Copy Prisma schema for runtime migrations
 COPY --from=builder /app/prisma ./prisma
 
