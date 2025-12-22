@@ -29,6 +29,11 @@ function getNextAuthSecret() {
 function createHandler() {
   const { clientId, clientSecret } = getGoogleCredentials();
 
+  // Log critical config for debugging
+  console.log("[NextAuth] Initializing with config:");
+  console.log("[NextAuth] NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+  console.log("[NextAuth] NODE_ENV:", process.env.NODE_ENV);
+
   return NextAuth({
   providers: [
     GoogleProvider({
@@ -115,19 +120,11 @@ function createHandler() {
     // JWT tokens expire in 1 hour to enable proper refresh cycle
     maxAge: 60 * 60, // 1 hour
   },
-  cookies: {
-    sessionToken: {
-      name: "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
+  // Let NextAuth handle cookie configuration automatically based on NEXTAUTH_URL
+  // This ensures proper cookie names (__Secure- prefix in production) and settings
   callbacks: {
     async signIn({ user }) {
+      console.log("[NextAuth] signIn callback - user:", user.email);
       // Custom sign-in logic - sync user with database
       try {
         if (user.email) {
@@ -143,13 +140,15 @@ function createHandler() {
             },
           });
         }
+        console.log("[NextAuth] signIn callback returning true");
         return true;
       } catch (error) {
-        console.error("Sign-in error:", error);
+        console.error("[NextAuth] signIn callback error:", error);
         return false;
       }
     },
     async session({ session, token }) {
+      console.log("[NextAuth] session callback - token.sub:", token.sub);
       // Attach user id and other claims to session
       if (session.user) {
         // Type assertion is used here because NextAuth's default type does not include 'id' on user
@@ -160,6 +159,7 @@ function createHandler() {
       return session;
     },
     async jwt({ token, account, user }) {
+      console.log("[NextAuth] jwt callback - user:", user?.email, "account:", account?.provider);
       // Persist additional claims or provider info in the JWT
       if (account) {
         token.provider = account.provider;
@@ -186,9 +186,11 @@ function createHandler() {
         token.shouldRefresh = true;
       }
 
+      console.log("[NextAuth] jwt callback returning token with sessionId:", token.sessionId);
       return token;
     },
     async redirect({ url, baseUrl }) {
+      console.log("[NextAuth] redirect callback - url:", url, "baseUrl:", baseUrl);
       // Ensure redirects stay within the app
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;

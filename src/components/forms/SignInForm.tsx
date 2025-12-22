@@ -101,17 +101,28 @@ export function SignInForm({
 
       if (authData.user) {
         // Then sign in with NextAuth to create session
+        console.log("[SignIn] Calling NextAuth signIn...");
         const result = await signIn("credentials", {
           email: data.email,
           supabaseToken: authData.session?.access_token,
           redirect: false,
         });
 
+        console.log("[SignIn] NextAuth result:", JSON.stringify(result));
+
         if (result?.error) {
+          console.error("[SignIn] NextAuth error:", result.error);
           toast.error(t("errors.authError"));
           return;
         }
 
+        if (!result?.ok) {
+          console.error("[SignIn] NextAuth not ok:", result);
+          toast.error(t("errors.authError"));
+          return;
+        }
+
+        console.log("[SignIn] Success! Redirecting to:", callbackUrl);
         toast.success(t("auth.successfullySignedIn"));
         onSuccess?.();
         router.push(callbackUrl);
