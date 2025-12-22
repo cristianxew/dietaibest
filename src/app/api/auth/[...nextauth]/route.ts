@@ -205,10 +205,17 @@ function getHandler() {
 }
 
 // Export wrapped handlers that defer initialization to runtime
-export async function GET(request: Request) {
-  return getHandler()(request);
+// App Router requires both request and context with params
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return getHandler()(request, context);
 }
 
-export async function POST(request: Request) {
-  return getHandler()(request);
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return getHandler()(request, context);
 }
