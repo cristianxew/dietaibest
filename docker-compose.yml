@@ -84,16 +84,8 @@ services:
       - "3000"
     networks:
       - dokploy-network
-    labels:
-      # Traefik configuration for automatic HTTPS
-      - "traefik.enable=true"
-      - "traefik.http.routers.dietaibook.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.dietaibook.entrypoints=websecure"
-      - "traefik.http.routers.dietaibook.tls.certResolver=letsencrypt"
-      - "traefik.http.services.dietaibook.loadbalancer.server.port=3000"
-      # Health check for zero-downtime deployments
-      - "traefik.http.services.dietaibook.loadbalancer.healthcheck.path=/api/health"
-      - "traefik.http.services.dietaibook.loadbalancer.healthcheck.interval=30s"
+    # Note: Traefik routing is managed by Dokploy UI, not docker-compose labels
+    # Configure domain in Dokploy: Project → Domains → Add "dietaimanager.com"
 
 # Persistent volume for database
 volumes:
