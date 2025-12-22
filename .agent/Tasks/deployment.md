@@ -72,6 +72,9 @@ EDAMAM_APP_ID=<your-app-id>
 EDAMAM_APP_KEY=<your-app-key>
 ```
 
+**Important:** `NEXT_PUBLIC_*` variables are embedded into the JavaScript at **build time**.
+If you change these values, you must trigger a **full rebuild** (not just restart) for changes to take effect.
+
 **Optional:**
 ```
 GOOGLE_CLIENT_ID=<for-google-oauth>
