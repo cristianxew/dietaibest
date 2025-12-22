@@ -43,10 +43,14 @@ function createHandler() {
         supabaseToken: { label: "Supabase Token", type: "text" },
       },
       async authorize(credentials) {
+        console.log("[NextAuth] Credentials authorize started");
         try {
           if (!credentials?.email || !credentials?.supabaseToken) {
+            console.error("[NextAuth] Missing credentials - email:", !!credentials?.email, "token:", !!credentials?.supabaseToken);
             return null;
           }
+
+          console.log("[NextAuth] Verifying Supabase token for:", credentials.email);
 
           // Verify the Supabase token and get user info
           const {
@@ -55,18 +59,21 @@ function createHandler() {
           } = await getSupabase().auth.getUser(credentials.supabaseToken);
 
           if (error || !user) {
-            console.error("Supabase auth verification failed:", error);
+            console.error("[NextAuth] Supabase auth verification failed:", error?.message || "No user returned");
             return null;
           }
 
+          console.log("[NextAuth] Supabase user verified:", user.email);
+
           // Ensure email matches
           if (user.email !== credentials.email) {
-            console.error("Email mismatch in credentials");
+            console.error("[NextAuth] Email mismatch - expected:", credentials.email, "got:", user.email);
             return null;
           }
 
           // Create or find user in database
           try {
+            console.log("[NextAuth] Upserting user in database...");
             await prisma.user.upsert({
               where: { email: user.email },
               update: {
@@ -77,10 +84,13 @@ function createHandler() {
                 password: "", // Empty password for OAuth users
               },
             });
+            console.log("[NextAuth] User upserted successfully");
           } catch (dbError) {
-            console.error("Database user creation error:", dbError);
+            console.error("[NextAuth] Database user creation error:", dbError);
+            // Don't return null here - user might already exist
           }
 
+          console.log("[NextAuth] Returning user object");
           return {
             id: user.id,
             email: user.email,
@@ -91,7 +101,7 @@ function createHandler() {
             image: user.user_metadata?.avatar_url || null,
           };
         } catch (error) {
-          console.error("Credentials authorization error:", error);
+          console.error("[NextAuth] Credentials authorization error:", error);
           return null;
         }
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -19,6 +19,7 @@ export default function SignInPage() {
   const { status } = useSession();
   const router = useRouter();
   const t = useTranslations();
+  const [showForm, setShowForm] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -27,8 +28,19 @@ export default function SignInPage() {
     }
   }, [status, router]);
 
-  // Show loading while checking session
-  if (status === "loading") {
+  // Timeout to show form after 2 seconds if stuck in loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (status === "loading") {
+        console.warn("[SignIn] Session loading timeout - showing form anyway");
+        setShowForm(true);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [status]);
+
+  // Show loading while checking session (with timeout fallback)
+  if (status === "loading" && !showForm) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
