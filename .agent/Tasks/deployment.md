@@ -1,7 +1,7 @@
 # DietAIbook Deployment Guide
 
 **Platform:** Hostinger VPS with Dokploy
-**Last Updated:** 2025-12-17
+**Last Updated:** 2025-12-23
 
 ---
 
@@ -197,6 +197,123 @@ docker exec -it dietaibook-app npx prisma db push
 1. Check Dockerfile syntax
 2. Verify `bun.lockb` is committed
 3. Check for missing dependencies
+
+---
+
+## Authentication Troubleshooting
+
+Authentication issues are common in production deployments. This section covers the most frequent problems and their solutions.
+
+### NEXT_PUBLIC_ Variables Not Working
+
+**Symptom:** Browser console shows `Missing Supabase environment variables`
+
+**Cause:** `NEXT_PUBLIC_*` variables are embedded into JavaScript at **build time**, not runtime.
+
+**Solution:**
+1. Variables must be passed as Docker **build args**, not just runtime environment
+2. In `Dockerfile`, add before the build step:
+   ```dockerfile
+   ARG NEXT_PUBLIC_SUPABASE_URL
+   ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+   ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+   ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+   ```
+3. In `docker-compose.yml`, add build args:
+   ```yaml
+   build:
+     context: .
+     dockerfile: Dockerfile
+     args:
+       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+   ```
+4. **Trigger a full rebuild** (restart won't work)
+
+### Supabase Configuration for Production
+
+**Symptom:** Magic links don't work, OAuth redirects fail
+
+**Solution:** Configure Supabase Dashboard → Authentication → URL Configuration:
+
+| Setting | Value |
+|---------|-------|
+| **Site URL** | `https://yourdomain.com` (exact match, with https) |
+| **Redirect URLs** | `https://yourdomain.com/auth/callback` |
+| | `https://yourdomain.com/api/auth/callback/google` |
+
+**Note:** Email/password login doesn't use redirect URLs - those are for magic links and OAuth only.
+
+### Login Succeeds But Session Not Created
+
+**Symptom:** Server logs show successful authentication, but user is redirected back to sign-in
+
+**Cause:** NextAuth cookie configuration issues
+
+**Solution:**
+1. **Don't override cookie settings** - let NextAuth auto-configure based on `NEXTAUTH_URL`
+2. Remove any custom `cookies: {}` configuration from NextAuth options
+3. NextAuth automatically handles:
+   - `__Secure-` cookie prefix in production
+   - Correct `sameSite` and `secure` flags
+   - Domain settings based on `NEXTAUTH_URL`
+
+### NEXTAUTH_URL Mismatch
+
+**Symptom:** Redirects go to wrong URL, cookies not set
+
+**Requirements for NEXTAUTH_URL:**
+- Must include `https://` protocol
+- Must exactly match your production domain
+- No trailing slash
+
+**Correct:**
+```
+NEXTAUTH_URL=https://dietaimanager.com
+```
+
+**Incorrect:**
+```
+NEXTAUTH_URL=dietaimanager.com          # Missing https://
+NEXTAUTH_URL=https://dietaimanager.com/ # Trailing slash
+NEXTAUTH_URL=http://dietaimanager.com   # Wrong protocol
+```
+
+### Debugging Authentication Issues
+
+**Step 1: Check Browser Console (F12 → Console)**
+- Look for `Missing Supabase environment variables` → NEXT_PUBLIC_ build args issue
+- Look for CORS errors → Domain mismatch
+- Look for 401 errors → Session/cookie issues
+
+**Step 2: Check Server Logs in Dokploy**
+Look for these log patterns:
+```
+[NextAuth] Credentials authorize started     → Auth handler reached
+[NextAuth] Supabase user verified           → Supabase token valid
+[NextAuth] User upserted successfully       → Database working
+[NextAuth] signIn callback returning true   → Auth completed
+```
+
+If logs stop at a certain point, that's where the issue is.
+
+**Step 3: Verify Environment Variables**
+```bash
+# In Dokploy terminal or container shell
+echo $NEXTAUTH_URL
+echo $NEXTAUTH_SECRET
+echo $NEXT_PUBLIC_SUPABASE_URL
+```
+
+### Authentication Environment Checklist
+
+| Variable | Build Time | Runtime | Notes |
+|----------|------------|---------|-------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✓ Required | ✓ | Must pass as build arg |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓ Required | ✓ | Must pass as build arg |
+| `NEXTAUTH_URL` | | ✓ Required | Exact domain with https |
+| `NEXTAUTH_SECRET` | | ✓ Required | Generate with `openssl rand -base64 32` |
+| `SUPABASE_SERVICE_ROLE_KEY` | | Optional | For admin operations |
 
 ---
 
