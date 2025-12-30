@@ -15,6 +15,7 @@ import {
   StyledTabsList as TabsList,
   StyledTabsTrigger as TabsTrigger,
 } from "./custom-ui/styled-tabs";
+import { EmptyStateIcon } from "./custom-ui/EmptyStateIcon";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -451,9 +452,7 @@ export default function MealPlans() {
           <Button
             onClick={() => setShowCreateDialog(true)}
             className={cn(
-              "gap-2 h-11 px-6 shadow-lg shadow-brand-500/20",
-              "bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700",
-              "transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
+              "gap-2 h-11 px-6 shadow-lg shadow-brand-500/20 transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
             )}
             disabled={isPending}
           >
@@ -504,9 +503,7 @@ export default function MealPlans() {
             ) : (
               <Card className="border-2 border-dashed border-border/60 bg-gradient-to-br from-muted/30 to-transparent">
                 <CardContent className="py-16 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-100/50 dark:bg-brand-500/10 mb-6">
-                    <Edit2 className="w-8 h-8 text-brand-500/70" />
-                  </div>
+                  <EmptyStateIcon icon={Edit2} className="mb-6" />
                   <h3 className="font-display font-semibold text-xl mb-3 text-foreground">
                     {t("selectToEdit")}
                   </h3>

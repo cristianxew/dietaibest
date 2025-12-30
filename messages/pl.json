@@ -152,6 +152,9 @@
         }
     },
     "dashboard": {
+        "dashboardLabel": "Panel Kontrolny",
+        "planActive": "Plan Aktywny",
+        "dayOne": "Dzień 1",
         "greeting": {
             "morning": "Dzień dobry",
             "afternoon": "Dzień dobry",
@@ -173,12 +176,18 @@
             "onTrack": "W Normie",
             "under": "Poniżej",
             "over": "Powyżej",
-            "noData": "Brak zaplanowanych posiłków na dziś",
-            "noTargets": "Ustaw swoje cele żywieniowe w ustawieniach profilu",
+            "noData": "Zaplanuj dzisiejsze posiłki, aby rozpocząć śledzenie",
+            "noTargets": "Powiedz nam o swoich celach, aby odblokować statystyki",
             "setupTargets": "Ustaw Cele",
             "planned": "Zaplanowane",
             "remaining": "pozostało",
-            "ofTarget": "z celu"
+            "ofTarget": "z celu",
+            "quickActions": {
+                "quickLog": "Szybki Zapis",
+                "adjustServings": "Dostosuj Porcje",
+                "swapMeal": "Zmień Posiłek"
+            },
+            "kcalUnit": "kcal"
         },
         "activePlan": {
             "title": "Aktywny Plan Posiłków",
@@ -187,15 +196,18 @@
             "todaysMeals": "Dzisiejsze Posiłki",
             "noActivePlan": "Brak Aktywnego Planu",
             "noActivePlanDescription": "Zaplanuj plan, aby zobaczyć tutaj swoje codzienne posiłki",
-            "schedulePlan": "Zaplanuj Plan",
+            "schedulePlan": "Aktywuj Posiłki Tego Tygodnia",
             "viewPlan": "Zobacz Plan",
-            "viewAllPlans": "Zobacz Wszystkie Plany"
+            "viewAllPlans": "Zobacz Wszystkie Plany",
+            "noMealsToday": "Brak zaplanowanych posiłków na dziś",
+            "noRecipe": "Brak przepisu",
+            "kcalUnit": "kcal"
         },
         "recentRecipes": {
             "title": "Ostatnie Przepisy",
             "viewAll": "Zobacz Wszystkie",
-            "noRecipes": "Zacznij Budować Swoją Kolekcję",
-            "noRecipesDescription": "Dodaj swój pierwszy przepis, aby zacząć",
+            "noRecipes": "Dodaj Swój Pierwszy Przepis w 2 Minuty",
+            "noRecipesDescription": "Utwórz lub zaimportuj z dowolnej strony z przepisami",
             "createRecipe": "Utwórz Przepis",
             "importRecipe": "Importuj z URL",
             "kcal": "kcal"
@@ -268,6 +280,39 @@
                 "description": "Planuj swoje tygodniowe posiłki i śledź odżywianie",
                 "cta": "Utwórz Plan",
                 "completed": "Plany Utworzone"
+            }
+        },
+        "heroCTA": {
+            "yourNextStep": "Twój Następny Krok",
+            "dismiss": "Może Później",
+            "onboardingIncomplete": {
+                "title": "Dokończ Konfigurację Profilu",
+                "description": "Opowiedz nam o swoich celach i preferencjach, aby odblokować spersonalizowane planowanie posiłków",
+                "cta": "Dokończ Konfigurację",
+                "benefits": {
+                    "targets": "Niestandardowe cele makroskładników oparte na Twoich celach",
+                    "preferences": "Preferencje dietetyczne i filtry alergii",
+                    "family": "Profile rodzinne do planowania posiłków"
+                }
+            },
+            "needsFirstRecipe": {
+                "title": "Dodaj Swój Pierwszy Przepis w 2 Minuty",
+                "description": "Zacznij budować swoją kolekcję przepisów, aby tworzyć plany posiłków",
+                "createCTA": "Utwórz Przepis",
+                "importCTA": "Importuj z URL",
+                "hint": "Importuj z dowolnej strony z przepisami lub stwórz własny"
+            },
+            "needsMealPlan": {
+                "title": "Utwórz Swój Pierwszy Plan Posiłków",
+                "description": "Organizuj przepisy w tygodniowe plany z automatycznym śledzeniem odżywiania",
+                "cta": "Utwórz Plan Posiłków",
+                "hint": "Masz {count} przepisów gotowych do użycia"
+            },
+            "needsActivePlan": {
+                "title": "Aktywuj Posiłki Tego Tygodnia",
+                "description": "Zaplanuj jeden ze swoich planów posiłków, aby rozpocząć śledzenie odżywiania",
+                "cta": "Zaplanuj Plan",
+                "hint": "Masz {count} planów posiłków gotowych do zaplanowania"
             }
         }
     },

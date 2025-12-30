@@ -327,7 +327,7 @@ function RunningStateView({
           variants={floatVariants}
           animate="float"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-100 to-brand-200 dark:from-brand-500/20 dark:to-brand-600/20 rounded-3xl rotate-6" />
+          <div className="absolute inset-0 bg-primary/10 rounded-3xl rotate-6" />
           <div className="absolute inset-0 bg-card rounded-3xl border border-border shadow-lg flex items-center justify-center">
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
@@ -358,7 +358,7 @@ function RunningStateView({
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
-        <div className="p-4 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100/50 dark:from-brand-500/10 dark:to-brand-600/5 border border-brand-200/50 dark:border-brand-500/20">
+        <div className="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-500/10 border border-brand-200/50 dark:border-brand-500/20">
           <div className="flex items-center gap-2 mb-1">
             <Package className="w-4 h-4 text-brand-600 dark:text-brand-400" />
             <span className="text-xs font-medium text-brand-600 dark:text-brand-400 uppercase tracking-wide">
@@ -370,7 +370,7 @@ function RunningStateView({
           </span>
         </div>
 
-        <div className="p-4 rounded-xl bg-gradient-to-br from-gold-50 to-gold-100/50 dark:from-gold-500/10 dark:to-gold-600/5 border border-gold-200/50 dark:border-gold-500/20">
+        <div className="p-4 rounded-xl bg-gold-50/50 dark:bg-gold-500/10 border border-gold-200/50 dark:border-gold-500/20">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-gold-600 dark:text-gold-400" />
             <span className="text-xs font-medium text-gold-600 dark:text-gold-400 uppercase tracking-wide">
@@ -483,7 +483,7 @@ export function ShoppingProgressModal({
         <DialogContent
           className={cn(
             "sm:max-w-xl max-h-[90vh] overflow-y-auto",
-            "bg-gradient-to-b from-card to-stone-50/50 dark:from-card dark:to-slate-950/50",
+            "bg-card",
             "border-border/60"
           )}
         >

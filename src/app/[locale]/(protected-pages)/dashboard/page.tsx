@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getDashboardData, getTodaysMacros } from "@/actions/dashboard";
-import { OnboardingPrompt } from "@/components/dashboard/OnboardingPrompt";
+import { HeroCTA } from "@/components/dashboard/HeroCTA";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
 import {
   ActivePlanPreview,
@@ -8,10 +8,10 @@ import {
 } from "@/components/dashboard/ActivePlanPreview";
 import { WeeklyMacroChart } from "@/components/dashboard/WeeklyMacroChart";
 import { RecentRecipesCarousel } from "@/components/dashboard/RecentRecipesCarousel";
-import { GettingStartedSection } from "@/components/dashboard/GettingStartedSection";
 import { DashboardSkeleton } from "@/components/dashboard/skeletons/DashboardSkeleton";
 import { CompactNutrition } from "@/components/dashboard/CompactNutrition";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getDashboardState, shouldShowHeroCTA } from "@/lib/dashboard-state";
 
 // Main dashboard content component
 async function DashboardContent() {
@@ -45,15 +45,28 @@ async function DashboardContent() {
   const hasActivePlan = !!activePlan;
   const profileComplete = profile?.onboardingCompleted || false;
 
-  // Check if user is new (for getting started section)
-  const isNewUser = !hasRecipes && !hasMealPlans;
+  // Determine dashboard state for smart CTA display
+  const dashboardState = getDashboardState({
+    profileComplete,
+    hasRecipes,
+    hasMealPlans,
+    hasActivePlan,
+  });
+
+  const showHeroCTA = shouldShowHeroCTA(dashboardState);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 slide-in-from-bottom-4">
-      {/* Onboarding Prompt */}
-      <OnboardingPrompt />
+    <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
+      {/* Hero CTA - Smart empty state based on user journey */}
+      {showHeroCTA && (
+        <HeroCTA
+          dashboardState={dashboardState}
+          recipeCount={recipeStats?.totalRecipes || 0}
+          mealPlanCount={mealPlanStats?.totalTemplates || 0}
+        />
+      )}
 
-      <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-end">
         <div className="flex-1 min-w-0">
           <WelcomeHeader
             hasRecipes={hasRecipes}
@@ -86,23 +99,17 @@ async function DashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* Left Column - Nutrition & Quick Actions */}
-        <div className="lg:col-span-6 xl:col-span-5 space-y-6">
-          {/* Compact Nutrition Card with Quick Actions on top */}
-          <Card className="border-stone-200/70 dark:border-stone-800/70 bg-white/60 dark:bg-stone-900/60 backdrop-blur-xl overflow-hidden shadow-lg shadow-stone-200/20 dark:shadow-none">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 via-gold-400 to-sage-500 opacity-80" />
+        <div className="lg:col-span-6 xl:col-span-5 flex flex-col gap-6 h-full">
+          {/* Compact Nutrition Card */}
+          <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm overflow-hidden">
 
-            <CardHeader className="pt-6 pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-display font-semibold tracking-tight">
-                <span className="bg-gradient-to-br from-brand-500 to-gold-500 bg-clip-text text-transparent">
-                  Today&apos;s Nutrition
-                </span>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-display font-semibold tracking-tight">
+                Today&apos;s Nutrition
               </CardTitle>
             </CardHeader>
 
-            <CardContent className="space-y-4">
-
-              {/* Divider */}
-              <div className="h-px bg-stone-200/60 dark:bg-stone-800/60" />
+            <CardContent className="pt-0">
 
               {/* Compact Nutrition Display */}
               <CompactNutrition
@@ -126,6 +133,7 @@ async function DashboardContent() {
             targetProtein={profile?.proteinGrams || null}
             targetCarbs={profile?.carbsGrams || null}
             targetFat={profile?.fatGrams || null}
+            className="flex-1"
           />
         </div>
 
@@ -153,15 +161,6 @@ async function DashboardContent() {
           <RecentRecipesCarousel recipes={recentRecipes || []} />
         </div>
       </div>
-
-      {/* Getting Started Section - only for new users */}
-      {isNewUser && (
-        <GettingStartedSection
-          profileComplete={profileComplete}
-          hasRecipes={hasRecipes}
-          hasMealPlans={hasMealPlans}
-        />
-      )}
     </div>
   );
 }
@@ -176,7 +175,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 p-6 lg:p-8 space-y-8">
+      <div className="relative z-10 p-6 lg:p-8">
         <Suspense fallback={<DashboardSkeleton />}>
           <DashboardContent />
         </Suspense>

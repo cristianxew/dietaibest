@@ -3,7 +3,9 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Calendar, LayoutDashboard } from "lucide-react";
+import { Trophy, Calendar, LayoutDashboard } from "lucide-react";
+
+import { useAuth } from "@/providers/AuthProvider";
 
 interface WelcomeHeaderProps {
   hasRecipes: boolean;
@@ -18,6 +20,7 @@ export function WelcomeHeader({
   hasActivePlan,
 }: WelcomeHeaderProps) {
   const t = useTranslations("dashboard");
+  const { user } = useAuth();
   const [greeting, setGreeting] = useState<string>("");
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export function WelcomeHeader({
 
   const isNewUser = !hasRecipes && !hasMealPlans;
   const subtitle = isNewUser ? t("subtitle.new") : t("subtitle.returning");
+  const firstName = user?.name?.split(" ")[0];
 
   return (
     <div className="space-y-3">
@@ -41,32 +45,32 @@ export function WelcomeHeader({
           <LayoutDashboard className="w-5 h-5 text-brand-600 dark:text-brand-400" />
         </div>
         <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-widest">
-          Dashboard
+          {t("dashboardLabel")}
         </span>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
-          {greeting}
+        <h1 className="text-4xl lg:text-5xl font-display font-bold text-foreground tracking-tight">
+          {greeting}{firstName ? `, ${firstName}` : ""}
         </h1>
 
         {hasActivePlan && (
           <Badge
             variant="outline"
-            className="bg-sage-50 dark:bg-sage-950/50 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-800 gap-1.5 py-1 px-3 ml-2"
+            className="bg-sage-50 dark:bg-sage-900/40 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-700 gap-1.5 py-1 px-3 ml-2"
           >
             <Calendar className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">Plan Active</span>
+            <span className="text-xs font-medium">{t("planActive")}</span>
           </Badge>
         )}
 
         {isNewUser && (
           <Badge
             variant="outline"
-            className="bg-gold-50 dark:bg-gold-950/50 text-gold-700 dark:text-gold-300 border-gold-200 dark:border-gold-800 gap-1.5 py-1 px-3 ml-2"
+            className="bg-gold-50 dark:bg-gold-900/40 text-gold-700 dark:text-gold-300 border-gold-200 dark:border-gold-700 gap-1.5 py-1 px-3 ml-2"
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">Getting Started</span>
+            <Trophy className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{t("dayOne")}</span>
           </Badge>
         )}
       </div>

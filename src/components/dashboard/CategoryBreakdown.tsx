@@ -1,5 +1,7 @@
 "use client";
 
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,9 +88,7 @@ export function CategoryBreakdown({
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center mb-3">
-              <Scale className="h-5 w-5 text-muted-foreground" />
-            </div>
+            <EmptyStateIcon icon={Scale} size="sm" variant="gray" className="mb-3" />
             <p className="text-sm text-muted-foreground">{t("noRecipes")}</p>
           </div>
         </CardContent>

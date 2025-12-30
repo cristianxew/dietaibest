@@ -53,7 +53,7 @@ export function OnboardingPrompt() {
   }
 
   return (
-    <Card className="relative overflow-hidden border-brand-200 dark:border-brand-800 bg-gradient-to-br from-brand-50 to-gold-50 dark:from-brand-950/50 dark:to-gold-950/30">
+    <Card className="relative overflow-hidden border-brand-200 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/30">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}

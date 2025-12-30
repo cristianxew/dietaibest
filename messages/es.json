@@ -157,6 +157,9 @@
         }
     },
     "dashboard": {
+        "dashboardLabel": "Panel de Control",
+        "planActive": "Plan Activo",
+        "dayOne": "Día 1",
         "greeting": {
             "morning": "Buenos días",
             "afternoon": "Buenas tardes",
@@ -178,12 +181,18 @@
             "onTrack": "En Objetivo",
             "under": "Por Debajo",
             "over": "Por Encima",
-            "noData": "Sin comidas planificadas hoy",
-            "noTargets": "Configura tus objetivos nutricionales en ajustes de perfil",
+            "noData": "Planifica las comidas de hoy para comenzar el seguimiento",
+            "noTargets": "Cuéntanos tus objetivos para desbloquear información",
             "setupTargets": "Configurar Objetivos",
             "planned": "Planificado",
             "remaining": "restante",
-            "ofTarget": "del objetivo"
+            "ofTarget": "del objetivo",
+            "quickActions": {
+                "quickLog": "Registro Rápido",
+                "adjustServings": "Ajustar Porciones",
+                "swapMeal": "Cambiar Comida"
+            },
+            "kcalUnit": "kcal"
         },
         "activePlan": {
             "title": "Plan de Comidas Activo",
@@ -192,15 +201,18 @@
             "todaysMeals": "Comidas de Hoy",
             "noActivePlan": "Sin Plan Activo",
             "noActivePlanDescription": "Programa un plan para ver tus comidas diarias aquí",
-            "schedulePlan": "Programar un Plan",
+            "schedulePlan": "Activa las Comidas de Esta Semana",
             "viewPlan": "Ver Plan",
-            "viewAllPlans": "Ver Todos los Planes"
+            "viewAllPlans": "Ver Todos los Planes",
+            "noMealsToday": "No hay comidas programadas para hoy",
+            "noRecipe": "Sin receta",
+            "kcalUnit": "kcal"
         },
         "recentRecipes": {
             "title": "Recetas Recientes",
             "viewAll": "Ver Todas",
-            "noRecipes": "Comienza a Construir Tu Colección",
-            "noRecipesDescription": "Añade tu primera receta para comenzar",
+            "noRecipes": "Añade Tu Primera Receta en 2 Minutos",
+            "noRecipesDescription": "Crea o importa desde cualquier sitio web de recetas",
             "createRecipe": "Crear Receta",
             "importRecipe": "Importar desde URL",
             "kcal": "kcal"
@@ -273,6 +285,39 @@
                 "description": "Planifica tus comidas semanales y rastrea tu nutrición",
                 "cta": "Crear Plan",
                 "completed": "Planes Creados"
+            }
+        },
+        "heroCTA": {
+            "yourNextStep": "Tu Próximo Paso",
+            "dismiss": "Quizás Más Tarde",
+            "onboardingIncomplete": {
+                "title": "Completa la Configuración de Tu Perfil",
+                "description": "Cuéntanos sobre tus objetivos y preferencias para desbloquear planificación de comidas personalizada",
+                "cta": "Completar Configuración",
+                "benefits": {
+                    "targets": "Objetivos de macros personalizados según tus metas",
+                    "preferences": "Preferencias dietéticas y filtros de alergias",
+                    "family": "Perfiles familiares para planificación de comidas"
+                }
+            },
+            "needsFirstRecipe": {
+                "title": "Añade Tu Primera Receta en 2 Minutos",
+                "description": "Comienza a construir tu colección de recetas para crear planes de comidas",
+                "createCTA": "Crear Receta",
+                "importCTA": "Importar desde URL",
+                "hint": "Importa desde cualquier sitio web de recetas o crea tu propia"
+            },
+            "needsMealPlan": {
+                "title": "Crea Tu Primer Plan de Comidas",
+                "description": "Organiza tus recetas en planes semanales con seguimiento automático de nutrición",
+                "cta": "Crear Plan de Comidas",
+                "hint": "Tienes {count} recetas listas para usar"
+            },
+            "needsActivePlan": {
+                "title": "Activa las Comidas de Esta Semana",
+                "description": "Programa uno de tus planes de comidas para comenzar a rastrear tu nutrición",
+                "cta": "Programar un Plan",
+                "hint": "Tienes {count} planes de comidas listos para programar"
             }
         }
     },

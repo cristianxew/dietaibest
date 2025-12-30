@@ -157,6 +157,9 @@
         }
     },
     "dashboard": {
+        "dashboardLabel": "Dashboard",
+        "planActive": "Plan Active",
+        "dayOne": "Day 1",
         "greeting": {
             "morning": "Good morning",
             "afternoon": "Good afternoon",
@@ -178,12 +181,18 @@
             "onTrack": "On Track",
             "under": "Under",
             "over": "Over",
-            "noData": "No meals planned today",
-            "noTargets": "Set up your nutrition targets in profile settings",
+            "noData": "Plan today's meals to start tracking",
+            "noTargets": "Tell us your goals to unlock insights",
             "setupTargets": "Set Up Targets",
             "planned": "Planned",
             "remaining": "remaining",
-            "ofTarget": "of target"
+            "ofTarget": "of target",
+            "quickActions": {
+                "quickLog": "Quick Log",
+                "adjustServings": "Adjust Servings",
+                "swapMeal": "Swap Meal"
+            },
+            "kcalUnit": "kcal"
         },
         "activePlan": {
             "title": "Active Meal Plan",
@@ -192,15 +201,18 @@
             "todaysMeals": "Today's Meals",
             "noActivePlan": "No Active Meal Plan",
             "noActivePlanDescription": "Schedule a plan to see your daily meals here",
-            "schedulePlan": "Schedule a Plan",
+            "schedulePlan": "Activate This Week's Meals",
             "viewPlan": "View Plan",
-            "viewAllPlans": "View All Plans"
+            "viewAllPlans": "View All Plans",
+            "noMealsToday": "No meals scheduled for today",
+            "noRecipe": "No recipe",
+            "kcalUnit": "kcal"
         },
         "recentRecipes": {
             "title": "Recent Recipes",
             "viewAll": "View All",
-            "noRecipes": "Start Building Your Collection",
-            "noRecipesDescription": "Add your first recipe to get started",
+            "noRecipes": "Add Your First Recipe in 2 Minutes",
+            "noRecipesDescription": "Create or import from any recipe website",
             "createRecipe": "Create Recipe",
             "importRecipe": "Import from URL",
             "kcal": "kcal"
@@ -273,6 +285,39 @@
                 "description": "Plan your weekly meals and track your nutrition",
                 "cta": "Create Plan",
                 "completed": "Plans Created"
+            }
+        },
+        "heroCTA": {
+            "yourNextStep": "Your Next Step",
+            "dismiss": "Maybe Later",
+            "onboardingIncomplete": {
+                "title": "Complete Your Profile Setup",
+                "description": "Tell us about your goals and preferences to unlock personalized meal planning",
+                "cta": "Complete Setup",
+                "benefits": {
+                    "targets": "Custom macro targets based on your goals",
+                    "preferences": "Dietary preferences and allergy filters",
+                    "family": "Family profiles for meal planning"
+                }
+            },
+            "needsFirstRecipe": {
+                "title": "Add Your First Recipe in 2 Minutes",
+                "description": "Start building your recipe collection to create meal plans",
+                "createCTA": "Create Recipe",
+                "importCTA": "Import from URL",
+                "hint": "Import from any recipe website or create your own"
+            },
+            "needsMealPlan": {
+                "title": "Create Your First Meal Plan",
+                "description": "Organize your recipes into weekly meal plans with automatic nutrition tracking",
+                "cta": "Create Meal Plan",
+                "hint": "You have {count} recipes ready to use"
+            },
+            "needsActivePlan": {
+                "title": "Activate This Week's Meals",
+                "description": "Schedule one of your meal plans to start tracking your nutrition",
+                "cta": "Schedule a Plan",
+                "hint": "You have {count} meal plans ready to schedule"
             }
         }
     },

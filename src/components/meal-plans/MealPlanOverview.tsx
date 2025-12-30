@@ -16,6 +16,7 @@ import {
   CompactMealPlanCard,
   CompactMealPlanCardSkeleton,
 } from "./CompactMealPlanCard";
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 import type { Prisma } from "@/generated/prisma";
 
 type TemplateWithMealsAndSchedules = Prisma.MealPlanTemplateGetPayload<{
@@ -114,9 +115,7 @@ export function MealPlanOverview({
         <div className="relative flex flex-col items-center justify-center text-center py-16 px-8">
           {/* Icon */}
           <div className="relative mb-6">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20 flex items-center justify-center shadow-xl shadow-brand-500/10">
-              <ChefHat className="w-10 h-10 text-brand-500" />
-            </div>
+            <EmptyStateIcon icon={ChefHat} size="lg" />
             <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-gold-400 flex items-center justify-center shadow-lg">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
@@ -136,9 +135,8 @@ export function MealPlanOverview({
           <Button
             onClick={onCreatePlan}
             className={cn(
-              "mt-8 gap-2 h-12 px-8 shadow-lg shadow-brand-500/20",
-              "bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700",
-              "transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
+              "mt-8 gap-2 h-12 px-8 shadow-lg shadow-brand-500/25",
+              "bg-primary text-primary-foreground transition-all hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 transition-all duration-300"
             )}
           >
             <Sparkles className="w-4 h-4" />

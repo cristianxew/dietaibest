@@ -1,5 +1,7 @@
 "use client";
 
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +16,7 @@ interface WeeklyMacroChartProps {
   targetProtein?: number | null;
   targetCarbs?: number | null;
   targetFat?: number | null;
+  className?: string;
 }
 
 type MacroType = "calories" | "protein" | "carbs" | "fat";
@@ -54,6 +57,7 @@ export function WeeklyMacroChart({
   targetProtein,
   targetCarbs,
   targetFat,
+  className,
 }: WeeklyMacroChartProps) {
   const t = useTranslations("dashboard.weeklyChart");
   const [activeMacro, setActiveMacro] = useState<MacroType>("calories");
@@ -83,18 +87,16 @@ export function WeeklyMacroChart({
 
   if (!hasAnyData) {
     return (
-      <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm">
+      <Card className={cn("border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm", className)}>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-display font-semibold tracking-tight">
             {t("title")}
           </CardTitle>
           <p className="text-xs text-muted-foreground">{t("subtitle")}</p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-700 flex items-center justify-center mb-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-            </div>
+            <EmptyStateIcon icon={Calendar} size="sm" className="mb-3" />
             <p className="text-muted-foreground text-sm max-w-xs">
               {t("noDataDescription")}
             </p>
@@ -105,8 +107,8 @@ export function WeeklyMacroChart({
   }
 
   return (
-    <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pt-6 pb-3">
+    <Card className={cn("border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm", className)}>
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <CardTitle className="text-lg font-display font-semibold tracking-tight">
@@ -141,7 +143,7 @@ export function WeeklyMacroChart({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-1">
+      <CardContent className="pt-0">
         {/* Horizontal Bar Chart */}
         <div className="space-y-2">
           {data.map((day) => {

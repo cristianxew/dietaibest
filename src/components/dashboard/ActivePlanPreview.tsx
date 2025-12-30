@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 
 interface Meal {
   id: string;
@@ -100,10 +101,8 @@ export function ActivePlanPreview({
 
   return (
     <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm overflow-hidden">
-      {/* Accent stripe */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 via-gold-400 to-sage-500" />
 
-      <CardHeader className="pt-6 pb-3">
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 min-w-0">
             <CardTitle className="text-lg font-display font-semibold tracking-tight truncate">
@@ -113,7 +112,7 @@ export function ActivePlanPreview({
               {t("day", { current: currentDayNumber, total: duration })}
             </p>
           </div>
-          <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
+          <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
             <Link href="/meal-plans">
               {t("viewAllPlans")}
               <ArrowRight className="h-3 w-3" />
@@ -122,7 +121,7 @@ export function ActivePlanPreview({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-5">
+      <CardContent className="pt-0 space-y-4">
         {/* Mini Calendar */}
         <div className="flex justify-between items-center gap-1">
           {calendarDays.map((day, index) => (
@@ -149,7 +148,7 @@ export function ActivePlanPreview({
                   day.isToday
                     ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30"
                     : day.isWithinPlan
-                      ? "bg-stone-100 dark:bg-stone-800 text-foreground"
+                      ? "bg-stone-100 dark:bg-stone-800 text-foreground hover:opacity-80 cursor-pointer"
                       : "text-muted-foreground/50"
                 )}
               >
@@ -160,7 +159,7 @@ export function ActivePlanPreview({
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-gradient-to-r from-transparent via-stone-200 dark:via-stone-700 to-transparent" />
+        <div className="h-px bg-stone-200/60 dark:bg-stone-800/60" />
 
         {/* Today's Meals */}
         <div className="space-y-3">
@@ -170,7 +169,7 @@ export function ActivePlanPreview({
 
           {todaysMeals.length === 0 ? (
             <p className="text-sm text-muted-foreground/70 italic">
-              No meals scheduled for today
+              {t("noMealsToday")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -192,11 +191,11 @@ export function ActivePlanPreview({
                         className="flex items-center justify-between pl-5 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
                       >
                         <span className="text-sm text-foreground truncate flex-1">
-                          {meal.recipe?.title || "No recipe"}
+                          {meal.recipe?.title || t("noRecipe")}
                         </span>
                         {meal.recipe?.calories && (
                           <span className="text-xs text-muted-foreground font-mono ml-2">
-                            {meal.recipe.calories} kcal
+                            {meal.recipe.calories} {t("kcalUnit")}
                           </span>
                         )}
                       </div>
@@ -209,7 +208,7 @@ export function ActivePlanPreview({
         </div>
 
         {/* View Plan Button */}
-        <Button asChild variant="outline" className="w-full" size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href={`/meal-plans/${templateId}`} className="gap-2">
             {t("viewPlan")}
             <ArrowRight className="h-4 w-4" />
@@ -231,18 +230,16 @@ export function ActivePlanEmpty() {
           {t("title")}
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-0">
         <div className="text-center py-8 space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-100 to-gold-100 dark:from-brand-900/30 dark:to-gold-900/30">
-            <Calendar className="h-8 w-8 text-brand-500" />
-          </div>
+          <EmptyStateIcon icon={Calendar} size="sm" />
           <div className="space-y-2">
             <p className="font-medium text-foreground">{t("noActivePlan")}</p>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto">
               {t("noActivePlanDescription")}
             </p>
           </div>
-          <Button asChild size="sm">
+          <Button asChild size="default" className="shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
             <Link href="/meal-plans" className="gap-2">
               {t("schedulePlan")}
               <ArrowRight className="h-4 w-4" />

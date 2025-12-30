@@ -107,11 +107,11 @@ export function ShoppingAutomationButton({
       })),
       preferences: preferences
         ? {
-            preferOrganic: preferences.preferOrganic,
-            preferStoreBrand: preferences.preferStoreBrand,
-            allowSubstitutions: preferences.allowSubstitutions,
-            maxPricePerItem: preferences.maxPricePerItem ?? undefined,
-          }
+          preferOrganic: preferences.preferOrganic,
+          preferStoreBrand: preferences.preferStoreBrand,
+          allowSubstitutions: preferences.allowSubstitutions,
+          maxPricePerItem: preferences.maxPricePerItem ?? undefined,
+        }
         : undefined,
     });
   }, [selectedStore, ingredients, preferences, startAutomation]);
@@ -158,7 +158,7 @@ export function ShoppingAutomationButton({
                 disabled={isButtonDisabled}
                 className={cn(
                   "relative group overflow-hidden",
-                  "bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700",
+                  "bg-primary text-primary-foreground",
                   "shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30",
                   "transition-all duration-300",
                   isButtonDisabled && "opacity-50 cursor-not-allowed"

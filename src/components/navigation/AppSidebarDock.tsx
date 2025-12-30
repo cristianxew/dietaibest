@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
+import { useTheme } from "next-themes";
 import {
   Home,
   BookOpen,
@@ -19,6 +20,10 @@ import {
   PanelLeft,
   Check,
   Globe,
+  LayoutDashboard,
+  Sun,
+  Moon,
+  Monitor,
   type LucideIcon,
 } from "lucide-react";
 import { Icon } from "@iconify/react";
@@ -90,16 +95,8 @@ function SidebarItem({
 }) {
   const content = (
     <>
-      {/* Active indicator - LEFT SIDE */}
-      {isActive && (
-        <span
-          className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2",
-            "w-1 h-6 rounded-r-full",
-            "bg-brand-500 dark:bg-brand-400"
-          )}
-        />
-      )}
+      {/* Active indicator - LEFT SIDE - REMOVED */}
+
       {/* Icon container - 40px, always left-aligned */}
       <span className="w-10 h-10 flex items-center justify-center shrink-0">
         <IconComponent
@@ -127,9 +124,10 @@ function SidebarItem({
     "transition-colors duration-200 ease-out",
     // Colors
     "text-stone-600 dark:text-stone-400",
-    !isActive && "hover:bg-stone-100 dark:hover:bg-stone-800",
+    "border", // Add border to base to prevent layout shift
+    !isActive && "border-transparent hover:bg-stone-100 dark:hover:bg-stone-800",
     !isActive && "hover:text-stone-900 dark:hover:text-stone-100",
-    isActive && "bg-brand-50 dark:bg-brand-950/40",
+    isActive && "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border-brand-200/50 dark:border-brand-500/20",
     isActive && "text-brand-600 dark:text-brand-400",
     // Focus
     "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400",
@@ -162,6 +160,107 @@ function SidebarItem({
     <button onClick={onClick} className={baseStyles}>
       {content}
     </button>
+  );
+}
+
+/**
+ * DockThemeSwitcher - Theme switcher for the dock sidebar
+ */
+function DockThemeSwitcher({ collapsed }: { collapsed: boolean }) {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="w-full h-10 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse" />
+    );
+  }
+
+  const currentThemeIcon = theme === "dark" ? Moon : theme === "light" ? Sun : Monitor;
+  const IconComponent = currentThemeIcon;
+
+  const label = theme === "dark" ? "Dark Mode" : theme === "light" ? "Light Mode" : "System Theme";
+
+  const trigger = (
+    <button
+      className={cn(
+        "relative flex items-center gap-3 w-full h-10 rounded-xl overflow-hidden",
+        "transition-colors duration-200 ease-out",
+        "text-stone-600 dark:text-stone-400",
+        "hover:bg-stone-100 dark:hover:bg-stone-800",
+        "hover:text-stone-900 dark:hover:text-stone-100",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
+      )}
+    >
+      <span className="w-10 h-10 flex items-center justify-center shrink-0">
+        <IconComponent className="w-5 h-5" />
+      </span>
+      <span
+        className={cn(
+          "text-sm font-medium whitespace-nowrap overflow-hidden",
+          "transition-opacity duration-300 ease-out",
+          collapsed ? "opacity-0" : "opacity-100"
+        )}
+      >
+        {label}
+      </span>
+    </button>
+  );
+
+  return (
+    <DropdownMenu>
+      {collapsed ? (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8} className="font-medium">
+            Theme
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      )}
+      <DropdownMenuContent
+        side="right"
+        align="center"
+        sideOffset={8}
+        className={cn(
+          "w-44 p-1.5 rounded-xl",
+          "bg-white/95 dark:bg-stone-900/95 backdrop-blur-xl",
+          "border border-stone-200/50 dark:border-stone-700/50",
+          "shadow-xl"
+        )}
+      >
+        {[
+          { name: "Light", value: "light", icon: Sun },
+          { name: "Dark", value: "dark", icon: Moon },
+          { name: "System", value: "system", icon: Monitor },
+        ].map((item) => (
+          <DropdownMenuItem
+            key={item.value}
+            onClick={() => setTheme(item.value)}
+            className={cn(
+              "flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer",
+              "transition-colors duration-150",
+              theme === item.value
+                ? "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20 text-brand-600 dark:text-brand-400"
+                : "border border-transparent text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+            )}
+          >
+            <span className="flex items-center gap-2">
+              <item.icon className="w-4 h-4" />
+              <span className="font-medium">{item.name}</span>
+            </span>
+            {theme === item.value && <Check className="w-4 h-4" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -259,8 +358,8 @@ function DockLanguageSwitcher({ collapsed }: { collapsed: boolean }) {
               "flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer",
               "transition-colors duration-150",
               locale === lang.code
-                ? "bg-brand-50 dark:bg-brand-950/30 text-brand-700 dark:text-brand-300"
-                : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                ? "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20 text-brand-600 dark:text-brand-400"
+                : "border border-transparent text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
             )}
           >
             <span className="font-medium">{lang.name}</span>
@@ -439,16 +538,14 @@ function MobileNavButton({
       href={item.href}
       onClick={onClose}
       className={cn(
-        "relative flex items-center gap-3 px-3 py-2.5 rounded-xl",
+        "relative flex items-center gap-3 px-3 py-2.5 rounded-xl border",
         "transition-all duration-200",
         isActive
-          ? "bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400"
-          : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+          ? "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border-brand-200/50 dark:border-brand-500/20 text-brand-600 dark:text-brand-400"
+          : "border-transparent text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
       )}
     >
-      {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-brand-500" />
-      )}
+      {/* Active indicator removed */}
       <ItemIcon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
       <span className="font-medium">{item.label}</span>
     </Link>
@@ -524,7 +621,7 @@ function MobileLanguageSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-40 rounded-xl">
         {languages.map((lang) => (
-          <DropdownMenuItem key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={cn("flex items-center justify-between px-3 py-2 cursor-pointer", locale === lang.code && "bg-brand-50 dark:bg-brand-950/30")}>
+          <DropdownMenuItem key={lang.code} onClick={() => handleLanguageChange(lang.code)} className={cn("flex items-center justify-between px-3 py-2 cursor-pointer border", locale === lang.code ? "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border-brand-200/50 dark:border-brand-500/20 text-brand-600 dark:text-brand-400" : "border-transparent text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800")}>
             <span>{lang.name}</span>
             {locale === lang.code && <Check className="w-4 h-4 text-brand-600" />}
           </DropdownMenuItem>
@@ -564,7 +661,7 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
   }, []);
 
   const allNavItems: NavItem[] = [
-    { id: "dashboard", label: t("dashboard"), href: "/dashboard", icon: Home, showWhen: "always" },
+    { id: "dashboard", label: t("dashboard"), href: "/dashboard", icon: LayoutDashboard, showWhen: "always" },
     { id: "recipes", label: t("recipes"), href: "/recipes", icon: BookOpen, showWhen: "always" },
     { id: "meal-plans", label: t("mealPlans"), href: "/meal-plans", icon: Calendar, showWhen: "always" },
     { id: "nutrition", label: t("nutrition"), href: "/nutrition", icon: Calculator, showWhen: "always" },
@@ -591,10 +688,7 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
       <div className="flex min-h-screen">
-        {/* Fixed Theme Toggle - Top Right */}
-        <div className="fixed top-4 right-4 z-50 hidden md:block">
-          <ThemeToggleSimple size="sm" />
-        </div>
+
 
         {/* Mobile Header */}
         <div className="fixed top-0 left-0 right-0 z-50 md:hidden">
@@ -699,8 +793,10 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
 
           {/* Settings */}
           <div className="space-y-1">
+            <DockThemeSwitcher collapsed={collapsed} />
             <DockLanguageSwitcher collapsed={collapsed} />
           </div>
+
 
           {/* Divider */}
           <div className="h-px bg-stone-200 dark:bg-stone-800 my-3 mx-2" />

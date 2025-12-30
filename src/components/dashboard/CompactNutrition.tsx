@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowRight } from "lucide-react";
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 
 interface CompactNutritionProps {
   calories: number;
@@ -56,14 +57,12 @@ export function CompactNutrition({
     return (
       <div className="flex items-center justify-between py-4 px-2">
         <div className="flex items-center gap-4">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-brand-100 to-gold-100 dark:from-brand-900/30 dark:to-gold-900/30">
-            <Settings className="h-6 w-6 text-brand-500" />
-          </div>
+          <EmptyStateIcon icon={Settings} size="sm" />
           <p className="text-sm text-muted-foreground max-w-[200px]">
             {t("noTargets")}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
+        <Button asChild size="sm" className="shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
           <Link href="/profile" className="gap-2">
             {t("setupTargets")}
             <ArrowRight className="h-4 w-4" />
@@ -116,9 +115,10 @@ export function CompactNutrition({
   }));
 
   const caloriePercent = getTargetPercent(calories, targetCalories);
+  const kcalUnit = t("kcalUnit");
 
   return (
-    <div className="flex flex-row items-center gap-6 sm:gap-8 py-4 px-2">
+    <div className="flex flex-row items-center gap-6 sm:gap-8 py-6">
       {/* Donut Chart */}
       <div className="h-[90px] w-[90px] relative shrink-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -160,7 +160,7 @@ export function CompactNutrition({
                           y={(viewBox.cy || 0) + 10}
                           className="fill-muted-foreground text-[8px] uppercase tracking-wider"
                         >
-                          kcal
+                          {kcalUnit}
                         </tspan>
                       </text>
                     );
@@ -181,29 +181,29 @@ export function CompactNutrition({
       {/* Stats Columns */}
       <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-wrap">
         {stats.map((stat) => (
-            <div key={stat.label} className="flex flex-col items-center gap-0.5 min-w-[50px]">
-              <span className="text-lg sm:text-xl font-bold font-display text-foreground tabular-nums">
-                {stat.value?.toFixed(0)}
-                <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-0.5">
-                  {stat.unit}
-                </span>
+          <div key={stat.label} className="flex flex-col items-center gap-0.5 min-w-[50px]">
+            <span className="text-lg sm:text-xl font-bold font-display text-foreground tabular-nums">
+              {stat.value?.toFixed(0)}
+              <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-0.5">
+                {stat.unit}
               </span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
-                {stat.label}
+            </span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+              {stat.label}
+            </span>
+            <span
+              className="text-[10px] font-semibold tabular-nums"
+              style={{ color: stat.color }}
+            >
+              {stat.percent}%
+            </span>
+            {stat.target && (
+              <span className="text-[9px] text-muted-foreground/70 tabular-nums">
+                /{stat.target}{stat.unit}
               </span>
-              <span
-                className="text-[10px] font-semibold tabular-nums"
-                style={{ color: stat.color }}
-              >
-                {stat.percent}%
-              </span>
-              {stat.target && (
-                <span className="text-[9px] text-muted-foreground/70 tabular-nums">
-                  /{stat.target}{stat.unit}
-                </span>
-              )}
-            </div>
-          )
+            )}
+          </div>
+        )
         )}
       </div>
     </div>

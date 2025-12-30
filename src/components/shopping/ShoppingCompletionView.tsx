@@ -174,9 +174,9 @@ function SuccessHeader({
       <motion.div
         variants={celebrationVariants}
         className={cn(
-          "relative mx-auto w-20 h-20 rounded-3xl flex items-center justify-center",
-          isSuccess && "bg-gradient-to-br from-sage-100 to-sage-200 dark:from-sage-500/20 dark:to-sage-600/10",
-          isPartial && "bg-gradient-to-br from-gold-100 to-gold-200 dark:from-gold-500/20 dark:to-gold-600/10"
+          "relative mx-auto w-20 h-20 rounded-3xl flex items-center justify-center shadow-sm",
+          isSuccess && "bg-sage-100 dark:bg-sage-500/20 border border-sage-200/50 dark:border-sage-500/30",
+          isPartial && "bg-gold-100 dark:bg-gold-500/20 border border-gold-200/50 dark:border-gold-500/30"
         )}
       >
         {isSuccess ? (
@@ -607,8 +607,8 @@ export function ShoppingCompletionView({
             size="lg"
             className={cn(
               "w-full h-14 text-base font-semibold",
-              "bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700",
-              "shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30",
+              "bg-primary text-primary-foreground",
+              "shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5",
               "transition-all duration-200"
             )}
             onClick={handleOpenCart}

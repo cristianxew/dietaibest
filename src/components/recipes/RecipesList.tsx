@@ -42,6 +42,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 
 const RECENT_SEARCHES_KEY = "DietAIbook-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -514,7 +515,7 @@ export function RecipesList() {
               className={cn(
                 "w-[150px] h-10 rounded-lg border-border/50",
                 selectedCategory !== "all" &&
-                  "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
+                "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
               )}
             >
               <SelectValue placeholder={t("allCategories")} />
@@ -538,7 +539,7 @@ export function RecipesList() {
               className={cn(
                 "w-[150px] h-10 rounded-lg border-border/50",
                 selectedDifficulty !== "all" &&
-                  "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
+                "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
               )}
             >
               <SelectValue placeholder={t("allDifficulties")} />
@@ -710,14 +711,7 @@ export function RecipesList() {
           )}
         >
           <div className="flex justify-center mb-4">
-            <div
-              className={cn(
-                "h-16 w-16 rounded-full flex items-center justify-center",
-                "bg-brand-100 dark:bg-brand-900/30"
-              )}
-            >
-              <ChefHat className="h-8 w-8 text-brand-500" />
-            </div>
+            <EmptyStateIcon icon={ChefHat} size="md" />
           </div>
           <p className="text-lg font-medium text-foreground mb-1">
             {t("noRecipes")}

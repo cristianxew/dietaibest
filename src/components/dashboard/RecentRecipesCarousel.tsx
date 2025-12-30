@@ -15,6 +15,7 @@ import {
   Link2,
   UtensilsCrossed,
 } from "lucide-react";
+import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 
 interface Recipe {
   id: string;
@@ -51,23 +52,21 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
             {t("title")}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-100 to-gold-100 dark:from-brand-900/30 dark:to-gold-900/30 flex items-center justify-center mb-4">
-              <UtensilsCrossed className="h-7 w-7 text-brand-500" />
-            </div>
+            <EmptyStateIcon icon={UtensilsCrossed} size="sm" className="mb-4" />
             <h3 className="font-medium text-foreground mb-1">{t("noRecipes")}</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
               {t("noRecipesDescription")}
             </p>
             <div className="flex gap-2">
-              <Button asChild size="sm">
+              <Button asChild size="default" className="shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
                 <Link href="/recipes/new" className="gap-2">
                   <Plus className="h-4 w-4" />
                   {t("createRecipe")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="default" className="hover:bg-muted transition-all">
                 <Link href="/recipes/new?mode=url" className="gap-2">
                   <Link2 className="h-4 w-4" />
                   {t("importRecipe")}
@@ -82,19 +81,19 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
 
   return (
     <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm">
-      <CardHeader className="pt-6 pb-3">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-display font-semibold tracking-tight">
             {t("title")}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="text-xs gap-1 h-8">
+            <Button asChild variant="outline" size="sm" className="text-xs gap-1">
               <Link href="/recipes/new">
                 <Plus className="h-3 w-3" />
                 {t("createRecipe")}
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
+            <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
               <Link href="/recipes">
                 {t("viewAll")}
                 <ArrowRight className="h-3 w-3" />
@@ -104,20 +103,20 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="relative">
+      <CardContent className="relative pt-0">
         {/* Scroll buttons */}
         {recipes.length > 3 && (
           <>
             <button
               onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity -ml-2"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all -ml-2"
               aria-label="Scroll left"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity -mr-2"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all -mr-2"
               aria-label="Scroll right"
             >
               <ChevronRight className="h-4 w-4" />
@@ -139,7 +138,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
             <Link
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
-              className="flex-shrink-0 w-40 group"
+              className="flex-shrink-0 w-40 group p-2 -m-2 rounded-xl hover:bg-stone-50/80 dark:hover:bg-stone-800/50 transition-colors"
               style={{
                 scrollSnapAlign: "start",
                 animationDelay: `${index * 50}ms`,
@@ -152,7 +151,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                     src={recipe.imageUrl}
                     alt={recipe.title}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover"
                     sizes="160px"
                   />
                 ) : (
@@ -160,9 +159,6 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                     <UtensilsCrossed className="h-8 w-8 text-stone-300 dark:text-stone-600" />
                   </div>
                 )}
-
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 {/* Category badge */}
                 {recipe.categories[0] && (
@@ -176,7 +172,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
               </div>
 
               {/* Title */}
-              <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+              <h4 className="font-medium text-sm text-foreground line-clamp-2">
                 {recipe.title}
               </h4>
 
