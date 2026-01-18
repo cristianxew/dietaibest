@@ -66,11 +66,33 @@ export const metadata: Metadata = {
     "automation",
   ],
   authors: [{ name: "DietAI" }],
+  manifest: "/manifest.json",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#22c55e" },
+    { media: "(prefers-color-scheme: dark)", color: "#16a34a" },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "DietAI",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "DietAI - Nutrition on Autopilot",
     description:
       "AI-powered meal planning and nutrition tracking. Let our agents handle the tedious parts of nutrition.",
     type: "website",
+  },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
   },
 };
 
