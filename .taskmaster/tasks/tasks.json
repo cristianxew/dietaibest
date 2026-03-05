@@ -1232,7 +1232,7 @@
           "5",
           "8"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1300,7 +1300,7 @@
         "complexity": 7,
         "recommendedSubtasks": 5,
         "expansionPrompt": "Break down the implementation of shopping list persistence, export functionality, and date-range selection into detailed subtasks, including data modeling, UI components, and integration with the meal plan system.",
-        "updatedAt": "2025-12-13T22:30:07.190Z"
+        "updatedAt": "2026-03-01T21:59:12.395Z"
       },
       {
         "id": "11",
@@ -2360,9 +2360,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-14T23:12:57.038Z",
+      "lastModified": "2026-03-01T21:59:12.397Z",
       "taskCount": 18,
-      "completedCount": 8,
+      "completedCount": 9,
       "tags": [
         "master"
       ]

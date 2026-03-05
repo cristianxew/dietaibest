@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Icon } from "@iconify/react";
+import Image from "next/image";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggleSimple } from "@/components/ui/ThemeToggle";
@@ -23,24 +23,26 @@ export function LandingNav({ className }: LandingNavProps) {
   return (
     <nav
       className={cn(
-        "sticky top-0 z-50 w-full",
+        "sticky top-0 z-50 w-full backdrop-blur-xl bg-background/80 border-b border-border/50",
         className
       )}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl py-3 px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary shadow-sm group-hover:shadow-md transition-shadow">
-              <Icon
-                icon="solar:leaf-bold-duotone"
-                width={20}
-                className="text-primary-foreground"
-              />
-            </div>
-            <span className="text-lg font-display font-semibold tracking-tight text-foreground">
-              DietAI
-            </span>
+          <Link href="/" className="block relative w-[184px] h-[60px]">
+            <Image
+              src="/Dietai_logo_dark.png"
+              alt="DietAI"
+              fill
+              className="object-contain hidden dark:block"
+            />
+            <Image
+              src="/Dietai_logo_light.png"
+              alt="DietAI"
+              fill
+              className="object-contain dark:hidden"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}

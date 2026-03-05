@@ -10,51 +10,51 @@ interface HowItWorksProps {
 const steps = [
   {
     number: 1,
-    title: "Profile & Goals Wizard",
+    title: "Set Your Targets",
     description:
-      "Complete a 2-minute onboarding. AI determines your BMR, activity level, and dietary preferences (Vegan, Paleo, etc.).",
+      "Answer a few quick questions—your body stats, goals, and dietary preferences. DietAI calculates your ideal calories and macros automatically.",
   },
   {
     number: 2,
-    title: "Generate Weekly Plan",
+    title: "Plan, Adjust & Schedule",
     description:
-      "Review your AI-generated menu. Swap meals with a click. The system learns what you like over time.",
+      "Get a meal plan built around your targets. Swap recipes, adjust portions with AI to hit your macros, and drag everything onto your weekly calendar.",
   },
   {
     number: 3,
-    title: "Shop & Cook",
+    title: "Shop on Autopilot",
     description:
-      "Export ingredients to your preferred grocery delivery service. Follow step-by-step cooking guides.",
+      "Generate a shopping list in one click—or let the AI Shopping Agent add items to your cart and complete checkout at your preferred store.",
   },
 ];
 
 const terminalLines = [
-  { label: "Analyze Profile", value: "Male, 180lbs, Active" },
-  { label: "Calc TDEE", value: "2,850 kcal" },
-  { label: "Goal", value: "Hypertrophy (Surplus)" },
+  { label: "Targets", value: "1,920 cal · 140g protein" },
+  { label: "Goal", value: "Lose weight — steady deficit" },
+  { label: "Prefs", value: "Mediterranean, no dairy" },
 ];
 
 const mealPlan = [
-  { meal: "Monday Breakfast", recipe: "Oatmeal & Whey" },
-  { meal: "Monday Lunch", recipe: "Chicken Quinoa Bowl" },
-  { meal: "Monday Dinner", recipe: "Steak & Asparagus" },
+  { meal: "Mon Breakfast", recipe: "Avocado & Egg Toast" },
+  { meal: "Mon Lunch", recipe: "Grilled Chicken Bowl" },
+  { meal: "Mon Dinner", recipe: "Herb-Crusted Salmon" },
 ];
 
 export function HowItWorks({ className }: HowItWorksProps) {
   return (
     <section
       id="how-it-works"
-      className={cn("py-24 px-6 md:px-12 max-w-7xl mx-auto", className)}
+      className={cn("py-20 md:py-28 px-4 sm:px-6 lg:px-8", className)}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Steps */}
         <div>
-          <span className="text-xs font-semibold text-primary uppercase tracking-widest mb-4 block">
-            The Workflow
+          <span className="inline-block px-3 py-1 bg-primary/10 text-primary text-xs font-semibold uppercase tracking-widest rounded-full mb-4">
+            How It Works
           </span>
-          <h2 className="text-3xl md:text-5xl font-display font-semibold text-foreground tracking-tight mb-8">
-            From onboarding to <br />
-            dinner in three steps.
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-semibold text-foreground tracking-tight mb-8">
+            Your First Plan in <br />
+            Under 5 Minutes
           </h2>
 
           <div className="space-y-0">
@@ -72,17 +72,17 @@ export function HowItWorks({ className }: HowItWorksProps) {
         </div>
 
         {/* Terminal Visual */}
-        <TerminalCard title="wizard_v2.exe">
+        <TerminalCard title="dietai_pipeline.log">
           {terminalLines.map((line, index) => (
             <div key={index}>
-              <span className="text-primary">➜</span>{" "}
+              <span className="text-primary">→</span>{" "}
               <span className="text-muted-foreground">{line.label}:</span>{" "}
               <span className="text-foreground">{line.value}</span>
             </div>
           ))}
 
           <TerminalSection>
-            <div className="text-muted-foreground mb-2">{`// Generating Plan...`}</div>
+            <div className="text-muted-foreground mb-2">{`// → Generated plan (adjusted to macros)`}</div>
             {mealPlan.map((item, index) => (
               <TerminalRow
                 key={index}
@@ -92,8 +92,13 @@ export function HowItWorks({ className }: HowItWorksProps) {
             ))}
           </TerminalSection>
 
+          <div className="text-xs text-muted-foreground mb-3 space-y-1">
+            <div>Daily Average: <span className="text-foreground">1,920 cal</span> | <span className="text-foreground">142g protein</span> | <span className="text-foreground">180g carbs</span></div>
+            <div className="text-sage-500">✓ All macros within target range</div>
+          </div>
+
           <button className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 transition-colors">
-            Confirm Plan
+            Build My First Plan
           </button>
         </TerminalCard>
       </div>

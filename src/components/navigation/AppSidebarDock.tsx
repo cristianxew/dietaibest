@@ -26,6 +26,7 @@ import {
   Monitor,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
@@ -702,10 +703,19 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-80 p-0 bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800">
                 <SheetHeader className="px-6 pt-6 pb-4 border-b border-stone-200 dark:border-stone-700">
                   <SheetTitle className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-stone-900 dark:bg-stone-100">
-                      <Icon icon="solar:leaf-bold-duotone" width={18} className="text-brand-400" />
+                    <div className="flex items-center justify-center w-full h-full relative overflow-hidden">
+                      <img
+                        src="/Dietai_logo_light.png"
+                        alt="DietAI Logo"
+                        className="w-full h-full object-contain dark:hidden"
+                      />
+                      <img
+                        src="/Dietai_logo_dark.png"
+                        alt="DietAI Logo"
+                        className="w-full h-full object-contain hidden dark:block"
+                      />
                     </div>
-                    <span className="font-display font-semibold text-lg">DietAI</span>
+                    {/* <span className="font-display font-semibold text-lg">DietAI</span> */}
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="px-4 py-4 space-y-1">
@@ -723,10 +733,19 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
               </SheetContent>
             </Sheet>
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-stone-900 dark:bg-stone-100">
-                <Icon icon="solar:leaf-bold-duotone" width={16} className="text-brand-400" />
+              <div className="flex items-center justify-center w-[120px] h-8 relative overflow-hidden">
+                <img
+                  src="/Dietai_logo_light.png"
+                  alt="DietAI Logo"
+                  className="w-full h-full object-contain dark:hidden"
+                />
+                <img
+                  src="/Dietai_logo_dark.png"
+                  alt="DietAI Logo"
+                  className="w-full h-full object-contain hidden dark:block"
+                />
               </div>
-              <span className="font-display font-semibold">DietAI</span>
+              {/* <span className="font-display font-semibold">DietAI</span> */}
             </Link>
             <div className="flex items-center gap-1">
               <ThemeToggleSimple size="sm" />
@@ -748,29 +767,39 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
           )}
         >
           {/* Logo - Same structure as nav items for alignment */}
-          <div className="h-12 mb-2">
+          <div className="h-15 mb-8">
             <Link
               href="/"
-              className="relative flex items-center gap-3 w-full h-10 rounded-xl overflow-hidden group"
             >
-              <span className="w-10 h-10 flex items-center justify-center shrink-0">
+              {/* <span className="w-10 h-10 flex items-center justify-center shrink-0">
                 <div className={cn(
                   "flex items-center justify-center",
                   "w-9 h-9 rounded-lg",
                   "bg-stone-900 dark:bg-stone-100",
-                  "group-hover:scale-105 transition-transform duration-200"
+                  "group-hover:scale-105 transition-transform duration-200 relative overflow-hidden"
                 )}>
-                  <Icon icon="solar:leaf-bold-duotone" width={18} className="text-brand-400" />
                 </div>
-              </span>
-              <span className={cn(
+              </span> */}
+              <div className="w-full h-full relative">
+                <img
+                  src="/Dietai_logo_light.png"
+                  alt="DietAI Logo"
+                  className="w-full h-full object-contain dark:hidden"
+                />
+                <img
+                  src="/Dietai_logo_dark.png"
+                  alt="DietAI Logo"
+                  className="w-full h-full object-contain hidden dark:block"
+                />
+              </div>
+              {/* <span className={cn(
                 "font-display font-semibold text-lg text-stone-900 dark:text-stone-100",
                 "whitespace-nowrap overflow-hidden",
                 "transition-opacity duration-300 ease-out",
                 collapsed ? "opacity-0" : "opacity-100"
               )}>
                 DietAI
-              </span>
+              </span> */}
             </Link>
           </div>
 

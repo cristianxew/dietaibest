@@ -3,6 +3,7 @@
 import { Suspense, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
+import Link from "next/link";
 import { LanguageSwitcherCompact } from "@/components/LanguageSwitcher";
 import { MainNav } from "@/components/navigation/MainNav";
 import { AuthControls } from "@/components/navigation/AuthControls";
@@ -117,7 +118,7 @@ export default function Header({ className, sticky = true }: HeaderProps) {
         className={cn(
           "w-full bg-background border-b border-border transition-all duration-200 overflow-hidden",
           sticky &&
-            "sticky top-0 z-50 backdrop-blur-sm bg-background/95 supports-[backdrop-filter]:bg-background/75",
+          "sticky top-0 z-50 backdrop-blur-sm bg-background/95 supports-[backdrop-filter]:bg-background/75",
           className
         )}
         role="banner"
@@ -134,14 +135,22 @@ export default function Header({ className, sticky = true }: HeaderProps) {
         <div className="container mx-auto">
           <div className="flex items-center justify-between h-14 sm:h-16 w-full min-w-0">
             <div>
-              <Image
-                src="/mydietbook.png"
-                alt="My diet book logo"
-                width={132}
-                height={34}
-                className="w-full h-full object-contain"
-                priority
-              />
+              <Link href="/" className="block relative w-[184px] h-[60px]">
+                <Image
+                  src="/Dietai_logo_dark.png"
+                  alt="DietAI Logo"
+                  fill
+                  className="object-contain hidden dark:block"
+                  priority
+                />
+                <Image
+                  src="/Dietai_logo_light.png"
+                  alt="DietAI Logo"
+                  fill
+                  className="object-contain dark:hidden"
+                  priority
+                />
+              </Link>
             </div>
 
             {/* Main Navigation - Desktop */}

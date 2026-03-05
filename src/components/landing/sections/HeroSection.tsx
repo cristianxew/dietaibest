@@ -21,19 +21,20 @@ export function HeroSection({ className }: HeroSectionProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         {/* Hero Text */}
         <div className="flex flex-col gap-6 animate-fade-up">
-          <AnimatedBadge variant="gold">AI Agent V2.0 Live</AnimatedBadge>
+          <AnimatedBadge variant="gold">Smarter Eating Starts Here</AnimatedBadge>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.1] font-display font-semibold text-foreground tracking-tight">
-            Nutrition on{" "}
+            Healthy Eating{" "}
             <span className="text-gradient bg-gradient-to-r from-brand-500 via-gold-500 to-brand-400">
-              Autopilot
+              Without the Guesswork
             </span>
           </h1>
 
           <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-            Stop manually tracking calories. DietAI agents build your meal
-            plans, scrape recipes, and order your groceries automatically—while
-            balancing your macros.
+            DietAI helps you truly understand what you eat, plan meals around
+            your nutritional targets, and automate everything from recipe
+            collection to grocery shopping—so healthy eating finally fits your
+            life.
           </p>
 
           {/* CTA Buttons */}
@@ -43,15 +44,16 @@ export function HeroSection({ className }: HeroSectionProps) {
               className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 transition-all duration-200"
             >
               <Icon icon="solar:chef-hat-bold-duotone" width={18} />
-              Generate My Plan
+              Build My First Plan
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <button
+            <a
+              href="#how-it-works"
               className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-foreground rounded-xl text-sm font-medium hover:bg-secondary hover:border-brand-200 transition-all duration-200"
             >
               <Play className="w-4 h-4" />
-              Watch Demo
-            </button>
+              See How It Works
+            </a>
           </div>
 
           {/* Social Proof */}
@@ -75,8 +77,8 @@ export function HeroSection({ className }: HeroSectionProps) {
               ))}
             </div>
             <div className="text-sm">
-              <span className="text-foreground font-medium">2,500+</span>
-              <span className="text-muted-foreground"> health-conscious users</span>
+              <span className="text-foreground font-medium">Join 2,500+</span>
+              <span className="text-muted-foreground"> people who finally understand their food</span>
             </div>
           </div>
         </div>

@@ -1,20 +1,16 @@
 {
   "mcpServers": {
     "shadcn": {
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "shadcn@latest",
         "mcp"
       ]
     },
     "taskmaster-ai": {
       "type": "stdio",
-      "command": "cmd",
+      "command": "npx",
       "args": [
-        "/c",
-        "npx",
         "-y",
         "--package=task-master-ai",
         "task-master-ai"

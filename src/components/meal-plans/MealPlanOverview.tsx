@@ -220,6 +220,18 @@ export function MealPlanOverview({
         )}
       />
 
+      {/* Plan count indicator */}
+      <div className="flex items-center justify-between my-6">
+        <span className="text-muted-foreground">
+          {templates.length} {templates.length === 1 ? "plan" : "plans"}
+        </span>
+        {templates.length > 3 && (
+          <span className="text-muted-foreground">
+            Scroll for more →
+          </span>
+        )}
+      </div>
+
       {/* Horizontal scrollable container */}
       <div
         ref={scrollContainerRef}
@@ -229,6 +241,7 @@ export function MealPlanOverview({
           "scroll-smooth snap-x snap-mandatory"
         )}
       >
+
         {/* Meal Plan Cards */}
         {templates.map((template, index) => (
           <div
@@ -280,18 +293,6 @@ export function MealPlanOverview({
             </span>
           </div>
         </Card>
-      </div>
-
-      {/* Plan count indicator */}
-      <div className="flex items-center justify-between mt-2 px-1">
-        <span className="text-xs text-muted-foreground">
-          {templates.length} {templates.length === 1 ? "plan" : "plans"}
-        </span>
-        {templates.length > 3 && (
-          <span className="text-xs text-muted-foreground">
-            Scroll for more →
-          </span>
-        )}
       </div>
     </div>
   );

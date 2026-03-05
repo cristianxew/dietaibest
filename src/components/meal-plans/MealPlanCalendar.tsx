@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { ReactNode, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
@@ -25,7 +25,7 @@ import type {
 import { moveMeal, addMealToDay, removeMealFromDay } from "@/actions/meal-plan";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Plus, Utensils, Calendar, Flame, Clock } from "lucide-react";
+import { Plus, Utensils, Flame, Clock, SunriseIcon, SunIcon, MoonIcon, AppleIcon, CookieIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -118,13 +118,13 @@ export function MealPlanCalendar({
             } else {
               const message = existingMeal
                 ? t("calendar.recipeReplaced", {
-                    recipe: recipe.title,
-                    existing: existingMeal.recipeName,
-                  })
+                  recipe: recipe.title,
+                  existing: existingMeal.recipeName,
+                })
                 : t("calendar.recipeAdded", {
-                    recipe: recipe.title,
-                    mealType: targetMealType,
-                  });
+                  recipe: recipe.title,
+                  mealType: targetMealType,
+                });
               toast.success(message);
               onUpdate?.();
             }
@@ -222,13 +222,13 @@ export function MealPlanCalendar({
 
   // Get meal type icon
   const getMealTypeIcon = (mealType: string) => {
-    const icons: Record<string, string> = {
-      breakfast: "🌅",
-      lunch: "☀️",
-      dinner: "🌙",
-      snack: "🍎",
-      snack1: "🍎",
-      snack2: "🥜",
+    const icons: Record<string, ReactNode> = {
+      breakfast: <SunriseIcon />,
+      lunch: <SunIcon />,
+      dinner: <MoonIcon />,
+      snack: <AppleIcon />,
+      snack1: <AppleIcon />,
+      snack2: <CookieIcon />,
     };
     return icons[mealType.toLowerCase()] || "🍽️";
   };
@@ -247,15 +247,12 @@ export function MealPlanCalendar({
         </div>
 
         {/* Main Calendar Area */}
-        <Card className={cn("border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden flex flex-col", CONTAINER_HEIGHT)}>
+        <Card className={cn("py-4 gap-4 border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden flex flex-col", CONTAINER_HEIGHT)}>
           {/* Header with gradient */}
           <div className="relative flex-shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-100/40 to-gold-100/20 dark:from-brand-500/10 dark:to-gold-500/5" />
+            <div className="absolute inset-0" />
             <CardHeader className="relative">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20">
-                  <Calendar className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-                </div>
                 <div className="flex-1 min-w-0">
                   <CardTitle className="font-display text-lg tracking-tight truncate">
                     {mealPlan.name}
@@ -295,8 +292,8 @@ export function MealPlanCalendar({
                               {day.date
                                 ? format(day.date, "EEEE")
                                 : t("calendar.dayNumber", {
-                                    number: day.dayNumber,
-                                  })}
+                                  number: day.dayNumber,
+                                })}
                             </h4>
                             <p className="text-xs text-muted-foreground">
                               {day.date
@@ -321,10 +318,10 @@ export function MealPlanCalendar({
                           mealPlan?.mealSlots?.length <= 3
                             ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                             : mealPlan?.mealSlots?.length === 4
-                            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-                            : mealPlan?.mealSlots?.length === 5
-                            ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
-                            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
+                              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                              : mealPlan?.mealSlots?.length === 5
+                                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-5"
+                                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-6"
                         )}
                       >
                         {mealPlan?.mealSlots?.map((mealType, slotIndex) => {
@@ -463,10 +460,10 @@ export function MealPlanCalendar({
                       activeRecipe.difficulty.toLowerCase() === "easy"
                         ? "bg-sage-100 text-sage-700 border-sage-200 dark:bg-sage-500/20 dark:text-sage-400 dark:border-sage-500/30"
                         : activeRecipe.difficulty.toLowerCase() === "medium"
-                        ? "bg-gold-100 text-gold-700 border-gold-200 dark:bg-gold-500/20 dark:text-gold-400 dark:border-gold-500/30"
-                        : activeRecipe.difficulty.toLowerCase() === "hard"
-                        ? "bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-400 dark:border-brand-500/30"
-                        : "bg-muted text-muted-foreground border-border"
+                          ? "bg-gold-100 text-gold-700 border-gold-200 dark:bg-gold-500/20 dark:text-gold-400 dark:border-gold-500/30"
+                          : activeRecipe.difficulty.toLowerCase() === "hard"
+                            ? "bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-400 dark:border-brand-500/30"
+                            : "bg-muted text-muted-foreground border-border"
                     )}
                   >
                     {activeRecipe.difficulty}
