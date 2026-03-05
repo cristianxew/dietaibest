@@ -687,12 +687,8 @@ export function SavedPlansCalendar({
             <Card className="h-full flex flex-col border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden">
               {/* Header with gradient accent */}
               <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-100/50 to-gold-100/30 dark:from-brand-500/10 dark:to-gold-500/5" />
                 <CardHeader className="relative pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/20">
-                      <Sparkles className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-                    </div>
                     <div>
                       <CardTitle className="font-display text-base tracking-tight">
                         {t("calendar.yourMealPlans")}
@@ -734,9 +730,9 @@ export function SavedPlansCalendar({
           </div>
 
           {/* Calendar */}
-          <Card className={cn("flex flex-col border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden", CONTAINER_HEIGHT)}>
+          <Card className={cn("flex flex-col border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden gap-0", CONTAINER_HEIGHT)}>
             {/* Calendar Header */}
-            <CardHeader className="flex-shrink-0 border-b border-border/40 bg-gradient-to-r from-muted/30 to-transparent">
+            <CardHeader className="flex-shrink-0 border-b border-border/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Button
@@ -780,11 +776,11 @@ export function SavedPlansCalendar({
 
             <CardContent className="flex-1 min-h-0 flex flex-col p-0 overflow-hidden">
               {/* Week Days Header */}
-              <div className="flex-shrink-0 grid grid-cols-7 border-b border-border/40">
+              <div className="flex-shrink-0 grid grid-cols-7 border-b border-border/40 bg-muted/20">
                 {weekDays.map((day) => (
                   <div
                     key={day}
-                    className="py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/20"
+                    className="py-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider "
                   >
                     {day}
                   </div>

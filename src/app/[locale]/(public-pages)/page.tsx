@@ -4,9 +4,13 @@ import {
   LandingFooter,
   AgentSidebar,
   HeroSection,
+  ProblemSection,
   FeaturesGrid,
   HowItWorks,
+  TestimonialsSection,
   PricingSection,
+  FAQSection,
+  FinalCTASection,
 } from "@/components/landing";
 
 export default function LandingPage() {
@@ -21,11 +25,23 @@ export default function LandingPage() {
           {/* Hero Section */}
           <HeroSection />
 
+          {/* Problem Section */}
+          <ProblemSection />
+
           {/* Features Grid */}
           <FeaturesGrid />
 
           {/* How It Works */}
           <HowItWorks />
+
+          {/* Testimonials */}
+          <TestimonialsSection />
+
+          {/* FAQ */}
+          <FAQSection />
+
+          {/* Final CTA */}
+          <FinalCTASection />
 
           {/* Pricing */}
           <PricingSection />

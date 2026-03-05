@@ -80,24 +80,18 @@ export function RecipeSidebar() {
   const hasActiveFilters = selectedCategory !== "all" || selectedDifficulty !== "all" || searchTerm !== "";
 
   return (
-    <Card className="h-full flex flex-col border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden">
+    <Card className="h-full py-0 gap-2 flex flex-col border-border/60 bg-card/80 backdrop-blur-sm overflow-hidden">
       {/* Header with gradient accent */}
       <div className="relative flex-shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-100/50 to-gold-100/30 dark:from-brand-500/10 dark:to-gold-500/5" />
+        <div className="absolute inset-0" />
         <CardHeader className="relative py-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 border border-brand-200/50 dark:border-brand-500/20">
-              <ChefHat className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-            </div>
-            <div className="flex-1">
-              <CardTitle className="font-display text-base tracking-tight flex items-center gap-2">
-                {t("recipes")}
-                <Sparkles className="w-3.5 h-3.5 text-gold-500" />
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {t("recipesDescription")}
-              </p>
-            </div>
+          <div className="flex-1">
+            <CardTitle className="font-display text-lg tracking-tight flex items-center gap-2">
+              {t("recipes")}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {t("recipesDescription")}
+            </p>
           </div>
         </CardHeader>
       </div>

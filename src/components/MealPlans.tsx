@@ -30,6 +30,7 @@ import {
   CalendarDays,
   Sparkles,
   ChefHat,
+  PlusIcon,
 } from "lucide-react";
 import { MealPlanCalendar } from "./meal-plans/MealPlanCalendar";
 import { MealPlanForm } from "./meal-plans/MealPlanForm";
@@ -456,14 +457,14 @@ export default function MealPlans() {
             )}
             disabled={isPending}
           >
-            <Sparkles className="w-4 h-4" />
+            <PlusIcon className="w-4 h-4" />
             {t("createPlan")}
           </Button>
         </div>
 
         {/* Meal Plan Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
+          <TabsList className="mb-0">
             <TabsTrigger value="planner">
               <Edit2 className="w-4 h-4 mr-2" />
               {t("mealPlanner")}
@@ -475,7 +476,7 @@ export default function MealPlans() {
           </TabsList>
 
           {/* Meal Planner Tab - Combined Overview + Editor */}
-          <TabsContent value="planner" className="space-y-6 mt-6">
+          <TabsContent value="planner" className="space-y-6">
             {/* Compact Meal Plan Overview */}
             <MealPlanOverview
               templates={templates}

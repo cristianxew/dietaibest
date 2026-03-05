@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -263,19 +264,20 @@ export function MobileMenu({ className }: MobileMenuProps) {
                 role="img"
                 aria-label="DietAIbook mobile menu header"
               >
-                <div
-                  className="w-6 h-6 bg-primary rounded-md flex items-center justify-center"
-                  role="img"
-                  aria-label="DietAIbook logo"
-                >
-                  <span
-                    className="text-primary-foreground font-bold text-xs"
-                    aria-hidden="true"
-                  >
-                    D
-                  </span>
+                <div className="relative w-[132px] h-[34px]">
+                  <Image
+                    src="/Dietai_logo_dark.png"
+                    alt="DietAI Logo"
+                    fill
+                    className="object-contain hidden dark:block"
+                  />
+                  <Image
+                    src="/Dietai_logo_light.png"
+                    alt="DietAI Logo"
+                    fill
+                    className="object-contain dark:hidden"
+                  />
                 </div>
-                <span className="font-bold text-lg">DietAIbook</span>
               </div>
             </SheetTitle>
           </SheetHeader>

@@ -596,6 +596,11 @@
   .stagger-4 { animation-delay: 200ms; }
   .stagger-5 { animation-delay: 250ms; }
   .stagger-6 { animation-delay: 300ms; }
+
+  /* Gentle floating bob */
+  .animate-gentle-float {
+    animation: gentleFloat 6s ease-in-out infinite;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -636,6 +641,11 @@
   50% {
     opacity: 0.7;
   }
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
 }
 
 @keyframes shimmer {
@@ -722,13 +732,21 @@
 
 /* Terminal Style */
 .terminal {
-  @apply font-mono rounded-2xl overflow-hidden;
+  @apply font-mono rounded-2xl overflow-hidden border border-border bg-card text-muted-foreground shadow-lg transition-colors duration-300;
+}
+
+.dark .terminal {
   background: #0C0A09;
   color: #A8A29E;
+  border-color: #292524;
 }
 
 .terminal-header {
-  @apply flex items-center gap-2 px-4 py-3 border-b;
+  @apply flex items-center gap-2 px-4 py-3 border-b border-border transition-colors duration-300;
+  background: var(--surface-sunken);
+}
+
+.dark .terminal-header {
   background: #1C1917;
   border-color: #292524;
 }
