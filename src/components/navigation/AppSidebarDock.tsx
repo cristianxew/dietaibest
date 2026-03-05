@@ -125,7 +125,6 @@ function SidebarItem({
     "transition-colors duration-200 ease-out",
     // Colors
     "text-stone-600 dark:text-stone-400",
-    "border", // Add border to base to prevent layout shift
     !isActive && "border-transparent hover:bg-stone-100 dark:hover:bg-stone-800",
     !isActive && "hover:text-stone-900 dark:hover:text-stone-100",
     isActive && "bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border-brand-200/50 dark:border-brand-500/20",
@@ -766,40 +765,58 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
             "transition-[width] duration-300 ease-out"
           )}
         >
-          {/* Logo - Same structure as nav items for alignment */}
+          {/* Logo - Symbol when collapsed, full logo when expanded */}
           <div className="h-15 mb-8">
             <Link
               href="/"
+              className="block w-full h-full relative"
             >
-              {/* <span className="w-10 h-10 flex items-center justify-center shrink-0">
-                <div className={cn(
-                  "flex items-center justify-center",
-                  "w-9 h-9 rounded-lg",
-                  "bg-stone-900 dark:bg-stone-100",
-                  "group-hover:scale-105 transition-transform duration-200 relative overflow-hidden"
-                )}>
-                </div>
-              </span> */}
-              <div className="w-full h-full relative">
-                <img
+              {/* Symbol logo - shown when collapsed */}
+              <div
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center",
+                  "transition-opacity duration-300 ease-out",
+                  collapsed ? "opacity-100" : "opacity-0 pointer-events-none"
+                )}
+              >
+                <Image
+                  src="/Dietai_logo_symbol.svg"
+                  alt="DietAI"
+                  width={40}
+                  height={40}
+                  className="object-contain dark:hidden"
+                />
+                <Image
+                  src="/Dietai_logo_symbol_dark.svg"
+                  alt="DietAI"
+                  width={40}
+                  height={40}
+                  className="object-contain hidden dark:block"
+                />
+              </div>
+              {/* Full logo - shown when expanded */}
+              <div
+                className={cn(
+                  "w-full h-full",
+                  "transition-opacity duration-300 ease-out",
+                  collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+                )}
+              >
+                <Image
                   src="/Dietai_logo_light.png"
                   alt="DietAI Logo"
+                  width={220}
+                  height={60}
                   className="w-full h-full object-contain dark:hidden"
                 />
-                <img
+                <Image
                   src="/Dietai_logo_dark.png"
                   alt="DietAI Logo"
+                  width={220}
+                  height={60}
                   className="w-full h-full object-contain hidden dark:block"
                 />
               </div>
-              {/* <span className={cn(
-                "font-display font-semibold text-lg text-stone-900 dark:text-stone-100",
-                "whitespace-nowrap overflow-hidden",
-                "transition-opacity duration-300 ease-out",
-                collapsed ? "opacity-0" : "opacity-100"
-              )}>
-                DietAI
-              </span> */}
             </Link>
           </div>
 

@@ -40,11 +40,11 @@ export default function LandingPage() {
           {/* FAQ */}
           <FAQSection />
 
-          {/* Pricing */}
-          <PricingSection />
-
           {/* Final CTA */}
           <FinalCTASection />
+
+          {/* Pricing */}
+          <PricingSection />
         </div>
 
         {/* Footer */}

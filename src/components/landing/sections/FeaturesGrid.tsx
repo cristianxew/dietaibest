@@ -65,7 +65,7 @@ const features = [
       "One click turns your scheduled meals into an organized shopping list—grouped by aisle, with quantities combined across recipes.",
   },
   {
-    icon: "solar:robot-bold-duotone",
+    icon: "solar:star-fall-bold-duotone",
     iconColor: "text-gold-500",
     iconBg: "bg-gold-50 border-gold-100 dark:bg-gold-500/10 dark:border-gold-500/20",
     title: "AI Shopping Agent",
