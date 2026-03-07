@@ -1,0 +1,21 @@
+{
+  "projectName": "DietAI",
+  "projectPath": "/home/cba_01/.openclaw/workspace-bmad/dietaibest",
+  "createdAt": "2026-03-06T18:32:32.509Z",
+  "currentPhase": "analysis",
+  "activeWorkflow": null,
+  "completedWorkflows": [
+    {
+      "id": "create-product-brief",
+      "agentId": "analyst",
+      "outputFile": "_bmad-output/planning-artifacts/product-brief.md",
+      "completedAt": "2026-03-06T00:00:00.000Z"
+    },
+    {
+      "id": "generate-project-context",
+      "agentId": "analyst",
+      "outputFile": "/home/cba_01/.openclaw/workspace-bmad/dietaibest/_bmad-output/project-context.md",
+      "completedAt": "2026-03-06T23:27:59.468Z"
+    }
+  ]
+}
