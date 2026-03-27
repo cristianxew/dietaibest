@@ -157,5 +157,3 @@ The easiest way to deploy is via **[Vercel](https://vercel.com/new)**:
 Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for other platforms.
 
 ---
-
-**Test marker from Max** ⚡ — Initial PR to confirm GitHub SSH workflow
