@@ -23,27 +23,27 @@ _This file contains critical rules and patterns that AI agents must follow when 
 
 ## Technology Stack & Versions
 
-| Layer | Technology | Version |
-|---|---|---|
-| Framework | Next.js (App Router, Turbopack) | 15.3.6 |
-| UI Runtime | React / React DOM | 19.2.3 |
-| Language | TypeScript (strict) | ^5 |
-| ORM | Prisma Client | 6.9.0 |
-| Database | PostgreSQL via Supabase | — |
-| Auth | NextAuth | 4.24.11 |
-| Styling | Tailwind CSS v4 | ^4 |
-| UI Components | shadcn/ui (new-york style) + Radix UI | 3.5.0 / latest |
-| Forms | React Hook Form + Zod | 7.59.0 / 3.25.67 |
-| i18n | next-intl | 4.3.1 |
-| Animations | Framer Motion | 12.23.3 |
-| Charts | Recharts | 2.15.3 |
-| DnD | @dnd-kit/core + sortable + utilities | 6.3.1 / 10.0.0 / 3.2.2 |
-| Icons | Lucide React | 0.508.0 |
-| PDF | jsPDF | 3.0.4 |
-| Unit/Integration Tests | Vitest + jsdom + @testing-library/react | 3.2.4 / 26.1.0 / 16.3.0 |
-| E2E Tests | Playwright | 1.54.1 |
-| Package Manager | Bun (dev) / npm (compatible) | — |
-| External APIs | Edamam, USDA FoodData Central (FDC), Google Cloud Document AI | — |
+| Layer                  | Technology                                                    | Version                 |
+| ---------------------- | ------------------------------------------------------------- | ----------------------- |
+| Framework              | Next.js (App Router, Turbopack)                               | 15.3.6                  |
+| UI Runtime             | React / React DOM                                             | 19.2.3                  |
+| Language               | TypeScript (strict)                                           | ^5                      |
+| ORM                    | Prisma Client                                                 | 6.9.0                   |
+| Database               | PostgreSQL via Supabase                                       | —                       |
+| Auth                   | NextAuth                                                      | 4.24.11                 |
+| Styling                | Tailwind CSS v4                                               | ^4                      |
+| UI Components          | shadcn/ui (new-york style) + Radix UI                         | 3.5.0 / latest          |
+| Forms                  | React Hook Form + Zod                                         | 7.59.0 / 3.25.67        |
+| i18n                   | next-intl                                                     | 4.3.1                   |
+| Animations             | Framer Motion                                                 | 12.23.3                 |
+| Charts                 | Recharts                                                      | 2.15.3                  |
+| DnD                    | @dnd-kit/core + sortable + utilities                          | 6.3.1 / 10.0.0 / 3.2.2  |
+| Icons                  | Lucide React                                                  | 0.508.0                 |
+| PDF                    | jsPDF                                                         | 3.0.4                   |
+| Unit/Integration Tests | Vitest + jsdom + @testing-library/react                       | 3.2.4 / 26.1.0 / 16.3.0 |
+| E2E Tests              | Playwright                                                    | 1.54.1                  |
+| Package Manager        | Bun (dev) / npm (compatible)                                  | —                       |
+| External APIs          | Edamam, USDA FoodData Central (FDC), Google Cloud Document AI | —                       |
 
 ---
 
