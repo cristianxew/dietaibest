@@ -99,6 +99,29 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [PWA Implementation](./System/pwa_implementation.md)
+**Purpose:** Progressive Web App implementation documentation
+
+**Contains:**
+- PWA features (installable app, offline support, optimized caching)
+- Technical implementation (next.config.ts, manifest.json, metadata)
+- Caching strategies (CacheFirst, NetworkFirst, StaleWhileRevalidate)
+- PWA icons and generation scripts
+- Development vs production modes
+- Testing procedures and browser support
+- Troubleshooting guide
+- Best practices and future enhancements
+
+**When to read:**
+- Understanding PWA functionality
+- Regenerating app icons
+- Updating caching strategies
+- Troubleshooting service worker issues
+- Testing PWA installation
+- Enhancing offline capabilities
+
+---
+
 #### [Database Schema](./System/database_schema.md)
 **Purpose:** Complete database design documentation with entity relationships
 
