@@ -48,6 +48,9 @@ next-env.d.ts
 /uploads
 /google-credentials.json
 
+# npm lock file (project uses bun)
+package-lock.json
+
 # PWA files
 /public/sw.js
 /public/sw.js.map
