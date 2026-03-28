@@ -32,7 +32,7 @@ interface HeaderProps {
  * Main application header component
  *
  * This is a client component that provides the primary navigation interface
- * for the DietAIbook application. It includes authentication-aware navigation,
+ * for the DietAI application. It includes authentication-aware navigation,
  * responsive design, internationalization support, and comprehensive keyboard navigation.
  *
  * @param props - Header component props
@@ -127,7 +127,7 @@ export default function Header({ className, sticky = true }: HeaderProps) {
       >
         {/* Header description for screen readers */}
         <div id="header-description" className="sr-only">
-          DietAIbook site header containing logo, main navigation, language
+          DietAI site header containing logo, main navigation, language
           switcher, and authentication controls. Press Alt+H to focus header,
           Alt+M to toggle mobile menu.
         </div>

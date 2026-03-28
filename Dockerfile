@@ -1,5 +1,5 @@
 # ===========================================
-# DietAIbook Production Dockerfile
+# DietAI Production Dockerfile
 # Multi-stage build: Bun (deps/build) + Node.js (runtime)
 # ===========================================
 

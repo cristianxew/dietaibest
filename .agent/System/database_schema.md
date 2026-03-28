@@ -1,4 +1,4 @@
-# DietAIbook - Database Schema Documentation
+# DietAI - Database Schema Documentation
 
 **Last Updated:** 2025-10-25
 

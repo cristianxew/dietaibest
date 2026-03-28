@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { DashboardState } from "@/lib/dashboard-state";
 
-const DISMISS_KEY = "DietAIbook_hero_cta_dismissed";
+const DISMISS_KEY = "DietAI_hero_cta_dismissed";
 
 interface HeroCTAProps {
   dashboardState: DashboardState;

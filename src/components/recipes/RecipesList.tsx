@@ -44,7 +44,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 
-const RECENT_SEARCHES_KEY = "DietAIbook-recent-searches";
+const RECENT_SEARCHES_KEY = "DietAI-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
 
 type SearchSuggestion = {

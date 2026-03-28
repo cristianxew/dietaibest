@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { checkOnboardingStatus } from "@/actions/onboarding";
 
-const DISMISS_KEY = "DietAIbook_onboarding_prompt_dismissed";
+const DISMISS_KEY = "DietAI_onboarding_prompt_dismissed";
 
 export function OnboardingPrompt() {
   const _t = useTranslations("dashboard");

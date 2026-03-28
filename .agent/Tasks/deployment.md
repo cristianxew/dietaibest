@@ -1,4 +1,4 @@
-# DietAIbook Deployment Guide
+# DietAI Deployment Guide
 
 **Platform:** Hostinger VPS with Dokploy
 **Last Updated:** 2025-12-23
@@ -32,14 +32,14 @@ External Services:
 
 ## Deployment Files
 
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Multi-stage build (Bun + Node.js) |
-| `docker-compose.yml` | Orchestrates app + PostgreSQL |
-| `.dockerignore` | Optimizes build context |
-| `.env.production.example` | Environment variable template |
-| `scripts/docker-entrypoint.sh` | Runs migrations on startup |
-| `src/app/api/health/route.ts` | Health check endpoint |
+| File                           | Purpose                           |
+| ------------------------------ | --------------------------------- |
+| `Dockerfile`                   | Multi-stage build (Bun + Node.js) |
+| `docker-compose.yml`           | Orchestrates app + PostgreSQL     |
+| `.dockerignore`                | Optimizes build context           |
+| `.env.production.example`      | Environment variable template     |
+| `scripts/docker-entrypoint.sh` | Runs migrations on startup        |
+| `src/app/api/health/route.ts`  | Health check endpoint             |
 
 ---
 
@@ -47,13 +47,13 @@ External Services:
 
 ### 1. Create Project
 1. Log into Dokploy dashboard at `http://your-vps-ip:3000`
-2. Click **New Project** → Name: "DietAIbook"
+2. Click **New Project** → Name: "DietAI"
 
 ### 2. Create Compose Service
 1. Click **Create Service** → Select **Compose**
 2. Configure:
    - **Provider**: GitHub
-   - **Repository**: Your DietAIbook repo
+   - **Repository**: Your DietAI repo
    - **Branch**: `main`
    - **Compose Path**: `./docker-compose.yml`
 
@@ -86,7 +86,7 @@ GOOGLE_CLOUD_PROJECT_ID=<for-document-ai>
 
 ### 4. Configure Domain & SSL
 1. Go to **Domains** section
-2. Add your domain (e.g., `dietaibook.com`)
+2. Add your domain (e.g., `DietAI.com`)
 3. Enable **SSL** with Let's Encrypt
 4. Point your domain's DNS A record to VPS IP
 
@@ -112,7 +112,7 @@ GOOGLE_CLOUD_PROJECT_ID=<for-document-ai>
 ### Database Seeding (Optional)
 If you need seed data, run via Dokploy terminal:
 ```bash
-docker exec -it dietaibook-app npx prisma db seed
+docker exec -it DietAI-app npx prisma db seed
 ```
 
 ### Google OAuth Configuration
@@ -161,17 +161,17 @@ Dokploy provides backup functionality:
 
 ### Manual Backup Command
 ```bash
-docker exec dietaibook-db pg_dump -U dietaibook dietaibook > backup.sql
+docker exec DietAI-db pg_dump -U DietAI DietAI > backup.sql
 ```
 
 ### Restore from Backup
 ```bash
-cat backup.sql | docker exec -i dietaibook-db psql -U dietaibook dietaibook
+cat backup.sql | docker exec -i DietAI-db psql -U DietAI DietAI
 ```
 
 ### Run Migrations Manually
 ```bash
-docker exec -it dietaibook-app npx prisma db push
+docker exec -it DietAI-app npx prisma db push
 ```
 
 ---
@@ -186,7 +186,7 @@ docker exec -it dietaibook-app npx prisma db push
 ### Database Connection Issues
 1. Check `POSTGRES_PASSWORD` matches in both services
 2. Verify database container is running: `docker ps`
-3. Test connection: `docker exec -it dietaibook-db psql -U dietaibook`
+3. Test connection: `docker exec -it DietAI-db psql -U DietAI`
 
 ### SSL Certificate Issues
 1. Verify domain DNS points to VPS IP
@@ -236,11 +236,11 @@ Authentication issues are common in production deployments. This section covers 
 
 **Solution:** Configure Supabase Dashboard → Authentication → URL Configuration:
 
-| Setting | Value |
-|---------|-------|
-| **Site URL** | `https://yourdomain.com` (exact match, with https) |
-| **Redirect URLs** | `https://yourdomain.com/auth/callback` |
-| | `https://yourdomain.com/api/auth/callback/google` |
+| Setting           | Value                                              |
+| ----------------- | -------------------------------------------------- |
+| **Site URL**      | `https://yourdomain.com` (exact match, with https) |
+| **Redirect URLs** | `https://yourdomain.com/auth/callback`             |
+|                   | `https://yourdomain.com/api/auth/callback/google`  |
 
 **Note:** Email/password login doesn't use redirect URLs - those are for magic links and OAuth only.
 
@@ -307,13 +307,13 @@ echo $NEXT_PUBLIC_SUPABASE_URL
 
 ### Authentication Environment Checklist
 
-| Variable | Build Time | Runtime | Notes |
-|----------|------------|---------|-------|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✓ Required | ✓ | Must pass as build arg |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓ Required | ✓ | Must pass as build arg |
-| `NEXTAUTH_URL` | | ✓ Required | Exact domain with https |
-| `NEXTAUTH_SECRET` | | ✓ Required | Generate with `openssl rand -base64 32` |
-| `SUPABASE_SERVICE_ROLE_KEY` | | Optional | For admin operations |
+| Variable                        | Build Time | Runtime    | Notes                                   |
+| ------------------------------- | ---------- | ---------- | --------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | ✓ Required | ✓          | Must pass as build arg                  |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓ Required | ✓          | Must pass as build arg                  |
+| `NEXTAUTH_URL`                  |            | ✓ Required | Exact domain with https                 |
+| `NEXTAUTH_SECRET`               |            | ✓ Required | Generate with `openssl rand -base64 32` |
+| `SUPABASE_SERVICE_ROLE_KEY`     |            | Optional   | For admin operations                    |
 
 ---
 

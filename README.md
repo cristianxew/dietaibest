@@ -1,10 +1,10 @@
-# DietAIbook - AI-Powered Meal Planning & Nutrition Management
+# DietAI - AI-Powered Meal Planning & Nutrition Management
 
 A comprehensive Next.js application that leverages professional AI services to automate the entire meal planning workflow - from recipe storage and nutritional analysis to automated grocery shopping.
 
 ## 🎯 What It Does
 
-**DietAIbook** transforms meal planning from a time-consuming manual process into an automated, intelligent workflow:
+**DietAI** transforms meal planning from a time-consuming manual process into an automated, intelligent workflow:
 
 - **Smart Recipe Management**: Store recipes via manual entry, URL import, or AI-powered OCR from images/PDFs
 - **Professional Nutrition Analysis**: Powered by Edamam's 28-nutrient analysis engine for accurate macro tracking
@@ -16,7 +16,7 @@ A comprehensive Next.js application that leverages professional AI services to a
 
 ### **services**
 
-Rather than building everything from scratch, DietAIbook integrates best-in-class professional APIs:
+Rather than building everything from scratch, DietAI integrates best-in-class professional APIs:
 
 - **[Edamam APIs](https://developer.edamam.com/)**: Recipe analysis + meal plan generation
 - **[Browser-Use Cloud](https://browseruse.ai/)**: AI-powered grocery shopping automation
@@ -63,7 +63,7 @@ Rather than building everything from scratch, DietAIbook integrates best-in-clas
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd DietAIbook
+cd DietAI
 
 # Install dependencies (Bun only)
 bun install

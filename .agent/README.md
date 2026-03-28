@@ -1,6 +1,6 @@
 # .agent Documentation Index
 
-**DietAIbook - AI-Powered Meal Planning & Nutrition Management**
+**DietAI - AI-Powered Meal Planning & Nutrition Management**
 
 Last Updated: 2025-12-11
 
@@ -8,7 +8,7 @@ Last Updated: 2025-12-11
 
 ## =� Documentation Structure
 
-This directory contains comprehensive documentation for the DietAIbook project, organized into three main categories:
+This directory contains comprehensive documentation for the DietAI project, organized into three main categories:
 
 ### 1. System Documentation (`/System/`)
 Core architecture, database design, and technical specifications for understanding how the system works.
@@ -26,7 +26,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 ### System Documentation
 
 #### [Project Architecture](./System/project_architecture.md)
-**Purpose:** Complete technical overview of the DietAIbook application
+**Purpose:** Complete technical overview of the DietAI application
 
 **Contains:**
 - Project goals and value propositions
@@ -238,7 +238,8 @@ bun dev
 
 ---
 
-## = Finding Information
+## =
+ Finding Information
 
 ### By Topic:
 

@@ -24,9 +24,9 @@ type OnboardingAction =
   | { type: "SET_PREFERENCES"; payload: PreferencesData }
   | { type: "ADD_FAMILY_MEMBER"; payload: FamilyMemberData }
   | {
-      type: "UPDATE_FAMILY_MEMBER";
-      payload: { index: number; data: FamilyMemberData };
-    }
+    type: "UPDATE_FAMILY_MEMBER";
+    payload: { index: number; data: FamilyMemberData };
+  }
   | { type: "REMOVE_FAMILY_MEMBER"; payload: number }
   | { type: "SET_SUBMITTING"; payload: boolean }
   | { type: "SET_ERROR"; payload: { field: string; message: string } }
@@ -121,7 +121,7 @@ const OnboardingContext = createContext<OnboardingContextValue | undefined>(
 );
 
 // Local storage key
-const STORAGE_KEY = "DietAIbook_onboarding_state";
+const STORAGE_KEY = "DietAI_onboarding_state";
 
 // Provider component
 export function OnboardingProvider({ children }: { children: ReactNode }) {

@@ -2,12 +2,12 @@
 set -e
 
 # ===========================================
-# DietAIbook Docker Entrypoint
+# DietAI Docker Entrypoint
 # Runs database migrations before starting app
 # ===========================================
 
 echo "=========================================="
-echo "DietAIbook Container Starting..."
+echo "DietAI Container Starting..."
 echo "=========================================="
 
 # Wait for database to be ready (extra safety beyond healthcheck)

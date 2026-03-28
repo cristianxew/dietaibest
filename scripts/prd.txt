@@ -1,17 +1,17 @@
 <PRD>
-# DietAIbook - Product Requirements Document
+# DietAI - Product Requirements Document
 
 ---
 
 ## 1. Introduction
 
-DietAIbook is a comprehensive meal planning and nutrition management web application that leverages AI agents to automate the entire process from recipe storage to grocery shopping. This document outlines the functional and technical requirements for developing a responsive Next.js application that helps users create balanced meal plans and provides a one-click shopping experience through automated browser agents.
+DietAI is a comprehensive meal planning and nutrition management web application that leverages AI agents to automate the entire process from recipe storage to grocery shopping. This document outlines the functional and technical requirements for developing a responsive Next.js application that helps users create balanced meal plans and provides a one-click shopping experience through automated browser agents.
 
 The application targets health-conscious individuals who want to streamline their meal planning, nutrition tracking, and grocery shopping processes while maintaining accurate macro-nutrient balance in their diets.
 
 ## 2. Product overview
 
-The DietAIbook front-end is a responsive single-page application (SPA) built with **Next.js 15** and **TypeScript**. It enables users to:
+The DietAI front-end is a responsive single-page application (SPA) built with **Next.js 15** and **TypeScript**. It enables users to:
 
 - create an account or sign in with Google
 - complete a three-step onboarding wizard that determines dietary goals and preferences
@@ -20,7 +20,7 @@ The DietAIbook front-end is a responsive single-page application (SPA) built wit
 - produce a consolidated shopping list and perform one-click purchase at a preferred grocery store
 - manage profile, family members, language, and subscription billing
 
-The app consumes typed REST/tRPC endpoints provided by the DietAIbook backend and third-party services (Edamam, Browser-Use Agent, Stripe, Supabase).
+The app consumes typed REST/tRPC endpoints provided by the DietAI backend and third-party services (Edamam, Browser-Use Agent, Stripe, Supabase).
 
 ## 3. Goals and objectives
 
@@ -135,7 +135,7 @@ Routes, behaviour, and UI elements as defined in section 3 of the functional spe
 
 | ID         | User story                                                                                                                               | Acceptance criteria                                                                                                                                                                                                       |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ST-101** | _As a visitor, I want to sign up with email so that I can create a DietAIbook account._                                                  | **AC1** “Sign up” form validates required fields.<br>**AC2** User receives magic-link email.<br>**AC3** Clicking link activates account and redirects to onboarding.<br>**AC4** Duplicate email shows error.              |
+| **ST-101** | _As a visitor, I want to sign up with email so that I can create a DietAI account._                                                  | **AC1** “Sign up” form validates required fields.<br>**AC2** User receives magic-link email.<br>**AC3** Clicking link activates account and redirects to onboarding.<br>**AC4** Duplicate email shows error.              |
 | **ST-102** | _As an authenticated user, I want my JWT to refresh silently so that long sessions remain active._                                       | **AC1** When an API call returns 401, front-end requests `/auth/refresh`.<br>**AC2** If refresh succeeds, original request retries.<br>**AC3** If refresh fails, user is logged out.                                      |
 | **ST-103** | _As a new user, I want to complete a three-step onboarding wizard so that my macro targets are calculated._                              | **AC1** Wizard cannot advance until required fields filled.<br>**AC2** “Back” preserves state.<br>**AC3** Step 2 calls `/api/macros/estimate` and displays preview.<br>**AC4** Finish stores profile and opens dashboard. |
 | **ST-104** | _As a user, I want to add family members during onboarding so that meal plans reflect household size._                                   | **AC1** “Add member” opens secondary form.<br>**AC2** Members persist to profile and are editable in settings.                                                                                                            |

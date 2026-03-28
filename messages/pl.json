@@ -27,7 +27,7 @@
         "signInTitle": "Witamy z powrotem",
         "signInDescription": "Zaloguj się do swojego konta, aby uzyskać dostęp do spersonalizowanych planów posiłków i śledzenia odżywiania.",
         "signUpTitle": "Utwórz swoje konto",
-        "signUpDescription": "Dołącz do DietAIbook, aby otrzymywać spersonalizowane plany posiłków i śledzić swoją podróż żywieniową.",
+        "signUpDescription": "Dołącz do DietAI, aby otrzymywać spersonalizowane plany posiłków i śledzić swoją podróż żywieniową.",
         "emailAndPassword": "E-mail i hasło",
         "magicLink": "Magiczny link",
         "continueWithGoogle": "Kontynuuj z Google",
@@ -50,7 +50,7 @@
         "whatToExpect": "Czego się spodziewać:",
         "checkInboxAndSpam": "• Sprawdź swoją skrzynkę odbiorczą (i folder spam)",
         "clickMagicLink": "• Kliknij magiczny link, aby zalogować się automatycznie",
-        "redirectBack": "• Zostaniesz przekierowany z powrotem do DietAIbook",
+        "redirectBack": "• Zostaniesz przekierowany z powrotem do DietAI",
         "linkOnceOnly": "• Link może być użyty tylko raz",
         "sendAnotherLink": "Wyślij kolejny link",
         "didntReceiveEmail": "Nie otrzymałeś e-maila? Sprawdź folder spam lub spróbuj wysłać kolejny link.",
@@ -262,7 +262,7 @@
         },
         "gettingStarted": {
             "title": "Pierwsze Kroki",
-            "description": "Wykonaj te kroki, aby w pełni wykorzystać DietAIbook",
+            "description": "Wykonaj te kroki, aby w pełni wykorzystać DietAI",
             "step1": {
                 "title": "Skonfiguruj Swój Profil",
                 "description": "Opowiedz nam o swoich preferencjach żywieniowych i celach zdrowotnych",
@@ -703,7 +703,7 @@
             "title": "Lista Zakupów",
             "exportTitle": "Eksportuj Listę Zakupów",
             "exportDescription": "Wybierz opcje eksportu i pobierz listę zakupów jako PDF.",
-            "generatedBy": "Wygenerowano przez DietAIbook",
+            "generatedBy": "Wygenerowano przez DietAI",
             "page": "Strona",
             "of": "z",
             "viewModeLabel": "Tryb Widoku",
@@ -822,7 +822,7 @@
         }
     },
     "onboarding": {
-        "title": "Witamy w DietAIbook",
+        "title": "Witamy w DietAI",
         "subtitle": "Spersonalizujmy Twoje doświadczenie",
         "steps": {
             "demographics": {
@@ -909,7 +909,7 @@
         "delete": "Usuń"
     },
     "meta": {
-        "title": "DietAIbook - Planowanie posiłków z AI",
+        "title": "DietAI - Planowanie posiłków z AI",
         "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
     },
     "nutrition": {

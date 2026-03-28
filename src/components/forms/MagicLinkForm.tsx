@@ -59,9 +59,8 @@ export function MagicLinkForm({
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
-          emailRedirectTo: `${
-            window.location.origin
-          }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
+          emailRedirectTo: `${window.location.origin
+            }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
         },
       });
 
@@ -110,7 +109,7 @@ export function MagicLinkForm({
             <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
               <li>• Check your email inbox (and spam folder)</li>
               <li>• Click the magic link to sign in automatically</li>
-              <li>• You&apos;ll be redirected back to DietAIbook</li>
+              <li>• You&apos;ll be redirected back to DietAI</li>
               <li>• The link can only be used once</li>
             </ul>
           </div>

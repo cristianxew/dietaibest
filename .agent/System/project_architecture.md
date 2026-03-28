@@ -1,4 +1,4 @@
-# DietAIbook - Project Architecture
+# DietAI - Project Architecture
 
 **Last Updated:** 2025-12-11
 
@@ -24,7 +24,7 @@
 
 ## Project Overview
 
-**DietAIbook** is an AI-powered meal planning and nutrition management application that automates the entire meal planning workflow - from recipe storage and nutritional analysis to automated grocery shopping.
+**DietAI** is an AI-powered meal planning and nutrition management application that automates the entire meal planning workflow - from recipe storage and nutritional analysis to automated grocery shopping.
 
 ### Project Goals
 - Automate meal planning with AI-powered weekly plans balanced to user macro goals
