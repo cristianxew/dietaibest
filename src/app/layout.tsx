@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display, Inter, Lato, Alice, Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
@@ -51,6 +51,16 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2c3e50" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a252f" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "DietAI - Autonomous Nutrition Operating System",
   description:
@@ -67,10 +77,6 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "DietAI" }],
   manifest: "/manifest.json",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2c3e50" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a252f" },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -88,11 +94,6 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
   },
 };
 
