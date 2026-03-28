@@ -68,8 +68,8 @@ export const metadata: Metadata = {
   authors: [{ name: "DietAI" }],
   manifest: "/manifest.json",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#22c55e" },
-    { media: "(prefers-color-scheme: dark)", color: "#16a34a" },
+    { media: "(prefers-color-scheme: light)", color: "#2c3e50" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a252f" },
   ],
   appleWebApp: {
     capable: true,
