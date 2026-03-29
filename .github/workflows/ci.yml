@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-        with:
-          cache: true
       - run: bun install --frozen-lockfile
       - run: bun run lint
 
@@ -22,8 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-        with:
-          cache: true
       - run: bun install --frozen-lockfile
       - run: bun run test:unit
 
@@ -40,8 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-        with:
-          cache: true
       - run: bun install --frozen-lockfile
       - run: bunx prisma generate
       - run: bun run build
