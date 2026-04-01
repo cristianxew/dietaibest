@@ -338,6 +338,13 @@
         "favorites": "Favorites",
         "noRecipes": "No recipes found. Create your first recipe!",
         "servings": "servings",
+        "ingredients": "Ingredients",
+        "nutrition": "Nutrition",
+        "portions": {
+            "title": "How many servings do you want to prepare?",
+            "helperText": "This will determine the quantity and weight of the ingredients listed below.",
+            "nutritionLabel": "Nutritional value per serving"
+        },
         "cal": "cal",
         "protein": "Protein",
         "carbs": "Carbs",

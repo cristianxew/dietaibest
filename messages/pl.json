@@ -329,6 +329,13 @@
         "favorites": "Ulubione",
         "noRecipes": "Nie znaleziono przepisów. Stwórz swój pierwszy przepis!",
         "servings": "porcji",
+        "ingredients": "Składniki",
+        "nutrition": "Odżywianie",
+        "portions": {
+            "title": "Ile porcji chcesz przygotować?",
+            "helperText": "To określi ilość i wagę składników wymienionych poniżej.",
+            "nutritionLabel": "Wartość odżywcza na porcję"
+        },
         "cal": "kcal",
         "protein": "Białko",
         "carbs": "Węglowodany",

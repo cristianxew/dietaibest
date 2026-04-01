@@ -3,9 +3,10 @@ import type { Prisma } from "@/generated/prisma";
 
 interface IngredientsListProps {
   ingredients: Prisma.JsonValue;
+  multiplier?: number;
 }
 
-export function IngredientsList({ ingredients }: IngredientsListProps) {
+export function IngredientsList({ ingredients, multiplier = 1 }: IngredientsListProps) {
   // Handle both array and JSON formats
   let ingredientsList: Ingredient[] = [];
 
@@ -27,20 +28,20 @@ export function IngredientsList({ ingredients }: IngredientsListProps) {
   }
 
   return (
-    <div className="space-y-2">
-      <h2 className="text-xl font-semibold">Ingredients</h2>
-      <ul className="space-y-2">
-        {ingredientsList.map((ingredient: Ingredient, index: number) => (
+    <ul className="space-y-2">
+      {ingredientsList.map((ingredient: Ingredient, index: number) => {
+        const scaledAmount = parseFloat((ingredient.amount * multiplier).toFixed(2));
+        return (
           <li key={index} className="flex items-start gap-2">
             <span className="text-primary mt-1">•</span>
             <span className="flex-1">
-              <span className="font-medium">{ingredient.amount}</span>{" "}
+              <span className="font-medium">{scaledAmount}</span>{" "}
               <span className="text-muted-foreground">{ingredient.unit}</span>{" "}
               <span>{ingredient.name}</span>
             </span>
           </li>
-        ))}
-      </ul>
-    </div>
+        );
+      })}
+    </ul>
   );
 }

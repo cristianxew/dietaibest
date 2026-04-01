@@ -3,14 +3,13 @@ import { getRecipe } from "@/actions/recipe";
 import { Button } from "@/components/ui/button";
 
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, Users, ChefHat, Edit } from "lucide-react";
+import { ArrowLeft, Clock, Users, ChefHat, Edit, Plus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { RecipeDeleteButton } from "../../../../../components/recipes/RecipeDeleteButton";
 import { RecipeFavoriteButton } from "../../../../../components/recipes/RecipeFavoriteButton";
-import { MacroDisplay } from "../../../../../components/recipes/MacroDisplay";
-import { IngredientsList } from "../../../../../components/recipes/IngredientsList";
+import { RecipeScalableContent } from "../../../../../components/recipes/RecipeScalableContent";
 import { InstructionsList } from "../../../../../components/recipes/InstructionsList";
 
 export async function generateMetadata({
@@ -99,6 +98,11 @@ export default async function RecipeDetailPage({
                     {recipe.title}
                   </h1>
                   <div className="flex items-center gap-2 shrink-0">
+                    <Link href={`/${locale}/recipes/new`}>
+                      <Button variant="outline" size="icon" className="h-9 w-9 border-input hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </Link>
                     <RecipeFavoriteButton
                       recipeId={recipe.id}
                       initialFavorited={isFavorited}
@@ -194,41 +198,17 @@ export default async function RecipeDetailPage({
         {/* Divider */}
         <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent opacity-60" />
 
-        {/* Bottom Section: Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-
-          {/* Left Column: Ingredients */}
-          <div className="lg:col-span-12 xl:col-span-5 space-y-10">
-            <section className="space-y-6">
-              <h2 className="text-3xl font-display font-bold flex items-center gap-3">
-                <div className="h-8 w-1 bg-brand-500 rounded-full" />
-                Ingredients
-              </h2>
-              <div className="bg-stone-50/50 dark:bg-stone-900/20 rounded-xl p-1 -mx-2 sm:mx-0">
-                <IngredientsList ingredients={recipe.ingredients} />
-              </div>
-            </section>
-
-            {/* Nutrition Section - Moved Here */}
-            <section className="space-y-6 pt-4">
-              <h2 className="text-2xl font-display font-semibold flex items-center gap-3 text-muted-foreground/80">
-                <div className="h-6 w-1 bg-amber-400 rounded-full" />
-                Nutrition
-              </h2>
-              <div className="bg-transparent border-t border-b border-border/40 py-2">
-                <MacroDisplay
-                  calories={recipe.calories}
-                  protein={recipe.protein}
-                  carbs={recipe.carbs}
-                  fat={recipe.fat}
-                  fiber={recipe.fiber}
-                />
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column: Instructions */}
-          <div className="lg:col-span-12 xl:col-span-7 space-y-8">
+        <RecipeScalableContent
+          baseServings={recipe.servings}
+          ingredients={recipe.ingredients}
+          calories={recipe.calories}
+          protein={recipe.protein}
+          carbs={recipe.carbs}
+          fat={recipe.fat}
+          fiber={recipe.fiber}
+        >
+          {/* Instructions — passed as children into the 2-col grid */}
+          <div className="space-y-8">
             <section className="space-y-6">
               <h2 className="text-3xl font-display font-bold flex items-center gap-3">
                 <div className="h-8 w-1 bg-brand-500 rounded-full" />
@@ -239,7 +219,6 @@ export default async function RecipeDetailPage({
               </div>
             </section>
 
-            {/* Source */}
             {recipe.sourceUrl && (
               <div className="pt-8 border-t border-border/40">
                 <p className="text-sm text-muted-foreground italic">
@@ -256,7 +235,7 @@ export default async function RecipeDetailPage({
               </div>
             )}
           </div>
-        </div>
+        </RecipeScalableContent>
       </div>
     </div>
   );
