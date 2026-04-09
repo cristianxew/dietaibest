@@ -334,6 +334,13 @@
         "favorites": "Favoritos",
         "noRecipes": "No se encontraron recetas. ¡Crea tu primera receta!",
         "servings": "porciones",
+        "ingredients": "Ingredientes",
+        "nutrition": "Nutrición",
+        "portions": {
+            "title": "¿Cuántas raciones querés preparar?",
+            "helperText": "Esto determinará la cantidad y el peso de los ingredientes que se indican a continuación.",
+            "nutritionLabel": "Valor nutricional por ración"
+        },
         "cal": "cal",
         "protein": "Proteína",
         "carbs": "Carbohidratos",
