@@ -33,7 +33,13 @@ const PROTECTED_API_ROUTES = [
   "/api/nutrition",
 ];
 
-const PUBLIC_API_ROUTES = ["/api/auth", "/api/health", "/api/fdc"];
+const PUBLIC_API_ROUTES = [
+  "/api/auth",
+  "/api/health",
+  "/api/fdc",
+  // Stripe webhooks are authenticated via signature, not session cookie.
+  "/api/webhooks/stripe",
+];
 
 // Create the intl middleware
 const intlMiddleware = createIntlMiddleware({
