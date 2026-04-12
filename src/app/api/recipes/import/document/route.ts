@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { join } from "path";
-import { writeFile, mkdir } from "fs/promises";
+// Removed unused fs/path imports
 import { randomUUID } from "crypto";
 
 // Google Cloud Document AI imports
 import { DocumentProcessorServiceClient } from "@google-cloud/documentai";
+import { PDFDocument } from "pdf-lib";
 
 // Configuration
 const SUPPORTED_FORMATS = [
@@ -18,7 +18,7 @@ const SUPPORTED_FORMATS = [
   "application/pdf",
 ];
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-const MAX_PDF_PAGES = 15; // Document AI limit for form parser
+const MAX_PDF_PAGES = 10; // Enforced maximum PDF pages allowed
 
 // Google Cloud Document AI configuration
 const DOCUMENT_AI_CONFIG = {
@@ -688,37 +688,35 @@ export async function POST(request: NextRequest) {
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
-
-    // Create uploads directory
-    const uploadsDir = join(process.cwd(), "uploads", "recipes", "documents");
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Save file
+    // Get file buffer directly into memory, no need to touch the filesystem
     const fileExtension = file.name.split(".").pop() || "";
     const fileName = `${randomUUID()}.${fileExtension}`;
-    const filePath = join(uploadsDir, fileName);
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
 
-    console.log("File saved:", filePath);
+    // Validate PDF page count
+    if (file.type === "application/pdf") {
+      try {
+        const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
+        const pageCount = pdfDoc.getPageCount();
+        if (pageCount > MAX_PDF_PAGES) {
+          return NextResponse.json(
+            { error: `PDF file too long. Maximum allowed is ${MAX_PDF_PAGES} pages, got ${pageCount}.` },
+            { status: 400 }
+          );
+        }
+      } catch (err) {
+        console.error("Failed to parse PDF for page count:", err);
+        return NextResponse.json({ error: "Invalid or corrupted PDF file" }, { status: 400 });
+      }
+    }
 
-    // Process with Document AI (or fallback)
+    // Process with Document AI (or fallback) using the buffer directly in memory
     const extractedData = await processDocumentWithAI(
       buffer,
       file.type,
       file.name
     );
-
-    // Clean up the uploaded file after processing
-    try {
-      const fs = await import("fs/promises");
-      await fs.unlink(filePath);
-      console.log("File cleaned up:", filePath);
-    } catch (cleanupError) {
-      console.error("Failed to clean up file:", cleanupError);
-    }
 
     // console.log("Processing completed successfully:", extractedData);
 
