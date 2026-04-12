@@ -18,6 +18,7 @@ const pricingPlans = [
       "Nutrition basics guide",
     ],
     buttonText: "Get Started Free",
+    href: "/sign-up",
     highlighted: false,
   },
   {
@@ -31,23 +32,10 @@ const pricingPlans = [
       "Grocery delivery integration",
       "Personalized meal feedback",
     ],
-    buttonText: "Start 7-Day Free Trial",
+    buttonText: "Start 14-Day Free Trial",
+    href: "/subscribe",
     highlighted: true,
     badge: "Most Popular",
-  },
-  {
-    name: "Family",
-    price: "$29",
-    period: "/mo",
-    features: [
-      "Up to 5 family members",
-      "Individual dietary needs",
-      "Consolidated shopping",
-      "Family nutrition dashboard",
-    ],
-    buttonText: "Coming Soon",
-    highlighted: false,
-    badge: "Coming Soon",
   },
 ];
 
@@ -75,7 +63,7 @@ export function PricingSection({ className }: PricingSectionProps) {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
           {pricingPlans.map((plan) => (
             <PricingCard
               key={plan.name}
@@ -84,6 +72,7 @@ export function PricingSection({ className }: PricingSectionProps) {
               period={plan.period}
               features={plan.features}
               buttonText={plan.buttonText}
+              href={plan.href}
               highlighted={plan.highlighted}
               badge={plan.badge}
             />

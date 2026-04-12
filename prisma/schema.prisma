@@ -15,6 +15,15 @@ model User {
   password            String
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
+
+  // Stripe subscription
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  plan                 String    @default("starter") // "starter" | "pro"
+  subscriptionStatus   String? // trialing | active | past_due | canceled | incomplete | incomplete_expired | unpaid
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+
   profile             UserProfile?
   recipes             Recipe[]
   favorites           UserFavorite[]
