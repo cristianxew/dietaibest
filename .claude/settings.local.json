@@ -8,7 +8,9 @@
       "Bash(find:*)",
       "Bash(npx tsc:*)",
       "mcp__plugin_engram_engram__mem_search",
-      "mcp__plugin_engram_engram__mem_save"
+      "mcp__plugin_engram_engram__mem_save",
+      "mcp__662d8de9-b021-48a6-81aa-f76d428b8beb__get_stripe_account_info",
+      "mcp__662d8de9-b021-48a6-81aa-f76d428b8beb__list_products"
     ]
   },
   "enableAllProjectMcpServers": true,
