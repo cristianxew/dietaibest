@@ -9,6 +9,7 @@ import { RecipeForm } from "../../../../../components/recipes/RecipeForm";
 import { RecipeImport } from "../../../../../components/recipes/RecipeImport";
 import { useLocale } from "next-intl";
 import { RecipeFormData } from "@/types/recipe";
+import { PageContainer } from "@/components/ui/page-container";
 
 interface ImportedRecipeData {
   title: string;
@@ -90,7 +91,7 @@ export default function NewRecipePage() {
         <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+      <PageContainer className="space-y-8">
         {/* Navigation & Header */}
         <div className="space-y-6">
           <div className="flex items-center gap-4">
@@ -155,7 +156,7 @@ export default function NewRecipePage() {
             </div>
           )}
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

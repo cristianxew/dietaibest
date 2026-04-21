@@ -20,6 +20,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { completeOnboarding } from "@/actions/onboarding";
+import { PageContainer } from "@/components/ui/page-container";
 
 function OnboardingWizardContent() {
   const t = useTranslations("onboarding");
@@ -83,7 +84,8 @@ function OnboardingWizardContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-3xl mx-auto py-8 px-4">
+      <PageContainer>
+        <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold">{t("title")}</CardTitle>
@@ -105,7 +107,8 @@ function OnboardingWizardContent() {
             <div className="mt-8">{renderStep()}</div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </PageContainer>
     </div>
   );
 }

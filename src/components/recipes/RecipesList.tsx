@@ -52,7 +52,7 @@ type SearchSuggestion = {
   value: string;
 };
 
-export function RecipesList() {
+export function RecipesList({ viewMode = "grid" }: { viewMode?: "grid" | "list" } = {}) {
   const t = useTranslations("recipes");
   const [recipes, setRecipes] = useState<
     (Recipe & {
@@ -349,29 +349,16 @@ export function RecipesList() {
 
   return (
     <div className="space-y-8">
-      {/* Search and filters card */}
-      <div
-        className={cn(
-          "p-5 rounded-2xl",
-          "bg-card border border-border/50",
-          "shadow-sm"
-        )}
-      >
+      {/* Search and filters container */}
+      <div className="space-y-4">
         {/* Search bar */}
-        <div className="relative mb-5">
-          <div
-            className={cn(
-              "absolute left-4 top-1/2 -translate-y-1/2",
-              "flex items-center justify-center",
-              "h-8 w-8 rounded-full",
-              "bg-brand-100 dark:bg-brand-900/30"
-            )}
-          >
-            <Search className="h-4 w-4 text-brand-600 dark:text-brand-400" />
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+            <Search className="h-4 w-4 text-brand-500" />
           </div>
           <Input
             ref={searchInputRef}
-            placeholder={t("searchPlaceholder")}
+            placeholder={t("searchPlaceholder") || "Search recipes, tags, ingredients..."}
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
@@ -384,12 +371,12 @@ export function RecipesList() {
             }}
             onFocus={() => setShowSuggestions(true)}
             className={cn(
-              "h-14 pl-16 pr-12 text-base",
-              "rounded-xl border-border/50",
-              "bg-background",
-              "placeholder:text-muted-foreground/60",
-              "focus:border-brand-300 focus:ring-brand-200/50",
-              "transition-all duration-200"
+              "h-12 pl-11 pr-12 text-sm",
+              "rounded-xl border border-border/40",
+              "bg-muted/40 hover:bg-muted/80",
+              "focus:bg-background focus:border-brand-300 focus:ring-1 focus:ring-brand-200",
+              "placeholder:text-muted-foreground/60 transition-all duration-200",
+              "shadow-sm"
             )}
           />
           {searchInput && (
@@ -400,7 +387,7 @@ export function RecipesList() {
                 setSearchInput("");
                 setSearchTerm("");
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -416,7 +403,6 @@ export function RecipesList() {
                 "shadow-xl border-border/50 rounded-xl"
               )}
             >
-              {/* Loading state */}
               {loadingSuggestions && (
                 <div className="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-4 w-4 animate-pulse text-brand-500" />
@@ -424,7 +410,6 @@ export function RecipesList() {
                 </div>
               )}
 
-              {/* Suggestions */}
               {!loadingSuggestions && suggestions.length > 0 && (
                 <div className="p-2">
                   <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
@@ -457,7 +442,6 @@ export function RecipesList() {
                 </div>
               )}
 
-              {/* Recent searches */}
               {!searchInput && recentSearches.length > 0 && (
                 <div className="p-2">
                   <div className="flex items-center justify-between px-3 py-2">
@@ -489,96 +473,87 @@ export function RecipesList() {
                 </div>
               )}
 
-              {/* No results */}
-              {!loadingSuggestions &&
-                searchInput &&
-                suggestions.length === 0 && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">
-                    No suggestions found
-                  </div>
-                )}
+              {!loadingSuggestions && searchInput && suggestions.length === 0 && (
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  No suggestions found
+                </div>
+              )}
             </Card>
           )}
         </div>
 
         {/* Filter row */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Filter icon label */}
-          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground pr-2 border-r border-border/50">
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="font-medium">Filters</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Category Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
+                  selectedCategory === "all"
+                    ? "bg-brand-500 text-white"
+                    : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {t("all")}
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer",
+                    selectedCategory === category.id
+                      ? "bg-brand-500 text-white"
+                      : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {category.slug && t.has(`categoryNames.${category.slug}`) 
+                    ? t(`categoryNames.${category.slug}`) 
+                    : category.name}
+                </button>
+              ))}
+            </div>
+
+            <div className="hidden sm:block h-6 w-px bg-border mx-1" />
+
+            {/* Difficulty Pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setSelectedDifficulty("all")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
+                  selectedDifficulty === "all"
+                    ? "bg-sage-600/20 text-sage-600 bg-sage-50 border-sage-200"
+                    : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {t("all")}
+              </button>
+              {["easy", "medium", "hard"].map((diff) => (
+                <button
+                  key={diff}
+                  onClick={() => setSelectedDifficulty(diff)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors capitalize",
+                    selectedDifficulty === diff
+                      ? "bg-sage-600/20 text-sage-600 bg-sage-50 border border-sage-200"
+                      : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {t(`difficulty.${diff}`)}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Category filter */}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger
-              className={cn(
-                "w-[150px] h-10 rounded-lg border-border/50",
-                selectedCategory !== "all" &&
-                "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
-              )}
-            >
-              <SelectValue placeholder={t("allCategories")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allCategories")}</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Difficulty filter */}
-          <Select
-            value={selectedDifficulty}
-            onValueChange={setSelectedDifficulty}
-          >
-            <SelectTrigger
-              className={cn(
-                "w-[150px] h-10 rounded-lg border-border/50",
-                selectedDifficulty !== "all" &&
-                "border-brand-300 bg-brand-50 dark:bg-brand-950/30 dark:border-brand-700/50"
-              )}
-            >
-              <SelectValue placeholder={t("allDifficulties")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allDifficulties")}</SelectItem>
-              <SelectItem value="easy">{t("difficulty.easy")}</SelectItem>
-              <SelectItem value="medium">{t("difficulty.medium")}</SelectItem>
-              <SelectItem value="hard">{t("difficulty.hard")}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Sort by */}
-          <Select
-            value={sortBy}
-            onValueChange={(v) =>
-              setSortBy(v as "createdAt" | "title" | "calories" | "prepTime")
-            }
-          >
-            <SelectTrigger className="w-[150px] h-10 rounded-lg border-border/50">
-              <SelectValue placeholder={t("sortBy")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="createdAt">{t("sort.newest")}</SelectItem>
-              <SelectItem value="title">{t("sort.alphabetical")}</SelectItem>
-              <SelectItem value="calories">{t("sort.calories")}</SelectItem>
-              <SelectItem value="prepTime">{t("sort.prepTime")}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Divider */}
-          <div className="hidden sm:block h-6 w-px bg-border/50" />
-
-          {/* Recipe source tabs - My Recipes / Public / Favorites */}
-          <div className="flex rounded-lg border border-border/50 overflow-hidden">
+          {/* Source/Tabs Pills */}
+          <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
             <button
               onClick={() => setActiveTab("my")}
               className={cn(
-                "px-4 py-2 text-sm font-medium transition-colors",
+                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
                 activeTab === "my"
                   ? "bg-brand-500 text-white"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -589,53 +564,26 @@ export function RecipesList() {
             <button
               onClick={() => setActiveTab("public")}
               className={cn(
-                "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5",
+                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
                 activeTab === "public"
-                  ? "bg-sage-500 text-white"
+                  ? "bg-brand-500 text-white"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
-              <Globe className="h-3.5 w-3.5" />
               {t("publicRecipes")}
             </button>
             <button
               onClick={() => setActiveTab("favorites")}
               className={cn(
-                "px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5",
+                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
                 activeTab === "favorites"
-                  ? "bg-gold-500 text-white"
+                  ? "bg-brand-500 text-white"
                   : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
-              <Heart
-                className={cn(
-                  "h-3.5 w-3.5",
-                  activeTab === "favorites" && "fill-current"
-                )}
-              />
-              {t("favorites")}
+              {t("saved")}
             </button>
           </div>
-
-          {/* Clear filters button */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearchTerm("");
-                setSearchInput("");
-                setSelectedCategory("all");
-                setSelectedDifficulty("all");
-                setActiveTab("my");
-                setPage(1);
-              }}
-              className="h-10 px-3 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4 mr-1.5" />
-              Clear
-            </Button>
-          )}
         </div>
       </div>
 
@@ -645,14 +593,14 @@ export function RecipesList() {
           <div className="text-sm text-muted-foreground">
             {totalCount > 0 ? (
               <span>
-                Showing{" "}
+                {t("showing")}{" "}
                 <span className="font-medium text-foreground">
                   {(page - 1) * itemsPerPage + 1}-
                   {Math.min(page * itemsPerPage, totalCount)}
                 </span>{" "}
-                of{" "}
+                {t("of")}{" "}
                 <span className="font-medium text-foreground">{totalCount}</span>{" "}
-                recipes
+                {t("recipesCount")}
                 {activeTab === "favorites" && (
                   <Badge variant="gold" className="ml-2 text-[10px]">
                     {t("favorites")}
@@ -666,23 +614,25 @@ export function RecipesList() {
                 {selectedCategory !== "all" &&
                   categories.find((c) => c.id === selectedCategory) && (
                     <Badge variant="brand" className="ml-2 text-[10px]">
-                      {categories.find((c) => c.id === selectedCategory)?.name}
+                      {categories.find((c) => c.id === selectedCategory)?.slug && t.has(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`) 
+                        ? t(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`) 
+                        : categories.find((c) => c.id === selectedCategory)?.name}
                     </Badge>
                   )}
                 {selectedDifficulty !== "all" && (
                   <Badge variant="secondary" className="ml-2 text-[10px] capitalize">
-                    {selectedDifficulty}
+                    {t(`difficulty.${selectedDifficulty}`)}
                   </Badge>
                 )}
               </span>
             ) : (
-              <span className="text-muted-foreground">No recipes found</span>
+              <span className="text-muted-foreground">{t("noRecipesFoundTitle")}</span>
             )}
           </div>
 
           {/* Items per page selector */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Show:</span>
+            <span className="text-xs text-muted-foreground">{t("show")}</span>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={(value) => setItemsPerPage(Number(value))}
@@ -697,7 +647,7 @@ export function RecipesList() {
                 <SelectItem value="48">48</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-xs text-muted-foreground">per page</span>
+            <span className="text-xs text-muted-foreground">{t("perPage")}</span>
           </div>
         </div>
       )}
@@ -714,19 +664,23 @@ export function RecipesList() {
             <EmptyStateIcon icon={ChefHat} size="md" />
           </div>
           <p className="text-lg font-medium text-foreground mb-1">
-            {t("noRecipes")}
+            {t("noRecipesFoundTitle")}
           </p>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             {hasActiveFilters
-              ? "Try adjusting your filters or search terms"
-              : "Start by adding your first recipe to build your collection"}
+              ? t("adjustFilters")
+              : t("startByAdding")}
           </p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={cn(
+            viewMode === "list" 
+              ? "flex flex-col gap-4" 
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          )}>
             {recipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} showAuthor={activeTab === "public"} />
+              <RecipeCard key={recipe.id} recipe={recipe} showAuthor={activeTab === "public"} viewMode={viewMode} />
             ))}
           </div>
 

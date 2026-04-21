@@ -22,9 +22,5 @@ export default async function MealPlansPage({
 }) {
   await params; // Required for Next.js params resolution
 
-  return (
-    <div className="min-h-screen bg-background">
-      <MealPlans />
-    </div>
-  );
+  return <MealPlans />;
 }
