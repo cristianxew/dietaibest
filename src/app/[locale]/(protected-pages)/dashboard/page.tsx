@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getDashboardData, getTodaysMacros } from "@/actions/dashboard";
+import { PageContainer } from "@/components/ui/page-container";
 import { HeroCTA } from "@/components/dashboard/HeroCTA";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
 import {
@@ -175,11 +176,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 p-6 lg:p-8">
+      <PageContainer className="z-10">
         <Suspense fallback={<DashboardSkeleton />}>
           <DashboardContent />
         </Suspense>
-      </div>
+      </PageContainer>
     </div>
   );
 }

@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import type { Prisma } from "@/generated/prisma";
 import { useTranslations } from "next-intl";
+import { PageContainer } from "@/components/ui/page-container";
 // import { format } from "date-fns";
 // import { calculateWeeklyMacros } from "@/lib/meal-plan-macros";
 // import { cn } from "@/lib/utils";
@@ -430,7 +431,7 @@ export default function MealPlans() {
         <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative p-6 lg:p-8 space-y-8">
+      <PageContainer className="space-y-8">
         {/* Hero Header */}
         <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
           <div className="space-y-3">
@@ -597,7 +598,7 @@ export default function MealPlans() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
+      </PageContainer>
     </div>
   );
 }

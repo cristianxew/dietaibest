@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ProfilePageContent } from "@/components/profile/ProfilePageContent";
 import { getUserProfile } from "@/actions/profile";
 import { UserCircle } from "lucide-react";
+import { PageContainer } from "@/components/ui/page-container";
 
 export default async function ProfilePage() {
   const t = await getTranslations("profile");
@@ -21,7 +22,7 @@ export default async function ProfilePage() {
         <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+      <PageContainer className="space-y-8">
         {/* Header */}
         <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end border-b border-border/40 pb-8">
           <div className="space-y-3">
@@ -46,7 +47,7 @@ export default async function ProfilePage() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <ProfilePageContent initialData={profile} />
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

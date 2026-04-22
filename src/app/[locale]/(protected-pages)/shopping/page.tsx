@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ShoppingListPage } from "@/components/shopping";
 import { ShoppingCart } from "lucide-react";
+import { PageContainer } from "@/components/ui/page-container";
 
 export async function generateMetadata({
   params,
@@ -32,7 +33,7 @@ export default async function ShoppingPage({
         <div className="absolute top-1/3 -left-20 w-72 h-72 bg-gold-100/20 dark:bg-gold-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative p-6 lg:p-8 space-y-8">
+      <PageContainer className="space-y-8">
         {/* Hero Header */}
         <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
           <div className="space-y-3">
@@ -54,7 +55,7 @@ export default async function ShoppingPage({
         </div>
 
         <ShoppingListPage />
-      </div>
+      </PageContainer>
     </div>
   );
 }

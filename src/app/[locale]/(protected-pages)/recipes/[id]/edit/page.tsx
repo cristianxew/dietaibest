@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RecipeForm } from "../../../../../../components/recipes/RecipeForm";
 import type { RecipeFormData } from "@/types/recipe";
+import { PageContainer } from "@/components/ui/page-container";
 
 export async function generateMetadata({
   params,
@@ -65,8 +66,8 @@ export default async function EditRecipePage({
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
+    <PageContainer className="space-y-8">
+      <div>
         <Link href={`/${locale}/recipes/${id}`}>
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -82,6 +83,6 @@ export default async function EditRecipePage({
 
         <RecipeForm mode="edit" recipe={formData} recipeId={id} />
       </div>
-    </div>
+    </PageContainer>
   );
 }

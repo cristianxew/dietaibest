@@ -11,12 +11,16 @@ interface RecipeFavoriteButtonProps {
   recipeId: string;
   initialFavorited: boolean;
   showText?: boolean;
+  compact?: boolean;
+  className?: string;
 }
 
 export function RecipeFavoriteButton({
   recipeId,
   initialFavorited,
   showText = false,
+  compact = false,
+  className,
 }: RecipeFavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isToggling, setIsToggling] = useState(false);
@@ -43,11 +47,15 @@ export function RecipeFavoriteButton({
     setIsToggling(false);
   };
 
+  const label = compact
+    ? isFavorited ? "Saved" : "Save"
+    : isFavorited ? "Remove from Favorites" : "Add to Favorites";
+
   return (
     <Button
       variant={isFavorited ? "default" : "outline"}
       size={showText ? "default" : "icon"}
-      className={showText ? "w-full" : ""}
+      className={cn(showText && !compact ? "w-full" : "", className)}
       onClick={handleToggleFavorite}
       disabled={isToggling}
     >
@@ -57,7 +65,7 @@ export function RecipeFavoriteButton({
           isFavorited && "fill-current"
         )}
       />
-      {showText && (isFavorited ? "Remove from Favorites" : "Add to Favorites")}
+      {showText && label}
     </Button>
   );
 }
