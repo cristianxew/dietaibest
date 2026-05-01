@@ -82,3 +82,29 @@ export const categorySchema = z.object({
 });
 
 export type CategoryFormData = z.infer<typeof categorySchema>;
+
+export interface ImportedRecipeData {
+  title: string;
+  description?: string;
+  ingredients: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+  }>;
+  instructions: string[];
+  prepTime?: number;
+  cookTime?: number;
+  servings?: number;
+  difficulty?: string;
+  cuisine?: string;
+  tags?: string[];
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  imageUrl?: string;
+  sourceUrl?: string;
+}

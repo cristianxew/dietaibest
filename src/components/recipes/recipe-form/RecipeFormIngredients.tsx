@@ -30,23 +30,22 @@ export function RecipeFormIngredients({
   const { fields, append, remove } = ingredientFields;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ingredients</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
+      <h3 className="font-semibold text-base tracking-wide">Ingredients</h3>
+      <div className="space-y-3">
         {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2">
+          <div key={field.id} className="flex gap-2 items-center">
             <FormField
               control={form.control}
               name={`ingredients.${index}.amount`}
               render={({ field }) => (
-                <FormItem className="w-24">
+                <FormItem className="w-[80px]">
                   <FormControl>
                     <Input
                       type="number"
                       step="0.1"
                       placeholder="1"
+                      className="h-11 bg-secondary/40 border-border rounded-lg text-center"
                       value={field.value}
                       onChange={(e) =>
                         field.onChange(parseFloat(e.target.value) || 0)
@@ -61,9 +60,13 @@ export function RecipeFormIngredients({
               control={form.control}
               name={`ingredients.${index}.unit`}
               render={({ field }) => (
-                <FormItem className="w-32">
+                <FormItem className="w-[80px]">
                   <FormControl>
-                    <Input placeholder="cup" {...field} />
+                    <Input
+                      placeholder="cup"
+                      className="h-11 bg-secondary/40 border-border rounded-lg text-center"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -75,12 +78,11 @@ export function RecipeFormIngredients({
               render={({ field }) => (
                 <FormItem className="flex-1">
                   <FormControl>
-                    <Input placeholder="Ingredient name" {...field} />
-                    {/* <IngredientAutocomplete
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Search ingredient..."
-                    /> */}
+                    <Input
+                      placeholder="Ingredient name"
+                      className="h-11 bg-secondary/40 border-border rounded-lg pl-4"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,10 +90,11 @@ export function RecipeFormIngredients({
             />
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => remove(index)}
               disabled={fields.length === 1}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-11 w-10 flex-shrink-0 rounded-lg"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -99,14 +102,14 @@ export function RecipeFormIngredients({
         ))}
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={() => append({ name: "", amount: 1, unit: "" })}
-          className="w-full"
+          className="w-full h-12 border border-dashed border-primary/30 text-primary hover:text-primary hover:bg-transparent dark:hover:bg-transparent hover:border-primary rounded-lg font-medium mt-4 transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Ingredient
+          Add ingredient
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

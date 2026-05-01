@@ -1,10 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { RecipesList } from "../../../../components/recipes/RecipesList";
-import { Button } from "@/components/ui/button";
-import { Plus, LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/ui/page-container";
+import { AddRecipeButton } from "@/components/recipes/AddRecipeButton";
 
 export async function generateMetadata({
   params,
@@ -73,18 +73,7 @@ export default async function RecipesPage({
                 <List className="w-4 h-4" />
               </Link>
             </div>
-            <Button
-              asChild
-              className={cn(
-                "h-10 px-4 shadow-sm",
-                "bg-brand-500 hover:bg-brand-600 text-white transition-all"
-              )}
-            >
-              <Link href={`/${locale}/recipes/new`}>
-                <Plus className="w-4 h-4 mr-1.5" />
-                {t("addRecipe")}
-              </Link>
-            </Button>
+            <AddRecipeButton label={t("addRecipe")} />
           </div>
         </div>
 

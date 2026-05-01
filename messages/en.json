@@ -977,5 +977,90 @@
         "confirmPassword": "Confirm your password",
         "enterFirstName": "Enter your first name",
         "enterLastName": "Enter your last name"
+    },
+    "recipeModal": {
+        "header": { "back": "Back", "close": "Close", "createTitle": "Add Recipe", "editTitle": "Edit Recipe" },
+        "stepper": { "details": "Details", "ingredients": "Ingredients", "nutrition": "Nutrition" },
+        "entry": {
+            "title": "Add a Recipe",
+            "subtitle": "Import from URL, upload a photo, or add manually.",
+            "urlPlaceholder": "Paste recipe URL…",
+            "extractButton": "Extract Recipe",
+            "orDivider": "OR",
+            "dropZoneTitle": "Drop a recipe page or photo here",
+            "dropZoneSubtitle": "JPG · PNG · PDF",
+            "addManually": "Add recipe manually"
+        },
+        "loading": {
+            "title": "Analyzing with AI",
+            "subtitle": "This will take a few seconds…",
+            "step1": "Accessing recipe page…",
+            "step2": "Extracting ingredients…",
+            "step3": "Calculating nutrition…"
+        },
+        "preview": {
+            "extracted": "Recipe extracted",
+            "save": "Save Recipe",
+            "editFirst": "Edit before saving",
+            "looksGood": "Looks good?",
+            "saveDescription": "Save the recipe as-is, or edit it first.",
+            "totalTime": "Total time",
+            "servings": "Servings"
+        },
+        "step0": {
+            "title": "Basic Information",
+            "subtitle": "Tell us about your recipe",
+            "photo": "Photo",
+            "nameLabel": "Recipe name",
+            "namePlaceholder": "e.g. Pesto Pasta",
+            "descriptionLabel": "Description",
+            "descriptionOptional": "optional",
+            "categoriesLabel": "Categories",
+            "prepLabel": "Prep (min)",
+            "cookLabel": "Cook (min)",
+            "servingsLabel": "Servings",
+            "difficultyLabel": "Difficulty",
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard",
+            "next": "Next: Ingredients"
+        },
+        "step1": {
+            "ingredientsTitle": "Ingredients",
+            "instructionsTitle": "Instructions",
+            "addIngredient": "Add Ingredient",
+            "addStep": "Add Step",
+            "amount": "Qty",
+            "unit": "Unit",
+            "ingredient": "Ingredient",
+            "stepPlaceholder": "Describe this step…",
+            "next": "Next: Nutrition"
+        },
+        "step2": {
+            "analyzeTitle": "Auto-analyze nutrition",
+            "analyzeDescription": "Estimated from your ingredients",
+            "analyzeButton": "Analyze",
+            "recalculate": "Recalculate",
+            "analyzing": "Analyzing…",
+            "analyzed": "Nutrition estimated",
+            "macrosTitle": "Macronutrients",
+            "calories": "Calories",
+            "protein": "Protein",
+            "carbs": "Carbs",
+            "fat": "Fat",
+            "fiber": "Fiber",
+            "kcal": "kcal",
+            "grams": "g",
+            "micronutrientsTitle": "Optional: Micronutrients",
+            "sugar": "Sugar",
+            "sodium": "Sodium",
+            "save": "Save Recipe",
+            "saving": "Saving…"
+        },
+        "success": {
+            "title": "Recipe saved!",
+            "view": "View my recipes",
+            "addAnother": "Add Another"
+        }
     }
 }

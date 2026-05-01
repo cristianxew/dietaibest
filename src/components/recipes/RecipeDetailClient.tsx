@@ -14,6 +14,8 @@ import { RecipeFavoriteButton } from "./RecipeFavoriteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
+import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { recipeToFormData } from "@/lib/recipe-utils";
 
 interface RecipeDetailClientProps {
   recipe: {
@@ -59,6 +61,7 @@ export function RecipeDetailClient({
   const t = useTranslations("recipes");
   const [selectedPortions, setSelectedPortions] = useState(recipe.servings);
   const [imageError, setImageError] = useState(false);
+  const { openEdit } = useRecipeModal();
 
   const multiplier = selectedPortions / recipe.servings;
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
@@ -202,11 +205,14 @@ export function RecipeDetailClient({
               Add to Plan
             </Button>
             {isOwner && (
-              <Link href={`/${locale}/recipes/${recipe.id}/edit`}>
-                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => openEdit(recipe.id, recipeToFormData(recipe))}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>

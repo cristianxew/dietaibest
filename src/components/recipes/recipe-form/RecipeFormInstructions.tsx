@@ -28,14 +28,12 @@ export function RecipeFormInstructions({
   const { fields, append, remove } = instructionFields;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Instructions</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4 pt-4">
+      <h3 className="font-semibold text-base tracking-wide">Instructions</h3>
+      <div className="space-y-3">
         {fields.map((field, index) => (
-          <div key={field.id} className="flex gap-2">
-            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
+          <div key={field.id} className="flex gap-3 items-start">
+            <div className="flex-shrink-0 w-8 h-8 mt-1.5 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
               {index + 1}
             </div>
             <FormField
@@ -46,7 +44,7 @@ export function RecipeFormInstructions({
                   <FormControl>
                     <Textarea
                       placeholder="Describe this step..."
-                      className="min-h-[80px]"
+                      className="min-h-[80px] bg-secondary/40 border-border rounded-xl resize-y"
                       {...field}
                     />
                   </FormControl>
@@ -56,10 +54,11 @@ export function RecipeFormInstructions({
             />
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={() => remove(index)}
               disabled={fields.length === 1}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-11 w-10 flex-shrink-0 rounded-xl mt-1.5"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -67,14 +66,14 @@ export function RecipeFormInstructions({
         ))}
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={() => append("")}
-          className="w-full"
+          className="w-full h-12 border border-dashed border-primary/30 text-primary hover:text-primary hover:bg-transparent dark:hover:bg-transparent hover:border-primary rounded-xl font-medium mt-4 transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Step
+          Add step
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

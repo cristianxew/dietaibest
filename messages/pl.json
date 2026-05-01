@@ -971,5 +971,90 @@
         "confirmPassword": "Potwierdź swoje hasło",
         "enterFirstName": "Wprowadź swoje imię",
         "enterLastName": "Wprowadź swoje nazwisko"
+    },
+    "recipeModal": {
+        "header": { "back": "Wstecz", "close": "Zamknij", "createTitle": "Dodaj przepis", "editTitle": "Edytuj przepis" },
+        "stepper": { "details": "Szczegóły", "ingredients": "Składniki", "nutrition": "Odżywianie" },
+        "entry": {
+            "title": "Dodaj przepis",
+            "subtitle": "Importuj z URL, prześlij zdjęcie lub dodaj ręcznie.",
+            "urlPlaceholder": "Wklej adres URL przepisu…",
+            "extractButton": "Wyodrębnij przepis",
+            "orDivider": "LUB",
+            "dropZoneTitle": "Upuść zdjęcie lub PDF tutaj",
+            "dropZoneSubtitle": "JPG · PNG · PDF",
+            "addManually": "Dodaj ręcznie"
+        },
+        "loading": {
+            "title": "Analiza AI",
+            "subtitle": "To zajmie kilka sekund…",
+            "step1": "Pobieranie strony…",
+            "step2": "Wyodrębnianie składników…",
+            "step3": "Obliczanie wartości odżywczych…"
+        },
+        "preview": {
+            "extracted": "Przepis wyodrębniony",
+            "save": "Zapisz przepis",
+            "editFirst": "Edytuj przed zapisaniem",
+            "looksGood": "Wygląda dobrze?",
+            "saveDescription": "Zapisz przepis tak jak jest lub najpierw go edytuj.",
+            "totalTime": "Całkowity czas",
+            "servings": "Porcje"
+        },
+        "step0": {
+            "title": "Podstawowe informacje",
+            "subtitle": "Opowiedz nam o swoim przepisie",
+            "photo": "Zdjęcie",
+            "nameLabel": "Nazwa przepisu",
+            "namePlaceholder": "np. Pesto Pasta",
+            "descriptionLabel": "Opis",
+            "descriptionOptional": "opcjonalnie",
+            "categoriesLabel": "Kategorie",
+            "prepLabel": "Przygotowanie (min)",
+            "cookLabel": "Gotowanie (min)",
+            "servingsLabel": "Porcje",
+            "difficultyLabel": "Trudność",
+            "easy": "Łatwy",
+            "medium": "Średni",
+            "hard": "Trudny",
+            "next": "Następny: Składniki"
+        },
+        "step1": {
+            "ingredientsTitle": "Składniki",
+            "instructionsTitle": "Instrukcje",
+            "addIngredient": "Dodaj składnik",
+            "addStep": "Dodaj krok",
+            "amount": "Ilość",
+            "unit": "Jednostka",
+            "ingredient": "Składnik",
+            "stepPlaceholder": "Opisz ten krok…",
+            "next": "Następny: Odżywianie"
+        },
+        "step2": {
+            "analyzeTitle": "Automatyczna analiza odżywcza",
+            "analyzeDescription": "Oszacowano na podstawie składników",
+            "analyzeButton": "Analizuj",
+            "recalculate": "Przelicz",
+            "analyzing": "Analizowanie…",
+            "analyzed": "Analiza zakończona",
+            "macrosTitle": "Makroskładniki",
+            "calories": "Kalorie",
+            "protein": "Białko",
+            "carbs": "Węglowodany",
+            "fat": "Tłuszcze",
+            "fiber": "Błonnik",
+            "kcal": "kcal",
+            "grams": "g",
+            "micronutrientsTitle": "Opcjonalnie: Mikroskładniki",
+            "sugar": "Cukier",
+            "sodium": "Sód",
+            "save": "Zapisz przepis",
+            "saving": "Zapisywanie…"
+        },
+        "success": {
+            "title": "Przepis zapisany!",
+            "view": "Zobacz moje przepisy",
+            "addAnother": "Dodaj kolejny"
+        }
     }
 }
