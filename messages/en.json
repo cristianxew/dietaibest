@@ -979,8 +979,17 @@
         "enterLastName": "Enter your last name"
     },
     "recipeModal": {
-        "header": { "back": "Back", "close": "Close", "createTitle": "Add Recipe", "editTitle": "Edit Recipe" },
-        "stepper": { "details": "Details", "ingredients": "Ingredients", "nutrition": "Nutrition" },
+        "header": {
+            "back": "Back",
+            "close": "Close",
+            "createTitle": "Add Recipe",
+            "editTitle": "Edit Recipe"
+        },
+        "stepper": {
+            "details": "Details",
+            "ingredients": "Ingredients",
+            "nutrition": "Nutrition"
+        },
         "entry": {
             "title": "Add a Recipe",
             "subtitle": "Import from URL, upload a photo, or add manually.",
@@ -1061,6 +1070,52 @@
             "title": "Recipe saved!",
             "view": "View my recipes",
             "addAnother": "Add Another"
+        }
+    },
+    "billing": {
+        "plans": {
+            "free": "Free",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Active",
+            "trialing": "Trialing",
+            "past_due": "Past due",
+            "canceled": "Canceled",
+            "unpaid": "Unpaid"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Upgrade to Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Pro feature",
+                "description": "This feature is only available on the Pro plan.",
+                "cta": "Upgrade to Pro"
+            },
+            "quotaExceeded": {
+                "title": "Limit reached",
+                "description": "You've used {used} of {limit} {quotaName}.",
+                "cta": "Upgrade for unlimited access"
+            },
+            "close": "Maybe later"
+        },
+        "sidebar": {
+            "upgradeTitle": "Unlock Pro",
+            "upgradeDescription": "Unlimited recipes, meal plans, shopping automation, and AI features.",
+            "upgradeButton": "Upgrade"
+        },
+        "featureNames": {
+            "aiMealPlan": "AI meal plans",
+            "shoppingAutomation": "Shopping automation",
+            "bulkActions": "URL and PDF imports"
+        },
+        "quotaNames": {
+            "savedRecipes": "saved recipes",
+            "recipesCreatedPerMonth": "recipes per month",
+            "importsPerMonth": "imports per month",
+            "mealPlanTemplates": "meal plan templates",
+            "mealPlanDurationDays": "meal plan duration",
+            "edamamAnalysesPerMonth": "nutrition analyses per month"
         }
     }
 }

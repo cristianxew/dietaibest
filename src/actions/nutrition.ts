@@ -20,6 +20,8 @@ import {
   type NutritionAnalysisResult,
   type NutritionAnalysisError,
 } from "@/lib/edamam-service";
+import { assertCanUseEdamamAnalysis } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
 
 // Re-export types for use in components
 export type {
@@ -79,6 +81,7 @@ export async function analyzeRecipeNutritionAction(
 }> {
   try {
     const user = await getAuthenticatedUser();
+    await assertCanUseEdamamAnalysis(user);
 
     const result = await analyzeRecipeNutrition(recipe, user.id, options);
 
@@ -97,6 +100,10 @@ export async function analyzeRecipeNutritionAction(
       data: result,
     };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) {
+      return { success: false, error: JSON.stringify(entError), code: entError.code, retryable: false };
+    }
     console.error("[Action] analyzeRecipeNutrition failed:", error);
     return {
       success: false,

@@ -978,8 +978,17 @@
         "enterLastName": "Ingresa tu apellido"
     },
     "recipeModal": {
-        "header": { "back": "Volver", "close": "Cerrar", "createTitle": "Agregar receta", "editTitle": "Editar receta" },
-        "stepper": { "details": "Detalles", "ingredients": "Ingredientes", "nutrition": "Nutrición" },
+        "header": {
+            "back": "Volver",
+            "close": "Cerrar",
+            "createTitle": "Agregar receta",
+            "editTitle": "Editar receta"
+        },
+        "stepper": {
+            "details": "Detalles",
+            "ingredients": "Ingredientes",
+            "nutrition": "Nutrición"
+        },
         "entry": {
             "title": "Agregar una receta",
             "subtitle": "Importá desde una URL, subí una foto o agregá manualmente.",
@@ -1060,6 +1069,52 @@
             "title": "¡Receta guardada!",
             "view": "Ver mis recetas",
             "addAnother": "Agregar otra"
+        }
+    },
+    "billing": {
+        "plans": {
+            "free": "Gratis",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Activo",
+            "trialing": "En prueba",
+            "past_due": "Pago pendiente",
+            "canceled": "Cancelado",
+            "unpaid": "Impago"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Mejorar a Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Función Pro",
+                "description": "Esta función está disponible solo en el plan Pro.",
+                "cta": "Mejorar a Pro"
+            },
+            "quotaExceeded": {
+                "title": "Límite alcanzado",
+                "description": "Usaste {used} de {limit} {quotaName}.",
+                "cta": "Mejorá para acceso ilimitado"
+            },
+            "close": "Quizás después"
+        },
+        "sidebar": {
+            "upgradeTitle": "Desbloqueá Pro",
+            "upgradeDescription": "Recetas ilimitadas, planes de comida, automatización de compras e IA.",
+            "upgradeButton": "Mejorar"
+        },
+        "featureNames": {
+            "aiMealPlan": "Planes de comida con IA",
+            "shoppingAutomation": "Automatización de compras",
+            "bulkActions": "Importaciones de URL y PDF"
+        },
+        "quotaNames": {
+            "savedRecipes": "recetas guardadas",
+            "recipesCreatedPerMonth": "recetas por mes",
+            "importsPerMonth": "importaciones por mes",
+            "mealPlanTemplates": "plantillas de plan de comida",
+            "mealPlanDurationDays": "duración del plan de comida",
+            "edamamAnalysesPerMonth": "análisis nutricionales por mes"
         }
     }
 }

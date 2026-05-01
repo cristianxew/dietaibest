@@ -51,22 +51,22 @@ export default async function RecipesPage({
               {t("title") || "My Recipes"}
             </h1>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center border border-border/60 rounded-lg p-1 bg-card">
-              <Link 
-                href={`/${locale}/recipes?view=grid`} 
+              <Link
+                href={`/${locale}/recipes?view=grid`}
                 className={cn(
-                  "p-2 rounded-md transition-colors", 
+                  "p-2 rounded-md transition-colors",
                   view === 'grid' ? "bg-brand-50 text-brand-500 dark:bg-brand-500/20 dark:text-brand-400" : "text-muted-foreground hover:bg-muted/50"
                 )}
               >
                 <LayoutGrid className="w-4 h-4" />
               </Link>
-              <Link 
-                href={`/${locale}/recipes?view=list`} 
+              <Link
+                href={`/${locale}/recipes?view=list`}
                 className={cn(
-                  "p-2 rounded-md transition-colors", 
+                  "p-2 rounded-md transition-colors",
                   view === 'list' ? "bg-brand-50 text-brand-500 dark:bg-brand-500/20 dark:text-brand-400" : "text-muted-foreground hover:bg-muted/50"
                 )}
               >
