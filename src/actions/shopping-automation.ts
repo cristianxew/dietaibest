@@ -20,6 +20,8 @@ import {
 } from "@/types/shopping-preferences";
 import { prisma } from "@/lib/prisma";
 import { encryptPassword, decryptPassword } from "@/lib/encryption";
+import { assertCanUseShoppingAutomation } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
 
 // ============================================================================
 // Validation Schemas
@@ -96,6 +98,8 @@ export async function startShoppingTask(input: ShoppingAutomationInput) {
       return { data: null, error: "User not found" };
     }
 
+    await assertCanUseShoppingAutomation(user);
+
     // Prepare credentials for Browser-Use if available
     let credentials: { email?: string } | undefined;
     let secrets: Record<string, string> | undefined;
@@ -150,6 +154,8 @@ export async function startShoppingTask(input: ShoppingAutomationInput) {
       error: null,
     };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) return { data: null, error: entError };
     console.error("[Shopping Automation] Error starting task:", error);
     return {
       data: null,

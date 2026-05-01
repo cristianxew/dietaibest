@@ -977,5 +977,51 @@
         "confirmPassword": "Confirm your password",
         "enterFirstName": "Enter your first name",
         "enterLastName": "Enter your last name"
+    },
+    "billing": {
+        "plans": {
+            "free": "Free",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Active",
+            "trialing": "Trialing",
+            "past_due": "Past due",
+            "canceled": "Canceled",
+            "unpaid": "Unpaid"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Upgrade to Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Pro feature",
+                "description": "This feature is only available on the Pro plan.",
+                "cta": "Upgrade to Pro"
+            },
+            "quotaExceeded": {
+                "title": "Limit reached",
+                "description": "You've used {used} of {limit} {quotaName}.",
+                "cta": "Upgrade for unlimited access"
+            },
+            "close": "Maybe later"
+        },
+        "sidebar": {
+            "upgradeTitle": "Unlock Pro",
+            "upgradeDescription": "Unlimited recipes, meal plans, shopping automation, and AI features.",
+            "upgradeButton": "Upgrade"
+        },
+        "featureNames": {
+            "aiMealPlan": "AI meal plans",
+            "shoppingAutomation": "Shopping automation",
+            "bulkActions": "URL and PDF imports"
+        },
+        "quotaNames": {
+            "savedRecipes": "saved recipes",
+            "recipesCreatedPerMonth": "recipes per month",
+            "importsPerMonth": "imports per month",
+            "mealPlanTemplates": "meal plan templates",
+            "mealPlanDurationDays": "meal plan duration",
+            "edamamAnalysesPerMonth": "nutrition analyses per month"
+        }
     }
 }

@@ -971,5 +971,51 @@
         "confirmPassword": "Potwierdź swoje hasło",
         "enterFirstName": "Wprowadź swoje imię",
         "enterLastName": "Wprowadź swoje nazwisko"
+    },
+    "billing": {
+        "plans": {
+            "free": "Bezpłatny",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Aktywny",
+            "trialing": "Okres próbny",
+            "past_due": "Zaległy",
+            "canceled": "Anulowany",
+            "unpaid": "Nieopłacony"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Przejdź na Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Funkcja Pro",
+                "description": "Ta funkcja jest dostępna tylko w planie Pro.",
+                "cta": "Przejdź na Pro"
+            },
+            "quotaExceeded": {
+                "title": "Osiągnięto limit",
+                "description": "Wykorzystałeś {used} z {limit} {quotaName}.",
+                "cta": "Przejdź na nieograniczony dostęp"
+            },
+            "close": "Może później"
+        },
+        "sidebar": {
+            "upgradeTitle": "Odblokuj Pro",
+            "upgradeDescription": "Nieograniczone przepisy, plany posiłków, automatyzacja zakupów i AI.",
+            "upgradeButton": "Ulepsz"
+        },
+        "featureNames": {
+            "aiMealPlan": "Plany posiłków AI",
+            "shoppingAutomation": "Automatyzacja zakupów",
+            "bulkActions": "Import URL i PDF"
+        },
+        "quotaNames": {
+            "savedRecipes": "zapisanych przepisów",
+            "recipesCreatedPerMonth": "przepisów miesięcznie",
+            "importsPerMonth": "importów miesięcznie",
+            "mealPlanTemplates": "szablonów planu posiłków",
+            "mealPlanDurationDays": "czas trwania planu posiłków",
+            "edamamAnalysesPerMonth": "analiz odżywczych miesięcznie"
+        }
     }
 }

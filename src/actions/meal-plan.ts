@@ -17,6 +17,8 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "crypto";
 import { addDays, format } from "date-fns";
 import { Prisma } from "@/generated/prisma";
+import { assertCanCreateMealPlanTemplate } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
 
 // ============================================================================
 // Helper Functions
@@ -51,6 +53,7 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
   try {
     const user = await getAuthenticatedUser();
     const validatedData = mealPlanTemplateFormSchema.parse(data);
+    await assertCanCreateMealPlanTemplate(user, validatedData.duration);
 
     // If creating from template, get template meals
     let templatePlan = null;
@@ -130,6 +133,8 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
     revalidatePath("/meal-plans");
     return { data: mealPlanTemplate, error: null };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) return { data: null, error: entError };
     console.error("Create meal plan template error:", error);
     return {
       data: null,

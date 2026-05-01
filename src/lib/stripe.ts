@@ -92,11 +92,19 @@ export async function resolvePrice(lookupKey: string): Promise<Stripe.Price> {
 }
 
 /**
- * Number of free-trial days to attach to new Pro subscriptions.
- * Overridable via env so it can be changed without touching Stripe.
+ * Stripe Checkout supports a fixed set of locale codes. Map next-intl
+ * locales to the matching Stripe locale; fall back to `auto` so Stripe
+ * decides based on the browser.
  */
-export function trialDays(): number {
-  const raw = process.env.STRIPE_TRIAL_DAYS;
-  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 14;
+export type StripeCheckoutLocale = "en" | "es" | "pl" | "auto";
+
+export function stripeLocaleForNextLocale(locale: string): StripeCheckoutLocale {
+  switch (locale) {
+    case "en":
+    case "es":
+    case "pl":
+      return locale;
+    default:
+      return "auto";
+  }
 }

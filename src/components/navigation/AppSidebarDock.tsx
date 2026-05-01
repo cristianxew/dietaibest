@@ -53,6 +53,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { checkOnboardingStatus } from "@/actions/onboarding";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { UpgradeCTA } from "@/components/billing/UpgradeCTA";
 
 interface NavItem {
   id: string;
@@ -640,6 +642,7 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(true);
+  const entitlements = useEntitlements();
 
   useEffect(() => {
     const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
@@ -843,6 +846,13 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
             <DockLanguageSwitcher collapsed={collapsed} />
           </div>
 
+
+          {/* Upgrade CTA — visible only for free users, hidden when collapsed */}
+          {entitlements.status === "ready" && !entitlements.data.isPro && !collapsed && (
+            <div className="mb-2">
+              <UpgradeCTA compact />
+            </div>
+          )}
 
           {/* Divider */}
           <div className="h-px bg-stone-200 dark:bg-stone-800 my-3 mx-2" />

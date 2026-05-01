@@ -1,16 +1,16 @@
 "use server";
 
 import { z } from "zod";
-import type Stripe from "stripe";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
 
 import { prisma } from "@/lib/prisma";
 import {
   stripe,
   resolvePrice,
   proPriceLookupKey,
-  trialDays,
+  stripeLocaleForNextLocale,
   type BillingInterval,
   type SupportedCurrency,
 } from "@/lib/stripe";
@@ -61,45 +61,46 @@ async function ensureStripeCustomer(user: {
   return customer.id;
 }
 
+function resolveBaseUrl(): string {
+  return (
+    process.env.NEXTAUTH_URL ??
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000")
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// createSubscriptionIntent
+// createCheckoutSession — Stripe-hosted Checkout (replaces embedded Elements)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const createSubscriptionIntentSchema = z.object({
+const createCheckoutSessionSchema = z.object({
   interval: z.enum(["monthly", "yearly"]),
   currency: z.enum(["usd", "eur", "pln"]),
 });
 
-export type CreateSubscriptionIntentInput = z.infer<
-  typeof createSubscriptionIntentSchema
+export type CreateCheckoutSessionInput = z.infer<
+  typeof createCheckoutSessionSchema
 >;
 
-export type CreateSubscriptionIntentResult =
-  | {
-      data: {
-        clientSecret: string;
-        /**
-         * `"setup"` when a trial is active (no payment is due up front, so
-         * we collect a SetupIntent to store the card). `"payment"` when the
-         * subscription starts billing immediately.
-         */
-        type: "setup" | "payment";
-        subscriptionId: string;
-      };
-      error: null;
-    }
+export type CreateCheckoutSessionResult =
+  | { data: { url: string }; error: null }
   | { data: null; error: string };
 
 /**
- * Creates (or reuses) a Stripe customer and creates a new Pro subscription
- * in `default_incomplete` status with a trial. Returns the client secret the
- * browser needs to confirm the Payment/Setup Intent via Stripe Elements.
+ * Creates a Stripe-hosted Checkout session for a Pro subscription and
+ * returns the URL the browser should redirect to. Webhooks (`checkout.session.completed`
+ * and the subsequent `customer.subscription.*` events) are authoritative for
+ * flipping the user's plan in the DB — never trust the return URL.
+ *
+ * No trial: the freemium free tier replaces it. We always collect a payment
+ * method up front (`payment_method_collection: "always"`).
  */
-export async function createSubscriptionIntent(
-  input: CreateSubscriptionIntentInput
-): Promise<CreateSubscriptionIntentResult> {
+export async function createCheckoutSession(
+  input: CreateCheckoutSessionInput
+): Promise<CreateCheckoutSessionResult> {
   try {
-    const parsed = createSubscriptionIntentSchema.safeParse(input);
+    const parsed = createCheckoutSessionSchema.safeParse(input);
     if (!parsed.success) {
       return { data: null, error: "Invalid input" };
     }
@@ -110,7 +111,7 @@ export async function createSubscriptionIntent(
       return { data: null, error: error ?? "Unauthorized" };
     }
 
-    // Guardrail: if the user is already Pro, don't create a second subscription.
+    // Guardrail: if the user is already Pro, do not create a second subscription.
     if (
       isPro({
         plan: user.plan,
@@ -127,68 +128,60 @@ export async function createSubscriptionIntent(
       stripeCustomerId: user.stripeCustomerId,
     });
 
-    const price = await resolvePrice(
-      proPriceLookupKey(
-        interval as BillingInterval,
-        currency as SupportedCurrency
-      )
+    const lookupKey = proPriceLookupKey(
+      interval as BillingInterval,
+      currency as SupportedCurrency
     );
+    const price = await resolvePrice(lookupKey);
 
-    const subscription = await stripe.subscriptions.create({
+    const locale = await getLocale();
+    const baseUrl = resolveBaseUrl();
+    const localePrefix = locale === "en" ? "" : `/${locale}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: price.id, quantity: 1 }],
+      // Pass the existing customer — NEVER `customer_email` — otherwise
+      // Stripe creates a duplicate customer on every checkout.
       customer: customerId,
-      items: [{ price: price.id }],
-      trial_period_days: trialDays() || undefined,
-      payment_behavior: "default_incomplete",
-      payment_settings: {
-        save_default_payment_method: "on_subscription",
-      },
-      expand: ["latest_invoice.payment_intent", "pending_setup_intent"],
+      success_url: `${baseUrl}${localePrefix}/subscribe/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}${localePrefix}/subscribe?canceled=1`,
       metadata: {
         userId: user.id,
-        lookupKey: price.lookup_key ?? "",
+        lookupKey,
       },
+      // Belt-and-suspenders: stamp metadata onto the subscription too, so the
+      // `customer.subscription.*` events carry it as well.
+      subscription_data: {
+        metadata: {
+          userId: user.id,
+          lookupKey,
+        },
+      },
+      allow_promotion_codes: true,
+      billing_address_collection: "auto",
+      locale: stripeLocaleForNextLocale(locale),
+      payment_method_collection: "always",
+      // NOTE: automatic_tax intentionally omitted until Stripe Tax is
+      // configured (TODO before real EU/PL revenue).
     });
 
-    // With a trial, Stripe returns a pending_setup_intent (collect card for
-    // later). Without a trial, it returns latest_invoice.payment_intent.
-    const pendingSetup =
-      subscription.pending_setup_intent as Stripe.SetupIntent | null;
-    if (pendingSetup?.client_secret) {
+    if (!session.url) {
       return {
-        data: {
-          clientSecret: pendingSetup.client_secret,
-          type: "setup",
-          subscriptionId: subscription.id,
-        },
-        error: null,
+        data: null,
+        error:
+          "Stripe did not return a Checkout URL. Check the Stripe dashboard for session details.",
       };
     }
 
-    const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-    const paymentIntent =
-      (latestInvoice as unknown as { payment_intent?: Stripe.PaymentIntent })
-        ?.payment_intent ?? null;
-    if (paymentIntent?.client_secret) {
-      return {
-        data: {
-          clientSecret: paymentIntent.client_secret,
-          type: "payment",
-          subscriptionId: subscription.id,
-        },
-        error: null,
-      };
-    }
-
+    return { data: { url: session.url }, error: null };
+  } catch (err) {
+    console.error("[createCheckoutSession] error:", err);
     return {
       data: null,
       error:
-        "Could not obtain a client secret from Stripe. Check the subscription state in the Stripe dashboard.",
+        err instanceof Error ? err.message : "Unknown error creating checkout session",
     };
-  } catch (err) {
-    console.error("[createSubscriptionIntent] error:", err);
-    const message =
-      err instanceof Error ? err.message : "Unknown error creating subscription";
-    return { data: null, error: message };
   }
 }
 
@@ -265,11 +258,7 @@ export async function createPortalSession(
       stripeCustomerId: user.stripeCustomerId,
     });
 
-    const baseUrl =
-      process.env.NEXTAUTH_URL ??
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
+    const baseUrl = resolveBaseUrl();
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,

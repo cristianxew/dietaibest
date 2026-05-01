@@ -14,6 +14,11 @@ import {
   analyzeRecipeNutrition,
   type RecipeNutritionInput,
 } from "@/lib/edamam-service";
+import {
+  assertCanCreateRecipe,
+  assertCanImportRecipe,
+} from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
 
 // Helper types
 interface StructuredIngredient {
@@ -52,6 +57,7 @@ export async function createRecipe(
 ) {
   try {
     const user = await getAuthenticatedUser();
+    await assertCanCreateRecipe(user);
     const validatedData = recipeFormSchema.parse(data);
 
     const { categoryIds, ...recipeData } = validatedData;
@@ -141,6 +147,8 @@ export async function createRecipe(
     revalidatePath("/recipes");
     return { data: recipe, error: null };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) return { data: null, error: entError };
     console.error("Create recipe error:", error);
     return {
       data: null,
@@ -163,6 +171,8 @@ export async function createImportedRecipe(
 ) {
   try {
     const user = await getAuthenticatedUser();
+    await assertCanImportRecipe(user);
+    await assertCanCreateRecipe(user);
     const validatedData = recipeFormSchema.parse(data);
 
     const { categoryIds, ...recipeData } = validatedData;
@@ -264,6 +274,8 @@ export async function createImportedRecipe(
     revalidatePath("/recipes");
     return { data: recipe, error: null };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) return { data: null, error: entError };
     console.error("Create imported recipe error:", error);
     return {
       data: null,

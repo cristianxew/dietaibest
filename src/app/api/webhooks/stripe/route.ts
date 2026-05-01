@@ -75,10 +75,40 @@ export async function POST(req: Request) {
         break;
       }
 
+      case "checkout.session.completed": {
+        // Stamp the customer + subscription ids onto the user row using the
+        // `userId` we planted in `metadata` when creating the Checkout session.
+        // The `customer.subscription.{created,updated}` events that follow
+        // carry the authoritative status/plan/period-end and are handled above —
+        // both families are needed; delivery order is NOT guaranteed.
+        const s = event.data.object as Stripe.Checkout.Session;
+        const userId = s.metadata?.userId;
+        const subId =
+          typeof s.subscription === "string"
+            ? s.subscription
+            : s.subscription?.id ?? null;
+        const custId =
+          typeof s.customer === "string"
+            ? s.customer
+            : s.customer?.id ?? null;
+        if (userId && custId) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              stripeCustomerId: custId,
+              ...(subId ? { stripeSubscriptionId: subId } : {}),
+            },
+          });
+        } else {
+          console.warn(
+            `[stripe webhook] checkout.session.completed missing userId or customer; session=${s.id}`
+          );
+        }
+        break;
+      }
+
       case "invoice.payment_succeeded":
-      case "checkout.session.completed":
-        // No-op for now. The subscription.updated event that follows carries
-        // the authoritative state and will be handled above.
+        // No-op. Handled via subscription.updated which follows.
         break;
 
       default:

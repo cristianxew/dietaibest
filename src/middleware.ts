@@ -25,6 +25,7 @@ const PROTECTED_ROUTES = [
 
 const PROTECTED_API_ROUTES = [
   "/api/user",
+  "/api/me",
   "/api/meals",
   "/api/recipes",
   "/api/shopping-lists",

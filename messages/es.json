@@ -976,5 +976,51 @@
         "confirmPassword": "Confirma tu contraseña",
         "enterFirstName": "Ingresa tu nombre",
         "enterLastName": "Ingresa tu apellido"
+    },
+    "billing": {
+        "plans": {
+            "free": "Gratis",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Activo",
+            "trialing": "En prueba",
+            "past_due": "Pago pendiente",
+            "canceled": "Cancelado",
+            "unpaid": "Impago"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Mejorar a Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Función Pro",
+                "description": "Esta función está disponible solo en el plan Pro.",
+                "cta": "Mejorar a Pro"
+            },
+            "quotaExceeded": {
+                "title": "Límite alcanzado",
+                "description": "Usaste {used} de {limit} {quotaName}.",
+                "cta": "Mejorá para acceso ilimitado"
+            },
+            "close": "Quizás después"
+        },
+        "sidebar": {
+            "upgradeTitle": "Desbloqueá Pro",
+            "upgradeDescription": "Recetas ilimitadas, planes de comida, automatización de compras e IA.",
+            "upgradeButton": "Mejorar"
+        },
+        "featureNames": {
+            "aiMealPlan": "Planes de comida con IA",
+            "shoppingAutomation": "Automatización de compras",
+            "bulkActions": "Importaciones de URL y PDF"
+        },
+        "quotaNames": {
+            "savedRecipes": "recetas guardadas",
+            "recipesCreatedPerMonth": "recetas por mes",
+            "importsPerMonth": "importaciones por mes",
+            "mealPlanTemplates": "plantillas de plan de comida",
+            "mealPlanDurationDays": "duración del plan de comida",
+            "edamamAnalysesPerMonth": "análisis nutricionales por mes"
+        }
     }
 }
