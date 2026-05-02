@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ImportedRecipe } from "@/types/recipe";
+import { useRecipeErrorTranslation } from "@/hooks/use-recipe-extraction";
 
 // URL validation schema
 const urlSchema = z.object({
@@ -79,6 +80,7 @@ export function URLUpload({
   useSSE = true,
 }: URLUploadProps) {
   const t = useTranslations("recipes.urlUpload");
+  const getErrorMessage = useRecipeErrorTranslation();
   const [uploadState, setUploadState] = useState<UploadState>({
     status: "idle",
     progress: 0,
@@ -113,85 +115,7 @@ export function URLUpload({
     },
   });
 
-  // Get user-friendly error message
-  const getErrorMessage = useCallback(
-    (error: unknown): string => {
-      const errorStr = error instanceof Error ? error.message : String(error);
 
-      // Check for specific error patterns and return user-friendly messages
-
-      // Consecutive failures / stopped task
-      if (
-        errorStr.includes("consecutive failures") ||
-        errorStr.includes("stopped")
-      ) {
-        return t("errors.consecutiveFailures");
-      }
-
-      if (errorStr.includes("404") || errorStr.includes("not found")) {
-        return t("errors.taskNotFound");
-      }
-
-      if (
-        errorStr.includes("timeout") ||
-        errorStr.includes("timed out") ||
-        errorStr.includes("taking longer than expected")
-      ) {
-        return t("errors.timeout");
-      }
-
-      if (errorStr.includes("cancelled")) {
-        return t("errors.cancelled");
-      }
-
-      if (
-        errorStr.includes("network") ||
-        errorStr.includes("fetch") ||
-        errorStr.includes("connection")
-      ) {
-        return t("errors.network");
-      }
-
-      if (
-        errorStr.includes("authentication") ||
-        errorStr.includes("unauthorized")
-      ) {
-        return t("errors.unauthorized");
-      }
-
-      if (errorStr.includes("validation") || errorStr.includes("invalid")) {
-        return t("errors.validation");
-      }
-
-      if (
-        errorStr.includes("recipe") &&
-        errorStr.includes("not") &&
-        (errorStr.includes("found") || errorStr.includes("contain"))
-      ) {
-        return t("errors.noRecipe");
-      }
-
-      if (errorStr.includes("popup") || errorStr.includes("overlay")) {
-        return t("errors.blocked");
-      }
-
-      if (
-        errorStr.includes("anti-bot") ||
-        errorStr.includes("captcha") ||
-        errorStr.includes("protection")
-      ) {
-        return t("errors.antiBot");
-      }
-
-      // Default fallback - return the actual error message if it's descriptive enough
-      if (errorStr.length > 20 && errorStr.length < 200) {
-        return errorStr;
-      }
-
-      return t("errors.processingFailed");
-    },
-    [t]
-  );
 
   // Validate URL format
   const validateURL = useCallback(
