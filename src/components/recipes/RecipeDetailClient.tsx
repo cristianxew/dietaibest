@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Prisma } from "@/generated/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Star, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ interface RecipeDetailClientProps {
     fat: number | null;
     fiber: number | null;
     sourceUrl: string | null;
+    source: string | null;
     userId: string;
     categories: { id: string; name: string }[];
     favoritedBy: { id: string }[];
@@ -215,6 +216,49 @@ export function RecipeDetailClient({
               </Button>
             )}
           </div>
+
+          {/* Source Attribution */}
+          {(() => {
+            const source = recipe.source;
+            const sourceUrl = recipe.sourceUrl;
+
+            if (source === "url" && sourceUrl) {
+              let hostname = sourceUrl;
+              try { hostname = new URL(sourceUrl).hostname.replace(/^www\./, ""); } catch {}
+              return (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t("source.importedFrom")}</span>
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary truncate max-w-[200px]"
+                  >
+                    {hostname}
+                  </a>
+                </div>
+              );
+            }
+
+            if (source === "imported" || source === "document") {
+              const fileName = sourceUrl || t("source.uploadedFile");
+              return (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t("source.importedFrom")}</span>
+                  <span className="font-medium text-foreground/80 truncate max-w-[200px]">{fileName}</span>
+                </div>
+              );
+            }
+
+            return (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <PenLine className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("source.manual")}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -235,21 +279,7 @@ export function RecipeDetailClient({
           servings={selectedPortions}
         />
 
-        {recipe.sourceUrl && (
-          <div className="pt-2 border-t border-border/40">
-            <p className="text-sm text-muted-foreground italic">
-              Source:{" "}
-              <a
-                href={recipe.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary"
-              >
-                {new URL(recipe.sourceUrl).hostname}
-              </a>
-            </p>
-          </div>
-        )}
+
       </RecipeScalableContent>
     </PageContainer>
   );

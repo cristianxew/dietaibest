@@ -18,7 +18,7 @@ import { randomBytes } from "crypto";
 import { addDays, format } from "date-fns";
 import { Prisma } from "@/generated/prisma";
 import { assertCanCreateMealPlanTemplate } from "@/lib/entitlements";
-import { toEntitlementError } from "@/lib/entitlement-error";
+import { serverAction } from "@/lib/server-action";
 
 // ============================================================================
 // Helper Functions
@@ -50,100 +50,96 @@ function generateShareToken(): string {
 // ============================================================================
 
 export async function createMealPlan(data: MealPlanTemplateFormData) {
-  try {
-    const user = await getAuthenticatedUser();
-    const validatedData = mealPlanTemplateFormSchema.parse(data);
-    await assertCanCreateMealPlanTemplate(user, validatedData.duration);
+  return serverAction(
+    {
+      input: mealPlanTemplateFormSchema,
+      // Parameterized quota: duration matters because Free is capped at
+      // mealPlanDurationDays per template, regardless of total templates.
+      requires: (input, ctx) =>
+        assertCanCreateMealPlanTemplate(ctx.user, input.duration),
+      revalidates: ["/meal-plans"],
+    },
+    async (ctx, validatedData) => {
+      // If creating from template, fetch source meals + verify access.
+      // Ownership stays body-side: the runtime gates ENTITLEMENT, not
+      // resource-level authorization.
+      let templatePlan = null;
+      if (validatedData.templateId) {
+        templatePlan = await prisma.mealPlanTemplate.findUnique({
+          where: { id: validatedData.templateId },
+          include: {
+            days: {
+              include: {
+                meals: true,
+              },
+              orderBy: { dayNumber: "asc" },
+            },
+          },
+        });
 
-    // If creating from template, get template meals
-    let templatePlan = null;
-    if (validatedData.templateId) {
-      templatePlan = await prisma.mealPlanTemplate.findUnique({
-        where: { id: validatedData.templateId },
+        if (
+          templatePlan &&
+          templatePlan.userId !== ctx.user.id &&
+          !templatePlan.isPublic
+        ) {
+          // Throw → runtime maps to { data: null, error: "..." } string tuple,
+          // matching the original behavior.
+          throw new Error("Unauthorized to use this template");
+        }
+      }
+
+      return prisma.mealPlanTemplate.create({
+        data: {
+          userId: ctx.user.id,
+          name: validatedData.name,
+          duration: validatedData.duration,
+          mealSlots: validatedData.mealSlots,
+          targetCalories: validatedData.targetCalories,
+          targetProtein: validatedData.targetProtein,
+          targetCarbs: validatedData.targetCarbs,
+          targetFat: validatedData.targetFat,
+          isPublic: validatedData.isPublic,
+          shareToken: validatedData.isPublic ? generateShareToken() : null,
+          days: {
+            create: Array.from(
+              { length: validatedData.duration },
+              (_, index) => {
+                const dayNumber = index + 1;
+                const templateDay =
+                  templatePlan?.days[index % (templatePlan.days.length || 1)];
+
+                return {
+                  dayNumber,
+                  meals: templateDay
+                    ? {
+                        create: templateDay.meals.map((meal) => ({
+                          recipeId: meal.recipeId,
+                          mealType: meal.mealType,
+                          servings: meal.servings,
+                          sortOrder: meal.sortOrder,
+                        })),
+                      }
+                    : undefined,
+                };
+              }
+            ),
+          },
+        },
         include: {
           days: {
             include: {
-              meals: true,
+              meals: {
+                include: {
+                  recipe: true,
+                },
+              },
             },
             orderBy: { dayNumber: "asc" },
           },
         },
       });
-
-      // Verify ownership of template
-      if (
-        templatePlan &&
-        templatePlan.userId !== user.id &&
-        !templatePlan.isPublic
-      ) {
-        return { data: null, error: "Unauthorized to use this template" };
-      }
     }
-
-    // Create meal plan template with days
-    const mealPlanTemplate = await prisma.mealPlanTemplate.create({
-      data: {
-        userId: user.id,
-        name: validatedData.name,
-        duration: validatedData.duration,
-        mealSlots: validatedData.mealSlots,
-        targetCalories: validatedData.targetCalories,
-        targetProtein: validatedData.targetProtein,
-        targetCarbs: validatedData.targetCarbs,
-        targetFat: validatedData.targetFat,
-        isPublic: validatedData.isPublic,
-        shareToken: validatedData.isPublic ? generateShareToken() : null,
-        days: {
-          create: Array.from({ length: validatedData.duration }, (_, index) => {
-            const dayNumber = index + 1;
-            // Copy meals from template if available (cycle through if template is shorter)
-            const templateDay =
-              templatePlan?.days[index % (templatePlan.days.length || 1)];
-
-            return {
-              dayNumber,
-              meals: templateDay
-                ? {
-                    create: templateDay.meals.map((meal) => ({
-                      recipeId: meal.recipeId,
-                      mealType: meal.mealType,
-                      servings: meal.servings,
-                      sortOrder: meal.sortOrder,
-                    })),
-                  }
-                : undefined,
-            };
-          }),
-        },
-      },
-      include: {
-        days: {
-          include: {
-            meals: {
-              include: {
-                recipe: true,
-              },
-            },
-          },
-          orderBy: { dayNumber: "asc" },
-        },
-      },
-    });
-
-    revalidatePath("/meal-plans");
-    return { data: mealPlanTemplate, error: null };
-  } catch (error) {
-    const entError = toEntitlementError(error);
-    if (entError) return { data: null, error: entError };
-    console.error("Create meal plan template error:", error);
-    return {
-      data: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to create meal plan template",
-    };
-  }
+  )(data);
 }
 
 // ============================================================================

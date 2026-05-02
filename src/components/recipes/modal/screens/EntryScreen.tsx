@@ -120,6 +120,7 @@ export function EntryScreen() {
         sugar: recipe.sugar,
         sodium: recipe.sodium,
         imageUrl: recipe.imageUrl,
+        sourceUrl: file.name,
       };
       setImportedPreview(preview);
       form.reset(importedToFormData(preview));

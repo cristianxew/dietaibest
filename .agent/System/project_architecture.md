@@ -1,6 +1,6 @@
 # DietAI - Project Architecture
 
-**Last Updated:** 2025-12-11
+**Last Updated:** 2026-05-02
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
@@ -570,14 +570,19 @@ Save recipe + trigger nutrition analysis
 "use server";
 
 export async function createRecipe(data: RecipeFormData) {
-  const user = await getAuthenticatedUser();
-  const recipe = await prisma.recipe.create({
-    data: { ...data, userId: user.id }
-  });
-  revalidatePath("/recipes");
-  return { data: recipe, error: null };
+  return serverAction(
+    {
+      input: recipeFormSchema,
+      requires: (_, ctx) => assertCanCreateRecipe(ctx.user),
+      revalidates: ["/recipes"],
+    },
+    async (ctx, validated) =>
+      prisma.recipe.create({ data: { ...validated, userId: ctx.user.id } })
+  )(data);
 }
 ```
+
+See pattern 8 below for the full Server Action Runtime that wraps every gated action.
 
 ### 2. Repository Pattern for External APIs
 **Each external API has a dedicated client class**
@@ -671,6 +676,46 @@ export async function createRecipe(data: RecipeFormData) {
 1. **ETag Caching:** Recipe-level full nutrition data
 2. **User Macro Cache:** User-specific 4-macro storage (Edamam policy)
 3. **Next.js Caching:** Page-level caching with revalidation
+
+### 8. Server Action Runtime (Pattern + Module)
+**Single deep module wraps every gated server action with auth + validation + entitlement + error mapping + revalidation**
+
+**Location:** `src/lib/server-action.ts`. SOP: `.agent/SOP/server-action-runtime.md`.
+
+**Why:** Before this runtime, every action re-implemented the same skeleton ad-hoc — `getAuthenticatedUser` was duplicated in 7 files, `toEntitlementError` mapping in 5, `revalidatePath` scattered 33 times, `assertCan*` call sites had no central audit point (silent-bypass risk for revenue-protecting quotas).
+
+**The interface:**
+```typescript
+serverAction(
+  {
+    input: zodSchema,                                          // optional Zod validation
+    requires: (input, ctx) => assertCanX(ctx.user, input.x),   // optional entitlement assertion
+    revalidates: ["/path"] | ((result) => ["/path"]),          // optional, static or dynamic
+  },
+  async (ctx, validatedInput) => { /* pure body */ }
+)
+```
+
+**Pipeline (in order):** auth resolution → Zod parse → entitlement assertion → body → revalidate → wrap in `{ data, error }` tuple. Every throw is caught and mapped: `EntitlementError` → structured `EntitlementErrorPayload`; `ZodError` → `"Invalid input: ..."` string; anything else → `error.message` string + `console.error`.
+
+**What stays in the body (NOT runtime concerns):**
+- Resource ownership checks (`recipe.userId !== ctx.user.id`)
+- Per-action user includes (fetch related rows separately)
+- Domain decisions and side-effects (e.g. nutrition analysis after recipe create)
+- Custom invariant errors (`throw new Error("Recipe not found")` — runtime maps it)
+
+**Reuses (do not reinvent):**
+- `src/lib/entitlements.ts` — pure `check*` + async `assertCan*` + shadow-mode `enforce()` kill switch
+- `src/lib/entitlement-error.ts` — `toEntitlementError(err)` → `EntitlementErrorPayload | null`
+
+**Migrated to date (gated actions):**
+- `src/actions/recipe.ts` — `createRecipe`, `createImportedRecipe`
+- `src/actions/meal-plan.ts` — `createMealPlan` (parameterized assertion via `input.duration`)
+- `src/actions/shopping-automation.ts` — `startShoppingTask`
+
+**Pending migration (non-gated, lower priority):** `dashboard.ts`, `profile.ts`, `subscription.ts`, `onboarding.ts`, `shopping-list.ts`, `analyzeRecipe.ts`, plus the read/update functions in already-migrated files (`getRecipes`, `updateRecipe`, etc.). Migrate as touched.
+
+**Known divergence:** `nutrition.ts` actions use `{ success, data?, error?, code?, retryable? }` shape instead of the standard `{ data, error }` tuple. Migration would require updating consumer hooks (`use-recipe-modal.ts`, `use-recipe-nutrition.ts`). `analyzeAndUpdateRecipe` is currently NOT gated and bypasses `assertCanUseEdamamAnalysis` despite calling Edamam — should be addressed in a follow-up.
 
 ---
 

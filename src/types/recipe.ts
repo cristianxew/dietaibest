@@ -40,6 +40,7 @@ export const recipeFormSchema = z.object({
   tags: z.array(z.string()).default([]),
   categoryIds: z.array(z.string()).default([]),
   isPublic: z.boolean().default(false),
+  sourceUrl: z.string().optional().or(z.literal("")).transform(v => v || undefined),
 
   // Nutritional information (optional, can be calculated later)
   calories: z.number().min(0).optional(),

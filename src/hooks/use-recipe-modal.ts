@@ -271,7 +271,10 @@ export function useRecipeModalState(): RecipeModalCtx {
     try {
       const data = form.getValues();
       if (mode === "create") {
-        const result = await createRecipe(data);
+        const source = data.sourceUrl
+          ? (data.sourceUrl.startsWith("http") ? "url" : "imported")
+          : "manual";
+        const result = await createRecipe(data, source);
         if (result.error || !result.data) {
           toast.error(result.error || "Failed to save recipe");
           return;
@@ -292,7 +295,7 @@ export function useRecipeModalState(): RecipeModalCtx {
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, mode, recipeId, goToScreen]);
+  }, [form, mode, enteredVia, recipeId, goToScreen]);
 
   return {
     isOpen,

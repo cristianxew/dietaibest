@@ -24,6 +24,7 @@ export function importedToFormData(imported: ImportedRecipeData): RecipeFormData
     fiber: imported.fiber,
     sugar: imported.sugar,
     sodium: imported.sodium,
+    sourceUrl: imported.sourceUrl || "",
   };
 }
 

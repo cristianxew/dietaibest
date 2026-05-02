@@ -401,7 +401,11 @@
         "minutes": "min",
         "nutritionPerServing": "Nutrition per serving",
         "editRecipe": "Edit Recipe",
-        "source": "Source",
+        "source": {
+            "importedFrom": "Imported from",
+            "manual": "Created manually",
+            "uploadedFile": "Uploaded file"
+        },
         "subtitle": "Your personal recipe collection",
         "comingSoon": "Coming Soon!",
         "features": {
@@ -1052,6 +1056,8 @@
             "recalculate": "Recalculate",
             "analyzing": "Analyzing…",
             "analyzed": "Nutrition estimated",
+            "remaining": "{remaining} of {limit} free analyses left",
+            "quotaExhausted": "Free analyses used — upgrade to Pro",
             "macrosTitle": "Macronutrients",
             "calories": "Calories",
             "protein": "Protein",

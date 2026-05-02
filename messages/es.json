@@ -401,7 +401,11 @@
         "minutes": "min",
         "nutritionPerServing": "Nutrición por porción",
         "editRecipe": "Editar Receta",
-        "source": "Fuente",
+        "source": {
+            "importedFrom": "Importado de",
+            "manual": "Creada manualmente",
+            "uploadedFile": "Archivo subido"
+        },
         "subtitle": "Tu colección personal de recetas",
         "comingSoon": "¡Próximamente!",
         "features": {
@@ -1051,6 +1055,8 @@
             "recalculate": "Recalcular",
             "analyzing": "Analizando…",
             "analyzed": "Análisis completo",
+            "remaining": "{remaining} de {limit} análisis gratuitos restantes",
+            "quotaExhausted": "Análisis gratuitos agotados — pasá a Pro",
             "macrosTitle": "Macronutrientes",
             "calories": "Calorías",
             "protein": "Proteínas",

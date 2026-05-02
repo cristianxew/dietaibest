@@ -13,7 +13,8 @@
       "mcp__662d8de9-b021-48a6-81aa-f76d428b8beb__list_products",
       "mcp__plugin_stripe_stripe__list_prices",
       "mcp__plugin_stripe_stripe__stripe_api_execute",
-      "mcp__plugin_stripe_stripe__fetch_stripe_resources"
+      "mcp__plugin_stripe_stripe__fetch_stripe_resources",
+      "mcp__claude_ai_Linear__save_issue"
     ]
   },
   "enableAllProjectMcpServers": true,

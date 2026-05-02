@@ -205,6 +205,25 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Server Action Runtime](./SOP/server-action-runtime.md)
+**Purpose:** How to write a gated server action using the `serverAction` runtime in `src/lib/server-action.ts`
+
+**Contains:**
+- The wrapper shape (HOF declarative form)
+- What the runtime owns (auth, validation, entitlement, error, revalidation)
+- What stays in the body (ownership, user includes, domain logic)
+- Patterns: single/multi/parameterized assertions, static/dynamic revalidates, no-input actions
+- Shadow-mode interaction (`ENTITLEMENTS_ENFORCED`)
+- Result contract (`ActionResult<T>`)
+- Migration checklist for pre-runtime actions
+
+**When to read:**
+- Before adding a new gated server action
+- When migrating an old action to the runtime
+- When debugging an entitlement payload not opening the paywall
+
+---
+
 ## =� Quick Start for New Developers
 
 ### 1. Read These First (in order):
