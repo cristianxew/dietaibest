@@ -3,11 +3,13 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeExtraction } from "@/hooks/use-recipe-extraction";
 import { importedToFormData } from "@/lib/recipe-utils";
 import { Link2, Camera, Sparkles } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { ImportedRecipeData } from "@/types/recipe";
+import type { ImportedRecipe } from "@/types/recipe";
 
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
@@ -16,75 +18,44 @@ export function EntryScreen() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { extract, cancel, state } = useRecipeExtraction();
+
   const handleExtractURL = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed) return;
-    goToScreen("loading");
+    
     try {
-      const startRes = await fetch("/api/recipes/import/url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
-      });
-      if (!startRes.ok) {
-        const err = await startRes.json();
-        throw new Error(err.error || "Failed to start extraction");
+      const recipe = await extract(trimmed);
+      if (recipe) {
+        const preview: ImportedRecipe = {
+          title: recipe.title || "",
+          description: recipe.description,
+          ingredients: recipe.ingredients || [],
+          instructions: recipe.instructions || [],
+          prepTime: recipe.prepTime,
+          cookTime: recipe.cookTime,
+          servings: recipe.servings,
+          difficulty: recipe.difficulty,
+          cuisine: recipe.cuisine,
+          tags: recipe.tags,
+          calories: recipe.calories,
+          protein: recipe.protein,
+          carbs: recipe.carbs,
+          fat: recipe.fat,
+          fiber: recipe.fiber,
+          sugar: recipe.sugar,
+          sodium: recipe.sodium,
+          imageUrl: recipe.imageUrl,
+          sourceUrl: trimmed,
+        };
+        setImportedPreview(preview);
+        form.reset(importedToFormData(preview));
+        goToScreen("preview");
       }
-      const { taskId } = await startRes.json();
-
-      await new Promise<void>((resolve, reject) => {
-        const es = new EventSource(`/api/recipes/import/url/status?taskId=${taskId}`);
-        es.onmessage = (evt) => {
-          try {
-            const data = JSON.parse(evt.data);
-            if (data.type === "complete" || data.status === "completed") {
-              es.close();
-              const recipe = data.recipe || data.data;
-              if (recipe) {
-                const preview: ImportedRecipeData = {
-                  title: recipe.title || "",
-                  description: recipe.description,
-                  ingredients: recipe.ingredients || [],
-                  instructions: recipe.instructions || [],
-                  prepTime: recipe.prepTime,
-                  cookTime: recipe.cookTime,
-                  servings: recipe.servings,
-                  difficulty: recipe.difficulty,
-                  cuisine: recipe.cuisine,
-                  tags: recipe.tags,
-                  calories: recipe.calories,
-                  protein: recipe.protein,
-                  carbs: recipe.carbs,
-                  fat: recipe.fat,
-                  fiber: recipe.fiber,
-                  sugar: recipe.sugar,
-                  sodium: recipe.sodium,
-                  imageUrl: recipe.imageUrl,
-                  sourceUrl: trimmed,
-                };
-                setImportedPreview(preview);
-                form.reset(importedToFormData(preview));
-                goToScreen("preview");
-              }
-              resolve();
-            } else if (data.type === "error" || data.status === "failed") {
-              es.close();
-              reject(new Error(data.error || "Extraction failed"));
-            }
-          } catch {
-            // ignore parse errors
-          }
-        };
-        es.onerror = () => {
-          es.close();
-          reject(new Error("Connection error during extraction"));
-        };
-      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to extract recipe");
-      goToScreen("entry");
     }
-  }, [url, goToScreen, setImportedPreview, form]);
+  }, [url, extract, goToScreen, setImportedPreview, form]);
 
   const handleFileUpload = useCallback(async (file: File) => {
     goToScreen("loading");
@@ -101,7 +72,7 @@ export function EntryScreen() {
       }
       const data = await res.json();
       const recipe = data.recipe || data.data || data;
-      const preview: ImportedRecipeData = {
+      const preview: ImportedRecipe = {
         title: recipe.title || "",
         description: recipe.description,
         ingredients: recipe.ingredients || [],
@@ -147,9 +118,48 @@ export function EntryScreen() {
     goToScreen("step0");
   };
 
+  const isLoading = ["starting", "polling", "processing", "validating"].includes(state.status);
+
   return (
     <div className="flex-1 flex items-center justify-center p-8 animate-in fade-in duration-300">
       <div className="w-full max-w-md">
+        {isLoading ? (
+          <div className="text-center space-y-6 py-4">
+            <div className="relative w-[60px] h-[60px] mx-auto">
+              <div className="absolute inset-0 rounded-full border-[3px] border-border border-t-primary animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center text-primary">
+                <Sparkles className="w-5 h-5" />
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-display text-xl font-semibold text-foreground mb-1.5">
+                {t("loading.title")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {state.message || t("loading.subtitle")}
+              </p>
+            </div>
+            
+            <div className="space-y-2 text-left">
+              <Progress value={state.progress} className="h-2 w-full" />
+              <div className="flex justify-between text-xs text-muted-foreground font-medium px-1">
+                <span>{state.progress}%</span>
+                {state.currentStep !== undefined && (
+                  <span>Step {state.currentStep}</span>
+                )}
+              </div>
+            </div>
+            
+            <button
+              onClick={cancel}
+              className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
         {/* Title */}
         <div className="text-center mb-7">
           <h2 className="font-display text-2xl font-bold text-foreground mb-2">
@@ -253,6 +263,8 @@ export function EntryScreen() {
             {t("entry.addManually")}
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

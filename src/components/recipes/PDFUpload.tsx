@@ -16,34 +16,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-
-interface ExtractedRecipeData {
-  title: string;
-  description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  cuisine?: string;
-  tags?: string[];
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
-}
+import type { ImportedRecipe } from "@/types/recipe";
 
 interface PDFUploadProps {
   onPDFUploaded?: (pdfData: {
     file: File;
-    extractedData?: ExtractedRecipeData;
+    extractedData?: ImportedRecipe;
   }) => void;
   onUploadError?: (error: string) => void;
   maxFileSize?: number; // in MB
@@ -146,7 +124,7 @@ export function PDFUpload({
 
   // Upload PDF to backend and process with Document AI
   const uploadPDFAndProcess = useCallback(
-    async (file: File): Promise<ExtractedRecipeData | null> => {
+    async (file: File): Promise<ImportedRecipe | null> => {
       // Phase 1: Upload (0-30%)
       setUploadState((prev) => ({
         ...prev,
@@ -228,7 +206,10 @@ export function PDFUpload({
             difficulty: result.data.difficulty,
             cuisine: result.data.cuisine,
             tags: result.data.tags,
-            nutritionalInfo: result.data.nutritionalInfo,
+            calories: result.data.calories,
+            protein: result.data.protein,
+            carbs: result.data.carbs,
+            fat: result.data.fat,
           };
         }
 
@@ -287,7 +268,7 @@ export function PDFUpload({
             );
           if (extractedData.instructions.length > 0)
             extractedFields.push(`${extractedData.instructions.length} steps`);
-          if (extractedData.nutritionalInfo)
+          if (extractedData.calories || extractedData.protein)
             extractedFields.push("nutrition info");
           if (extractedData.difficulty)
             extractedFields.push(`difficulty: ${extractedData.difficulty}`);

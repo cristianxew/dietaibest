@@ -4,6 +4,7 @@ import {
   getBrowserUseClient,
   type ExtendedTaskStatus,
 } from "@/lib/browser-use";
+import type { ImportedRecipe } from "@/types/recipe";
 
 // Get task status and result
 export async function GET(
@@ -61,7 +62,7 @@ export async function GET(
       ) {
         try {
           // Always try to parse the recipe data first
-          const recipeData = browserUseClient.parseRecipeData(
+          const recipeData: ImportedRecipe = browserUseClient.parseRecipeData(
             taskStatus.output || taskStatus.result,
             taskStatus.startUrl || ""
           );

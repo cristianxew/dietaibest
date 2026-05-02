@@ -5,7 +5,7 @@ import { createContext, useContext, useRef } from "react";
 import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useEffect, useCallback } from "react";
-import { recipeFormSchema, type RecipeFormData, type ImportedRecipeData } from "@/types/recipe";
+import { recipeFormSchema, type RecipeFormData, type ImportedRecipe } from "@/types/recipe";
 import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
 import { analyzeRecipeNutritionAction, type NutritionAnalysisResult } from "@/actions/nutrition";
 import { ingredientsToNutritionLines } from "@/lib/recipe-utils";
@@ -53,8 +53,8 @@ export interface RecipeModalCtx {
     remove: (index: number) => void;
   };
   categories: RecipeCategory[];
-  importedPreview: ImportedRecipeData | null;
-  setImportedPreview: (data: ImportedRecipeData) => void;
+  importedPreview: ImportedRecipe | null;
+  setImportedPreview: (data: ImportedRecipe) => void;
   analyzeNutrition: () => Promise<void>;
   nutritionLoading: boolean;
   nutritionResult: NutritionAnalysisResult | null;
@@ -92,7 +92,7 @@ export function useRecipeModalState(): RecipeModalCtx {
   const [enteredVia, setEnteredVia] = useState<EnteredVia>("manual");
   const [recipeId, setRecipeId] = useState<string | null>(null);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
-  const [importedPreview, setImportedPreview] = useState<ImportedRecipeData | null>(null);
+  const [importedPreview, setImportedPreview] = useState<ImportedRecipe | null>(null);
   const [nutritionLoading, setNutritionLoading] = useState(false);
   const [nutritionResult, setNutritionResult] = useState<NutritionAnalysisResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

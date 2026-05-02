@@ -1,6 +1,6 @@
-import type { RecipeFormData, ImportedRecipeData } from "@/types/recipe";
+import type { RecipeFormData, ImportedRecipe } from "@/types/recipe";
 
-export function importedToFormData(imported: ImportedRecipeData): RecipeFormData {
+export function importedToFormData(imported: ImportedRecipe): RecipeFormData {
   return {
     title: imported.title,
     description: imported.description || "",
