@@ -23,7 +23,6 @@ export function EntryScreen() {
   const handleExtractURL = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed) return;
-
     try {
       const recipe = await extract(trimmed);
       if (recipe) {
