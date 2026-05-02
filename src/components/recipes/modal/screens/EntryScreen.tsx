@@ -7,7 +7,7 @@ import { importedToFormData } from "@/lib/recipe-utils";
 import { Link2, Camera, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { ImportedRecipeData } from "@/types/recipe";
+import type { ImportedRecipe } from "@/types/recipe";
 
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
@@ -41,7 +41,7 @@ export function EntryScreen() {
               es.close();
               const recipe = data.recipe || data.data;
               if (recipe) {
-                const preview: ImportedRecipeData = {
+                const preview: ImportedRecipe = {
                   title: recipe.title || "",
                   description: recipe.description,
                   ingredients: recipe.ingredients || [],
@@ -101,7 +101,7 @@ export function EntryScreen() {
       }
       const data = await res.json();
       const recipe = data.recipe || data.data || data;
-      const preview: ImportedRecipeData = {
+      const preview: ImportedRecipe = {
         title: recipe.title || "",
         description: recipe.description,
         ingredients: recipe.ingredients || [],

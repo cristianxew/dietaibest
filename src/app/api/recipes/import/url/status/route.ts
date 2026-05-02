@@ -6,6 +6,7 @@ import {
   type ExtendedTaskStatus,
   type BrowserUseTaskStep,
 } from "@/lib/browser-use";
+import type { ImportedRecipe } from "@/types/recipe";
 
 /**
  * Server-Sent Events endpoint for real-time task status updates
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
               ) {
                 try {
                   // Always try to parse the recipe data first
-                  const recipeData = browserUseClient.parseRecipeData(
+                  const recipeData: ImportedRecipe = browserUseClient.parseRecipeData(
                     taskStatus.output || taskStatus.result,
                     lastStep?.url || ""
                   );

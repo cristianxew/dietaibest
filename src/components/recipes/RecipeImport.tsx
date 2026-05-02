@@ -21,34 +21,10 @@ import { toast } from "sonner";
 import { ImageUpload } from "./ImageUpload";
 import { PDFUpload } from "./PDFUpload";
 import { URLUpload } from "./URLUpload";
-
-interface ImportedRecipeData {
-  title: string;
-  description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  cuisine?: string;
-  tags?: string[];
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  fiber?: number;
-  sugar?: number;
-  sodium?: number;
-  imageUrl?: string;
-}
+import type { ImportedRecipe } from "@/types/recipe";
 
 interface RecipeImportProps {
-  onImportComplete?: (recipeData: ImportedRecipeData) => void;
+  onImportComplete?: (recipeData: ImportedRecipe) => void;
   onSkipImport?: () => void;
 }
 
@@ -62,7 +38,7 @@ export function RecipeImport({
   // Handle URL upload completion - pass data through without analysis
   const handleURLUploaded = (urlData: {
     url: string;
-    extractedData?: ImportedRecipeData;
+    extractedData?: ImportedRecipe;
   }) => {
     if (urlData.extractedData) {
       toast.success("Recipe imported successfully");
@@ -98,7 +74,7 @@ export function RecipeImport({
     };
   }) => {
     if (imageData.extractedData) {
-      const transformedData: ImportedRecipeData = {
+      const transformedData: ImportedRecipe = {
         title: imageData.extractedData.title,
         description: imageData.extractedData.description,
         ingredients: imageData.extractedData.ingredients,
@@ -147,7 +123,7 @@ export function RecipeImport({
     };
   }) => {
     if (pdfData.extractedData) {
-      const transformedData: ImportedRecipeData = {
+      const transformedData: ImportedRecipe = {
         title: pdfData.extractedData.title,
         description: pdfData.extractedData.description,
         ingredients: pdfData.extractedData.ingredients,

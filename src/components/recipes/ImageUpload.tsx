@@ -17,35 +17,13 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import NextImage from "next/image";
-
-interface ExtractedRecipeData {
-  title: string;
-  description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  cuisine?: string;
-  tags?: string[];
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
-}
+import type { ImportedRecipe } from "@/types/recipe";
 
 interface ImageUploadProps {
   onImageUploaded?: (imageData: {
     file: File;
     preview: string;
-    extractedData?: ExtractedRecipeData;
+    extractedData?: ImportedRecipe;
   }) => void;
   onUploadError?: (error: string) => void;
   maxFileSize?: number; // in MB
@@ -182,7 +160,7 @@ export function ImageUpload({
 
   // Upload image to backend and process with OCR
   const uploadImageAndProcess = useCallback(
-    async (file: File): Promise<ExtractedRecipeData | null> => {
+    async (file: File): Promise<ImportedRecipe | null> => {
       // Phase 1: Upload (0-30%)
       setUploadState((prev) => ({
         ...prev,
@@ -265,7 +243,10 @@ export function ImageUpload({
             difficulty: result.data.difficulty,
             cuisine: result.data.cuisine,
             tags: result.data.tags,
-            nutritionalInfo: result.data.nutritionalInfo,
+            calories: result.data.calories,
+            protein: result.data.protein,
+            carbs: result.data.carbs,
+            fat: result.data.fat,
           };
         }
 
@@ -326,7 +307,7 @@ export function ImageUpload({
             );
           if (extractedData.instructions.length > 0)
             extractedFields.push(`${extractedData.instructions.length} steps`);
-          if (extractedData.nutritionalInfo)
+          if (extractedData.calories || extractedData.protein)
             extractedFields.push("nutrition info");
           if (extractedData.difficulty)
             extractedFields.push(`difficulty: ${extractedData.difficulty}`);

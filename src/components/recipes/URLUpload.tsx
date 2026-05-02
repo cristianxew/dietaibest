@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { ImportedRecipe } from "@/types/recipe";
 
 // URL validation schema
 const urlSchema = z.object({
@@ -46,32 +47,10 @@ const urlSchema = z.object({
 
 type UrlFormData = z.infer<typeof urlSchema>;
 
-interface ExtractedRecipeData {
-  title: string;
-  description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  cuisine?: string;
-  tags?: string[];
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  imageUrl?: string;
-}
-
 interface URLUploadProps {
   onURLUploaded?: (urlData: {
     url: string;
-    extractedData?: ExtractedRecipeData;
+    extractedData?: ImportedRecipe;
   }) => void;
   onUploadError?: (error: string) => void;
   useSSE?: boolean; // Use Server-Sent Events for real-time updates (default: true)
@@ -246,7 +225,7 @@ export function URLUpload({
 
   // Start extraction task and monitor status
   const fetchURLAndProcess = useCallback(
-    async (url: string): Promise<ExtractedRecipeData | null> => {
+    async (url: string): Promise<ImportedRecipe | null> => {
       // Phase 1: Starting task
       if (isMountedRef.current) {
         setUploadState((prev) => ({
@@ -292,7 +271,7 @@ export function URLUpload({
         // Phase 2: Monitor task status (SSE or polling)
         if (useSSE) {
           // Use Server-Sent Events for real-time updates
-          return new Promise<ExtractedRecipeData | null>((resolve, reject) => {
+          return new Promise<ImportedRecipe | null>((resolve, reject) => {
             // Clean up any existing EventSource completely before creating new one
             if (eventSourceRef.current) {
               const oldEventSource = eventSourceRef.current;

@@ -84,20 +84,26 @@ export const categorySchema = z.object({
 
 export type CategoryFormData = z.infer<typeof categorySchema>;
 
-export interface ImportedRecipeData {
+/**
+ * Canonical shape produced by the URL / image / PDF / document recipe
+ * extraction pipelines. Single source of truth for any extracted-but-not-yet-
+ * persisted recipe traveling through preview, edit, and import flows.
+ *
+ * Required fields are the irreducible minimum every extractor must emit
+ * (`title`, `ingredients`, `instructions`). Everything else — including
+ * pipeline metadata `extractedAt` and `confidence` — is optional so legacy
+ * producers and consumers keep compiling unchanged.
+ */
+export interface ImportedRecipe {
   title: string;
   description?: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
   prepTime?: number;
   cookTime?: number;
   servings?: number;
   difficulty?: string;
-  cuisine?: string;
+  ingredients: Ingredient[];
+  instructions: string[];
+  imageUrl?: string;
   tags?: string[];
   calories?: number;
   protein?: number;
@@ -106,6 +112,9 @@ export interface ImportedRecipeData {
   fiber?: number;
   sugar?: number;
   sodium?: number;
-  imageUrl?: string;
+  cuisine?: string;
   sourceUrl?: string;
+  extractedAt?: string;
+  confidence?: number;
 }
+

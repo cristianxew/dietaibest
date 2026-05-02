@@ -15,6 +15,7 @@ import {
   transformShoppingItems,
   formatAsShoppingList,
 } from "./shopping-item-transformer";
+import type { ImportedRecipe, Ingredient } from "@/types/recipe";
 
 // ============================================================================
 // TypeScript Interfaces
@@ -159,29 +160,6 @@ export interface ExtendedTaskStatus extends BrowserUseTaskDetails {
   progress: number;
 }
 
-export interface ExtractedRecipeData {
-  title: string;
-  description: string;
-  prepTime: number;
-  cookTime: number;
-  servings: number;
-  difficulty: "easy" | "medium" | "hard";
-  imageUrl: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-  }>;
-  instructions: string[];
-  tags: string[];
-  calories?: number;
-  protein?: number;
-  carbs?: number;
-  fat?: number;
-  sourceUrl: string;
-  extractedAt: string;
-  confidence: number;
-}
 
 // ============================================================================
 // Shopping Automation Types (Polish Stores)
@@ -694,7 +672,7 @@ export class BrowserUseClient {
    */
   async extractRecipeFromUrl(
     request: RecipeExtractionRequest
-  ): Promise<ExtractedRecipeData> {
+  ): Promise<ImportedRecipe> {
     const { taskId } = await this.startRecipeExtraction(request);
 
     // Poll for completion
@@ -1175,7 +1153,7 @@ OUTPUT: Return JSON with status ("success"/"partial"/"failed"), cartUrl, foundIt
   public parseRecipeData(
     result: unknown,
     sourceUrl: string
-  ): ExtractedRecipeData {
+  ): ImportedRecipe {
     try {
       // Handle case where result is a string (JSON response)
       const data = typeof result === "string" ? JSON.parse(result) : result;
@@ -1248,8 +1226,8 @@ OUTPUT: Return JSON with status ("success"/"partial"/"failed"), cartUrl, foundIt
   }
 
   private validateIngredients(
-    ingredients: ExtractedRecipeData["ingredients"]
-  ): ExtractedRecipeData["ingredients"] {
+    ingredients: Ingredient[]
+  ): Ingredient[] {
     if (!Array.isArray(ingredients)) {
       throw this.createError(
         "INVALID_DATA",
