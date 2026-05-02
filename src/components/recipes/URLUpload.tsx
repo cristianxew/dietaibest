@@ -59,13 +59,13 @@ interface URLUploadProps {
 
 interface UploadState {
   status:
-    | "idle"
-    | "validating"
-    | "starting"
-    | "polling"
-    | "processing"
-    | "success"
-    | "error";
+  | "idle"
+  | "validating"
+  | "starting"
+  | "polling"
+  | "processing"
+  | "success"
+  | "error";
   progress: number;
   message: string;
   url?: string;
@@ -175,7 +175,7 @@ export function URLUpload({
         if (!startResponse.ok) {
           throw new Error(
             startResult.error ||
-              "Unable to start recipe extraction. Please try again."
+            "Unable to start recipe extraction. Please try again."
           );
         }
 
@@ -457,8 +457,8 @@ export function URLUpload({
             ) {
               throw new Error(
                 statusResult.message ||
-                  statusResult.error ||
-                  "Recipe extraction failed. Please check the URL and try again."
+                statusResult.error ||
+                "Recipe extraction failed. Please check the URL and try again."
               );
             }
 
