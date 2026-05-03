@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ShoppingAutomationResult, ShoppingItemResult } from "@/lib/browser-use";
+import { EntitlementErrorPayload } from "@/lib/entitlement-error";
 import { SupportedStore } from "@/types/shopping-preferences";
 import { startShoppingTask, ShoppingAutomationInput } from "@/actions/shopping-automation";
 
@@ -33,7 +34,7 @@ export interface ShoppingAutomationState {
   status: ShoppingAutomationStatus;
   progress: ShoppingProgress;
   result: ShoppingAutomationResult | null;
-  error: string | null;
+  error: string | EntitlementErrorPayload | null;
   taskId: string | null;
   store: SupportedStore | null;
   /** Live URL to access the browser session with cart state */
@@ -51,6 +52,12 @@ export interface UseShoppingAutomationReturn {
   isLoading: boolean;
   isComplete: boolean;
   isError: boolean;
+}
+
+function entitlementErrorMessage(error: string | EntitlementErrorPayload): string {
+  if (typeof error === "string") return error;
+  if (error.code === "PRO_ONLY") return `This feature requires a Pro plan (${error.feature})`;
+  return `You've reached the limit for ${error.quota} (${error.used}/${error.limit})`;
 }
 
 // ============================================================================
@@ -301,17 +308,17 @@ export function useShoppingAutomation(): UseShoppingAutomationReturn {
         if (!isMountedRef.current) return;
 
         if (result.error || !result.data?.taskId) {
-          const errorMsg = result.error || "Failed to start automation";
-          console.error("[useShoppingAutomation] Failed to start task:", errorMsg);
+          const errorPayload = result.error || "Failed to start automation";
+          console.error("[useShoppingAutomation] Failed to start task:", errorPayload);
           safeSetState((prev) => ({
             ...prev,
             status: "failed",
             progress: {
               ...prev.progress,
               status: "failed",
-              message: errorMsg,
+              message: entitlementErrorMessage(errorPayload),
             },
-            error: errorMsg,
+            error: errorPayload,
           }));
           return;
         }

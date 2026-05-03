@@ -570,7 +570,7 @@ export function ShoppingProgressModal({
                       {t("errorTitle")}
                     </h3>
                     <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                      {state.error || t("genericError")}
+                      {typeof state.error === "string" ? state.error : t("genericError")}
                     </p>
                   </div>
 
