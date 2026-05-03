@@ -27,6 +27,7 @@ import {
   useRecipeFormHandlers,
 } from "./recipe-form";
 import { useRecipeNutrition } from "@/hooks/use-recipe-nutrition";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData;
@@ -37,6 +38,7 @@ interface RecipeFormProps {
 export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   const router = useRouter();
   const locale = useLocale();
+  const paywall = usePaywall();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -157,7 +159,11 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
           source: "manual",
         });
         if (error) {
-          toast.error(error);
+          if (typeof error === "string") {
+            toast.error(error);
+          } else {
+            paywall.open(error);
+          }
         } else if (createdRecipe) {
           toast.success("Recipe created successfully!");
           router.push(`/${locale}/recipes/${createdRecipe.id}`);
