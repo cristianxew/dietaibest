@@ -44,9 +44,9 @@ export default async function RecipesPage({
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h2 className="text-xs font-bold tracking-widest text-brand-500 uppercase mb-1">
+            <span className="text-xs tracking-widest text-brand-500 uppercase mb-1">
               Recipe Library
-            </h2>
+            </span>
             <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
               {t("title") || "My Recipes"}
             </h1>

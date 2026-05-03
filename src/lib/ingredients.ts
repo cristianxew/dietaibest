@@ -6,6 +6,16 @@
  */
 
 /**
+ * Structured ingredient as stored in `Recipe.ingredients` (Json?).
+ * Persisted by the recipe form; consumed by nutrition orchestration.
+ */
+export interface StructuredIngredient {
+  name?: string;
+  amount?: string | number;
+  unit?: string;
+}
+
+/**
  * Parsed ingredient structure
  */
 export interface ParsedIngredient {
@@ -1135,4 +1145,60 @@ export function getBestDisplayUnit(
 
   // Fallback (shouldn't reach here)
   return { amount: baseAmount, unit: "g" };
+}
+
+// ============================================================================
+// Forward direction: structured ingredients → string lines for nutrition APIs
+// ============================================================================
+
+function formatOne(item: unknown): string | null {
+  if (typeof item === "string") {
+    const trimmed = item.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (item && typeof item === "object") {
+    const { name, amount, unit } = item as StructuredIngredient;
+    if (typeof name !== "string" || name.trim().length === 0) {
+      return null;
+    }
+    const amountStr =
+      amount === undefined || amount === null || amount === ""
+        ? ""
+        : String(amount);
+    const unitStr = typeof unit === "string" ? unit : "";
+    return [amountStr, unitStr, name].filter((s) => s.length > 0).join(" ").trim();
+  }
+
+  return null;
+}
+
+/**
+ * Format the `Recipe.ingredients` Json value into the string-line shape
+ * Edamam (and other nutrition services) expect.
+ *
+ * Accepts:
+ * - an array of strings or `StructuredIngredient` objects (the canonical case),
+ * - a single string or object (wrapped into a one-element array),
+ * - `null`/`undefined`/anything else (returns `[]`).
+ *
+ * Skips empty strings, structured items without a name, and non-objects.
+ */
+export function formatIngredientsForNutrition(ingredients: unknown): string[] {
+  if (ingredients === null || ingredients === undefined) {
+    return [];
+  }
+
+  const list = Array.isArray(ingredients)
+    ? ingredients
+    : typeof ingredients === "string" || typeof ingredients === "object"
+      ? [ingredients]
+      : [];
+
+  const lines: string[] = [];
+  for (const item of list) {
+    const line = formatOne(item);
+    if (line !== null) lines.push(line);
+  }
+  return lines;
 }

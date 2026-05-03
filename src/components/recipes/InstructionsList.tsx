@@ -48,9 +48,9 @@ export function InstructionsList({ instructions }: InstructionsListProps) {
               onClick={() => toggleStep(index)}
             >
               <div
-                className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold font-display border-2 transition-colors mt-0.5 ${isCompleted
-                    ? "bg-brand-500 border-brand-500 text-white"
-                    : "bg-transparent border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400"
+                className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors mt-0.5 ${isCompleted
+                  ? "bg-brand-500 border-brand-500 text-white"
+                  : "bg-transparent border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400"
                   }`}
               >
                 {isCompleted ? <Check className="w-3.5 h-3.5" /> : index + 1}

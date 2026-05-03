@@ -5,7 +5,7 @@ import type { ImportedRecipe } from "@/types/recipe";
 
 vi.mock("@/actions/recipe", () => ({
   getCategories: vi.fn().mockResolvedValue({ data: [] }),
-  createRecipe: vi.fn(),
+  persistRecipe: vi.fn(),
   updateRecipe: vi.fn(),
 }));
 
@@ -124,8 +124,8 @@ describe("useRecipeFormState", () => {
     });
 
     it("clears nutritionResult and savedRecipeId on reset", async () => {
-      const { createRecipe } = await import("@/actions/recipe");
-      (createRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      const { persistRecipe } = await import("@/actions/recipe");
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         data: { id: "r1" },
       });
 
@@ -154,9 +154,9 @@ describe("useRecipeFormState", () => {
   });
 
   describe("handleSubmit — create mode", () => {
-    it("calls createRecipe with form data and invokes onSubmitSuccess", async () => {
-      const { createRecipe } = await import("@/actions/recipe");
-      (createRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    it("calls persistRecipe with form data and invokes onSubmitSuccess", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         data: { id: "recipe-123" },
       });
 
@@ -173,14 +173,14 @@ describe("useRecipeFormState", () => {
         await result.current.handleSubmit();
       });
 
-      expect(createRecipe).toHaveBeenCalled();
+      expect(persistRecipe).toHaveBeenCalled();
       expect(onSubmitSuccess).toHaveBeenCalledOnce();
       expect(result.current.savedRecipeId).toBe("recipe-123");
     });
 
-    it("does not call onSubmitSuccess when createRecipe returns an error", async () => {
-      const { createRecipe } = await import("@/actions/recipe");
-      (createRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+    it("does not call onSubmitSuccess when persistRecipe returns an error", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         error: "Server error",
       });
 

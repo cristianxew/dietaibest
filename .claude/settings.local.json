@@ -14,7 +14,9 @@
       "mcp__plugin_stripe_stripe__list_prices",
       "mcp__plugin_stripe_stripe__stripe_api_execute",
       "mcp__plugin_stripe_stripe__fetch_stripe_resources",
-      "mcp__claude_ai_Linear__save_issue"
+      "mcp__claude_ai_Linear__save_issue",
+      "Bash(bun run *)",
+      "Bash(bunx tsc *)"
     ]
   },
   "enableAllProjectMcpServers": true,

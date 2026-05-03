@@ -13,7 +13,7 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { recipeFormSchema, type RecipeFormData } from "@/types/recipe";
-import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
+import { persistRecipe, updateRecipe, getCategories } from "@/actions/recipe";
 import { analyzeRecipeNutritionAction, type NutritionAnalysisResult } from "@/actions/nutrition";
 import { ingredientsToNutritionLines } from "@/lib/recipe-utils";
 import { toast } from "sonner";
@@ -156,7 +156,7 @@ export function useRecipeFormState(opts: {
         const source = data.sourceUrl
           ? (data.sourceUrl.startsWith("http") ? "url" : "imported")
           : "manual";
-        const result = await createRecipe(data, source);
+        const result = await persistRecipe(data, { source });
         if (result.error || !result.data) {
           toast.error((result.error as string) || "Failed to save recipe");
           return;

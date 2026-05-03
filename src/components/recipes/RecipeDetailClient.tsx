@@ -144,24 +144,24 @@ export function RecipeDetailClient({
           <div className="flex items-stretch bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm divide-x divide-border/60 w-fit">
             {recipe.prepTime !== null && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{recipe.prepTime}m</span>
+                <span className="font-bold text-xl text-foreground">{recipe.prepTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("prepTime")}</span>
               </div>
             )}
             {recipe.cookTime !== null && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{recipe.cookTime}m</span>
+                <span className="font-bold text-xl text-foreground">{recipe.cookTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("cookTime")}</span>
               </div>
             )}
             {totalTime > 0 && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{totalTime}m</span>
+                <span className="font-bold text-xl text-foreground">{totalTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Total</span>
               </div>
             )}
             <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-              <span className="font-display font-bold text-xl text-foreground">{selectedPortions}</span>
+              <span className="font-bold text-xl text-foreground">{selectedPortions}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("servings")}</span>
             </div>
           </div>
@@ -224,7 +224,7 @@ export function RecipeDetailClient({
 
             if (source === "url" && sourceUrl) {
               let hostname = sourceUrl;
-              try { hostname = new URL(sourceUrl).hostname.replace(/^www\./, ""); } catch {}
+              try { hostname = new URL(sourceUrl).hostname.replace(/^www\./, ""); } catch { }
               return (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <ExternalLink className="h-3.5 w-3.5 shrink-0" />
