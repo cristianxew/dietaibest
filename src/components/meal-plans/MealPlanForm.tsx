@@ -41,6 +41,7 @@ import {
   getMealPlans,
 } from "@/actions/meal-plan";
 import { useTranslations } from "next-intl";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 
 interface MealPlanFormProps {
   open: boolean;
@@ -66,6 +67,7 @@ export function MealPlanForm({
   defaultValues,
 }: MealPlanFormProps) {
   const t = useTranslations();
+  const paywall = usePaywall();
   const [isPending, startTransition] = useTransition();
   const [availablePlans, setAvailablePlans] = useState<
     Array<{ id: string; name: string; duration: number }>
@@ -146,7 +148,11 @@ export function MealPlanForm({
           : await createMealPlan(data);
 
       if (result.error) {
-        toast.error(result.error);
+        if (typeof result.error === "string") {
+          toast.error(result.error);
+        } else {
+          paywall.open(result.error);
+        }
       } else {
         toast.success(editMode ? "Meal plan updated!" : "Meal plan created!");
         reset();

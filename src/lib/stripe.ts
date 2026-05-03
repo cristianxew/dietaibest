@@ -1,5 +1,16 @@
 import Stripe from "stripe";
 
+export type {
+  BillingInterval,
+  SupportedCurrency,
+  StripeCheckoutLocale,
+} from "./stripe-helpers";
+export {
+  currencyForLocale,
+  proPriceLookupKey,
+  stripeLocaleForNextLocale,
+} from "./stripe-helpers";
+
 /**
  * Server-side Stripe client.
  *
@@ -13,8 +24,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  // Pin to the API version the installed SDK was generated against so
-  // upgrades are explicit and predictable.
   apiVersion: "2026-03-25.dahlia",
   typescript: true,
   appInfo: {
@@ -22,42 +31,6 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     version: "0.1.0",
   },
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Plan / price configuration
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type BillingInterval = "monthly" | "yearly";
-export type SupportedCurrency = "usd" | "eur" | "pln";
-
-/**
- * Maps the next-intl locale to the currency we bill in.
- * en → USD, es → EUR, pl → PLN.
- */
-export function currencyForLocale(locale: string): SupportedCurrency {
-  switch (locale) {
-    case "pl":
-      return "pln";
-    case "es":
-      return "eur";
-    case "en":
-    default:
-      return "usd";
-  }
-}
-
-/**
- * Builds the lookup key that must match what you entered in the Stripe
- * dashboard when creating each price (Advanced options → Lookup key).
- *
- * Format: `pro_<interval>_<currency>` — e.g. `pro_monthly_usd`.
- */
-export function proPriceLookupKey(
-  interval: BillingInterval,
-  currency: SupportedCurrency
-): string {
-  return `pro_${interval}_${currency}`;
-}
 
 // In-memory cache of resolved prices for the lifetime of the server process.
 // Lookup keys -> price ids. Stripe prices are effectively immutable once
@@ -91,20 +64,3 @@ export async function resolvePrice(lookupKey: string): Promise<Stripe.Price> {
   return price;
 }
 
-/**
- * Stripe Checkout supports a fixed set of locale codes. Map next-intl
- * locales to the matching Stripe locale; fall back to `auto` so Stripe
- * decides based on the browser.
- */
-export type StripeCheckoutLocale = "en" | "es" | "pl" | "auto";
-
-export function stripeLocaleForNextLocale(locale: string): StripeCheckoutLocale {
-  switch (locale) {
-    case "en":
-    case "es":
-    case "pl":
-      return locale;
-    default:
-      return "auto";
-  }
-}

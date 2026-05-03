@@ -4,7 +4,7 @@ import {
   stripeLocaleForNextLocale,
   currencyForLocale,
   proPriceLookupKey,
-} from "@/lib/stripe";
+} from "@/lib/stripe-helpers";
 
 describe("currencyForLocale", () => {
   it("maps en → usd", () => {

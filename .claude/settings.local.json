@@ -16,7 +16,8 @@
       "mcp__plugin_stripe_stripe__fetch_stripe_resources",
       "mcp__claude_ai_Linear__save_issue",
       "Bash(bun run *)",
-      "Bash(bunx tsc *)"
+      "Bash(bunx tsc *)",
+      "Bash(rg \"EntitlementErrorPayload\" /Users/bernal/dietai-project/dietaibest-vscode/src --include=\"*.ts\" --include=\"*.tsx\" -l)"
     ]
   },
   "enableAllProjectMcpServers": true,
