@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import {
   FormField,
   FormItem,
@@ -74,15 +75,15 @@ const MICRO_GROUPS = [
 export function Step2Nutrition() {
   const t = useTranslations("recipeModal");
   const tBilling = useTranslations("billing");
+  const { goBack } = useRecipeModal();
   const {
     form,
     analyzeNutrition,
     nutritionLoading,
     nutritionResult,
-    goBack,
     handleSubmit,
     isSubmitting,
-  } = useRecipeModal();
+  } = useRecipeForm();
   const { status: entStatus, data: entData } = useEntitlements();
   const paywall = usePaywall();
 

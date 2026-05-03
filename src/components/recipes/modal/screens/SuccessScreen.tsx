@@ -2,13 +2,15 @@
 
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 
 export function SuccessScreen() {
   const t = useTranslations("recipeModal.success");
-  const { close, savedRecipeId, form, openCreate } = useRecipeModal();
+  const { close, openCreate } = useRecipeModal();
+  const { form, savedRecipeId } = useRecipeForm();
   const router = useRouter();
   const locale = useLocale();
 

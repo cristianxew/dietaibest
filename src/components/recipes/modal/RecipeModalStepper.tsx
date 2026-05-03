@@ -2,33 +2,24 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRecipeModal, type ModalScreen } from "@/hooks/use-recipe-modal";
+import { useRecipeModal, STEPPER_CONFIG, currentStepIndex } from "@/hooks/use-recipe-modal";
 import { useTranslations } from "next-intl";
-
-const STEP_LABELS_KEYS = ["details", "ingredients", "nutrition"] as const;
-
-function screenToStepIndex(screen: ModalScreen): number {
-  if (screen === "step0") return 0;
-  if (screen === "step1") return 1;
-  if (screen === "step2") return 2;
-  return -1;
-}
 
 export function RecipeModalStepper() {
   const { screen } = useRecipeModal();
   const t = useTranslations("recipeModal.stepper");
-  const currentStep = screenToStepIndex(screen);
+  const currentStep = currentStepIndex(screen);
 
   return (
     <nav aria-label="Recipe creation steps">
       <ol className="flex items-center gap-0">
-        {STEP_LABELS_KEYS.map((key, index) => {
+        {STEPPER_CONFIG.map(({ id, label }, index) => {
           const isCompleted = index < currentStep;
           const isActive = index === currentStep;
           const isPending = index > currentStep;
 
           return (
-            <li key={key} className="flex items-center">
+            <li key={id} className="flex items-center">
               {/* Dot + label */}
               <div className="flex flex-col items-center gap-1">
                 <div
@@ -53,12 +44,12 @@ export function RecipeModalStepper() {
                     isPending && "text-muted-foreground"
                   )}
                 >
-                  {t(key)}
+                  {t(label)}
                 </span>
               </div>
 
               {/* Connector line (not after last item) */}
-              {index < STEP_LABELS_KEYS.length - 1 && (
+              {index < STEPPER_CONFIG.length - 1 && (
                 <div
                   className={cn(
                     "w-11 h-0.5 mx-1.5 mb-3.5 transition-all duration-400",

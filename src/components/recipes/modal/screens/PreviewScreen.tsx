@@ -2,12 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { Clock, Users, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function PreviewScreen() {
   const t = useTranslations("recipeModal");
-  const { importedPreview, goToScreen, handleSubmit, isSubmitting } = useRecipeModal();
+  const { importedPreview, goToScreen } = useRecipeModal();
+  const { handleSubmit, isSubmitting } = useRecipeForm();
 
   if (!importedPreview) return null;
 

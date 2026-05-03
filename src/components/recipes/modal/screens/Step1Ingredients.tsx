@@ -2,13 +2,15 @@
 
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { Form } from "@/components/ui/form";
 import { RecipeFormIngredients } from "@/components/recipes/recipe-form/RecipeFormIngredients";
 import { RecipeFormInstructions } from "@/components/recipes/recipe-form/RecipeFormInstructions";
 
 export function Step1Ingredients() {
   const t = useTranslations("recipeModal");
-  const { form, ingredientFields, instructionFields, goBack, goToNextStep } = useRecipeModal();
+  const { goBack, goToNextStep } = useRecipeModal();
+  const { form, ingredientFields, instructionFields } = useRecipeForm();
 
   return (
     <Form {...form as any}>

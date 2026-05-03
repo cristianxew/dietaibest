@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import {
   FormField,
   FormItem,
@@ -18,7 +19,8 @@ const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
 export function Step0Details() {
   const t = useTranslations("recipeModal");
-  const { form, categories, goToNextStep } = useRecipeModal();
+  const { goToNextStep } = useRecipeModal();
+  const { form, categories } = useRecipeForm();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const control = form.control as any;
 

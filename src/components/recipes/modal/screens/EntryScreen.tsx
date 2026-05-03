@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { useRecipeExtraction } from "@/hooks/use-recipe-extraction";
 import { importedToFormData } from "@/lib/recipe-utils";
 import { Link2, Camera, Sparkles } from "lucide-react";
@@ -13,7 +14,8 @@ import type { ImportedRecipe } from "@/types/recipe";
 
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
-  const { goToScreen, setImportedPreview, form } = useRecipeModal();
+  const { goToScreen, setImportedPreview } = useRecipeModal();
+  const { form } = useRecipeForm();
   const [url, setUrl] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
