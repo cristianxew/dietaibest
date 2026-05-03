@@ -1,8 +1,16 @@
 "use client";
 
 import { createContext, useContext, useEffect, useCallback, useState } from "react";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { useForm, useFieldArray, type UseFormReturn } from "react-hook-form";
+import {
+  useForm,
+  useFieldArray,
+  useWatch,
+  type UseFormReturn,
+  type FieldArrayWithId,
+  type UseFieldArrayAppend,
+  type UseFieldArrayRemove,
+  type Resolver,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { recipeFormSchema, type RecipeFormData } from "@/types/recipe";
 import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
@@ -13,20 +21,15 @@ import { toast } from "sonner";
 type RecipeCategory = { id: string; name: string; slug: string };
 
 export interface RecipeFormCtx {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  form: UseFormReturn<RecipeFormData, any, undefined>;
+  form: UseFormReturn<RecipeFormData>;
   ingredientFields: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fields: any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    append: (value: any) => void;
-    remove: (index: number) => void;
+    fields: FieldArrayWithId<RecipeFormData, "ingredients">[];
+    append: UseFieldArrayAppend<RecipeFormData, "ingredients">;
+    remove: UseFieldArrayRemove;
   };
   instructionFields: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fields: any[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    append: (value: any) => void;
+    fields: string[];
+    append: (value: string) => void;
     remove: (index: number) => void;
   };
   categories: RecipeCategory[];
@@ -75,19 +78,32 @@ export function useRecipeFormState(opts: {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<RecipeFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(recipeFormSchema) as any,
+    // zodResolver infers z.input<Schema> (pre-transform) for TFieldValues, but our form
+    // is typed as RecipeFormData (z.infer, post-transform). The cast aligns them — safe
+    // because DEFAULT_VALUES always satisfies both types at runtime.
+    resolver: zodResolver(recipeFormSchema) as Resolver<RecipeFormData>,
     defaultValues: DEFAULT_VALUES,
   });
 
   const { fields: ingredientFieldsArr, append: appendIngredient, remove: removeIngredient } =
     useFieldArray({ control: form.control, name: "ingredients" });
 
-  const { fields: instructionFieldsArr, append: appendInstruction, remove: removeInstruction } =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useFieldArray({ control: form.control as any, name: "instructions" as any });
+  const instructionValues = useWatch({ control: form.control, name: "instructions" }) ?? [""];
+
+  const appendInstruction = useCallback((value: string) => {
+    const current = form.getValues("instructions") ?? [];
+    form.setValue("instructions", [...current, value], { shouldValidate: true });
+  }, [form]);
+
+  const removeInstruction = useCallback((index: number) => {
+    const current = form.getValues("instructions") ?? [];
+    form.setValue(
+      "instructions",
+      current.filter((_, i) => i !== index),
+      { shouldValidate: true },
+    );
+  }, [form]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -164,15 +180,14 @@ export function useRecipeFormState(opts: {
   }, [form, mode, recipeId, onSubmitSuccess]);
 
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    form: form as any,
+    form,
     ingredientFields: {
       fields: ingredientFieldsArr,
       append: appendIngredient,
       remove: removeIngredient,
     },
     instructionFields: {
-      fields: instructionFieldsArr,
+      fields: instructionValues,
       append: appendInstruction,
       remove: removeInstruction,
     },
