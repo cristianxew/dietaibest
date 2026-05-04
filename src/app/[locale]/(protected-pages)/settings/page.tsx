@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import { StoreSelector } from "@/components/shopping";
 import { PageContainer } from "@/components/ui/page-container";
+import { SettingsBilling } from "@/components/billing/SettingsBilling";
 
 export default function SettingsPage() {
   const t = useTranslations("navigation.settingsHeader");
@@ -37,6 +38,7 @@ export default function SettingsPage() {
 
         {/* Settings Content */}
         <div className="space-y-6">
+          <SettingsBilling />
           <StoreSelector />
         </div>
       </PageContainer>

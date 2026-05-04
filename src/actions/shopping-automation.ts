@@ -20,6 +20,8 @@ import {
 } from "@/types/shopping-preferences";
 import { prisma } from "@/lib/prisma";
 import { encryptPassword, decryptPassword } from "@/lib/encryption";
+import { assertCanUseShoppingAutomation } from "@/lib/entitlements";
+import { serverAction } from "@/lib/server-action";
 
 // ============================================================================
 // Validation Schemas
@@ -65,100 +67,82 @@ export type ShoppingAutomationInput = z.infer<typeof shoppingAutomationSchema>;
  * If user has stored credentials for the store, will auto-login first
  */
 export async function startShoppingTask(input: ShoppingAutomationInput) {
-  try {
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return { data: null, error: "Unauthorized" };
-    }
+  return serverAction(
+    {
+      input: shoppingAutomationSchema,
+      requires: (_, ctx) => assertCanUseShoppingAutomation(ctx.user),
+    },
+    async (ctx, validated) => {
+      const { store, items, preferences } = validated;
 
-    // Validate input
-    const validation = shoppingAutomationSchema.safeParse(input);
-    if (!validation.success) {
+      // Fetch stored credentials separately. The runtime resolves a base User;
+      // it doesn't carry per-action includes, so the body owns this side-fetch.
+      const storedCredential = await prisma.storeCredential.findFirst({
+        where: { userId: ctx.user.id, store },
+      });
+
+      let credentials: { email?: string } | undefined;
+      let secrets: Record<string, string> | undefined;
+      let hasStoredCredentials = false;
+
+      if (storedCredential) {
+        try {
+          const decryptedPassword = decryptPassword({
+            encryptedPassword: storedCredential.encryptedPassword,
+            iv: storedCredential.iv,
+            authTag: storedCredential.authTag,
+          });
+
+          credentials = { email: storedCredential.email };
+          secrets = {
+            store_email: storedCredential.email,
+            store_password: decryptedPassword,
+          };
+          hasStoredCredentials = true;
+
+          console.log(
+            `[Shopping Automation] Using stored credentials for ${store} (email: ${storedCredential.email})`
+          );
+        } catch (decryptError) {
+          console.error(
+            "[Shopping Automation] Failed to decrypt credentials:",
+            decryptError
+          );
+          // Continue without credentials if decryption fails
+        }
+      }
+
+      console.log(
+        `[Shopping Automation] Starting task for ${store} with ${items.length} items, hasCredentials: ${hasStoredCredentials}`
+      );
+
+      const browserUseClient = getBrowserUseClient();
+      const { taskId, sessionId, liveUrl, browserSessionId } =
+        await browserUseClient.startShoppingAutomation(
+          {
+            store: store as SupportedStore,
+            items,
+            preferences,
+            credentials,
+            hasStoredCredentials,
+          },
+          secrets
+        );
+
+      console.log(
+        `[Shopping Automation] Task started: ${taskId}, liveUrl: ${liveUrl}`
+      );
+
       return {
-        data: null,
-        error: validation.error.errors[0].message,
+        taskId,
+        sessionId,
+        store,
+        itemCount: items.length,
+        liveUrl,
+        browserSessionId,
       };
     }
-
-    const { store, items, preferences } = validation.data;
-
-    // Fetch user and check for stored credentials
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        storeCredentials: {
-          where: { store },
-        },
-      },
-    });
-
-    if (!user) {
-      return { data: null, error: "User not found" };
-    }
-
-    // Prepare credentials for Browser-Use if available
-    let credentials: { email?: string } | undefined;
-    let secrets: Record<string, string> | undefined;
-    let hasStoredCredentials = false;
-
-    const storedCredential = user.storeCredentials[0];
-    if (storedCredential) {
-      try {
-        // Decrypt the password
-        const decryptedPassword = decryptPassword({
-          encryptedPassword: storedCredential.encryptedPassword,
-          iv: storedCredential.iv,
-          authTag: storedCredential.authTag,
-        });
-
-        credentials = { email: storedCredential.email };
-        secrets = {
-          store_email: storedCredential.email,
-          store_password: decryptedPassword,
-        };
-        hasStoredCredentials = true;
-
-        console.log(
-          `[Shopping Automation] Using stored credentials for ${store} (email: ${storedCredential.email})`
-        );
-      } catch (decryptError) {
-        console.error("[Shopping Automation] Failed to decrypt credentials:", decryptError);
-        // Continue without credentials if decryption fails
-      }
-    }
-
-    console.log(
-      `[Shopping Automation] Starting task for ${store} with ${items.length} items, hasCredentials: ${hasStoredCredentials}`
-    );
-
-    const browserUseClient = getBrowserUseClient();
-    const { taskId, sessionId, liveUrl, browserSessionId } = await browserUseClient.startShoppingAutomation(
-      {
-        store: store as SupportedStore,
-        items,
-        preferences,
-        credentials,
-        hasStoredCredentials,
-      },
-      secrets
-    );
-
-    console.log(`[Shopping Automation] Task started: ${taskId}, liveUrl: ${liveUrl}`);
-
-    return {
-      data: { taskId, sessionId, store, itemCount: items.length, liveUrl, browserSessionId },
-      error: null,
-    };
-  } catch (error) {
-    console.error("[Shopping Automation] Error starting task:", error);
-    return {
-      data: null,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to start shopping automation",
-    };
-  }
+  )(input);
 }
 
 // ============================================================================

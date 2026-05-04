@@ -4,6 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { PaywallProvider } from "@/components/billing/PaywallProvider";
+import { Paywall } from "@/components/billing/Paywall";
 
 interface ClientProvidersProps {
   children: React.ReactNode;
@@ -26,8 +28,11 @@ export function ClientProviders({
     >
       <SessionProvider>
         <AuthProvider>
-          {children}
-          <Toaster />
+          <PaywallProvider>
+            {children}
+            <Paywall />
+            <Toaster />
+          </PaywallProvider>
         </AuthProvider>
       </SessionProvider>
     </NextIntlClientProvider>

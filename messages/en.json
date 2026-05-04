@@ -401,7 +401,11 @@
         "minutes": "min",
         "nutritionPerServing": "Nutrition per serving",
         "editRecipe": "Edit Recipe",
-        "source": "Source",
+        "source": {
+            "importedFrom": "Imported from",
+            "manual": "Created manually",
+            "uploadedFile": "Uploaded file"
+        },
         "subtitle": "Your personal recipe collection",
         "comingSoon": "Coming Soon!",
         "features": {
@@ -977,5 +981,147 @@
         "confirmPassword": "Confirm your password",
         "enterFirstName": "Enter your first name",
         "enterLastName": "Enter your last name"
+    },
+    "recipeModal": {
+        "header": {
+            "back": "Back",
+            "close": "Close",
+            "createTitle": "Add Recipe",
+            "editTitle": "Edit Recipe"
+        },
+        "stepper": {
+            "details": "Details",
+            "ingredients": "Ingredients",
+            "nutrition": "Nutrition"
+        },
+        "entry": {
+            "title": "Add a Recipe",
+            "subtitle": "Import from URL, upload a photo, or add manually.",
+            "urlPlaceholder": "Paste recipe URL…",
+            "extractButton": "Extract Recipe",
+            "orDivider": "OR",
+            "dropZoneTitle": "Drop a recipe page or photo here",
+            "dropZoneSubtitle": "JPG · PNG · PDF",
+            "addManually": "Add recipe manually"
+        },
+        "loading": {
+            "title": "Analyzing with AI",
+            "subtitle": "This will take a few seconds…",
+            "step1": "Accessing recipe page…",
+            "step2": "Extracting ingredients…",
+            "step3": "Calculating nutrition…"
+        },
+        "preview": {
+            "extracted": "Recipe extracted",
+            "save": "Save Recipe",
+            "editFirst": "Edit before saving",
+            "looksGood": "Looks good?",
+            "saveDescription": "Save the recipe as-is, or edit it first.",
+            "totalTime": "Total time",
+            "servings": "Servings"
+        },
+        "step0": {
+            "title": "Basic Information",
+            "subtitle": "Tell us about your recipe",
+            "photo": "Photo",
+            "nameLabel": "Recipe name",
+            "namePlaceholder": "e.g. Pesto Pasta",
+            "descriptionLabel": "Description",
+            "descriptionOptional": "optional",
+            "categoriesLabel": "Categories",
+            "prepLabel": "Prep (min)",
+            "cookLabel": "Cook (min)",
+            "servingsLabel": "Servings",
+            "difficultyLabel": "Difficulty",
+            "easy": "Easy",
+            "medium": "Medium",
+            "hard": "Hard",
+            "next": "Next: Ingredients"
+        },
+        "step1": {
+            "ingredientsTitle": "Ingredients",
+            "instructionsTitle": "Instructions",
+            "addIngredient": "Add Ingredient",
+            "addStep": "Add Step",
+            "amount": "Qty",
+            "unit": "Unit",
+            "ingredient": "Ingredient",
+            "stepPlaceholder": "Describe this step…",
+            "next": "Next: Nutrition"
+        },
+        "step2": {
+            "analyzeTitle": "Auto-analyze nutrition",
+            "analyzeDescription": "Estimated from your ingredients",
+            "analyzeButton": "Analyze",
+            "recalculate": "Recalculate",
+            "analyzing": "Analyzing…",
+            "analyzed": "Nutrition estimated",
+            "remaining": "{remaining} of {limit} free analyses left",
+            "quotaExhausted": "Free analyses used — upgrade to Pro",
+            "macrosTitle": "Macronutrients",
+            "calories": "Calories",
+            "protein": "Protein",
+            "carbs": "Carbs",
+            "fat": "Fat",
+            "fiber": "Fiber",
+            "kcal": "kcal",
+            "grams": "g",
+            "micronutrientsTitle": "Optional: Micronutrients",
+            "sugar": "Sugar",
+            "sodium": "Sodium",
+            "save": "Save Recipe",
+            "saving": "Saving…"
+        },
+        "success": {
+            "title": "Recipe saved!",
+            "view": "View my recipes",
+            "addAnother": "Add Another"
+        }
+    },
+    "billing": {
+        "plans": {
+            "free": "Free",
+            "pro": "Pro"
+        },
+        "status": {
+            "active": "Active",
+            "trialing": "Trialing",
+            "past_due": "Past due",
+            "canceled": "Canceled",
+            "unpaid": "Unpaid"
+        },
+        "proBadge": "Pro",
+        "upgradeButton": "Upgrade to Pro",
+        "paywall": {
+            "proOnly": {
+                "title": "Pro feature",
+                "description": "This feature is only available on the Pro plan.",
+                "cta": "Upgrade to Pro"
+            },
+            "quotaExceeded": {
+                "title": "Limit reached",
+                "description": "You've used {used} of {limit} {quotaName}.",
+                "cta": "Upgrade for unlimited access"
+            },
+            "close": "Maybe later"
+        },
+        "sidebar": {
+            "upgradeTitle": "Unlock Pro",
+            "upgradeDescription": "Unlimited recipes, meal plans, shopping automation, and AI features.",
+            "upgradeButton": "Upgrade"
+        },
+        "featureNames": {
+            "aiMealPlan": "AI meal plans",
+            "shoppingAutomation": "Shopping automation",
+            "bulkActions": "URL and PDF imports"
+        },
+        "quotaNames": {
+            "savedRecipes": "saved recipes",
+            "recipesCreatedPerMonth": "recipes per month",
+            "importsPerMonth": "imports per month",
+            "mealPlanTemplates": "meal plan templates",
+            "mealPlanDurationDays": "meal plan duration",
+            "edamamAnalysesPerMonth": "nutrition analyses per month"
+        }
     }
 }

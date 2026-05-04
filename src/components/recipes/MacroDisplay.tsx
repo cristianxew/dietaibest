@@ -47,7 +47,7 @@ export function MacroDisplay({
 
       <div className="grid grid-cols-4 divide-x divide-border/40">
         <div className="flex flex-col items-center justify-center py-5 bg-brand-50/40 dark:bg-brand-900/10">
-          <span className="font-display font-bold text-2xl text-brand-600 dark:text-brand-400">
+          <span className="font-bold text-2xl text-brand-600 dark:text-brand-400">
             {displayCals.toFixed(0)}
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-brand-600/70 dark:text-brand-400/70 mt-0.5">
@@ -55,7 +55,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-sage-50/40 dark:bg-sage-900/10">
-          <span className="font-display font-bold text-2xl text-sage-600 dark:text-sage-400">
+          <span className="font-bold text-2xl text-sage-600 dark:text-sage-400">
             {protein.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-sage-600/70 dark:text-sage-400/70 mt-0.5">
@@ -63,7 +63,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-gold-50/40 dark:bg-gold-900/10">
-          <span className="font-display font-bold text-2xl text-gold-600 dark:text-gold-400">
+          <span className="font-bold text-2xl text-gold-600 dark:text-gold-400">
             {carbs.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-gold-600/70 dark:text-gold-400/70 mt-0.5">
@@ -71,7 +71,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-stone-50 dark:bg-stone-900/20">
-          <span className="font-display font-bold text-2xl text-stone-600 dark:text-stone-400">
+          <span className="font-bold text-2xl text-stone-600 dark:text-stone-400">
             {fat.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-stone-600/70 dark:text-stone-400/70 mt-0.5">

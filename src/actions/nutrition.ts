@@ -20,6 +20,9 @@ import {
   type NutritionAnalysisResult,
   type NutritionAnalysisError,
 } from "@/lib/edamam-service";
+import { assertCanUseEdamamAnalysis } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
+import { formatIngredientsForNutrition } from "@/lib/ingredients";
 
 // Re-export types for use in components
 export type {
@@ -27,13 +30,6 @@ export type {
   NutritionAnalysisError,
   RecipeNutritionInput,
 };
-
-// Helper types
-interface StructuredIngredient {
-  name?: string;
-  amount?: string | number;
-  unit?: string;
-}
 
 // ============================================================================
 // Helper Functions
@@ -79,6 +75,7 @@ export async function analyzeRecipeNutritionAction(
 }> {
   try {
     const user = await getAuthenticatedUser();
+    await assertCanUseEdamamAnalysis(user);
 
     const result = await analyzeRecipeNutrition(recipe, user.id, options);
 
@@ -97,6 +94,10 @@ export async function analyzeRecipeNutritionAction(
       data: result,
     };
   } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) {
+      return { success: false, error: JSON.stringify(entError), code: entError.code, retryable: false };
+    }
     console.error("[Action] analyzeRecipeNutrition failed:", error);
     return {
       success: false,
@@ -247,28 +248,7 @@ export async function analyzeAndUpdateRecipe(
       };
     }
 
-    // Prepare nutrition input
-    const ingredientLines: string[] = [];
-    if (recipe.ingredients && typeof recipe.ingredients === "object") {
-      const ingredientsArray = Array.isArray(recipe.ingredients)
-        ? recipe.ingredients
-        : [recipe.ingredients];
-
-      for (const ing of ingredientsArray) {
-        if (typeof ing === "string") {
-          ingredientLines.push(ing);
-        } else if (ing && typeof ing === "object") {
-          // Handle structured ingredient format { name, amount, unit }
-          const structuredIng = ing as StructuredIngredient;
-          const name = structuredIng.name || "";
-          const amount = structuredIng.amount || "";
-          const unit = structuredIng.unit || "";
-          if (name) {
-            ingredientLines.push(`${amount} ${unit} ${name}`.trim());
-          }
-        }
-      }
-    }
+    const ingredientLines = formatIngredientsForNutrition(recipe.ingredients);
 
     if (ingredientLines.length === 0) {
       return {

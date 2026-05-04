@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Prisma } from "@/generated/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Star, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,8 @@ import { RecipeFavoriteButton } from "./RecipeFavoriteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
+import { useRecipeModal } from "@/hooks/use-recipe-modal";
+import { recipeToFormData } from "@/lib/recipe-utils";
 
 interface RecipeDetailClientProps {
   recipe: {
@@ -34,6 +36,7 @@ interface RecipeDetailClientProps {
     fat: number | null;
     fiber: number | null;
     sourceUrl: string | null;
+    source: string | null;
     userId: string;
     categories: { id: string; name: string }[];
     favoritedBy: { id: string }[];
@@ -59,6 +62,7 @@ export function RecipeDetailClient({
   const t = useTranslations("recipes");
   const [selectedPortions, setSelectedPortions] = useState(recipe.servings);
   const [imageError, setImageError] = useState(false);
+  const { openEdit } = useRecipeModal();
 
   const multiplier = selectedPortions / recipe.servings;
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
@@ -140,24 +144,24 @@ export function RecipeDetailClient({
           <div className="flex items-stretch bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm divide-x divide-border/60 w-fit">
             {recipe.prepTime !== null && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{recipe.prepTime}m</span>
+                <span className="font-bold text-xl text-foreground">{recipe.prepTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("prepTime")}</span>
               </div>
             )}
             {recipe.cookTime !== null && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{recipe.cookTime}m</span>
+                <span className="font-bold text-xl text-foreground">{recipe.cookTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("cookTime")}</span>
               </div>
             )}
             {totalTime > 0 && (
               <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-display font-bold text-xl text-foreground">{totalTime}m</span>
+                <span className="font-bold text-xl text-foreground">{totalTime}m</span>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Total</span>
               </div>
             )}
             <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-              <span className="font-display font-bold text-xl text-foreground">{selectedPortions}</span>
+              <span className="font-bold text-xl text-foreground">{selectedPortions}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("servings")}</span>
             </div>
           </div>
@@ -202,13 +206,59 @@ export function RecipeDetailClient({
               Add to Plan
             </Button>
             {isOwner && (
-              <Link href={`/${locale}/recipes/${recipe.id}/edit`}>
-                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0">
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => openEdit(recipe.id, recipeToFormData(recipe))}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
             )}
           </div>
+
+          {/* Source Attribution */}
+          {(() => {
+            const source = recipe.source;
+            const sourceUrl = recipe.sourceUrl;
+
+            if (source === "url" && sourceUrl) {
+              let hostname = sourceUrl;
+              try { hostname = new URL(sourceUrl).hostname.replace(/^www\./, ""); } catch { }
+              return (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t("source.importedFrom")}</span>
+                  <a
+                    href={sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary truncate max-w-[200px]"
+                  >
+                    {hostname}
+                  </a>
+                </div>
+              );
+            }
+
+            if (source === "imported" || source === "document") {
+              const fileName = sourceUrl || t("source.uploadedFile");
+              return (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span>{t("source.importedFrom")}</span>
+                  <span className="font-medium text-foreground/80 truncate max-w-[200px]">{fileName}</span>
+                </div>
+              );
+            }
+
+            return (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <PenLine className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("source.manual")}</span>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -229,21 +279,7 @@ export function RecipeDetailClient({
           servings={selectedPortions}
         />
 
-        {recipe.sourceUrl && (
-          <div className="pt-2 border-t border-border/40">
-            <p className="text-sm text-muted-foreground italic">
-              Source:{" "}
-              <a
-                href={recipe.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary"
-              >
-                {new URL(recipe.sourceUrl).hostname}
-              </a>
-            </p>
-          </div>
-        )}
+
       </RecipeScalableContent>
     </PageContainer>
   );

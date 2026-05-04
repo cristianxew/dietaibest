@@ -1,6 +1,7 @@
 import { getMessages } from "next-intl/server";
 import { ClientProviders } from "@/providers/ClientProviders";
 import { AppSidebarDock } from "@/components/navigation/AppSidebarDock";
+import { RecipeModalProvider } from "@/providers/RecipeModalProvider";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -20,17 +21,19 @@ export default async function ProtectedLayout({
 
   return (
     <ClientProviders messages={messages} locale={locale} timeZone="UTC">
-      {/* AppSidebarDock includes navigation, theme, language, and user controls */}
-      <AppSidebarDock>
-        <div
-          id="main-content"
-          className="flex-1 overflow-auto"
-          tabIndex={-1}
-          aria-label="Main content"
-        >
-          {children}
-        </div>
-      </AppSidebarDock>
+      <RecipeModalProvider>
+        {/* AppSidebarDock includes navigation, theme, language, and user controls */}
+        <AppSidebarDock>
+          <div
+            id="main-content"
+            className="flex-1 overflow-auto"
+            tabIndex={-1}
+            aria-label="Main content"
+          >
+            {children}
+          </div>
+        </AppSidebarDock>
+      </RecipeModalProvider>
     </ClientProviders>
   );
 }

@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RecipeFormData, recipeFormSchema } from "@/types/recipe";
-import { createRecipe, updateRecipe, getCategories } from "@/actions/recipe";
+import { persistRecipe, updateRecipe, getCategories } from "@/actions/recipe";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import {
@@ -27,6 +27,7 @@ import {
   useRecipeFormHandlers,
 } from "./recipe-form";
 import { useRecipeNutrition } from "@/hooks/use-recipe-nutrition";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 
 interface RecipeFormProps {
   recipe?: RecipeFormData;
@@ -37,6 +38,7 @@ interface RecipeFormProps {
 export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   const router = useRouter();
   const locale = useLocale();
+  const paywall = usePaywall();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -153,9 +155,15 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
 
     try {
       if (mode === "create") {
-        const { data: createdRecipe, error } = await createRecipe(data);
+        const { data: createdRecipe, error } = await persistRecipe(data, {
+          source: "manual",
+        });
         if (error) {
-          toast.error(error);
+          if (typeof error === "string") {
+            toast.error(error);
+          } else {
+            paywall.open(error);
+          }
         } else if (createdRecipe) {
           toast.success("Recipe created successfully!");
           router.push(`/${locale}/recipes/${createdRecipe.id}`);

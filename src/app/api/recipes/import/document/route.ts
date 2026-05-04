@@ -56,33 +56,7 @@ function getDocumentAIClient() {
   return new DocumentProcessorServiceClient(options);
 }
 
-interface ExtractedRecipeData {
-  title: string;
-  description: string;
-  ingredients: Array<{
-    name: string;
-    amount: number;
-    unit: string;
-    notes?: string;
-  }>;
-  instructions: string[];
-  prepTime?: number;
-  cookTime?: number;
-  servings?: number;
-  difficulty?: string;
-  cuisine?: string;
-  tags?: string[];
-  nutritionalInfo?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
-  confidence: number;
-  processingTime: number;
-  sourceType: "image" | "pdf";
-  language: "en" | "es" | "pl" | "auto";
-}
+import type { ImportedRecipe } from "@/types/recipe";
 
 interface DocumentEntity {
   type?: string;
@@ -125,7 +99,7 @@ async function processWithFallbackOCR(
   fileBuffer: Buffer,
   mimeType: string,
   fileName: string
-): Promise<ExtractedRecipeData> {
+): Promise<ImportedRecipe> {
   const startTime = Date.now();
 
   console.log("Using fallback OCR processing for:", fileName);
@@ -133,7 +107,7 @@ async function processWithFallbackOCR(
   // For now, return mock data - in production you'd implement OpenAI Vision API
   await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate processing time
 
-  const mockData: ExtractedRecipeData = {
+  const mockData: ImportedRecipe = {
     title:
       "Extracted Recipe from " +
       (mimeType === "application/pdf" ? "PDF" : "Image"),
@@ -155,16 +129,11 @@ async function processWithFallbackOCR(
     difficulty: "medium",
     cuisine: "international",
     tags: ["imported", "fallback-ocr", "needs-review"],
-    nutritionalInfo: {
-      calories: 250,
-      protein: 15,
-      carbs: 30,
-      fat: 8,
-    },
+    calories: 250,
+    protein: 15,
+    carbs: 30,
+    fat: 8,
     confidence: 0.6, // Lower confidence to indicate fallback processing
-    processingTime: Date.now() - startTime,
-    sourceType: mimeType === "application/pdf" ? "pdf" : "image",
-    language: "auto",
   };
 
   return mockData;
@@ -175,7 +144,7 @@ async function processDocumentWithAI(
   fileBuffer: Buffer,
   mimeType: string,
   fileName: string
-): Promise<ExtractedRecipeData> {
+): Promise<ImportedRecipe> {
   const startTime = Date.now();
 
   // Check if Document AI is configured
@@ -229,7 +198,6 @@ async function processDocumentWithAI(
 
     return {
       ...extractedRecipe,
-      processingTime,
       confidence: calculateConfidence(document),
     };
   } catch (error) {
@@ -262,7 +230,7 @@ function calculateConfidence(document: DocumentResponse): number {
 function parseDocumentAIResponse(
   document: DocumentResponse,
   mimeType: string
-): Omit<ExtractedRecipeData, "processingTime" | "confidence"> {
+): Omit<ImportedRecipe, "confidence"> {
   const entities = document.entities || [];
   const text = document.text || "";
 
@@ -531,10 +499,7 @@ function parseDocumentAIResponse(
     difficulty,
     cuisine,
     tags: uniqueTags,
-    nutritionalInfo:
-      Object.keys(nutritionalInfo).length > 0 ? nutritionalInfo : undefined,
-    sourceType: mimeType === "application/pdf" ? "pdf" : "image",
-    language: "auto", // Document AI can detect language
+    ...(Object.keys(nutritionalInfo).length > 0 ? nutritionalInfo : {}),
   };
 }
 

@@ -87,7 +87,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
   const primaryCategory = recipe.categories[0]?.name || 'DINNER';
   const styles = getCategoryStyles(primaryCategory);
-  
+
   const showImage = Boolean(recipe.imageUrl && !imageError);
 
   return (
@@ -99,7 +99,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
         )}
       >
         {/* Placeholder Block or Real Image */}
-        <div 
+        <div
           className={cn(
             "relative flex items-center justify-center overflow-hidden shrink-0",
             viewMode === "list" ? "aspect-square w-24 h-24 sm:w-28 sm:h-28 rounded-xl" : "aspect-[4/3] w-full",
@@ -111,10 +111,10 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
         >
           {showImage ? (
             <>
-              <img 
-                src={recipe.imageUrl!} 
-                alt={recipe.title} 
-                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" 
+              <img
+                src={recipe.imageUrl!}
+                alt={recipe.title}
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 onError={() => setImageError(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-500" />
@@ -165,12 +165,12 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
             <div
               className={cn(
                 "absolute right-3 bottom-3 px-3 py-1 rounded-full text-[11px] font-semibold shadow-sm lowercase",
-                showImage 
-                  ? "bg-white/20 backdrop-blur-md text-white" 
-                  : cn("bg-white dark:bg-stone-900", 
-                      recipe.difficulty === "easy" ? "text-sage-500 dark:text-sage-400" :
+                showImage
+                  ? "bg-white/20 backdrop-blur-md text-white"
+                  : cn("bg-white dark:bg-stone-900",
+                    recipe.difficulty === "easy" ? "text-sage-500 dark:text-sage-400" :
                       recipe.difficulty === "medium" ? "text-gold-500 dark:text-gold-400" :
-                      "text-brand-500 dark:text-brand-400")
+                        "text-brand-500 dark:text-brand-400")
               )}
             >
               {t(`difficulty.${recipe.difficulty}`)}
@@ -180,107 +180,107 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
 
         {/* Content */}
         <div className={cn("flex flex-col bg-transparent flex-1 min-w-0 overflow-hidden", viewMode === "list" ? "py-1 pr-2" : "p-5")}>
-            {viewMode === "grid" ? (
-              <>
-                <div className="mb-3">
-                  <span
-                    className={cn(
-                      "inline-flex text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-0.5",
-                      styles.badgeBg, styles.badgeText
-                    )}
-                  >
-                    {primaryCategory}
-                  </span>
-                </div>
-
-                <h3
-                  className="font-display text-lg font-bold leading-tight mb-2 text-card-foreground line-clamp-2"
-                  title={recipe.title}
+          {viewMode === "grid" ? (
+            <>
+              <div className="mb-3">
+                <span
+                  className={cn(
+                    "inline-flex text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-0.5",
+                    styles.badgeBg, styles.badgeText
+                  )}
                 >
+                  {primaryCategory}
+                </span>
+              </div>
+
+              <h3
+                className="font-display text-lg  leading-tight mb-2 text-card-foreground line-clamp-2"
+                title={recipe.title}
+              >
+                {recipe.title}
+              </h3>
+
+              {recipe.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed" title={recipe.description}>
+                  {recipe.description}
+                </p>
+              )}
+
+              {showAuthor && recipe.user && (
+                <p className="text-xs text-muted-foreground mb-4 truncate" title={recipe.user.email}>
+                  {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
+                </p>
+              )}
+
+              <div className="mt-auto pt-2 space-y-3">
+                {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] font-medium text-muted-foreground pt-1">
+                    {recipe.calories && (
+                      <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>
+                    )}
+                    {recipe.protein && (
+                      <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>
+                    )}
+                    {recipe.carbs && (
+                      <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>
+                    )}
+                    {recipe.fat && (
+                      <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-row justify-between items-start w-full">
+              <div className="flex flex-col flex-1 min-w-0 pr-4">
+                <h3 className="font-display text-base font-bold text-card-foreground line-clamp-2" title={recipe.title}>
                   {recipe.title}
                 </h3>
-
                 {recipe.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed" title={recipe.description}>
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1" title={recipe.description}>
                     {recipe.description}
                   </p>
                 )}
-
                 {showAuthor && recipe.user && (
-                  <p className="text-xs text-muted-foreground mb-4 truncate" title={recipe.user.email}>
+                  <p className="text-xs text-muted-foreground mt-1 truncate" title={recipe.user.email}>
                     {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
                   </p>
                 )}
-
-                <div className="mt-auto pt-2 space-y-3">
-                  {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] font-medium text-muted-foreground pt-1">
-                      {recipe.calories && (
-                        <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>
-                      )}
-                      {recipe.protein && (
-                        <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>
-                      )}
-                      {recipe.carbs && (
-                        <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>
-                      )}
-                      {recipe.fat && (
-                        <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-row justify-between items-start w-full">
-                <div className="flex flex-col flex-1 min-w-0 pr-4">
-                  <h3 className="font-display text-base font-bold text-card-foreground line-clamp-2" title={recipe.title}>
-                    {recipe.title}
-                  </h3>
-                  {recipe.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1" title={recipe.description}>
-                      {recipe.description}
-                    </p>
-                  )}
-                  {showAuthor && recipe.user && (
-                    <p className="text-xs text-muted-foreground mt-1 truncate" title={recipe.user.email}>
-                      {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium mt-3">
-                    {recipe.calories && <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>}
-                    {recipe.protein && <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>}
-                    {recipe.carbs && <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>}
-                    {recipe.fat && <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>}
-                    {totalTime > 0 && (
-                      <span className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded-sm text-stone-500 dark:text-stone-400">
-                        <Clock className="w-3 h-3"/>{totalTime}m
-                      </span>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col items-end shrink-0 gap-3 justify-between h-full">
-                  <div className="flex gap-2">
-                    {recipe.difficulty && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground lowercase">
-                        {t(`difficulty.${recipe.difficulty}`)}
-                      </span>
-                    )}
-                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", styles.badgeBg, styles.badgeText)}>
-                      {primaryCategory}
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium mt-3">
+                  {recipe.calories && <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>}
+                  {recipe.protein && <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>}
+                  {recipe.carbs && <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>}
+                  {recipe.fat && <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>}
+                  {totalTime > 0 && (
+                    <span className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded-sm text-stone-500 dark:text-stone-400">
+                      <Clock className="w-3 h-3" />{totalTime}m
                     </span>
-                  </div>
-                  <button 
-                    onClick={handleToggleFavorite} 
-                    disabled={isPending}
-                    className="p-1.5 hover:bg-muted rounded-full transition-colors mt-auto"
-                  >
-                    <Heart className={cn("w-4 h-4", isFavorited ? "fill-brand-500 text-brand-500" : "text-muted-foreground")} />
-                  </button>
+                  )}
                 </div>
               </div>
-            )}
+
+              <div className="flex flex-col items-end shrink-0 gap-3 justify-between h-full">
+                <div className="flex gap-2">
+                  {recipe.difficulty && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground lowercase">
+                      {t(`difficulty.${recipe.difficulty}`)}
+                    </span>
+                  )}
+                  <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", styles.badgeBg, styles.badgeText)}>
+                    {primaryCategory}
+                  </span>
+                </div>
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isPending}
+                  className="p-1.5 hover:bg-muted rounded-full transition-colors mt-auto"
+                >
+                  <Heart className={cn("w-4 h-4", isFavorited ? "fill-brand-500 text-brand-500" : "text-muted-foreground")} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </article>
     </Link>

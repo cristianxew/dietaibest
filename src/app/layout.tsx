@@ -24,33 +24,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-// Geist Mono for code and technical content
-const geistMono = localFont({
-  src: "./fonts/GeistMono-Variable.woff2",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-  fallback: ["ui-monospace", "monospace"],
-});
-
-// Legacy fonts (kept for backward compatibility with existing app pages)
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["300", "400", "700", "900"],
-  variable: "--font-lato",
-});
-
-const alice = Alice({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-alice",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
-
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#2c3e50" },
@@ -103,19 +76,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`
-          ${dmSans.variable}
-          ${playfair.variable}
-          ${inter.variable}
-          ${geistMono.variable}
-          ${lato.variable}
-          ${alice.variable}
-          ${poppins.variable}
-          antialiased
-        `}
-      >
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`
+        ${dmSans.variable}
+        ${playfair.variable}
+        ${inter.variable}
+      `}
+    >
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
