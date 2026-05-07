@@ -20,6 +20,9 @@ export type ExtractionState = {
   currentUrl?: string;
 };
 
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLLS = 60;
+
 export function useRecipeErrorTranslation() {
   const t = useTranslations("recipes.urlUpload");
 
@@ -101,10 +104,7 @@ export function useRecipeErrorTranslation() {
   );
 }
 
-export function useRecipeExtraction(
-  options: { useSSE?: boolean } = { useSSE: true },
-) {
-  const { useSSE } = options;
+export function useRecipeExtraction() {
   const getErrorMessage = useRecipeErrorTranslation();
 
   const [state, setState] = useState<ExtractionState>({
@@ -114,7 +114,6 @@ export function useRecipeExtraction(
   });
 
   const isMountedRef = useRef(true);
-  const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const rejectPromiseRef = useRef<((err: Error) => void) | null>(null);
   const taskIdRef = useRef<string | null>(null);
@@ -123,10 +122,6 @@ export function useRecipeExtraction(
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
@@ -139,11 +134,6 @@ export function useRecipeExtraction(
   }, []);
 
   const cancel = useCallback(async () => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
@@ -167,7 +157,7 @@ export function useRecipeExtraction(
         await fetch(`/api/recipes/import/url/${taskIdRef.current}`, {
           method: "DELETE",
         });
-      } catch (error) {
+      } catch {
         // Ignore cancellation errors
       }
     }
@@ -198,6 +188,13 @@ export function useRecipeExtraction(
 
         if (!response.ok) {
           const errorData = await response.json();
+          if (response.status === 403) {
+            // Surface the structured payload so callers can open the paywall
+            throw Object.assign(
+              new Error("entitlement_violation"),
+              { payload: errorData },
+            );
+          }
           throw new Error(errorData.error || "Failed to start extraction");
         }
 
@@ -217,201 +214,111 @@ export function useRecipeExtraction(
         return new Promise<ImportedRecipe>((resolve, reject) => {
           rejectPromiseRef.current = reject;
 
-          if (useSSE) {
-            if (eventSourceRef.current) {
-              eventSourceRef.current.close();
-              eventSourceRef.current = null;
-            }
+          let pollCount = 0;
 
-            const eventSource = new EventSource(
-              `/api/recipes/import/url/status?taskId=${taskId}`,
-            );
-            eventSourceRef.current = eventSource;
+          const executePoll = async () => {
+            while (pollCount < MAX_POLLS) {
+              await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-            eventSource.onmessage = (event) => {
-              if (eventSourceRef.current !== eventSource) return;
+              if (
+                !isMountedRef.current ||
+                rejectPromiseRef.current !== reject
+              ) {
+                return;
+              }
 
-              const data = JSON.parse(event.data);
+              try {
+                const statusResponse = await fetch(
+                  `/api/recipes/import/url/${taskId}`,
+                  { signal: abortControllerRef.current?.signal },
+                );
 
-              switch (data.type) {
-                case "status":
-                  if (isMountedRef.current) {
-                    setState((prev) => ({
-                      ...prev,
-                      progress: data.progress,
-                      message: data.message,
-                      currentStep: data.currentStep,
-                      currentUrl: data.currentUrl,
-                    }));
-                  }
-                  break;
-                case "complete":
+                if (statusResponse.status === 404) {
+                  pollCount++;
+                  continue; // transient error, try again
+                }
+
+                if (!statusResponse.ok) {
+                  throw new Error(
+                    `Failed to fetch status: ${statusResponse.status}`,
+                  );
+                }
+
+                const statusResult = await statusResponse.json();
+
+                if (isMountedRef.current) {
+                  setState((prev) => ({
+                    ...prev,
+                    progress: statusResult.progress,
+                    message: statusResult.message,
+                    currentStep: statusResult.currentStep,
+                    currentUrl: statusResult.currentUrl,
+                  }));
+                }
+
+                if (
+                  statusResult.status === "completed" ||
+                  statusResult.status === "finished"
+                ) {
                   if (isMountedRef.current) {
                     setState((prev) => ({
                       ...prev,
                       status: "success",
                       progress: 100,
-                      message: data.message || "Extraction complete",
+                      message: statusResult.message || "Extraction complete",
                     }));
                   }
-                  eventSource.close();
-                  eventSourceRef.current = null;
                   rejectPromiseRef.current = null;
-                  resolve(data.data as ImportedRecipe);
-                  break;
-                case "error":
-                case "stopped":
-                case "failed":
-                case "cancelled":
-                case "timeout": {
-                  const rawMsg = data.message || data.type;
-                  const translatedMsg = getErrorMessage(rawMsg);
-                  if (isMountedRef.current) {
-                    setState((prev) => ({
-                      ...prev,
-                      status: data.type === "cancelled" ? "cancelled" : "error",
-                      message: translatedMsg,
-                    }));
-                  }
-                  eventSource.close();
-                  eventSourceRef.current = null;
-                  rejectPromiseRef.current = null;
-                  reject(new Error(translatedMsg));
-                  break;
+                  resolve(statusResult.data as ImportedRecipe);
+                  return;
                 }
-              }
-            };
-
-            eventSource.onerror = () => {
-              if (eventSourceRef.current === eventSource) {
-                eventSource.close();
-                eventSourceRef.current = null;
-              }
-              const translatedMsg = getErrorMessage(
-                "Lost connection to extraction service",
-              );
-              if (isMountedRef.current) {
-                setState((prev) => ({
-                  ...prev,
-                  status: "error",
-                  message: translatedMsg,
-                }));
-              }
-              if (rejectPromiseRef.current) {
-                rejectPromiseRef.current(new Error(translatedMsg));
-                rejectPromiseRef.current = null;
-              }
-            };
-          } else {
-            // Polling fallback
-            const pollInterval = 2000;
-            const maxPolls = 60;
-            let pollCount = 0;
-
-            const executePoll = async () => {
-              while (pollCount < maxPolls) {
-                await new Promise((r) => setTimeout(r, pollInterval));
 
                 if (
-                  !isMountedRef.current ||
-                  rejectPromiseRef.current !== reject
+                  statusResult.status === "failed" ||
+                  statusResult.status === "stopped" ||
+                  statusResult.status === "cancelled"
                 ) {
-                  return;
-                }
-
-                try {
-                  const statusResponse = await fetch(
-                    `/api/recipes/import/url/${taskId}`,
-                    { signal: abortControllerRef.current?.signal },
+                  throw new Error(
+                    statusResult.message || "Extraction failed",
                   );
-
-                  if (statusResponse.status === 404) {
-                    pollCount++;
-                    continue; // transient error, try again
-                  }
-
-                  if (!statusResponse.ok) {
-                    throw new Error(
-                      `Failed to fetch status: ${statusResponse.status}`,
-                    );
-                  }
-
-                  const statusResult = await statusResponse.json();
-
-                  if (isMountedRef.current) {
-                    setState((prev) => ({
-                      ...prev,
-                      progress: statusResult.progress,
-                      message: statusResult.message,
-                      currentStep: statusResult.currentStep,
-                      currentUrl: statusResult.currentUrl,
-                    }));
-                  }
-
-                  if (
-                    statusResult.status === "completed" ||
-                    statusResult.status === "finished"
-                  ) {
-                    if (isMountedRef.current) {
-                      setState((prev) => ({
-                        ...prev,
-                        status: "success",
-                        progress: 100,
-                        message: statusResult.message || "Extraction complete",
-                      }));
-                    }
-                    rejectPromiseRef.current = null;
-                    resolve(statusResult.data as ImportedRecipe);
-                    return;
-                  }
-
-                  if (
-                    statusResult.status === "failed" ||
-                    statusResult.status === "stopped" ||
-                    statusResult.status === "cancelled"
-                  ) {
-                    throw new Error(
-                      statusResult.message || "Extraction failed",
-                    );
-                  }
-                } catch (error) {
-                  if ((error as Error).name === "AbortError") {
-                    return; // Request was aborted, stop polling
-                  }
-
-                  const translatedMsg = getErrorMessage(error);
-                  if (isMountedRef.current) {
-                    setState((prev) => ({
-                      ...prev,
-                      status: "error",
-                      message: translatedMsg,
-                    }));
-                  }
-                  rejectPromiseRef.current = null;
-                  reject(new Error(translatedMsg));
-                  return;
+                }
+              } catch (error) {
+                if ((error as Error).name === "AbortError") {
+                  return; // Request was aborted, stop polling
                 }
 
-                pollCount++;
+                const translatedMsg = getErrorMessage(error);
+                if (isMountedRef.current) {
+                  setState((prev) => ({
+                    ...prev,
+                    status: "error",
+                    message: translatedMsg,
+                  }));
+                }
+                rejectPromiseRef.current = null;
+                reject(new Error(translatedMsg));
+                return;
               }
 
-              // Exceeded max polls
-              const translatedMsg = getErrorMessage(
-                "Recipe extraction took too long",
-              );
-              if (isMountedRef.current) {
-                setState((prev) => ({
-                  ...prev,
-                  status: "error",
-                  message: translatedMsg,
-                }));
-              }
-              rejectPromiseRef.current = null;
-              reject(new Error(translatedMsg));
-            };
+              pollCount++;
+            }
 
-            void executePoll();
-          }
+            // Exceeded max polls
+            const translatedMsg = getErrorMessage(
+              "Recipe extraction took too long",
+            );
+            if (isMountedRef.current) {
+              setState((prev) => ({
+                ...prev,
+                status: "error",
+                message: translatedMsg,
+              }));
+            }
+            rejectPromiseRef.current = null;
+            reject(new Error(translatedMsg));
+          };
+
+          void executePoll();
         });
       } catch (error) {
         const translatedMsg = getErrorMessage(error);
@@ -425,7 +332,7 @@ export function useRecipeExtraction(
         throw new Error(translatedMsg);
       }
     },
-    [useSSE, getErrorMessage],
+    [getErrorMessage],
   );
 
   const reset = useCallback(() => {

@@ -13,8 +13,22 @@ vi.mock("@/actions/nutrition", () => ({
   analyzeRecipeNutritionAction: vi.fn(),
 }));
 
+vi.mock("next-intl", () => ({
+  useLocale: () => "en",
+}));
+
+const paywallOpen = vi.fn();
+vi.mock("@/components/billing/PaywallProvider", () => ({
+  usePaywall: () => ({ open: paywallOpen, close: vi.fn(), isOpen: false, payload: null }),
+}));
+
 vi.mock("sonner", () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
 }));
 
 const baseOpts = {
@@ -197,6 +211,55 @@ describe("useRecipeFormState", () => {
         await result.current.handleSubmit();
       });
 
+      expect(onSubmitSuccess).not.toHaveBeenCalled();
+    });
+
+    it("toasts a validation message when form validation fails (no silent return)", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      const { toast } = await import("sonner");
+      const { result } = renderHook(() => useRecipeFormState(baseOpts));
+
+      // Form is in default empty state — title is "" which fails .min(3).
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(persistRecipe).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalled();
+      // The argument MUST be a string for Sonner.
+      const [arg] = (toast.error as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(typeof arg).toBe("string");
+    });
+
+    it("opens the paywall (does NOT toast) when persistRecipe returns an EntitlementErrorPayload", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      const { toast } = await import("sonner");
+      const payload = { code: "QUOTA_EXCEEDED", quota: "recipe_import", limit: 5, used: 5 };
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        error: payload,
+      });
+
+      const onSubmitSuccess = vi.fn();
+      const { result } = renderHook(() =>
+        useRecipeFormState({ ...baseOpts, onSubmitSuccess })
+      );
+
+      act(() => {
+        result.current.form.reset(validFormValues);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(paywallOpen).toHaveBeenCalledOnce();
+      expect(paywallOpen).toHaveBeenCalledWith(payload);
+      // Critical: toast.error must NEVER receive a non-string — that's the
+      // crash this test guards against (Sonner renders the value as a child).
+      const errorCalls = (toast.error as ReturnType<typeof vi.fn>).mock.calls;
+      for (const [arg] of errorCalls) {
+        expect(typeof arg === "string" || arg == null).toBe(true);
+      }
       expect(onSubmitSuccess).not.toHaveBeenCalled();
     });
   });

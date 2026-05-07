@@ -1,8 +1,9 @@
-import { describe, it, expectTypeOf } from "vitest";
+import { describe, it, expect, expectTypeOf } from "vitest";
 import type {
   ImportedRecipe,
   Ingredient,
 } from "@/types/recipe";
+import { ingredientSchema, recipeFormSchema } from "@/types/recipe";
 
 describe("ImportedRecipe canonical type", () => {
   it("requires the core fields produced by every extraction pipeline", () => {
@@ -80,6 +81,39 @@ describe("ImportedRecipe canonical type", () => {
       instructions: ["Boil water", "Cook pasta"],
     };
     expectTypeOf(minimal).toMatchTypeOf<ImportedRecipe>();
+  });
+
+  it("ingredientSchema accepts an empty unit (e.g. '2 huevos', '1 cebolla')", () => {
+    const result = ingredientSchema.safeParse({
+      name: "huevos",
+      amount: 2,
+      unit: "",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("ingredientSchema defaults a missing unit to empty string", () => {
+    const result = ingredientSchema.safeParse({
+      name: "huevos",
+      amount: 2,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.unit).toBe("");
+  });
+
+  it("recipeFormSchema accepts an imported recipe with unit-less ingredients", () => {
+    const result = recipeFormSchema.safeParse({
+      title: "Tortilla de papa",
+      servings: 4,
+      ingredients: [
+        { name: "papa", amount: 4, unit: "" },
+        { name: "huevos", amount: 6, unit: "" },
+        { name: "cebolla", amount: 1, unit: "" },
+        { name: "aceite", amount: 50, unit: "ml" },
+      ],
+      instructions: ["Cortar papas", "Batir huevos", "Cocinar"],
+    });
+    expect(result.success).toBe(true);
   });
 
   it("accepts a full payload including pipeline metadata", () => {

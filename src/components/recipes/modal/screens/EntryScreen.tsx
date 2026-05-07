@@ -6,11 +6,13 @@ import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { useRecipeExtraction } from "@/hooks/use-recipe-extraction";
 import { importedToFormData } from "@/lib/recipe-utils";
-import { Link2, Camera, Sparkles } from "lucide-react";
+import { Link2, Camera, Sparkles, Lock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ImportedRecipe } from "@/types/recipe";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
@@ -21,10 +23,21 @@ export function EntryScreen() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { extract, cancel, state } = useRecipeExtraction();
+  const paywall = usePaywall();
+  const entitlements = useEntitlements();
+
+  const canImport =
+    entitlements.status !== "ready" || entitlements.data.isPro;
 
   const handleExtractURL = useCallback(async () => {
+    if (entitlements.status === "ready" && !entitlements.data.isPro) {
+      paywall.open({ code: "PRO_ONLY", feature: "bulkActions" });
+      return;
+    }
+
     const trimmed = url.trim();
     if (!trimmed) return;
+
     try {
       const recipe = await extract(trimmed);
       if (recipe) {
@@ -54,9 +67,19 @@ export function EntryScreen() {
         goToScreen("preview");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to extract recipe");
+      if (
+        err instanceof Error &&
+        err.message === "entitlement_violation" &&
+        (err as Error & { payload?: unknown }).payload
+      ) {
+        paywall.open(
+          (err as Error & { payload: Parameters<typeof paywall.open>[0] }).payload,
+        );
+      } else {
+        toast.error(err instanceof Error ? err.message : "Failed to extract recipe");
+      }
     }
-  }, [url, extract, goToScreen, setImportedPreview, form]);
+  }, [url, extract, goToScreen, setImportedPreview, form, entitlements, paywall]);
 
   const handleFileUpload = useCallback(async (file: File) => {
     goToScreen("loading");
@@ -196,16 +219,20 @@ export function EntryScreen() {
 
             <button
               onClick={handleExtractURL}
-              disabled={!url.trim()}
+              disabled={!url.trim() && canImport}
               className={cn(
                 "w-full rounded-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2 mb-6 transition-all duration-200",
-                url.trim()
+                url.trim() || !canImport
                   ? "bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(var(--primary-rgb),.3)] hover:opacity-90"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               )}
             >
               {t("entry.extractButton")}
-              <Sparkles className="w-4 h-4" />
+              {canImport ? (
+                <Sparkles className="w-4 h-4" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
             </button>
 
             {/* OR divider */}

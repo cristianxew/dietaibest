@@ -15,14 +15,13 @@ import {
   getCachedRecipeNutrition,
   getRecipeNutritionSummary,
   clearRecipeNutritionCache,
-  saveUserMacroCache,
   type RecipeNutritionInput,
   type NutritionAnalysisResult,
   type NutritionAnalysisError,
 } from "@/lib/edamam-service";
 import { assertCanUseEdamamAnalysis } from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import { applyNutritionToRecipe } from "@/lib/recipe-nutrition";
 
 // Re-export types for use in components
 export type {
@@ -236,7 +235,6 @@ export async function analyzeAndUpdateRecipe(
   try {
     const user = await getAuthenticatedUser();
 
-    // Get recipe
     const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId, userId: user.id },
     });
@@ -248,63 +246,27 @@ export async function analyzeAndUpdateRecipe(
       };
     }
 
-    const ingredientLines = formatIngredientsForNutrition(recipe.ingredients);
+    const outcome = await applyNutritionToRecipe(recipe, user.id, options);
 
-    if (ingredientLines.length === 0) {
+    if (outcome.kind === "noop") {
       return {
         success: false,
         error: "Recipe has no ingredients to analyze",
       };
     }
 
-    const nutritionInput: RecipeNutritionInput = {
-      title: recipe.title,
-      ingredients: ingredientLines,
-      servings: recipe.servings,
-      url: recipe.sourceUrl || undefined,
-      instructions: recipe.instructions,
-    };
-
-    // Analyze nutrition
-    const nutritionResult = await analyzeRecipeNutrition(
-      nutritionInput,
-      user.id,
-      options
-    );
-
-    if ("error" in nutritionResult) {
+    if (outcome.kind === "failed") {
       return {
         success: false,
-        error: nutritionResult.error,
+        error: outcome.reason,
       };
     }
-
-    // Update recipe with nutrition data
-    const updatedRecipe = await prisma.recipe.update({
-      where: { id: recipeId },
-      data: {
-        calories: nutritionResult.macros.calories,
-        protein: nutritionResult.macros.protein,
-        carbs: nutritionResult.macros.netCarbs, // Store net carbs as carbs
-        fat: nutritionResult.macros.fat,
-        // Note: fiber is not in the 4 allowed cached macros
-        updatedAt: new Date(),
-      },
-    });
-
-    // Save user-specific macro cache (Edamam policy: only 4 macros)
-    await saveUserMacroCache(
-      user.id,
-      recipeId,
-      nutritionResult.macros,
-      nutritionResult.servings
-    );
 
     return {
       success: true,
       data: {
-        recipe: updatedRecipe,
-        nutrition: nutritionResult,
+        recipe: outcome.recipe,
+        nutrition: outcome.nutrition,
       },
     };
   } catch (error) {

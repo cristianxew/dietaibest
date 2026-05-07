@@ -12,15 +12,11 @@ import {
 import { Prisma } from "@/generated/prisma";
 import { revalidatePath } from "next/cache";
 import {
-  analyzeRecipeNutrition,
-  type RecipeNutritionInput,
-} from "@/lib/edamam-service";
-import {
   assertCanCreateRecipe,
   assertCanImportRecipe,
 } from "@/lib/entitlements";
 import { serverAction } from "@/lib/server-action";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import { applyNutritionToRecipe } from "@/lib/recipe-nutrition";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -109,50 +105,21 @@ export async function persistRecipe(
         },
       });
 
-      // Side-effect: nutrition orchestration. Kept body-side because a
-      // failure must not roll the recipe back.
+      // Side-effect: nutrition application is best-effort. A failure must
+      // not roll the recipe back; the caller (creation flow) ignores the
+      // outcome beyond logging.
       if (shouldAnalyze) {
-        try {
-          const ingredientLines = formatIngredientsForNutrition(
-            recipe.ingredients
+        const outcome = await applyNutritionToRecipe(recipe, ctx.user.id, {
+          locale: options.locale,
+        });
+        if (outcome.kind === "applied") {
+          console.info(
+            `[Recipe] Auto-analyzed nutrition for recipe: ${recipe.id}`
           );
-
-          if (ingredientLines.length > 0) {
-            const nutritionInput: RecipeNutritionInput = {
-              title: recipe.title,
-              ingredients: ingredientLines,
-              servings: recipe.servings,
-              url: recipe.sourceUrl || undefined,
-              instructions: recipe.instructions,
-            };
-
-            const nutritionResult = await analyzeRecipeNutrition(
-              nutritionInput,
-              ctx.user.id,
-              { locale: options.locale }
-            );
-
-            if (!("error" in nutritionResult)) {
-              await prisma.recipe.update({
-                where: { id: recipe.id },
-                data: {
-                  calories: nutritionResult.macros.calories,
-                  protein: nutritionResult.macros.protein,
-                  carbs: nutritionResult.macros.netCarbs,
-                  fat: nutritionResult.macros.fat,
-                },
-              });
-              console.info(
-                `[Recipe] Auto-analyzed nutrition for recipe: ${recipe.id}`
-              );
-            } else {
-              console.warn(
-                `[Recipe] Failed to auto-analyze nutrition: ${nutritionResult.error}`
-              );
-            }
-          }
-        } catch (nutritionError) {
-          console.error("[Recipe] Nutrition analysis failed:", nutritionError);
+        } else if (outcome.kind === "failed") {
+          console.warn(
+            `[Recipe] Failed to auto-analyze nutrition: ${outcome.reason}`
+          );
         }
       }
 

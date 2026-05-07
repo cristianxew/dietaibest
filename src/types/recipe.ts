@@ -1,10 +1,12 @@
 import { z } from "zod";
 
-// Ingredient schema
+// Ingredient schema. `unit` is intentionally optional — imported recipes
+// often have unit-less items ("2 huevos", "1 cebolla", "sal a gusto"), and
+// `formatIngredientsForNutrition` already filters empty unit segments.
 export const ingredientSchema = z.object({
   name: z.string().min(1, "Ingredient name is required"),
-  amount: z.number().positive("Amount must be positive"),
-  unit: z.string().min(1, "Unit is required"),
+  amount: z.number().nonnegative("Amount must be non-negative"),
+  unit: z.string().default(""),
 });
 
 export type Ingredient = z.infer<typeof ingredientSchema>;

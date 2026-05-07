@@ -14,8 +14,9 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { recipeFormSchema, type RecipeFormData } from "@/types/recipe";
 import { persistRecipe, updateRecipe, getCategories } from "@/actions/recipe";
-import { analyzeRecipeNutritionAction, type NutritionAnalysisResult } from "@/actions/nutrition";
-import { ingredientsToNutritionLines } from "@/lib/recipe-utils";
+import type { NutritionAnalysisResult } from "@/actions/nutrition";
+import { useRecipeNutrition } from "@/hooks/use-recipe-nutrition";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 import { toast } from "sonner";
 
 type RecipeCategory = { id: string; name: string; slug: string };
@@ -73,7 +74,6 @@ export function useRecipeFormState(opts: {
   const { mode, recipeId, isOpen, onSubmitSuccess } = opts;
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
-  const [nutritionLoading, setNutritionLoading] = useState(false);
   const [nutritionResult, setNutritionResult] = useState<NutritionAnalysisResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null);
@@ -84,6 +84,19 @@ export function useRecipeFormState(opts: {
     // because DEFAULT_VALUES always satisfies both types at runtime.
     resolver: zodResolver(recipeFormSchema) as Resolver<RecipeFormData>,
     defaultValues: DEFAULT_VALUES,
+  });
+
+  const paywall = usePaywall();
+
+  const { analyze: runAnalysis, isLoading: nutritionLoading } = useRecipeNutrition({
+    onSuccess: (result) => {
+      setNutritionResult(result);
+      const { macros } = result;
+      form.setValue("calories", Math.round(macros.calories));
+      form.setValue("protein", Math.round(macros.protein));
+      form.setValue("carbs", Math.round(macros.netCarbs));
+      form.setValue("fat", Math.round(macros.fat));
+    },
   });
 
   const { fields: ingredientFieldsArr, append: appendIngredient, remove: removeIngredient } =
@@ -119,35 +132,31 @@ export function useRecipeFormState(opts: {
   }, [form]);
 
   const analyzeNutrition = useCallback(async () => {
-    const { title, ingredients, servings } = form.getValues();
-    const lines = ingredientsToNutritionLines(ingredients);
-    if (!lines.length) {
+    const { title, ingredients, servings, instructions, sourceUrl } =
+      form.getValues();
+    if (!ingredients?.some((ing) => ing?.name?.trim())) {
       toast.error("Add ingredients before analyzing nutrition");
       return;
     }
-    setNutritionLoading(true);
-    try {
-      const result = await analyzeRecipeNutritionAction({ title, ingredients: lines, servings });
-      if (result.success && result.data) {
-        setNutritionResult(result.data);
-        const { macros } = result.data;
-        form.setValue("calories", Math.round(macros.calories));
-        form.setValue("protein", Math.round(macros.protein));
-        form.setValue("carbs", Math.round(macros.netCarbs));
-        form.setValue("fat", Math.round(macros.fat));
-      } else {
-        toast.error(result.error || "Failed to analyze nutrition");
-      }
-    } catch {
-      toast.error("Nutrition analysis failed");
-    } finally {
-      setNutritionLoading(false);
-    }
-  }, [form]);
+    await runAnalysis(
+      title,
+      ingredients,
+      servings,
+      sourceUrl || undefined,
+      instructions ?? [],
+    );
+  }, [form, runAnalysis]);
 
   const handleSubmit = useCallback(async () => {
     const valid = await form.trigger();
-    if (!valid) return;
+    if (!valid) {
+      const errors = form.formState.errors;
+      const firstError = Object.values(errors).find(
+        (e) => e && typeof e === "object" && "message" in e,
+      ) as { message?: string } | undefined;
+      toast.error(firstError?.message || "Please fix the errors in the form");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -158,7 +167,11 @@ export function useRecipeFormState(opts: {
           : "manual";
         const result = await persistRecipe(data, { source });
         if (result.error || !result.data) {
-          toast.error((result.error as string) || "Failed to save recipe");
+          if (result.error && typeof result.error !== "string") {
+            paywall.open(result.error);
+          } else {
+            toast.error(result.error || "Failed to save recipe");
+          }
           return;
         }
         setSavedRecipeId(result.data.id);
@@ -166,7 +179,7 @@ export function useRecipeFormState(opts: {
         if (!recipeId) return;
         const result = await updateRecipe(recipeId, data);
         if (result.error || !result.data) {
-          toast.error((result.error as string) || "Failed to update recipe");
+          toast.error(result.error || "Failed to update recipe");
           return;
         }
         setSavedRecipeId(result.data.id);
@@ -177,7 +190,7 @@ export function useRecipeFormState(opts: {
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, mode, recipeId, onSubmitSuccess]);
+  }, [form, mode, recipeId, onSubmitSuccess, paywall]);
 
   return {
     form,

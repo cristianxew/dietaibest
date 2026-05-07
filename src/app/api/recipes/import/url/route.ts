@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { getBrowserUseClient } from "@/lib/browser-use";
+import { prisma } from "@/lib/prisma";
+import { checkCanImportRecipe } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
 
 // URL validation schema with security checks
 const urlImportSchema = z.object({
@@ -73,6 +76,20 @@ export async function POST(request: NextRequest) {
     }
 
     const { url } = validation.data;
+
+    // Enforce import entitlement before spinning up Browser-Use
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { plan: true, subscriptionStatus: true },
+    });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const violation = checkCanImportRecipe(user);
+    if (violation) {
+      const payload = toEntitlementError(violation);
+      return NextResponse.json(payload, { status: 403 });
+    }
 
     try {
       // Start extraction task and return task ID immediately

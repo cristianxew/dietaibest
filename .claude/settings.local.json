@@ -24,5 +24,12 @@
   "enabledMcpjsonServers": [
     "shadcn",
     "taskmaster-ai"
-  ]
+  ],
+  "skillOverrides": {
+    "landing-page-copywriter": "user-invocable-only",
+    "skill-creator": "name-only",
+    "to-issues": "user-invocable-only",
+    "to-prd": "name-only",
+    "triage": "name-only"
+  }
 }

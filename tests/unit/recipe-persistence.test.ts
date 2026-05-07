@@ -14,6 +14,7 @@ vi.mock("@/lib/entitlements", () => ({
 }));
 vi.mock("@/lib/edamam-service", () => ({
   analyzeRecipeNutrition: vi.fn(),
+  saveUserMacroCache: vi.fn(),
 }));
 
 import { getServerSession } from "next-auth";
@@ -22,7 +23,10 @@ import {
   assertCanCreateRecipe,
   assertCanImportRecipe,
 } from "@/lib/entitlements";
-import { analyzeRecipeNutrition } from "@/lib/edamam-service";
+import {
+  analyzeRecipeNutrition,
+  saveUserMacroCache,
+} from "@/lib/edamam-service";
 import { persistRecipe } from "@/actions/recipe";
 import type { RecipeFormData } from "@/types/recipe";
 
@@ -275,6 +279,26 @@ describe("persistRecipe — nutrition orchestration", () => {
     await persistRecipe(baseData(), { source: "url", locale: "es" });
     const args = vi.mocked(analyzeRecipeNutrition).mock.calls[0];
     expect(args[2]).toMatchObject({ locale: "es" });
+  });
+
+  it("saves the user macro cache after a successful auto-analysis", async () => {
+    await persistRecipe(baseData(), { source: "url" });
+    expect(saveUserMacroCache).toHaveBeenCalledOnce();
+    expect(saveUserMacroCache).toHaveBeenCalledWith(
+      baseUser.id,
+      "recipe-1",
+      successfulNutrition.macros,
+      successfulNutrition.servings,
+    );
+  });
+
+  it("does NOT save macro cache when nutrition fails", async () => {
+    vi.mocked(analyzeRecipeNutrition).mockResolvedValueOnce({
+      error: "rate limit",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    await persistRecipe(baseData(), { source: "url" });
+    expect(saveUserMacroCache).not.toHaveBeenCalled();
   });
 });
 
