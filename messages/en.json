@@ -1113,7 +1113,7 @@
         "featureNames": {
             "aiMealPlan": "AI meal plans",
             "shoppingAutomation": "Shopping automation",
-            "bulkActions": "URL and PDF imports"
+            "recipeImport": "URL and PDF imports"
         },
         "quotaNames": {
             "savedRecipes": "saved recipes",
@@ -1122,6 +1122,25 @@
             "mealPlanTemplates": "meal plan templates",
             "mealPlanDurationDays": "meal plan duration",
             "edamamAnalysesPerMonth": "nutrition analyses per month"
+        },
+        "pricing": {
+            "title": "Upgrade to DietAI Pro",
+            "description": "Unlimited recipes, meal plans, shopping automation, and AI-powered nutrition analysis. Cancel anytime.",
+            "canceledTitle": "Checkout canceled",
+            "canceledDescription": "No worries — you can pick a plan and try again whenever you're ready.",
+            "unavailableTitle": "Billing unavailable",
+            "choosePlan": "Choose your plan",
+            "savePercent": "Save ~20%",
+            "billedMonthly": "Billed monthly",
+            "billedYearly": "Billed yearly",
+            "intervalMonthly": "Monthly",
+            "intervalYearly": "Yearly",
+            "perMonth": "/month",
+            "perYear": "/year",
+            "continueToCheckout": "Continue to checkout",
+            "redirectingToStripe": "Redirecting to Stripe…",
+            "somethingWentWrong": "Something went wrong. Try again.",
+            "stripeFooter": "Secure payment handled by Stripe. You'll be redirected to a hosted checkout page."
         }
     }
 }

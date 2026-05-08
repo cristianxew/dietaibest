@@ -37,7 +37,7 @@ describe("getEntitlements", () => {
     expect(ent.limits.importsPerMonth).toBe(Number.POSITIVE_INFINITY);
     expect(ent.features.aiMealPlan).toBe(true);
     expect(ent.features.shoppingAutomation).toBe(true);
-    expect(ent.features.bulkActions).toBe(true);
+    expect(ent.features.recipeImport).toBe(true);
   });
 
   it("stays pro for past_due (Stripe dunning)", () => {
@@ -137,7 +137,7 @@ describe("checkCanImportRecipe", () => {
   it("always blocks free users (Pro-only, no free imports)", () => {
     const v = checkCanImportRecipe(FREE);
     expect(v).toBeInstanceOf(ProOnlyError);
-    expect((v as ProOnlyError).feature).toBe("bulkActions");
+    expect((v as ProOnlyError).feature).toBe("recipeImport");
   });
 
   it("allows pro users", () => {

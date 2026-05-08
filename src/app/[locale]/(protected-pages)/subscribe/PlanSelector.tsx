@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,6 @@ export interface PlanOption {
   interval: "monthly" | "yearly";
   currency: "usd" | "eur" | "pln";
   priceLabel: string;
-  intervalLabel: string;
 }
 
 interface PlanSelectorProps {
@@ -24,8 +24,24 @@ interface PlanSelectorProps {
 }
 
 export function PlanSelector({ plans }: PlanSelectorProps) {
+  const t = useTranslations("billing.pricing");
   const [selected, setSelected] = useState<"monthly" | "yearly">("yearly");
   const [isPending, startTransition] = useTransition();
+
+  const intervalLabel = {
+    monthly: t("intervalMonthly"),
+    yearly: t("intervalYearly"),
+  } as const;
+
+  const billedLabel = {
+    monthly: t("billedMonthly"),
+    yearly: t("billedYearly"),
+  } as const;
+
+  const perPeriodLabel = {
+    monthly: t("perMonth"),
+    yearly: t("perYear"),
+  } as const;
 
   const handleSubscribe = () => {
     const plan = plans.find((p) => p.interval === selected);
@@ -37,7 +53,7 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
         currency: plan.currency,
       });
       if (result.error || !result.data) {
-        toast.error(result.error ?? "Something went wrong. Try again.");
+        toast.error(result.error ?? t("somethingWentWrong"));
         return;
       }
       window.location.href = result.data.url;
@@ -47,7 +63,7 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Choose your plan</CardTitle>
+        <CardTitle>{t("choosePlan")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <RadioGroup
@@ -68,22 +84,22 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
                 />
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium capitalize">
-                      {plan.interval}
+                    <span className="font-medium">
+                      {intervalLabel[plan.interval]}
                     </span>
                     {plan.interval === "yearly" ? (
-                      <Badge variant="secondary">Save ~20%</Badge>
+                      <Badge variant="secondary">{t("savePercent")}</Badge>
                     ) : null}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Billed {plan.interval}
+                    {billedLabel[plan.interval]}
                   </div>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-lg font-semibold">{plan.priceLabel}</div>
                 <div className="text-xs text-muted-foreground">
-                  {plan.intervalLabel}
+                  {perPeriodLabel[plan.interval]}
                 </div>
               </div>
             </label>
@@ -96,12 +112,11 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
           className="w-full"
           size="lg"
         >
-          {isPending ? "Redirecting to Stripe…" : "Continue to checkout"}
+          {isPending ? t("redirectingToStripe") : t("continueToCheckout")}
         </Button>
 
         <p className="text-xs text-muted-foreground text-center">
-          Secure payment handled by Stripe. You&apos;ll be redirected to a
-          hosted checkout page.
+          {t("stripeFooter")}
         </p>
       </CardContent>
     </Card>

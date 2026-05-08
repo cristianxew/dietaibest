@@ -5,6 +5,18 @@ import { ShoppingAutomationResult, ShoppingItemResult } from "@/lib/browser-use"
 import { EntitlementErrorPayload } from "@/lib/entitlement-error";
 import { SupportedStore } from "@/types/shopping-preferences";
 import { startShoppingTask, ShoppingAutomationInput } from "@/actions/shopping-automation";
+import { usePaywall } from "@/components/billing/PaywallProvider";
+
+function isEntitlementPayload(
+  error: string | EntitlementErrorPayload | null | undefined
+): error is EntitlementErrorPayload {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error.code === "PRO_ONLY" || error.code === "QUOTA_EXCEEDED")
+  );
+}
 
 // ============================================================================
 // Types
@@ -91,6 +103,7 @@ const initialState: ShoppingAutomationState = {
 
 export function useShoppingAutomation(): UseShoppingAutomationReturn {
   const [state, setState] = useState<ShoppingAutomationState>(initialState);
+  const paywall = usePaywall();
 
   // Refs for cleanup and preventing state updates after unmount
   const isMountedRef = useRef(true);
@@ -310,6 +323,9 @@ export function useShoppingAutomation(): UseShoppingAutomationReturn {
         if (result.error || !result.data?.taskId) {
           const errorPayload = result.error || "Failed to start automation";
           console.error("[useShoppingAutomation] Failed to start task:", errorPayload);
+          if (isEntitlementPayload(errorPayload)) {
+            paywall.open(errorPayload);
+          }
           safeSetState((prev) => ({
             ...prev,
             status: "failed",
@@ -363,7 +379,7 @@ export function useShoppingAutomation(): UseShoppingAutomationReturn {
         }));
       }
     },
-    [cleanupConnection, safeSetState, startSSEConnection]
+    [cleanupConnection, paywall, safeSetState, startSSEConnection]
   );
 
   // Cancel automation
