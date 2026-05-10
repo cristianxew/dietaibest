@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import {
   currencyForLocale,
@@ -41,7 +41,6 @@ async function loadPlanOptions(
       interval,
       currency,
       priceLabel: formatPrice(p.unit_amount, p.currency, locale),
-      intervalLabel: interval === "monthly" ? "/month" : "/year",
     };
   });
 }
@@ -53,6 +52,7 @@ interface SubscribePageProps {
 export default async function SubscribePage({ searchParams }: SubscribePageProps) {
   const locale = await getLocale();
   const currency = currencyForLocale(locale);
+  const t = await getTranslations("billing.pricing");
 
   const { data } = await getCurrentSubscription();
   if (data?.isPro) {
@@ -74,27 +74,21 @@ export default async function SubscribePage({ searchParams }: SubscribePageProps
     <div className="max-w-3xl mx-auto py-12 px-4">
       <div className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight mb-3">
-          Upgrade to DietAI Pro
+          {t("title")}
         </h1>
-        <p className="text-muted-foreground">
-          Unlimited recipes, meal plans, shopping automation, and AI-powered
-          nutrition analysis. Cancel anytime.
-        </p>
+        <p className="text-muted-foreground">{t("description")}</p>
       </div>
 
       {canceled ? (
         <Alert className="mb-6">
-          <AlertTitle>Checkout canceled</AlertTitle>
-          <AlertDescription>
-            No worries — you can pick a plan and try again whenever you&apos;re
-            ready.
-          </AlertDescription>
+          <AlertTitle>{t("canceledTitle")}</AlertTitle>
+          <AlertDescription>{t("canceledDescription")}</AlertDescription>
         </Alert>
       ) : null}
 
       {loadError ? (
         <Alert variant="destructive" className="mb-6">
-          <AlertTitle>Billing unavailable</AlertTitle>
+          <AlertTitle>{t("unavailableTitle")}</AlertTitle>
           <AlertDescription>{loadError}</AlertDescription>
         </Alert>
       ) : plans ? (

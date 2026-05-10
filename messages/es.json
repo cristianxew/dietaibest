@@ -1112,7 +1112,7 @@
         "featureNames": {
             "aiMealPlan": "Planes de comida con IA",
             "shoppingAutomation": "Automatización de compras",
-            "bulkActions": "Importaciones de URL y PDF"
+            "recipeImport": "Importaciones de URL y PDF"
         },
         "quotaNames": {
             "savedRecipes": "recetas guardadas",
@@ -1121,6 +1121,25 @@
             "mealPlanTemplates": "plantillas de plan de comida",
             "mealPlanDurationDays": "duración del plan de comida",
             "edamamAnalysesPerMonth": "análisis nutricionales por mes"
+        },
+        "pricing": {
+            "title": "Pasate a DietAI Pro",
+            "description": "Recetas, planes de comida, automatización de compras y análisis nutricional con IA ilimitados. Cancelá cuando quieras.",
+            "canceledTitle": "Pago cancelado",
+            "canceledDescription": "No hay problema — podés elegir un plan e intentarlo cuando quieras.",
+            "unavailableTitle": "Facturación no disponible",
+            "choosePlan": "Elegí tu plan",
+            "savePercent": "Ahorrá ~20%",
+            "billedMonthly": "Facturación mensual",
+            "billedYearly": "Facturación anual",
+            "intervalMonthly": "Mensual",
+            "intervalYearly": "Anual",
+            "perMonth": "/mes",
+            "perYear": "/año",
+            "continueToCheckout": "Ir al pago",
+            "redirectingToStripe": "Redirigiendo a Stripe…",
+            "somethingWentWrong": "Algo salió mal. Intentá de nuevo.",
+            "stripeFooter": "Pago seguro procesado por Stripe. Serás redirigido a una página de pago segura."
         }
     }
 }

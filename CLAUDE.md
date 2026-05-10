@@ -12,3 +12,17 @@ We keep all important docs in the .agent folder and keep updating them, structur
 We should always update agent docs after we implement certain feature, to make sure it fully reflect the up to date information
 
 Before you plan any implementation, always read the .agent/README first to get context
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in Linear, project "Dietai desktop", via the connected Linear MCP server. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical five-role label vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

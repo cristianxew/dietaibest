@@ -23,7 +23,7 @@ import { isPro } from "@/lib/plan";
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type FeatureKey = "aiMealPlan" | "shoppingAutomation" | "bulkActions";
+export type FeatureKey = "aiMealPlan" | "shoppingAutomation" | "recipeImport";
 
 export type QuotaKey =
   | "savedRecipes"
@@ -71,13 +71,13 @@ const PRO_LIMITS: Record<QuotaKey, number> = {
 const PRO_FEATURES: Record<FeatureKey, boolean> = {
   aiMealPlan: true,
   shoppingAutomation: true,
-  bulkActions: true,
+  recipeImport: true,
 };
 
 const FREE_FEATURES: Record<FeatureKey, boolean> = {
   aiMealPlan: false,
   shoppingAutomation: false,
-  bulkActions: false,
+  recipeImport: false,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ export function checkCanImportRecipe(user: UserLike): EntitlementViolation | nul
   const ent = getEntitlements(user);
   // Free gets zero imports. This is intentional — imports run Document AI / Browser-Use,
   // which are the most expensive ops we have. Modeled as a Pro-only feature.
-  if (!ent.isPro) return new ProOnlyError("bulkActions");
+  if (!ent.isPro) return new ProOnlyError("recipeImport");
   return null;
 }
 
