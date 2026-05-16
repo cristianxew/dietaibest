@@ -133,7 +133,7 @@ function sleep(ms: number): Promise<void> {
  * newly created). In tests, the model returns a plain text string with the ID.
  * In production, the model would use tool calls (searchRecipes / createRecipe).
  *
- * 1 retry: on transient errors only, 1s → 3s backoff.
+ * 1 retry: on transient errors only, 1s backoff.
  */
 async function resolveSlot(
   slot: { day: number; mealType: string; brief: string },
@@ -149,7 +149,7 @@ async function resolveSlot(
         // Permanent error — fail immediately, no retry
         throw lastError;
       }
-      await sleep(attempt === 1 ? 1000 : 3000);
+      await sleep(1000);
     }
 
     try {
