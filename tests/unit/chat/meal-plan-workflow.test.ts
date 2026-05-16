@@ -99,6 +99,89 @@ describe("generateMealPlanWorkflow — happy path (7-day × 2-meal)", () => {
     expect(slotEvents).toHaveLength(14);
     const savingEvents = progressEvents.filter((e) => e.statusKey === "mealplan.saving");
     expect(savingEvents).toHaveLength(1);
+
+    // mealplan.saving must arrive AFTER all mealplan.slot events
+    const savingIdx = progressEvents.findIndex((e) => e.statusKey === "mealplan.saving");
+    const lastSlotIdx = progressEvents
+      .map((e, i) => ({ e, i }))
+      .filter(({ e }) => e.statusKey === "mealplan.slot")
+      .pop()!.i;
+    expect(savingIdx).toBeGreaterThan(lastSlotIdx);
+  });
+});
+
+// ── Skeleton failure ──────────────────────────────────────────────────────────
+
+describe("generateMealPlanWorkflow — skeleton failure", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("exits failed with SKELETON_FAILED on permanent skeleton error; chat tool maps to ok=false", async () => {
+    // Skeleton model throws a permanent (non-transient) error on every attempt.
+    // With the isTransient guard in skeletonStep, the retry loop breaks immediately
+    // and SkeletonFailedError is thrown after the first attempt.
+    const failingSkeleton = new (await import("ai/test")).MockLanguageModelV3({
+      provider: "fake",
+      modelId: "fake-skeleton-fail",
+      doGenerate: async () => {
+        const err = new Error("Schema validation failed (permanent)");
+        // Explicitly mark as non-retriable to be unambiguous about intent.
+        Object.assign(err, { isRetryable: false });
+        throw err;
+      },
+    });
+
+    vi.mocked(getSkeletonModel).mockReturnValue(failingSkeleton as never);
+    vi.mocked(getFanoutModel).mockReturnValue(makeSuccessFanoutModel() as never);
+
+    // Workflow direct invocation — assert failure status + error code
+    const requestContext = new RequestContext();
+    const workflow = mastra.getWorkflow("generateMealPlanWorkflow");
+    const run = await workflow.createRun();
+    const result = await run.start({
+      inputData: {
+        days: 7,
+        mealsPerDay: ["breakfast", "dinner"],
+        userId: "u1",
+      },
+      requestContext,
+    });
+
+    expect(result.status).toBe("failed");
+    if (result.status !== "failed") return;
+    const err = result.error as { code?: string };
+    expect(err?.code).toBe("SKELETON_FAILED");
+
+    // createMealPlan must NEVER be called when skeleton fails
+    expect(createMealPlan).not.toHaveBeenCalled();
+  });
+
+  it("chat tool maps skeleton failure to { ok: false, reason: 'generic', message: /skeleton/i }", async () => {
+    const failingSkeleton = new (await import("ai/test")).MockLanguageModelV3({
+      provider: "fake",
+      modelId: "fake-skeleton-fail",
+      doGenerate: async () => {
+        const err = new Error("Schema validation failed (permanent)");
+        Object.assign(err, { isRetryable: false });
+        throw err;
+      },
+    });
+
+    vi.mocked(getSkeletonModel).mockReturnValue(failingSkeleton as never);
+    vi.mocked(getFanoutModel).mockReturnValue(makeSuccessFanoutModel() as never);
+
+    const ctx = makeCtx({ userId: "u1" });
+    const result = await generateMealPlan.execute(
+      { days: 7, mealsPerDay: ["breakfast", "dinner"] },
+      ctx,
+      () => {}
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe("generic");
+    expect(result.message).toMatch(/skeleton/i);
   });
 });
 

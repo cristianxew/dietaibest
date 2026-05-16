@@ -111,12 +111,17 @@ function createLimiter(max: number) {
 function isTransient(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const e = err as Record<string, unknown>;
-  const status = e["status"] as number | undefined;
-  if (status !== undefined && status >= 500) return true;
+
+  // @ai-sdk/provider's APICallError exposes `isRetryable` covering HTTP 408/409/429/≥500.
+  if (e["isRetryable"] === true) return true;
+
+  // Node.js network errors + aborts.
   const code = e["code"] as string | undefined;
-  if (code === "ETIMEDOUT" || code === "rate_limit_exceeded") return true;
+  if (code === "ETIMEDOUT" || code === "ECONNRESET" || code === "ENOTFOUND") return true;
+
   const name = e["name"] as string | undefined;
   if (name === "AbortError") return true;
+
   return false;
 }
 
@@ -271,6 +276,7 @@ const skeletonStep = createStep({
 
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
+        if (!isTransient(lastError)) break; // permanent — don't waste latency on retries
         await sleep(Math.pow(2, attempt - 1) * 1000); // 1s, 2s
       }
 
