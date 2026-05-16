@@ -32,6 +32,7 @@ const PROTECTED_API_ROUTES = [
   "/api/shopping",
   "/api/profiles",
   "/api/nutrition",
+  "/api/chat",
 ];
 
 const PUBLIC_API_ROUTES = [
