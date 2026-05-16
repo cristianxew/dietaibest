@@ -21,6 +21,12 @@ type Intent =
   | { kind: "search-recipes"; query: string }
   | { kind: "get-nutrition"; ingredients: string[]; servings: number }
   | { kind: "delete-recipe"; query: string }
+  | {
+      kind: "generate-meal-plan";
+      days: number;
+      targetCalories?: number;
+      dietary?: string[];
+    }
   | { kind: "medical"; topic: string }
   | { kind: "text" };
 
@@ -33,6 +39,27 @@ function detectIntent(latestUser: string): Intent {
 
   const medical = lower.match(MEDICAL_KEYWORDS);
   if (medical) return { kind: "medical", topic: medical[0] };
+
+  // meal plan generation: "meal plan", "plan de comidas", "plan semanal", "generá un plan", "build me a plan"
+  if (
+    /\b(meal plan|plan de comidas|plan semanal|gener[aá] un plan|build me a plan|arm[aá]me un plan|plan jadłospis|create a plan)\b/i.test(
+      lower
+    )
+  ) {
+    const daysMatch = lower.match(/(\d+)[\s-]*d[ií]?as?\b|(\d+)[\s-]*day/);
+    const kcalMatch = lower.match(/(\d{3,4})\s*(?:kcal|cal|cal[oó]r)/);
+    const days = daysMatch ? parseInt(daysMatch[1] ?? daysMatch[2] ?? "7", 10) : 7;
+    const dietary: string[] = [];
+    if (/\bvegetarian|vegetariano\b/i.test(lower)) dietary.push("vegetarian");
+    if (/\bvegan|vegano\b/i.test(lower)) dietary.push("vegan");
+    if (/\bgluten[- ]?free|sin gluten\b/i.test(lower)) dietary.push("gluten-free");
+    return {
+      kind: "generate-meal-plan",
+      days: Math.max(1, Math.min(days, 14)),
+      ...(kcalMatch && { targetCalories: parseInt(kcalMatch[1], 10) }),
+      ...(dietary.length > 0 && { dietary }),
+    };
+  }
 
   // delete: "delete recipe X" / "borra la receta X"
   if (/\b(delete|remove|borr[aá]|elimin[aá]|usu[ńn])\b.*\b(recipe|receta|przepis)\b/i.test(lower)) {
@@ -223,6 +250,22 @@ export class MockLlmProvider implements LlmProvider {
         callId: randomUUID(),
         toolName: "getNutrition",
         input: { ingredients: intent.ingredients, servings: intent.servings },
+      };
+      return;
+    }
+
+    if (intent.kind === "generate-meal-plan" && toolNames.has("generateMealPlan")) {
+      yield* streamText(`Building you a ${intent.days}-day plan…`);
+      yield {
+        kind: "tool-call",
+        callId: randomUUID(),
+        toolName: "generateMealPlan",
+        input: {
+          days: intent.days,
+          mealsPerDay: ["breakfast", "lunch", "dinner"],
+          ...(intent.targetCalories && { targetCalories: intent.targetCalories }),
+          ...(intent.dietary && { dietary: intent.dietary }),
+        },
       };
       return;
     }

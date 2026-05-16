@@ -1192,7 +1192,18 @@
             "mealplan": {
                 "skeleton": "Building the plan…",
                 "fanout": "Generating recipes for the days… ({completed}/{total})",
-                "persisting": "Saving the plan…"
+                "persisting": "Saving the plan…",
+                "searching": "Searching your plans…",
+                "loading": "Loading plan…",
+                "addingMeal": "Adding meal to day…",
+                "movingMeal": "Moving meal…",
+                "updatingServings": "Updating servings…",
+                "removingMeal": "Removing meal…",
+                "generating": "Generating plan…",
+                "planning": "Planning…",
+                "slot": "Cooking {n} of {m}…",
+                "slotFailed": "Day {day} {meal} failed",
+                "saving": "Saving plan…"
             },
             "success": "Done",
             "error": "Something went wrong"
@@ -1201,7 +1212,12 @@
             "generic": "I had a problem with that. Try again in a minute.",
             "quotaExceeded": "You've hit a usage limit for this action.",
             "notFound": "I couldn't find that.",
-            "unauthorized": "You don't have access to that."
+            "unauthorized": "You don't have access to that.",
+            "mealPlan": {
+                "skeletonFailed": "I couldn't draft the plan structure. Try again with fewer constraints.",
+                "persistFailed": "I couldn't save the plan. Try again in a moment.",
+                "planIncomplete": "Plan incomplete: {failed} of {total} slots failed."
+            }
         },
         "guardrail": {
             "nutritionRedacted": "For precise macros, open the recipe.",

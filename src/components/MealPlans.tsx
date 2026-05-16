@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -56,6 +57,7 @@ import { PageContainer } from "@/components/ui/page-container";
 export default function MealPlans() {
   const t = useTranslations("mealPlans");
   const common = useTranslations("common");
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("planner");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -332,12 +334,24 @@ export default function MealPlans() {
     [t]
   );
 
-  // Auto-select first plan when templates load
+  // Honor ?selected=<id> from URL (e.g. deep link from chat after generateMealPlan)
+  // Takes priority over the "auto-select first" default below.
+  useEffect(() => {
+    const requested = searchParams.get("selected");
+    if (!requested || templates.length === 0 || selectedPlanId === requested) return;
+    if (templates.some((tpl) => tpl.id === requested)) {
+      handleSelectPlan(requested);
+    }
+  }, [searchParams, templates, selectedPlanId, handleSelectPlan]);
+
+  // Auto-select first plan when templates load (skipped if ?selected= will resolve)
   useEffect(() => {
     if (templates.length > 0 && !selectedPlanId && !editingMealTemplate) {
+      const requested = searchParams.get("selected");
+      if (requested && templates.some((tpl) => tpl.id === requested)) return;
       handleSelectPlan(templates[0].id);
     }
-  }, [templates, selectedPlanId, editingMealTemplate, handleSelectPlan]);
+  }, [templates, selectedPlanId, editingMealTemplate, handleSelectPlan, searchParams]);
 
   // Handle switching between meal plans (legacy - now using handleSelectPlan)
   const _handleSwitchMealPlan = (templateId: string) => {

@@ -1191,7 +1191,18 @@
             "mealplan": {
                 "skeleton": "Armando el plan…",
                 "fanout": "Generando recetas para los días… ({completed}/{total})",
-                "persisting": "Guardando el plan…"
+                "persisting": "Guardando el plan…",
+                "searching": "Buscando tus planes…",
+                "loading": "Abriendo plan…",
+                "addingMeal": "Agregando comida al día…",
+                "movingMeal": "Moviendo comida…",
+                "updatingServings": "Actualizando porciones…",
+                "removingMeal": "Quitando comida…",
+                "generating": "Generando plan…",
+                "planning": "Planificando…",
+                "slot": "Cocinando {n} de {m}…",
+                "slotFailed": "Falló día {day} {meal}",
+                "saving": "Guardando plan…"
             },
             "success": "Listo",
             "error": "Algo salió mal"
@@ -1200,7 +1211,12 @@
             "generic": "Tuve un problema con eso. Probá de nuevo en un minuto.",
             "quotaExceeded": "Llegaste al límite de uso para esta acción.",
             "notFound": "No pude encontrar eso.",
-            "unauthorized": "No tenés acceso a eso."
+            "unauthorized": "No tenés acceso a eso.",
+            "mealPlan": {
+                "skeletonFailed": "No pude armar la estructura del plan. Probá de nuevo con menos restricciones.",
+                "persistFailed": "No pude guardar el plan. Probá de nuevo en un momento.",
+                "planIncomplete": "Plan incompleto: fallaron {failed} de {total} comidas."
+            }
         },
         "guardrail": {
             "nutritionRedacted": "Para macros precisos, abrí la receta.",

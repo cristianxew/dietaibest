@@ -1186,7 +1186,18 @@
             "mealplan": {
                 "skeleton": "Buduję plan…",
                 "fanout": "Generuję przepisy na dni… ({completed}/{total})",
-                "persisting": "Zapisuję plan…"
+                "persisting": "Zapisuję plan…",
+                "searching": "Wyszukuję twoje plany…",
+                "loading": "Wczytuję plan…",
+                "addingMeal": "Dodaję posiłek do dnia…",
+                "movingMeal": "Przenoszę posiłek…",
+                "updatingServings": "Aktualizuję porcje…",
+                "removingMeal": "Usuwam posiłek…",
+                "generating": "Generuję plan…",
+                "planning": "Planuję…",
+                "slot": "Gotuję {n} z {m}…",
+                "slotFailed": "Dzień {day} {meal} nieudany",
+                "saving": "Zapisuję plan…"
             },
             "success": "Gotowe",
             "error": "Coś poszło nie tak"
@@ -1195,7 +1206,12 @@
             "generic": "Wystąpił problem. Spróbuj ponownie za chwilę.",
             "quotaExceeded": "Osiągnięto limit dla tej akcji.",
             "notFound": "Nie udało się tego znaleźć.",
-            "unauthorized": "Nie masz dostępu do tej akcji."
+            "unauthorized": "Nie masz dostępu do tej akcji.",
+            "mealPlan": {
+                "skeletonFailed": "Nie udało się zaplanować struktury planu. Spróbuj z mniejszą liczbą ograniczeń.",
+                "persistFailed": "Nie udało się zapisać planu. Spróbuj ponownie za chwilę.",
+                "planIncomplete": "Plan niekompletny: nieudane {failed} z {total} posiłków."
+            }
         },
         "guardrail": {
             "nutritionRedacted": "Aby zobaczyć dokładne makro, otwórz przepis.",
