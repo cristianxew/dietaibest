@@ -224,7 +224,7 @@ interface Schedule {
       dayNumber: number;
       meals: Array<{
         id: string;
-        recipeId: string;
+        recipeId: string | null;
         mealType: string;
         servings: number;
         recipe: {
@@ -242,7 +242,7 @@ interface DaySchedule {
   dayNumber: number;
   meals: Array<{
     id: string;
-    recipeId: string;
+    recipeId: string | null;
     mealType: string;
     servings: number;
     recipe: {

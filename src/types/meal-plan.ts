@@ -254,7 +254,7 @@ export interface MacroComparisons {
 
 export interface MealDisplay {
   id: string;
-  recipeId: string;
+  recipeId: string | null;
   recipeName: string;
   recipeImage?: string;
   mealType: MealType;

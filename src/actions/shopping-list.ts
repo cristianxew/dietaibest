@@ -228,6 +228,8 @@ export async function generateShoppingList(
         for (const meal of day.meals) {
           totalMeals++;
           const recipe = meal.recipe;
+          // Skip slots without a resolved recipe (DIE-37 partial-fail rows).
+          if (!recipe) continue;
           const ingredients = parseIngredients(recipe.ingredients);
           const mealServings = meal.servings;
           const recipeServings = recipe.servings;

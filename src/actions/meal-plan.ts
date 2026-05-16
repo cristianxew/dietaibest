@@ -89,10 +89,6 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
       }
 
       // Build days payload outside the Prisma call for clarity.
-      // NOTE: the Prisma client has not been regenerated after the
-      // partial-failure migration (Task 1), so generationFailed/generationError
-      // are written via `as never` to work around stale generated types.
-      // Once `prisma generate` runs, the cast can be removed.
       const daysPayload = Array.from(
         { length: validatedData.duration },
         (_, index) => {
@@ -116,7 +112,7 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
                         sortOrder: meal.sortOrder ?? i,
                         generationFailed: meal.generationFailed ?? false,
                         generationError: meal.generationError ?? null,
-                      })) as never,
+                      })),
                     },
                   }
                 : {}),
@@ -158,7 +154,7 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
           isPublic: validatedData.isPublic,
           shareToken: validatedData.isPublic ? generateShareToken() : null,
           days: {
-            create: daysPayload as never,
+            create: daysPayload,
           },
         },
         include: {
