@@ -10,11 +10,11 @@ datasource db {
 }
 
 model User {
-  id                  String                 @id @default(uuid())
-  email               String                 @unique
-  password            String
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Stripe subscription
   stripeCustomerId     String?   @unique
@@ -259,7 +259,7 @@ model MealPlanSchedule {
   updatedAt DateTime @updatedAt
 
   template MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([templateId])
@@ -285,18 +285,20 @@ model MealPlanDay {
 
 // MealPlanMeal: Individual recipe assignments (unchanged structure)
 model MealPlanMeal {
-  id            String @id @default(uuid())
-  mealPlanDayId String
-  recipeId      String
-  mealType      String // breakfast, lunch, dinner, snack
-  servings      Int    @default(1) // Can override recipe default servings
-  sortOrder     Int    @default(0) // For ordering meals within a slot
+  id               String  @id @default(uuid())
+  mealPlanDayId    String
+  recipeId         String? // nullable: AI-generated slots may fail before a recipe exists
+  mealType         String // breakfast, lunch, dinner, snack
+  servings         Int     @default(1) // Can override recipe default servings
+  sortOrder        Int     @default(0) // For ordering meals within a slot
+  generationFailed Boolean @default(false)
+  generationError  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   mealPlanDay MealPlanDay @relation(fields: [mealPlanDayId], references: [id], onDelete: Cascade)
-  recipe      Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe      Recipe?     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([mealPlanDayId])
   @@index([recipeId])
@@ -309,14 +311,14 @@ model MealPlanMeal {
 
 // ShoppingPreferences: User's preferred store and shopping automation settings
 model ShoppingPreferences {
-  id                 String   @id @default(uuid())
-  userId             String   @unique
-  selectedStore      String?  // "auchan" | "frisco" | "carrefour"
-  deliveryPreference String   @default("delivery") // "delivery" | "pickup"
+  id                 String  @id @default(uuid())
+  userId             String  @unique
+  selectedStore      String? // "auchan" | "frisco" | "carrefour"
+  deliveryPreference String  @default("delivery") // "delivery" | "pickup"
   zipCode            String?
-  preferOrganic      Boolean  @default(false)
-  preferStoreBrand   Boolean  @default(false)
-  allowSubstitutions Boolean  @default(true)
+  preferOrganic      Boolean @default(false)
+  preferStoreBrand   Boolean @default(false)
+  allowSubstitutions Boolean @default(true)
   maxPricePerItem    Float?
 
   createdAt DateTime @default(now())
@@ -329,13 +331,13 @@ model ShoppingPreferences {
 
 // StoreCredential: Per-store encrypted credentials for auto-login during shopping automation
 model StoreCredential {
-  id                String   @id @default(uuid())
+  id                String @id @default(uuid())
   userId            String
-  store             String   // "auchan" | "frisco" | "carrefour"
+  store             String // "auchan" | "frisco" | "carrefour"
   email             String
-  encryptedPassword String   // AES-256-GCM encrypted
-  iv                String   // Initialization vector for decryption
-  authTag           String   // Authentication tag for GCM verification
+  encryptedPassword String // AES-256-GCM encrypted
+  iv                String // Initialization vector for decryption
+  authTag           String // Authentication tag for GCM verification
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
