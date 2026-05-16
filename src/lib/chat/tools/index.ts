@@ -13,6 +13,7 @@ import { addMealToDay } from "./addMealToDay";
 import { moveMeal } from "./moveMeal";
 import { updateMealServings } from "./updateMealServings";
 import { removeMealFromDay } from "./removeMealFromDay";
+import { generateMealPlan } from "./generateMealPlan";
 
 export type { Tool, ToolResult, AnyTool } from "./types";
 
@@ -35,7 +36,7 @@ export const allTools: ReadonlyArray<AnyTool> = [
   moveMeal,
   updateMealServings,
   removeMealFromDay,
-  // generateMealPlan will be added in Task 4 — don't add it now
+  generateMealPlan,
 ];
 
 /**

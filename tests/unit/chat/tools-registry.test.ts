@@ -57,6 +57,7 @@ describe("Tool registry", () => {
       "createRecipe",
       "deleteRecipe",
       "editRecipe",
+      "generateMealPlan",
       "getMealPlan",
       "getNutrition",
       "getRecipe",
