@@ -1112,7 +1112,8 @@
         "featureNames": {
             "aiMealPlan": "Planes de comida con IA",
             "shoppingAutomation": "Automatización de compras",
-            "recipeImport": "Importaciones de URL y PDF"
+            "recipeImport": "Importaciones de URL y PDF",
+            "aiChat": "Asistente de chat con IA"
         },
         "quotaNames": {
             "savedRecipes": "recetas guardadas",
@@ -1140,6 +1141,99 @@
             "redirectingToStripe": "Redirigiendo a Stripe…",
             "somethingWentWrong": "Algo salió mal. Intentá de nuevo.",
             "stripeFooter": "Pago seguro procesado por Stripe. Serás redirigido a una página de pago segura."
+        }
+    },
+    "chat": {
+        "title": "Asistente DietAI",
+        "online": "En línea",
+        "clearConversation": "Limpiar conversación",
+        "close": "Cerrar asistente",
+        "send": "Enviar mensaje",
+        "attach": "Adjuntar imagen",
+        "placeholder": "Decime qué querés cocinar…",
+        "confirmClear": "¿Seguro? Esto cierra la conversación actual.",
+        "empty": {
+            "title": "¿Cómo puedo ayudarte?",
+            "subtitle": "Te puedo armar planes de comida, extraer recetas o crear nuevas.",
+            "suggestion1": "Crear una receta describiéndola",
+            "suggestion2": "Importar desde un link",
+            "suggestion3": "Subir una foto de una receta",
+            "suggestion4": "Pedí un plan de 7 días",
+            "suggestion1Prompt": "Quiero cocinar un risotto vegetariano alto en proteínas",
+            "suggestion2Prompt": "Importá esta receta: ",
+            "suggestion3Prompt": "Extraé la receta de esta foto",
+            "suggestion4Prompt": "Armame un plan de 7 días alrededor de 1800 kcal"
+        },
+        "status": {
+            "tool": {
+                "invoked": "Trabajando…"
+            },
+            "recipe": {
+                "searching": "Buscando en tus recetas…",
+                "creating": "Creando receta…",
+                "editing": "Actualizando receta…",
+                "deleting": "Eliminando receta…",
+                "analyzing": "Analizando macros…",
+                "saving": "Guardando…",
+                "loading": "Cargando receta…"
+            },
+            "import": {
+                "fetching": "Trayendo el contenido…",
+                "extracting": "Extrayendo la receta…",
+                "analyzing": "Analizando los macros…",
+                "saving": "Guardando la receta…",
+                "fallback": "Reintentando con otro método…"
+            },
+            "media": {
+                "uploading": "Subiendo imagen…",
+                "extracting": "Leyendo la receta de la foto…"
+            },
+            "mealplan": {
+                "skeleton": "Armando el plan…",
+                "fanout": "Generando recetas para los días… ({completed}/{total})",
+                "persisting": "Guardando el plan…"
+            },
+            "success": "Listo",
+            "error": "Algo salió mal"
+        },
+        "toolError": {
+            "generic": "Tuve un problema con eso. Probá de nuevo en un minuto.",
+            "quotaExceeded": "Llegaste al límite de uso para esta acción.",
+            "notFound": "No pude encontrar eso.",
+            "unauthorized": "No tenés acceso a eso."
+        },
+        "guardrail": {
+            "nutritionRedacted": "Para macros precisos, abrí la receta.",
+            "medicalAdvice": "No te puedo dar consejos médicos. Para temas de {topic}, consultá con un profesional de la salud."
+        },
+        "costCap": {
+            "reached": "Llegaste al límite mensual de uso de IA.",
+            "resetsOn": "Se reinicia el {date}."
+        },
+        "confirm": {
+            "delete": {
+                "recipe": "¿Seguro que querés eliminar \"{name}\"?",
+                "meal": "¿Sacar esta comida del plan?",
+                "plan": "¿Eliminar este plan de comidas?"
+            },
+            "yes": "Sí, eliminar",
+            "no": "No, cancelar",
+            "deleted": "Eliminado",
+            "cancelled": "Cancelado"
+        },
+        "attach": {
+            "maxSize": "El archivo es demasiado grande (máximo 10 MB).",
+            "unsupportedFormat": "Formato de archivo no soportado.",
+            "dropImage": "Soltá la imagen acá"
+        },
+        "link": {
+            "recipe": "Ver receta",
+            "mealplan": "Ver plan de comidas",
+            "shoppinglist": "Ver lista de compras"
+        },
+        "error": {
+            "stream": "Se cortó la conexión. Reintentando…",
+            "send": "No pude enviar el mensaje. Probá de nuevo."
         }
     }
 }

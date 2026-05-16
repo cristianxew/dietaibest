@@ -1113,7 +1113,8 @@
         "featureNames": {
             "aiMealPlan": "AI meal plans",
             "shoppingAutomation": "Shopping automation",
-            "recipeImport": "URL and PDF imports"
+            "recipeImport": "URL and PDF imports",
+            "aiChat": "AI chat assistant"
         },
         "quotaNames": {
             "savedRecipes": "saved recipes",
@@ -1141,6 +1142,99 @@
             "redirectingToStripe": "Redirecting to Stripe…",
             "somethingWentWrong": "Something went wrong. Try again.",
             "stripeFooter": "Secure payment handled by Stripe. You'll be redirected to a hosted checkout page."
+        }
+    },
+    "chat": {
+        "title": "DietAI Assistant",
+        "online": "Online",
+        "clearConversation": "Clear conversation",
+        "close": "Close assistant",
+        "send": "Send message",
+        "attach": "Attach image",
+        "placeholder": "Tell me what you want to cook…",
+        "confirmClear": "Sure? This closes the current conversation.",
+        "empty": {
+            "title": "How can I help?",
+            "subtitle": "I can help you build meal plans, extract recipes, or create new ones.",
+            "suggestion1": "Create a recipe by describing it",
+            "suggestion2": "Import from a link",
+            "suggestion3": "Upload a photo of a recipe",
+            "suggestion4": "Ask for a 7-day plan",
+            "suggestion1Prompt": "I want to cook a high-protein vegetarian risotto",
+            "suggestion2Prompt": "Import this recipe: ",
+            "suggestion3Prompt": "Extract the recipe from this photo",
+            "suggestion4Prompt": "Build me a 7-day meal plan around 1800 kcal"
+        },
+        "status": {
+            "tool": {
+                "invoked": "Working…"
+            },
+            "recipe": {
+                "searching": "Searching your recipes…",
+                "creating": "Creating recipe…",
+                "editing": "Updating recipe…",
+                "deleting": "Deleting recipe…",
+                "analyzing": "Analyzing macros…",
+                "saving": "Saving…",
+                "loading": "Loading recipe…"
+            },
+            "import": {
+                "fetching": "Fetching the content…",
+                "extracting": "Extracting the recipe…",
+                "analyzing": "Analyzing nutrition…",
+                "saving": "Saving the recipe…",
+                "fallback": "Retrying with another method…"
+            },
+            "media": {
+                "uploading": "Uploading image…",
+                "extracting": "Reading the recipe from the photo…"
+            },
+            "mealplan": {
+                "skeleton": "Building the plan…",
+                "fanout": "Generating recipes for the days… ({completed}/{total})",
+                "persisting": "Saving the plan…"
+            },
+            "success": "Done",
+            "error": "Something went wrong"
+        },
+        "toolError": {
+            "generic": "I had a problem with that. Try again in a minute.",
+            "quotaExceeded": "You've hit a usage limit for this action.",
+            "notFound": "I couldn't find that.",
+            "unauthorized": "You don't have access to that."
+        },
+        "guardrail": {
+            "nutritionRedacted": "For precise macros, open the recipe.",
+            "medicalAdvice": "I can't give you medical advice. For matters about {topic}, consult with a healthcare professional."
+        },
+        "costCap": {
+            "reached": "You've reached your monthly AI usage limit.",
+            "resetsOn": "Resets on {date}."
+        },
+        "confirm": {
+            "delete": {
+                "recipe": "Are you sure you want to delete \"{name}\"?",
+                "meal": "Remove this meal from the plan?",
+                "plan": "Delete this meal plan?"
+            },
+            "yes": "Yes, delete",
+            "no": "No, cancel",
+            "deleted": "Deleted",
+            "cancelled": "Cancelled"
+        },
+        "attach": {
+            "maxSize": "File is too large (max 10 MB).",
+            "unsupportedFormat": "Unsupported file format.",
+            "dropImage": "Drop image here"
+        },
+        "link": {
+            "recipe": "View recipe",
+            "mealplan": "View meal plan",
+            "shoppinglist": "View shopping list"
+        },
+        "error": {
+            "stream": "Connection lost. Retrying…",
+            "send": "Couldn't send the message. Try again."
         }
     }
 }

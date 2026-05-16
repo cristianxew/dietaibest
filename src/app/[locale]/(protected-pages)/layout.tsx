@@ -2,6 +2,7 @@ import { getMessages } from "next-intl/server";
 import { ClientProviders } from "@/providers/ClientProviders";
 import { AppSidebarDock } from "@/components/navigation/AppSidebarDock";
 import { RecipeModalProvider } from "@/providers/RecipeModalProvider";
+import { ChatContainer } from "@/components/chat/ChatContainer";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -24,14 +25,9 @@ export default async function ProtectedLayout({
       <RecipeModalProvider>
         {/* AppSidebarDock includes navigation, theme, language, and user controls */}
         <AppSidebarDock>
-          <div
-            id="main-content"
-            className="flex-1 overflow-auto"
-            tabIndex={-1}
-            aria-label="Main content"
-          >
+          <ChatContainer>
             {children}
-          </div>
+          </ChatContainer>
         </AppSidebarDock>
       </RecipeModalProvider>
     </ClientProviders>

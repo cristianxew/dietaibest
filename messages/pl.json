@@ -1107,7 +1107,8 @@
         "featureNames": {
             "aiMealPlan": "Plany posiłków AI",
             "shoppingAutomation": "Automatyzacja zakupów",
-            "recipeImport": "Import URL i PDF"
+            "recipeImport": "Import URL i PDF",
+            "aiChat": "Asystent czatu AI"
         },
         "quotaNames": {
             "savedRecipes": "zapisanych przepisów",
@@ -1135,6 +1136,99 @@
             "redirectingToStripe": "Przekierowuję do Stripe…",
             "somethingWentWrong": "Coś poszło nie tak. Spróbuj ponownie.",
             "stripeFooter": "Bezpieczna płatność obsługiwana przez Stripe. Zostaniesz przekierowany na stronę płatności."
+        }
+    },
+    "chat": {
+        "title": "Asystent DietAI",
+        "online": "Online",
+        "clearConversation": "Wyczyść rozmowę",
+        "close": "Zamknij asystenta",
+        "send": "Wyślij wiadomość",
+        "attach": "Załącz obraz",
+        "placeholder": "Powiedz, co chcesz ugotować…",
+        "confirmClear": "Na pewno? To zamknie obecną rozmowę.",
+        "empty": {
+            "title": "Jak mogę pomóc?",
+            "subtitle": "Pomogę Ci zbudować plany posiłków, wyekstrahować przepisy lub stworzyć nowe.",
+            "suggestion1": "Stwórz przepis, opisując go",
+            "suggestion2": "Importuj z linku",
+            "suggestion3": "Prześlij zdjęcie przepisu",
+            "suggestion4": "Poproś o plan 7-dniowy",
+            "suggestion1Prompt": "Chcę ugotować risotto wegetariańskie wysokobiałkowe",
+            "suggestion2Prompt": "Importuj ten przepis: ",
+            "suggestion3Prompt": "Wyekstrahuj przepis z tego zdjęcia",
+            "suggestion4Prompt": "Zbuduj plan 7-dniowy na około 1800 kcal"
+        },
+        "status": {
+            "tool": {
+                "invoked": "Pracuję…"
+            },
+            "recipe": {
+                "searching": "Przeszukuję Twoje przepisy…",
+                "creating": "Tworzę przepis…",
+                "editing": "Aktualizuję przepis…",
+                "deleting": "Usuwam przepis…",
+                "analyzing": "Analizuję makro…",
+                "saving": "Zapisuję…",
+                "loading": "Ładuję przepis…"
+            },
+            "import": {
+                "fetching": "Pobieram zawartość…",
+                "extracting": "Wyciągam przepis…",
+                "analyzing": "Analizuję wartości odżywcze…",
+                "saving": "Zapisuję przepis…",
+                "fallback": "Próbuję inną metodą…"
+            },
+            "media": {
+                "uploading": "Przesyłam obraz…",
+                "extracting": "Czytam przepis ze zdjęcia…"
+            },
+            "mealplan": {
+                "skeleton": "Buduję plan…",
+                "fanout": "Generuję przepisy na dni… ({completed}/{total})",
+                "persisting": "Zapisuję plan…"
+            },
+            "success": "Gotowe",
+            "error": "Coś poszło nie tak"
+        },
+        "toolError": {
+            "generic": "Wystąpił problem. Spróbuj ponownie za chwilę.",
+            "quotaExceeded": "Osiągnięto limit dla tej akcji.",
+            "notFound": "Nie udało się tego znaleźć.",
+            "unauthorized": "Nie masz dostępu do tej akcji."
+        },
+        "guardrail": {
+            "nutritionRedacted": "Aby zobaczyć dokładne makro, otwórz przepis.",
+            "medicalAdvice": "Nie mogę udzielać porad medycznych. W kwestiach {topic} skonsultuj się z lekarzem."
+        },
+        "costCap": {
+            "reached": "Osiągnięto miesięczny limit użycia AI.",
+            "resetsOn": "Reset {date}."
+        },
+        "confirm": {
+            "delete": {
+                "recipe": "Na pewno usunąć \"{name}\"?",
+                "meal": "Usunąć ten posiłek z planu?",
+                "plan": "Usunąć ten plan posiłków?"
+            },
+            "yes": "Tak, usuń",
+            "no": "Nie, anuluj",
+            "deleted": "Usunięto",
+            "cancelled": "Anulowano"
+        },
+        "attach": {
+            "maxSize": "Plik jest za duży (maks. 10 MB).",
+            "unsupportedFormat": "Niewspierany format pliku.",
+            "dropImage": "Upuść obraz tutaj"
+        },
+        "link": {
+            "recipe": "Zobacz przepis",
+            "mealplan": "Zobacz plan posiłków",
+            "shoppinglist": "Zobacz listę zakupów"
+        },
+        "error": {
+            "stream": "Utracono połączenie. Ponawiam…",
+            "send": "Nie udało się wysłać wiadomości. Spróbuj ponownie."
         }
     }
 }

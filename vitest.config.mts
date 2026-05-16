@@ -2,9 +2,20 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { loadEnv } from "vite";
+import path from "node:path";
 
 export default defineConfig(({ mode }) => ({
   plugins: [tsconfigPaths(), react()],
+  resolve: {
+    alias: {
+      // `server-only` is a build-time marker Next.js ships; not installed as a
+      // standalone package, so unit tests that transitively import it need a
+      // local stub. Stub keeps the marker behavior (importing in client code
+      // throws at runtime) trivially absent so server-only modules can be
+      // exercised under jsdom.
+      "server-only": path.resolve(__dirname, "tests/stubs/server-only.ts"),
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,

@@ -74,6 +74,21 @@ export const MEAL_SLOT_PRESETS: MealSlotPreset[] = [
 // Meal Plan Template Schemas
 // ============================================================================
 
+// Meal item within a day when creating a plan with pre-populated meals
+// (used by the AI generator — allows nullable recipeId for failed slots)
+export const mealPlanMealItemSchema = z.object({
+  recipeId: z.string().uuid().nullable(),
+  mealType: mealTypeEnum,
+  servings: z.number().int().min(1).default(1),
+  sortOrder: z.number().int().min(0).optional(),
+  /** Set to true when the AI failed to generate a recipe for this slot */
+  generationFailed: z.boolean().optional(),
+  /** Human-readable reason the slot generation failed */
+  generationError: z.string().optional(),
+});
+
+export type MealPlanMealItemData = z.infer<typeof mealPlanMealItemSchema>;
+
 // Meal Plan Template form schema for creation/editing
 export const mealPlanTemplateFormSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
@@ -93,6 +108,19 @@ export const mealPlanTemplateFormSchema = z.object({
   targetCarbs: z.number().min(0).optional(),
   targetFat: z.number().min(0).optional(),
   isPublic: z.boolean().default(false),
+  /**
+   * Optional pre-populated days with meals (used by AI generator).
+   * When provided, days[i].meals are created instead of copying from templateId.
+   * Existing UI callers omit this field — behavior unchanged for them.
+   */
+  days: z
+    .array(
+      z.object({
+        dayNumber: z.number().int().min(1),
+        meals: z.array(mealPlanMealItemSchema).optional(),
+      })
+    )
+    .optional(),
 });
 
 export type MealPlanTemplateFormData = z.infer<
