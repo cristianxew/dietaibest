@@ -392,7 +392,9 @@ export class AgentRuntime {
       });
     }
 
-    // Flush any remaining events emitted right as the promise settled
+    // Safety drain: events pushed in the same microtask as resolution may have
+    // been missed by the outer loop if execDone was observed true before the
+    // queue was checked.
     while (progressQueue.length > 0) {
       yield progressQueue.shift()!;
     }
