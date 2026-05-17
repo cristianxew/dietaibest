@@ -32,6 +32,7 @@ model User {
   mealPlanSchedules   MealPlanSchedule[] // User's scheduled meal plans
   shoppingPreferences ShoppingPreferences? // User's shopping automation preferences
   storeCredentials    StoreCredential[] // Per-store encrypted credentials for auto-login
+  conversations       Conversation[] // In-app AI chat conversations
 }
 
 model UserProfile {
@@ -346,4 +347,37 @@ model StoreCredential {
 
   @@unique([userId, store]) // One credential per store per user
   @@index([userId])
+}
+
+// ============================================================================
+// AI Chat Agent — Conversation Persistence (DIE-39)
+// ============================================================================
+// Decision #112 (locked 2026-05-15): ONE active conversation per user. The
+// "Limpiar" action sets archivedAt; the next user turn creates a fresh
+// conversation. Partial unique index added in the migration enforces this at
+// the DB level: UNIQUE (userId) WHERE archivedAt IS NULL.
+
+model Conversation {
+  id         String    @id @default(uuid())
+  userId     String
+  archivedAt DateTime? // null = active; non-null = archived "Limpiar"
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId, archivedAt])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String // "user" | "assistant" | "tool"
+  content        Json // ConversationTurnItem: { kind: "text"|"tool-call"|"tool-result", ... }
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }

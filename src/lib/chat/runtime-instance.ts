@@ -1,7 +1,10 @@
+import { prisma } from "@/lib/prisma";
+
 import { AgentRuntime } from "./runtime";
 import { AnthropicLlmProvider } from "./llm-anthropic";
 import { MockLlmProvider } from "./llm-mock";
-import { MemoryConversationStore } from "./conversation-memory";
+import { PrismaConversationStore } from "./conversation-prisma";
+import type { ConversationStore } from "./conversation-store";
 import type { LlmProvider } from "./llm-provider";
 import { allTools } from "./tools/index";
 
@@ -14,6 +17,9 @@ import { allTools } from "./tools/index";
  *    override via CHAT_LLM_MODEL).
  *  - Otherwise → MockLlmProvider, so dev/test setups without a key keep the
  *    pipeline runnable end-to-end. The fallback is logged once.
+ *
+ * Store: PrismaConversationStore (DIE-39). Durable per-user, per-conversation
+ * history. The runtime is stateless so a single shared store instance is fine.
  */
 
 const GLOBAL_KEY = Symbol.for("dietai.chat.runtime");
@@ -38,7 +44,7 @@ export function getRuntime(): AgentRuntime {
   if (!g[GLOBAL_KEY]) {
     g[GLOBAL_KEY] = new AgentRuntime({
       llm: selectProvider(),
-      store: new MemoryConversationStore(),
+      store: getStore(),
       tools: allTools,
       toolConcurrency: 4,
       maxToolLoops: 5,
@@ -47,6 +53,6 @@ export function getRuntime(): AgentRuntime {
   return g[GLOBAL_KEY]!;
 }
 
-export function getStore() {
-  return new MemoryConversationStore();
+export function getStore(): ConversationStore {
+  return new PrismaConversationStore(prisma);
 }

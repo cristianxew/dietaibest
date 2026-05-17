@@ -33,6 +33,7 @@ const PROTECTED_API_ROUTES = [
   "/api/profiles",
   "/api/nutrition",
   "/api/chat",
+  "/api/chat/conversation",
 ];
 
 const PUBLIC_API_ROUTES = [
@@ -63,8 +64,7 @@ export default withAuth(
 
     // Enhanced logging for monitoring
     console.info(
-      `[${requestTime}] ${method} ${pathname} - Token: ${
-        !!token ? "Valid" : "None"
+      `[${requestTime}] ${method} ${pathname} - Token: ${!!token ? "Valid" : "None"
       } - UA: ${userAgent.slice(0, 50)}`
     );
 
@@ -93,8 +93,7 @@ export default withAuth(
         signInUrl.searchParams.set("redirect", returnTo);
       }
       console.info(
-        `[${requestTime}] Redirecting to sign-in with return URL: ${returnTo} (locale: ${
-          currentLocale || defaultLocale
+        `[${requestTime}] Redirecting to sign-in with return URL: ${returnTo} (locale: ${currentLocale || defaultLocale
         })`
       );
       return NextResponse.redirect(signInUrl);

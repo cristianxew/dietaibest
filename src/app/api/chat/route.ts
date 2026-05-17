@@ -10,6 +10,7 @@ import {
 import { toEntitlementError } from "@/lib/entitlement-error";
 import type { AgentContext, Locale } from "@/lib/chat/context";
 import { getRuntime } from "@/lib/chat/runtime-instance";
+import { resolveActiveConversation } from "@/lib/chat/conversation-prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,11 +97,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const active = await resolveActiveConversation(prisma, user.id);
+
   const ctx: AgentContext = {
     userId: user.id,
     locale: locale as Locale,
     entitlements: getEntitlements(user),
-    conversationId: `user:${user.id}`,
+    conversationId: active.id,
   };
 
   const runtime = getRuntime();
