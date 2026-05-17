@@ -7,6 +7,7 @@ import type {
   ProviderStreamEvent,
 } from "./llm-provider";
 import type { ConversationStore } from "./conversation-store";
+import { looksLikeRefusal } from "./refusal-heuristic";
 import type { AnyTool, ToolEmit } from "./tools/types";
 import { buildSystemPrompt } from "./system-prompt";
 
@@ -181,6 +182,17 @@ export class AgentRuntime {
     const systemPrompt = buildSystemPrompt(ctx.locale);
     const guardrail = new StreamingGuardrail();
 
+    // Refusal-telemetry accumulators (decision #117). A turn is flagged as a
+    // medical refusal if NO tool was called this turn AND the assistant text
+    // matches a multilingual refusal heuristic.
+    let turnAssistantText = "";
+    let turnHadToolCall = false;
+    // Token-usage accumulators (DIE-38 cost cap). Summed across LLM steps,
+    // emitted on finish AND persisted per step as `kind: "usage"` items so the
+    // conversation-prisma adapter can fill the Message columns.
+    let turnInputTokens = 0;
+    let turnOutputTokens = 0;
+
     // Step 2: tool loop. Cap at maxToolLoops to avoid runaway tool ping-pong.
     let loops = 0;
     while (loops++ < this.maxToolLoops) {
@@ -209,6 +221,7 @@ export class AgentRuntime {
         for (const out of wrapped) yield out;
 
         if (ev.kind === "text-delta") {
+          turnAssistantText += ev.text;
           pendingPersist.push({
             kind: "text",
             role: "assistant",
@@ -218,6 +231,7 @@ export class AgentRuntime {
         }
         if (ev.kind === "tool-call") {
           sawToolCall = true;
+          turnHadToolCall = true;
           const item: ConversationTurnItem = {
             kind: "tool-call",
             callId: ev.callId,
@@ -227,6 +241,15 @@ export class AgentRuntime {
           toolCallBatch.push(item);
           pendingPersist.push(item);
           history.push(item);
+        }
+        if (ev.kind === "finish" && ev.usage) {
+          turnInputTokens += ev.usage.inputTokens;
+          turnOutputTokens += ev.usage.outputTokens;
+          pendingPersist.push({
+            kind: "usage",
+            inputTokens: ev.usage.inputTokens,
+            outputTokens: ev.usage.outputTokens,
+          });
         }
       }
 
@@ -277,7 +300,19 @@ export class AgentRuntime {
       }
     }
 
-    yield { type: "finish" };
+    if (!turnHadToolCall && looksLikeRefusal(turnAssistantText)) {
+      pendingPersist.push({
+        kind: "metadata",
+        role: "assistant",
+        refusalDetected: true,
+      });
+    }
+
+    const usage =
+      turnInputTokens > 0 || turnOutputTokens > 0
+        ? { inputTokens: turnInputTokens, outputTokens: turnOutputTokens }
+        : undefined;
+    yield usage ? { type: "finish", usage } : { type: "finish" };
     await this.store.append(ctx.conversationId, pendingPersist);
   }
 

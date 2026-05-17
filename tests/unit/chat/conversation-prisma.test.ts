@@ -11,7 +11,14 @@ import type { ConversationTurnItem } from "@/lib/chat/llm-provider";
  * PrismaConversationStore + resolveActiveConversation depend on. Mirrors the
  * subset we actually call so we can exercise serialization without a real DB.
  */
-type Row = { id: string; content: unknown; createdAt: Date };
+type Row = {
+  id: string;
+  content: unknown;
+  createdAt: Date;
+  role: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+};
 type Conv = {
   id: string;
   userId: string;
@@ -99,7 +106,13 @@ class FakePrisma {
     createMany: async ({
       data,
     }: {
-      data: Array<{ conversationId: string; role: string; content: unknown }>;
+      data: Array<{
+        conversationId: string;
+        role: string;
+        content: unknown;
+        inputTokens?: number;
+        outputTokens?: number;
+      }>;
     }): Promise<{ count: number }> => {
       for (const d of data) {
         const rows = this.messageRows.get(d.conversationId) ?? [];
@@ -107,6 +120,9 @@ class FakePrisma {
           id: `m-${rows.length + 1}`,
           content: JSON.parse(JSON.stringify(d.content)), // round-trip through JSON like JSONB
           createdAt: new Date(Date.now() + rows.length),
+          role: d.role,
+          inputTokens: d.inputTokens ?? null,
+          outputTokens: d.outputTokens ?? null,
         });
         this.messageRows.set(d.conversationId, rows);
       }
@@ -226,6 +242,28 @@ describe("PrismaConversationStore — round-trip preserves ConversationTurnItems
     const loaded = await store.load("c1");
 
     expect(loaded).toEqual(items);
+  });
+
+  it("projects usage turn items into inputTokens / outputTokens columns (DIE-38)", async () => {
+    const items: ConversationTurnItem[] = [
+      { kind: "text", role: "user", text: "hi" },
+      { kind: "text", role: "assistant", text: "hello" },
+      { kind: "usage", inputTokens: 230, outputTokens: 18 },
+    ];
+
+    await store.append("c1", items);
+
+    const rows = fake.messageRows.get("c1") ?? [];
+    expect(rows).toHaveLength(3);
+
+    const usageRow = rows.find((r) => r.role === "usage");
+    expect(usageRow).toBeDefined();
+    expect(usageRow?.inputTokens).toBe(230);
+    expect(usageRow?.outputTokens).toBe(18);
+
+    const userRow = rows.find((r) => r.role === "user");
+    expect(userRow?.inputTokens).toBeNull();
+    expect(userRow?.outputTokens).toBeNull();
   });
 
   it("clear() archives the conversation rather than deleting messages", async () => {

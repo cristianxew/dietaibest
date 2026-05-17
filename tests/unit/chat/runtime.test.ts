@@ -159,6 +159,126 @@ describe("AgentRuntime — confirmation gate", () => {
   });
 });
 
+describe("AgentRuntime — token usage telemetry (DIE-38 cost cap)", () => {
+  it("emits finish.usage on the AgentEvent and persists a usage turn item", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        { kind: "text-delta", text: "Hi" },
+        { kind: "finish", usage: { inputTokens: 120, outputTokens: 45 } },
+      ],
+    ]);
+
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+    const events = await collect(runtime.run({ ctx: makeCtx(), userMessage: "hi" }));
+
+    const finish = events.find((e) => e.type === "finish");
+    expect(finish).toBeDefined();
+    if (finish && finish.type === "finish") {
+      expect(finish.usage?.inputTokens).toBe(120);
+      expect(finish.usage?.outputTokens).toBe(45);
+    }
+
+    const usageItem = store.history.find((i) => i.kind === "usage");
+    expect(usageItem).toBeDefined();
+    if (usageItem && usageItem.kind === "usage") {
+      expect(usageItem.inputTokens).toBe(120);
+      expect(usageItem.outputTokens).toBe(45);
+    }
+  });
+
+  it("sums usage across multiple LLM steps in a tool loop", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        { kind: "tool-call", callId: "c1", toolName: "echo", input: { value: "x" } },
+        { kind: "finish", usage: { inputTokens: 100, outputTokens: 10 } },
+      ],
+      [
+        { kind: "text-delta", text: "Done" },
+        { kind: "finish", usage: { inputTokens: 50, outputTokens: 5 } },
+      ],
+    ]);
+
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+    const events = await collect(runtime.run({ ctx: makeCtx(), userMessage: "go" }));
+
+    const finish = events.find((e) => e.type === "finish");
+    expect(finish?.type === "finish" && finish.usage).toBeTruthy();
+    if (finish?.type === "finish" && finish.usage) {
+      expect(finish.usage.inputTokens).toBe(150);
+      expect(finish.usage.outputTokens).toBe(15);
+    }
+
+    const usageItems = store.history.filter((i) => i.kind === "usage");
+    expect(usageItems).toHaveLength(2);
+  });
+});
+
+describe("AgentRuntime — refusal telemetry (decision #117)", () => {
+  it("appends refusalDetected metadata when the model refuses medical advice without calling a tool", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        {
+          kind: "text-delta",
+          text:
+            "No te puedo asesorar sobre tu diabetes. Consultá con un profesional de la salud.",
+        },
+        { kind: "finish" },
+      ],
+    ]);
+
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+    await collect(
+      runtime.run({ ctx: makeCtx(), userMessage: "qué puedo comer si tengo diabetes" })
+    );
+
+    const metadata = store.history.find((i) => i.kind === "metadata");
+    expect(metadata).toBeDefined();
+    if (metadata && metadata.kind === "metadata") {
+      expect(metadata.refusalDetected).toBe(true);
+    }
+  });
+
+  it("does not append refusalDetected when the model calls a tool", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [{ kind: "tool-call", callId: "c1", toolName: "echo", input: { value: "hi" } }],
+      [
+        {
+          // Even if the post-tool ack contains a refusal-ish word, presence of a
+          // tool call this turn means it isn't a clean refusal.
+          kind: "text-delta",
+          text: "Done — you can talk to a healthcare professional if needed.",
+        },
+        { kind: "finish" },
+      ],
+    ]);
+
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+    await collect(runtime.run({ ctx: makeCtx(), userMessage: "use tool" }));
+
+    expect(store.history.find((i) => i.kind === "metadata")).toBeUndefined();
+  });
+
+  it("does not append refusalDetected for ordinary cooking prose", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        { kind: "text-delta", text: "I can help with that. " },
+        { kind: "text-delta", text: "What are you in the mood for?" },
+        { kind: "finish" },
+      ],
+    ]);
+
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+    await collect(runtime.run({ ctx: makeCtx(), userMessage: "hi" }));
+
+    expect(store.history.find((i) => i.kind === "metadata")).toBeUndefined();
+  });
+});
+
 describe("AgentRuntime — proactive filter (Layer A)", () => {
   it("does not surface Pro-gated tools to the LLM for a Free user", async () => {
     const store = new FakeStore();

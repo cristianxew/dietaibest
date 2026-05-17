@@ -11,6 +11,13 @@ import { toEntitlementError } from "@/lib/entitlement-error";
 import type { AgentContext, Locale } from "@/lib/chat/context";
 import { getRuntime } from "@/lib/chat/runtime-instance";
 import { resolveActiveConversation } from "@/lib/chat/conversation-prisma";
+import {
+  CHAT_COST_CAP_USD,
+  decideCostCap,
+  getMonthlyAiCostUsd,
+  isCostCapEnforced,
+  nextMonthResetDate,
+} from "@/lib/chat/cost-cap";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,6 +117,42 @@ export async function POST(req: NextRequest) {
   const encoder = new TextEncoder();
   const abort = new AbortController();
   req.signal.addEventListener("abort", () => abort.abort());
+
+  // DIE-38 cost cap. Derived per-user-per-month from Message.inputTokens /
+  // outputTokens. Shadow mode (flag off) only logs; enforcement (flag on)
+  // returns an SSE stream carrying a single cost.cap event so the client
+  // renders chat.costCap.reached without invoking the runtime / LLM.
+  const monthlyCostUsd = await getMonthlyAiCostUsd(prisma, user.id);
+  const capDecision = decideCostCap(
+    monthlyCostUsd,
+    CHAT_COST_CAP_USD,
+    isCostCapEnforced()
+  );
+  if (capDecision.reached) {
+    console.info(
+      `[chat:cost-cap] user=${user.id} monthlyCostUsd=${monthlyCostUsd.toFixed(4)} capUsd=${CHAT_COST_CAP_USD} enforced=${isCostCapEnforced()} block=${capDecision.shouldBlock}`
+    );
+  }
+  if (capDecision.shouldBlock) {
+    const resetsOn = nextMonthResetDate().toISOString();
+    const capStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode(sseEncode({ type: "cost.cap", resetsOn }))
+        );
+        controller.enqueue(encoder.encode(sseEncode({ type: "finish" })));
+        controller.close();
+      },
+    });
+    return new Response(capStream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
 
   const pendingResolve = resolve
     ? {

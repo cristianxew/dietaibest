@@ -193,6 +193,7 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
   };
 
   for (const item of items) {
+    if (item.kind === "metadata" || item.kind === "usage") continue;
     if (item.kind === "text") {
       if (item.role === "system") continue;
       if (item.role === "user") {

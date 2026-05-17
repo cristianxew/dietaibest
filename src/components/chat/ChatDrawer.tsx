@@ -52,8 +52,22 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
       success: () => t("status.success" as Parameters<typeof t>[0]) as string,
       deleted: () => t("confirm.deleted" as Parameters<typeof t>[0]) as string,
       cancelled: () => t("confirm.cancelled" as Parameters<typeof t>[0]) as string,
+      costCapReached: (resetsOnIso: string) => {
+        const reached = t("costCap.reached" as Parameters<typeof t>[0]) as string;
+        try {
+          const formatted = new Intl.DateTimeFormat(locale, {
+            dateStyle: "long",
+          }).format(new Date(resetsOnIso));
+          const resetsOn = t("costCap.resetsOn" as Parameters<typeof t>[0], {
+            date: formatted,
+          }) as string;
+          return `${reached} ${resetsOn}`;
+        } catch {
+          return reached;
+        }
+      },
     }),
-    [t]
+    [t, locale]
   );
 
   const { messages, isStreaming, send, clear } = useChatStream({

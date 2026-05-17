@@ -42,7 +42,7 @@ type AgentEvent =
       message: string;
       payload: unknown;
     }
-  | { type: "guardrail.redacted"; reason: "nutrition" | "medical" }
+  | { type: "guardrail.redacted"; reason: "nutrition" }
   | { type: "cost.cap"; resetsOn: string }
   | { type: "finish" }
   | { type: "error"; message: string };
@@ -57,6 +57,7 @@ interface UseChatStreamProps {
     success: () => string;
     deleted: () => string;
     cancelled: () => string;
+    costCapReached: (resetsOn: string) => string;
   };
 }
 
@@ -274,6 +275,15 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           content: {
             status: { state: "error", message: translate.guardrailRedacted() },
           },
+        });
+        break;
+      }
+      case "cost.cap": {
+        streamingTextIdRef.current = null;
+        appendMessage({
+          id: nextId(),
+          role: "agent",
+          content: { text: translate.costCapReached(event.resetsOn) },
         });
         break;
       }

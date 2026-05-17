@@ -41,6 +41,12 @@ export class PrismaConversationStore implements ConversationStore {
           conversationId,
           role: roleFor(item),
           content: item as unknown as Prisma.InputJsonValue,
+          // DIE-38: project usage tokens into queryable columns so the monthly
+          // cost cap can be derived with a plain SQL aggregate (no JSON path).
+          ...(item.kind === "usage" && {
+            inputTokens: item.inputTokens,
+            outputTokens: item.outputTokens,
+          }),
         })),
       }),
       this.prisma.conversation.update({
@@ -59,7 +65,10 @@ export class PrismaConversationStore implements ConversationStore {
 }
 
 function roleFor(item: ConversationTurnItem): string {
-  return item.kind === "text" ? item.role : item.kind;
+  if (item.kind === "text") return item.role;
+  if (item.kind === "metadata") return "metadata";
+  if (item.kind === "usage") return "usage";
+  return item.kind;
 }
 
 /**

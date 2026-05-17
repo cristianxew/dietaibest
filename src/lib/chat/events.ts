@@ -77,7 +77,7 @@ export type AgentEvent =
       message: string;
       payload: unknown;
     }
-  | { type: "guardrail.redacted"; reason: "nutrition" | "medical" }
+  | { type: "guardrail.redacted"; reason: "nutrition" }
   | { type: "cost.cap"; resetsOn: string }
   | { type: "finish"; usage?: { inputTokens: number; outputTokens: number } }
   | { type: "error"; message: string };

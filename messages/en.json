@@ -1165,6 +1165,10 @@
             "suggestion3Prompt": "Extract the recipe from this photo",
             "suggestion4Prompt": "Build me a 7-day meal plan around 1800 kcal"
         },
+        "proGate": {
+            "title": "Pro feature",
+            "cta": "Upgrade to use the assistant"
+        },
         "status": {
             "tool": {
                 "invoked": "Working…"

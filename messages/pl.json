@@ -1159,6 +1159,10 @@
             "suggestion3Prompt": "Wyekstrahuj przepis z tego zdjęcia",
             "suggestion4Prompt": "Zbuduj plan 7-dniowy na około 1800 kcal"
         },
+        "proGate": {
+            "title": "Funkcja Pro",
+            "cta": "Przejdź na Pro, aby użyć asystenta"
+        },
         "status": {
             "tool": {
                 "invoked": "Pracuję…"

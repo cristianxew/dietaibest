@@ -20,6 +20,16 @@ export type ConversationTurnItem =
       callId: string;
       toolName: string;
       result: unknown;
+    }
+  | {
+      kind: "metadata";
+      role: "assistant";
+      refusalDetected: true;
+    }
+  | {
+      kind: "usage";
+      inputTokens: number;
+      outputTokens: number;
     };
 
 /**

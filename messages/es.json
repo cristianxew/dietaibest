@@ -1164,6 +1164,10 @@
             "suggestion3Prompt": "Extraé la receta de esta foto",
             "suggestion4Prompt": "Armame un plan de 7 días alrededor de 1800 kcal"
         },
+        "proGate": {
+            "title": "Función Pro",
+            "cta": "Pasate a Pro para usar el asistente"
+        },
         "status": {
             "tool": {
                 "invoked": "Trabajando…"
