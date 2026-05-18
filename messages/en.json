@@ -1269,6 +1269,16 @@
         "error": {
             "stream": "Connection lost. Retrying…",
             "send": "Couldn't send the message. Try again."
-        }
+        },
+        "sessions": {
+            "title": "Conversations",
+            "newChat": "New chat",
+            "untitled": "New conversation",
+            "empty": "No previous conversations"
+        },
+        "session": {
+            "messages": "{count} messages"
+        },
+        "retry": "Retry"
     }
 }

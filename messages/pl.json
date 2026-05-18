@@ -1263,6 +1263,16 @@
         "error": {
             "stream": "Utracono połączenie. Ponawiam…",
             "send": "Nie udało się wysłać wiadomości. Spróbuj ponownie."
-        }
+        },
+        "sessions": {
+            "title": "Rozmowy",
+            "newChat": "Nowa rozmowa",
+            "untitled": "Nowa rozmowa",
+            "empty": "Brak poprzednich rozmów"
+        },
+        "session": {
+            "messages": "{count} wiadomości"
+        },
+        "retry": "Ponów"
     }
 }

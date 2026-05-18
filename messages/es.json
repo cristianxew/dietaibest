@@ -1268,6 +1268,16 @@
         "error": {
             "stream": "Se cortó la conexión. Reintentando…",
             "send": "No pude enviar el mensaje. Probá de nuevo."
-        }
+        },
+        "sessions": {
+            "title": "Conversaciones",
+            "newChat": "Nueva conversación",
+            "untitled": "Nueva conversación",
+            "empty": "No hay conversaciones anteriores"
+        },
+        "session": {
+            "messages": "{count} mensajes"
+        },
+        "retry": "Reintentar"
     }
 }
