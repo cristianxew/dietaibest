@@ -1,10 +1,8 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText, Output, type LanguageModel } from "ai";
+import { generateText, type LanguageModel } from "ai";
+import { z } from "zod";
 
-import {
-  importedRecipeSchema,
-  type ImportedRecipeData,
-} from "@/lib/ingest/imported-recipe-schema";
+import { type ImportedRecipeData } from "@/lib/ingest/imported-recipe-schema";
 
 // DIE-41 — Gemma 4 image-extraction provider. Lives INSIDE the
 // importRecipeFromImage tool, NOT in the orchestrator loop. The orchestrator
@@ -61,26 +59,80 @@ export interface ExtractRecipeArgs {
   locale?: "en" | "es" | "pl";
 }
 
-const PROMPT_BASE = `You are a kitchen assistant extracting a structured recipe from a single image. The image may be a cookbook page, a social-media screenshot, a restaurant chalkboard, a handwritten note, or a phone photo of a printed recipe.
+const PROMPT_BASE = `You are a kitchen assistant that extracts structured recipe data from images.
 
-Output a JSON object that conforms to the provided schema. Be precise:
+IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no explanation, no code blocks. Raw JSON only.
 
-- title: the dish's name as written. Trim quotation marks and ellipses.
-- ingredients: each line as { name, amount, unit }. Amount is a number (use 0 only if quantity is literally absent). Unit is the singular form ("cup", "tbsp", "g", "ml"). Keep ingredient names in the source language.
-- instructions: each step as one string in the source language. Skip section headers ("Preparation", "For the sauce").
-- servings: integer >= 1, only if explicitly stated.
-- prepTime / cookTime: integer minutes, only if explicitly stated.
-- description, cuisine, difficulty, tags, nutrition fields: omit entirely if not in the image.
+The JSON must have this exact shape:
+{
+  "title": "string (required — the dish name as written)",
+  "ingredients": [{ "name": "string", "amount": number, "unit": "string" }],
+  "instructions": ["string"],
+  "servings": number or omit,
+  "prepTime": number (minutes) or omit,
+  "cookTime": number (minutes) or omit,
+  "description": "string" or omit,
+  "cuisine": "string" or omit,
+  "difficulty": "easy" | "medium" | "hard" or omit,
+  "tags": ["string"] or omit
+}
 
-Do NOT invent ingredients or quantities. If the image clearly does not contain a recipe (e.g. landscape, person, food product label without instructions), return an empty ingredients array — the calling tool surfaces "no-ingredients" to the user.
-
-If multiple recipes appear in one image, extract only the most prominent one (largest, centered, or titled).`;
+Rules:
+- title: required, trim quotes and ellipses.
+- ingredients[].name: keep in the source language of the image.
+- ingredients[].amount: use 0 for "to taste" / "a pinch" / quantities absent.
+- ingredients[].unit: singular form ("cup", "tbsp", "g", "ml", "unit"). Use "unit" when no unit is stated.
+- instructions: one string per step. Skip section headers.
+- omit optional fields entirely when not stated in the image.
+- If the image does NOT contain a recipe (landscape, portrait, product label), return { "title": "", "ingredients": [], "instructions": [] }.
+- If multiple recipes appear, extract only the most prominent one.
+- Do NOT invent data. Only output what you can read in the image.`;
 
 const LOCALE_HINT: Record<NonNullable<ExtractRecipeArgs["locale"]>, string> = {
   en: "If the image is in another language, keep ingredient/instruction text in that language — the user picked an English UI but the recipe stays in its source language.",
   es: "Si la imagen está en otro idioma, mantené los ingredientes e instrucciones en ese idioma. El usuario eligió español pero la receta queda en su idioma fuente.",
   pl: "Jeśli obraz jest w innym języku, zachowaj składniki i instrukcje w tym języku. Użytkownik wybrał polski interfejs, ale przepis pozostaje w języku źródłowym.",
 };
+
+// Lenient schema for extraction — more permissive than the app-level schemas
+// because LLMs (especially vision models) produce noisy output:
+//   - amount >= 0 (Gemma uses 0 for "to taste"; the app schema requires > 0)
+//   - unit: allow empty string (Gemma may omit for items like "eggs")
+//   - title: allow empty (we map "" to no-ingredients later)
+const extractionIngredientSchema = z.object({
+  name: z.string(),
+  amount: z.number().min(0).default(0),
+  unit: z.string().default("unit"),
+});
+
+const extractionSchema = z.object({
+  title: z.string().default(""),
+  description: z.string().optional(),
+  prepTime: z.number().int().min(0).optional(),
+  cookTime: z.number().int().min(0).optional(),
+  servings: z.number().int().min(1).optional(),
+  difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+  ingredients: z.array(extractionIngredientSchema).default([]),
+  instructions: z.array(z.string()).default([]),
+  tags: z.array(z.string()).optional(),
+  cuisine: z.string().optional(),
+});
+
+// Pull a JSON object out of a model response that may include markdown fences
+// or surrounding prose. Throws if no valid JSON object is found.
+function extractJsonObject(text: string): unknown {
+  // Try ```json ... ``` or ``` ... ``` blocks first
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenceMatch ? fenceMatch[1].trim() : text.trim();
+
+  // Find the outermost { ... } span
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("No JSON object found in model response");
+  }
+  return JSON.parse(candidate.slice(start, end + 1));
+}
 
 export class GemmaProvider {
   private readonly model: LanguageModel;
@@ -104,11 +156,13 @@ export class GemmaProvider {
     const locale = args.locale ?? "en";
     const systemPrompt = `${PROMPT_BASE}\n\n${LOCALE_HINT[locale]}`;
 
-    let recipe: ImportedRecipeData;
+    // Use plain generateText — no native structured-output dependency.
+    // Gemma models on Gemini API don't reliably support JSON-mode enforcement,
+    // so we prompt-engineer the JSON shape and parse manually.
+    let raw: string;
     try {
       const result = await generateText({
         model: this.model,
-        output: Output.object({ schema: importedRecipeSchema }),
         system: systemPrompt,
         messages: [
           {
@@ -116,7 +170,7 @@ export class GemmaProvider {
             content: [
               {
                 type: "text",
-                text: "Extract the recipe from this image.",
+                text: "Extract the recipe from this image. Return raw JSON only.",
               },
               {
                 type: "image",
@@ -127,26 +181,38 @@ export class GemmaProvider {
           },
         ],
       });
-      recipe = result.output as ImportedRecipeData;
+      raw = result.text;
     } catch (err) {
-      // Schema mismatch (model returned malformed JSON) is the most common
-      // non-transient failure. Treat anything else as transient — the tool
-      // does not retry today (one-shot extraction is cheap to ask the user to
-      // retry manually), but the reason gives us per-error telemetry.
       const message = err instanceof Error ? err.message : String(err);
-      if (/schema|validation|parse/i.test(message)) {
-        throw new GemmaExtractionError(
-          "schema-mismatch",
-          `Gemma returned data that did not match the recipe schema: ${message}`,
-          { cause: err }
-        );
-      }
       throw new GemmaExtractionError(
         "transient",
-        `Gemma extraction failed: ${message}`,
+        `Gemma generation failed: ${message}`,
         { cause: err }
       );
     }
+
+    // Extract the JSON object from the response text.
+    // The model might wrap it in ```json ... ``` or return raw text.
+    let parsed: unknown;
+    try {
+      parsed = extractJsonObject(raw);
+    } catch {
+      throw new GemmaExtractionError(
+        "schema-mismatch",
+        `Gemma response contained no parseable JSON. Raw (first 200 chars): ${raw.slice(0, 200)}`
+      );
+    }
+
+    // Validate with a lenient extraction schema (amount >= 0, unit may be empty).
+    const validated = extractionSchema.safeParse(parsed);
+    if (!validated.success) {
+      throw new GemmaExtractionError(
+        "schema-mismatch",
+        `Gemma returned data that did not match the recipe schema: ${validated.error.message}`
+      );
+    }
+
+    let recipe: ImportedRecipeData = validated.data;
 
     // The schema accepts empty ingredients on purpose so the caller can map
     // it to a user-facing "no-ingredients" reason. Image-quality signal: if
