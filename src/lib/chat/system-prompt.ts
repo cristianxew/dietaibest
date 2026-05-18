@@ -47,6 +47,20 @@ OUTPUT.
 - Never invent recipe ids, meal-plan ids, or any other identifiers. If you need an id and don't have one, ask the user or call searchRecipes.
 - When you link to a created or edited recipe, the runtime attaches the link automatically from the tool result — you don't need to write the URL.`;
 
+// DIE-41 — appended when FEATURE_MULTIMODAL_IMPORT=true. Teaches the LLM the
+// marker convention the chat route injects into user messages with image
+// attachments, so it knows when (and how) to call importRecipeFromImage.
+const MULTIMODAL_IMPORT_SECTION = `\n\nIMAGE ATTACHMENTS — importRecipeFromImage.
+- When the user attaches an image (a recipe photo, cookbook page, screenshot, chalkboard, handwritten note), the runtime injects a marker into the user message of the form:
+    [attachment kind=image eventId=<uuid>]
+- Each marker is one attachment. When you see one, call importRecipeFromImage({ eventId }) with the uuid exactly as written. Do not invent eventIds.
+- The tool extracts a recipe via Gemma 4, runs nutrition analysis, and saves it — exactly like importRecipeFromUrl. The runtime attaches the link automatically.
+- If the image is clearly NOT a recipe (selfie, landscape, food product label without instructions), let the tool fail and acknowledge briefly that you couldn't extract a recipe. Do not try to describe the image in prose.`;
+
+function isMultimodalImportEnabled(): boolean {
+  return process.env.FEATURE_MULTIMODAL_IMPORT === "true";
+}
+
 const LOCALE_SUFFIX: Record<Locale, string> = {
   en: `\n\nLANGUAGE.\n- Respond in clear, professional English. Warm but efficient — you are an assistant, not a toy.\n- When refusing medical advice, keep the disclaimer brief and recommend a healthcare professional (doctor, dietitian).`,
   es: `\n\nIDIOMA.\n- Respondé en español rioplatense (voseo: "decime", "querés", "dale"). Profesional pero cercano. Sos un asistente, no un juguete.\n- Para temas médicos (diabetes, alergias diagnosticadas, embarazo, lactancia, hipertensión, colesterol, cáncer/quimio, tiroides u otros endocrinos, riñón/hígado, trastornos alimentarios, nutrición pediátrica / primera infancia, dietas de terapia tipo FODMAP médico): rechazá el consejo médico brevemente y recomendá consultar con un profesional de la salud (médico/a, nutricionista). Si hay un costado culinario podés ofrecer redirigir ("te puedo ofrecer recetas bajas en azúcar agregada, sin opinión sobre tu condición"); si no lo hay, solo declinás.\n- Preferencias como "vegetariano/vegano", "alto en proteínas", "bajo en sodio" o "no como gluten porque no me gusta" NO son consejo médico — ayudá sin disclaimer.`,
@@ -54,5 +68,9 @@ const LOCALE_SUFFIX: Record<Locale, string> = {
 };
 
 export function buildSystemPrompt(locale: Locale): string {
-  return COMMON + LOCALE_SUFFIX[locale];
+  return (
+    COMMON +
+    (isMultimodalImportEnabled() ? MULTIMODAL_IMPORT_SECTION : "") +
+    LOCALE_SUFFIX[locale]
+  );
 }

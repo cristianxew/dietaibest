@@ -1149,7 +1149,6 @@
         "clearConversation": "Limpiar conversación",
         "close": "Cerrar asistente",
         "send": "Enviar mensaje",
-        "attach": "Adjuntar imagen",
         "placeholder": "Decime qué querés cocinar…",
         "confirmClear": "¿Seguro? Esto cierra la conversación actual.",
         "empty": {
@@ -1220,6 +1219,16 @@
                 "skeletonFailed": "No pude armar la estructura del plan. Probá de nuevo con menos restricciones.",
                 "persistFailed": "No pude guardar el plan. Probá de nuevo en un momento.",
                 "planIncomplete": "Plan incompleto: fallaron {failed} de {total} comidas."
+            },
+            "extraction": {
+                "noIngredients": "No pude detectar ingredientes en la imagen. Probá otra foto más clara.",
+                "lowQuality": "La imagen no se ve lo suficientemente clara. Probá con mejor luz o más cerca.",
+                "unsupportedFormat": "Formato de imagen no soportado. Usá JPEG, PNG, WebP o HEIC.",
+                "schemaMismatch": "Leí la imagen pero no pude armar una receta estructurada. Probá con otra foto.",
+                "transient": "Algo salió mal leyendo la imagen. Probá de nuevo en un momento.",
+                "costCapDay": "Ya usaste tus 10 importaciones por imagen de hoy. Probá mañana.",
+                "eventNotFound": "Ese adjunto ya no está. Subí la imagen de nuevo y probá otra vez.",
+                "persistFailed": "Extraje la receta pero no la pude guardar. Probá de nuevo en un momento."
             }
         },
         "guardrail": {
@@ -1242,9 +1251,14 @@
             "cancelled": "Cancelado"
         },
         "attach": {
+            "label": "Adjuntar imagen",
             "maxSize": "El archivo es demasiado grande (máximo 10 MB).",
             "unsupportedFormat": "Formato de archivo no soportado.",
-            "dropImage": "Soltá la imagen acá"
+            "dropImage": "Soltá la imagen acá",
+            "uploading": "Subiendo…",
+            "failed": "No pude subir la imagen. Probá de nuevo.",
+            "remove": "Quitar adjunto",
+            "delete": "Eliminar imagen"
         },
         "link": {
             "recipe": "Ver receta",

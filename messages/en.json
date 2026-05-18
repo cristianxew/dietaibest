@@ -1150,7 +1150,6 @@
         "clearConversation": "Clear conversation",
         "close": "Close assistant",
         "send": "Send message",
-        "attach": "Attach image",
         "placeholder": "Tell me what you want to cook…",
         "confirmClear": "Sure? This closes the current conversation.",
         "empty": {
@@ -1221,6 +1220,16 @@
                 "skeletonFailed": "I couldn't draft the plan structure. Try again with fewer constraints.",
                 "persistFailed": "I couldn't save the plan. Try again in a moment.",
                 "planIncomplete": "Plan incomplete: {failed} of {total} slots failed."
+            },
+            "extraction": {
+                "noIngredients": "I couldn't detect ingredients in the image. Try a clearer photo.",
+                "lowQuality": "The image isn't clear enough to read. Try better lighting or a closer shot.",
+                "unsupportedFormat": "Unsupported image format. Use JPEG, PNG, WebP, or HEIC.",
+                "schemaMismatch": "I read the image but couldn't structure it as a recipe. Try another photo.",
+                "transient": "Something went wrong reading the image. Try again in a moment.",
+                "costCapDay": "You've used your 10 image imports for today. Try again tomorrow.",
+                "eventNotFound": "I couldn't find that attachment anymore. Re-upload and try again.",
+                "persistFailed": "I extracted the recipe but couldn't save it. Try again in a moment."
             }
         },
         "guardrail": {
@@ -1243,9 +1252,14 @@
             "cancelled": "Cancelled"
         },
         "attach": {
+            "label": "Attach image",
             "maxSize": "File is too large (max 10 MB).",
             "unsupportedFormat": "Unsupported file format.",
-            "dropImage": "Drop image here"
+            "dropImage": "Drop image here",
+            "uploading": "Uploading…",
+            "failed": "Couldn't upload the image. Try again.",
+            "remove": "Remove attachment",
+            "delete": "Delete image"
         },
         "link": {
             "recipe": "View recipe",

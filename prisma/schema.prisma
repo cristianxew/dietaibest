@@ -33,6 +33,7 @@ model User {
   shoppingPreferences ShoppingPreferences? // User's shopping automation preferences
   storeCredentials    StoreCredential[] // Per-store encrypted credentials for auto-login
   conversations       Conversation[] // In-app AI chat conversations
+  multimodalImports   MultimodalImportEvent[] // DIE-41 image-based recipe imports
 }
 
 model UserProfile {
@@ -109,6 +110,7 @@ model Recipe {
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
   edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
   mealPlanMeals     MealPlanMeal[] // Usage in meal plans
+  multimodalImports MultimodalImportEvent[] // DIE-41 image-based imports that produced this recipe
 }
 
 model RecipeCategory {
@@ -364,8 +366,9 @@ model Conversation {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          Message[]
+  multimodalImports MultimodalImportEvent[]
 
   @@index([userId, archivedAt])
 }
@@ -382,8 +385,55 @@ model Message {
   inputTokens  Int?
   outputTokens Int?
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  // DIE-41 attachments. Array of { kind: "image", mediaRef, eventId }. Null for
+  // text-only messages. Populated on user messages that carry an upload.
+  attachments Json?
+
+  conversation      Conversation            @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  multimodalImports MultimodalImportEvent[]
 
   @@index([conversationId, createdAt])
   @@index([createdAt])
+}
+
+// ============================================================================
+// AI Chat Agent — Multimodal Imports (DIE-41)
+// ============================================================================
+// Tracks every image upload + extraction attempt by the in-app chat agent.
+// Two purposes: (1) per-user daily cap (count rows for userId where createdAt
+// >= startOfDay), (2) Supabase Storage retention cleanup (cron deletes blob
+// 7d post-success, 30d post-failure, then sets deletedAt).
+//
+// Storage path scheme: {userId}/{eventId}/{filename}. eventId is the row id,
+// generated at upload time — eliminates the need for conversationId/messageId
+// in the path (those are filled AFTER the message is sent and are nullable).
+
+model MultimodalImportEvent {
+  id             String  @id @default(uuid())
+  userId         String
+  conversationId String? // filled when the message carrying this upload is persisted
+  messageId      String? // filled when the message carrying this upload is persisted
+  recipeId       String? // filled on successful extraction + persist
+
+  kind      String // "image" (audio reserved for v1.1)
+  mediaPath String // Supabase Storage path: {userId}/{id}/{filename}
+  mimeType  String // image/jpeg | image/png | image/webp | image/heic
+  sizeBytes Int
+
+  outcome String // "pending" | "success" | "failure"
+  reason  String? // failure reason: "no-ingredients" | "low-quality" | "unsupported-format" | "cost-cap-day" | ...
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime? // set when the tool finishes (success or failure)
+  deletedAt   DateTime? // set when bucket blob is wiped (cron or user-initiated)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  recipe       Recipe?       @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt]) // daily cap query
+  @@index([outcome, processedAt]) // success cleanup (outcome=success AND processedAt < now - 7d)
+  @@index([outcome, createdAt]) // failure cleanup (outcome=failure AND createdAt < now - 30d)
+  @@index([deletedAt])
 }

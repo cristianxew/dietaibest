@@ -42,6 +42,9 @@ const PUBLIC_API_ROUTES = [
   "/api/fdc",
   // Stripe webhooks are authenticated via signature, not session cookie.
   "/api/webhooks/stripe",
+  // DIE-41 — cron endpoints authenticated via CRON_SECRET bearer header
+  // (called by GitHub Actions), not by user session.
+  "/api/cron",
 ];
 
 // Create the intl middleware

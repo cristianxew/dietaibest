@@ -7,7 +7,7 @@ import { ChatHeader } from "./ChatHeader";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessage } from "./ChatMessage";
 import { EmptyChat } from "./EmptyChat";
-import { useChatStream } from "./useChatStream";
+import { useChatStream, type PendingAttachment } from "./useChatStream";
 
 interface ChatDrawerProps {
   onClose: () => void;
@@ -89,10 +89,10 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
   }, [clear, t]);
 
   const handleSend = useCallback(
-    async (text: string) => {
+    async (text: string, attachment?: PendingAttachment) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
-      await send(trimmed);
+      if (!trimmed && !attachment) return;
+      await send(trimmed, attachment);
     },
     [send]
   );

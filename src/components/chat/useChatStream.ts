@@ -61,10 +61,21 @@ interface UseChatStreamProps {
   };
 }
 
+/** DIE-41 — single image attachment that the chat composer uploaded and is
+ * about to attach to the next user message. */
+export interface PendingAttachment {
+  eventId: string;
+  kind: "image";
+  /** Local blob URL for in-session rendering. Won't survive page reload. */
+  previewUrl: string;
+  /** Original file name for the user-message bubble. */
+  name: string;
+}
+
 interface UseChatStreamResult {
   messages: ChatMessageProps[];
   isStreaming: boolean;
-  send: (text: string) => Promise<void>;
+  send: (text: string, attachment?: PendingAttachment) => Promise<void>;
   resolveConfirm: (
     callId: string,
     toolName: string,
@@ -81,6 +92,15 @@ const nextId = () => `m-${++messageIdCounter}-${Date.now()}`;
 function statusKeyToI18n(key: string): string {
   // "recipe.creating" → "chat.status.recipe.creating"
   return `chat.status.${key}`;
+}
+
+// DIE-41 — strip [attachment kind=... eventId=...] markers from persisted
+// user-message text before rendering. The markers are injected by the chat
+// route for the LLM's benefit; users should never see them in the UI.
+const ATTACHMENT_MARKER_RE = /\s*\[attachment[^\]]+\]\s*/g;
+
+function stripAttachmentMarkers(text: string): string {
+  return text.replace(ATTACHMENT_MARKER_RE, " ").trim();
 }
 
 export function useChatStream({ locale, translate }: UseChatStreamProps): UseChatStreamResult {
@@ -305,11 +325,36 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   }, []);
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, attachment?: PendingAttachment) => {
+      const userMsgId = nextId();
+      const deleteAttachmentBlob = attachment
+        ? async () => {
+            try {
+              await fetch(`/api/chat/attachment/${attachment.eventId}`, {
+                method: "DELETE",
+              });
+            } catch {
+              /* swallow — UI removes preview optimistically below */
+            }
+            updateMessage(userMsgId, (prev) => ({
+              ...prev,
+              content: { ...prev.content, attachment: undefined },
+            }));
+          }
+        : undefined;
       const userMsg: ChatMessageProps = {
-        id: nextId(),
+        id: userMsgId,
         role: "user",
-        content: { text },
+        content: {
+          text,
+          ...(attachment && {
+            attachment: {
+              url: attachment.previewUrl,
+              name: attachment.name,
+              onDelete: deleteAttachmentBlob,
+            },
+          }),
+        },
       };
       appendMessage(userMsg);
       setIsStreaming(true);
@@ -317,7 +362,13 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, locale }),
+          body: JSON.stringify({
+            message: text,
+            locale,
+            ...(attachment && {
+              attachments: [{ eventId: attachment.eventId, kind: attachment.kind }],
+            }),
+          }),
         });
         if (!res.ok) {
           const payload = await res.json().catch(() => ({}));
@@ -394,7 +445,11 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       const hydrated: ChatMessageProps[] = [];
       for (const m of payload.messages) {
         if (m.kind === "user") {
-          hydrated.push({ id: m.id, role: "user", content: { text: m.text ?? "" } });
+          hydrated.push({
+            id: m.id,
+            role: "user",
+            content: { text: stripAttachmentMarkers(m.text ?? "") },
+          });
         } else if (m.kind === "assistant") {
           hydrated.push({ id: m.id, role: "agent", content: { text: m.text ?? "" } });
         } else if (m.kind === "tool") {

@@ -7,6 +7,7 @@ import { editRecipe } from "./editRecipe";
 import { deleteRecipe } from "./deleteRecipe";
 import { getNutrition } from "./getNutrition";
 import { importRecipeFromUrl } from "./importRecipeFromUrl";
+import { importRecipeFromImage } from "./importRecipeFromImage";
 import { searchMealPlans } from "./searchMealPlans";
 import { getMealPlan } from "./getMealPlan";
 import { addMealToDay } from "./addMealToDay";
@@ -16,6 +17,14 @@ import { removeMealFromDay } from "./removeMealFromDay";
 import { generateMealPlan } from "./generateMealPlan";
 
 export type { Tool, ToolResult, AnyTool } from "./types";
+
+// DIE-41: gate importRecipeFromImage behind FEATURE_MULTIMODAL_IMPORT. Ship
+// the full infra OFF; flip the flag once the 20-item Gemma quality eval clears
+// the >=80%/>=70% bar (tests/eval/gemma-image-import.ts). When the flag is
+// false the tool isn't even in the registry, so the LLM never sees it.
+function isMultimodalImportEnabled(): boolean {
+  return process.env.FEATURE_MULTIMODAL_IMPORT === "true";
+}
 
 /**
  * Source of truth for every tool the agent can call. Each tool is a plain
@@ -30,6 +39,7 @@ export const allTools: ReadonlyArray<AnyTool> = [
   deleteRecipe,
   getNutrition,
   importRecipeFromUrl,
+  ...(isMultimodalImportEnabled() ? [importRecipeFromImage] : []),
   searchMealPlans,
   getMealPlan,
   addMealToDay,

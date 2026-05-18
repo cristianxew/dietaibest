@@ -1144,7 +1144,6 @@
         "clearConversation": "Wyczyść rozmowę",
         "close": "Zamknij asystenta",
         "send": "Wyślij wiadomość",
-        "attach": "Załącz obraz",
         "placeholder": "Powiedz, co chcesz ugotować…",
         "confirmClear": "Na pewno? To zamknie obecną rozmowę.",
         "empty": {
@@ -1215,6 +1214,16 @@
                 "skeletonFailed": "Nie udało się zaplanować struktury planu. Spróbuj z mniejszą liczbą ograniczeń.",
                 "persistFailed": "Nie udało się zapisać planu. Spróbuj ponownie za chwilę.",
                 "planIncomplete": "Plan niekompletny: nieudane {failed} z {total} posiłków."
+            },
+            "extraction": {
+                "noIngredients": "Nie udało się wykryć składników na obrazie. Spróbuj wyraźniejszego zdjęcia.",
+                "lowQuality": "Obraz nie jest wystarczająco wyraźny. Spróbuj lepszego oświetlenia lub bliższego kadru.",
+                "unsupportedFormat": "Niewspierany format obrazu. Użyj JPEG, PNG, WebP lub HEIC.",
+                "schemaMismatch": "Odczytałem obraz, ale nie udało się go zorganizować jako przepis. Spróbuj innego zdjęcia.",
+                "transient": "Coś poszło nie tak podczas odczytu obrazu. Spróbuj ponownie za chwilę.",
+                "costCapDay": "Wykorzystałeś dziś 10 importów obrazów. Spróbuj jutro.",
+                "eventNotFound": "Nie mogę już znaleźć tego załącznika. Prześlij obraz ponownie.",
+                "persistFailed": "Wyciągnąłem przepis, ale nie udało się go zapisać. Spróbuj ponownie za chwilę."
             }
         },
         "guardrail": {
@@ -1237,9 +1246,14 @@
             "cancelled": "Anulowano"
         },
         "attach": {
+            "label": "Załącz obraz",
             "maxSize": "Plik jest za duży (maks. 10 MB).",
             "unsupportedFormat": "Niewspierany format pliku.",
-            "dropImage": "Upuść obraz tutaj"
+            "dropImage": "Upuść obraz tutaj",
+            "uploading": "Wysyłanie…",
+            "failed": "Nie udało się wysłać obrazu. Spróbuj ponownie.",
+            "remove": "Usuń załącznik",
+            "delete": "Usuń obraz"
         },
         "link": {
             "recipe": "Zobacz przepis",

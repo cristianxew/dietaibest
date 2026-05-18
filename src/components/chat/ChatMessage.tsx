@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import { Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ChatStatus, StatusState } from "./ChatStatus";
 import { ToolResultLink, LinkType } from "./ToolResultLink";
@@ -13,6 +15,10 @@ export interface MessageContent {
   attachment?: {
     url: string;
     name?: string;
+    /** DIE-41 — set when the user can request immediate deletion of the
+     * underlying bucket blob (the chat-recipe-media object). When `onDelete`
+     * is provided, the UI renders a trash button on the preview. */
+    onDelete?: () => Promise<void> | void;
   };
   status?: {
     state: StatusState;
@@ -38,6 +44,7 @@ export interface ChatMessageProps {
 }
 
 export function ChatMessage({ role, content }: ChatMessageProps) {
+  const t = useTranslations("chat");
   if (role === "system") {
     return (
       <div className="flex flex-col items-center justify-center my-4">
@@ -62,12 +69,22 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
       >
         {/* Attachment preview for user message */}
         {isUser && content.attachment && (
-          <div className="mb-1 rounded-xl overflow-hidden border border-border max-w-[200px]">
-            <img 
-              src={content.attachment.url} 
-              alt={content.attachment.name || "Attachment"} 
+          <div className="mb-1 relative rounded-xl overflow-hidden border border-border max-w-[200px] group">
+            <img
+              src={content.attachment.url}
+              alt={content.attachment.name || "Attachment"}
               className="w-full h-auto object-cover"
             />
+            {content.attachment.onDelete && (
+              <button
+                onClick={() => content.attachment?.onDelete?.()}
+                aria-label={t("attach.delete")}
+                title={t("attach.delete")}
+                className="absolute top-1 right-1 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-black/80 transition-opacity"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
           </div>
         )}
 
