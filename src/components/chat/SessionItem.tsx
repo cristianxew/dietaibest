@@ -71,7 +71,7 @@ export function SessionItem({
           onDelete(id);
         }}
         disabled={isDeleting}
-        aria-label={t("sessions.untitled")}
+        aria-label={t("sessions.delete")}
         className={cn(
           "absolute top-2.5 right-2 p-1.5 rounded-md transition-all",
           "opacity-0 group-hover:opacity-100",

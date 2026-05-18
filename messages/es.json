@@ -1273,7 +1273,8 @@
             "title": "Conversaciones",
             "newChat": "Nueva conversación",
             "untitled": "Nueva conversación",
-            "empty": "No hay conversaciones anteriores"
+            "empty": "No hay conversaciones anteriores",
+            "delete": "Eliminar conversación"
         },
         "session": {
             "messages": "{count} mensajes"

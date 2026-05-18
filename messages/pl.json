@@ -1268,7 +1268,8 @@
             "title": "Rozmowy",
             "newChat": "Nowa rozmowa",
             "untitled": "Nowa rozmowa",
-            "empty": "Brak poprzednich rozmów"
+            "empty": "Brak poprzednich rozmów",
+            "delete": "Usuń rozmowę"
         },
         "session": {
             "messages": "{count} wiadomości"

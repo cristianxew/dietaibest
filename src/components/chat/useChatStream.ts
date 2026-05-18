@@ -84,6 +84,10 @@ interface UseChatStreamResult {
   ) => Promise<void>;
   clear: () => Promise<void>;
   hydrate: () => Promise<void>;
+  retry: () => Promise<void>;
+  canRetry: boolean;
+  switchSession: (sessionId: string) => Promise<void>;
+  createSession: () => Promise<void>;
 }
 
 let messageIdCounter = 0;
@@ -103,11 +107,55 @@ function stripAttachmentMarkers(text: string): string {
   return text.replace(ATTACHMENT_MARKER_RE, " ").trim();
 }
 
+type RawMessage = {
+  role?: string;
+  kind?: string;
+  id: string;
+  text?: string;
+  toolName?: string;
+  ok?: boolean;
+  link?: { type: LinkType; href: string; label: string };
+};
+
+function hydrateMessages(
+  msgs: RawMessage[],
+  translate: UseChatStreamProps["translate"]
+): ChatMessageProps[] {
+  const hydrated: ChatMessageProps[] = [];
+  for (const m of msgs) {
+    const kind = (m as { kind?: string }).kind ?? m.role;
+    if (kind === "user") {
+      hydrated.push({
+        id: m.id,
+        role: "user",
+        content: { text: stripAttachmentMarkers(m.text ?? "") },
+      });
+    } else if (kind === "assistant") {
+      hydrated.push({ id: m.id, role: "agent", content: { text: m.text ?? "" } });
+    } else if (kind === "tool") {
+      const content: MessageContent = {
+        status: {
+          state: (m.ok ? "success" : "error") as StatusState,
+          message: m.ok ? translate.success() : translate.error("generic"),
+        },
+        ...(m.link && { link: { type: m.link.type, href: m.link.href, label: m.link.label } }),
+      };
+      hydrated.push({ id: m.id, role: "agent", content });
+    }
+  }
+  return hydrated;
+}
+
 export function useChatStream({ locale, translate }: UseChatStreamProps): UseChatStreamResult {
   const [messages, setMessages] = useState<ChatMessageProps[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
   const streamingTextIdRef = useRef<string | null>(null);
+
+  // For retry
+  const lastUserInputRef = useRef<{ text: string; attachment?: PendingAttachment } | null>(null);
+  const messagesBeforeLastSendRef = useRef<number>(0);
+  const [hasLastInput, setHasLastInput] = useState(false);
 
   const appendMessage = useCallback((msg: ChatMessageProps) => {
     setMessages((prev) => [...prev, msg]);
@@ -326,6 +374,9 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
 
   const send = useCallback(
     async (text: string, attachment?: PendingAttachment) => {
+      messagesBeforeLastSendRef.current = messages.length;
+      lastUserInputRef.current = { text, attachment };
+      setHasLastInput(true);
       const userMsgId = nextId();
       const deleteAttachmentBlob = attachment
         ? async () => {
@@ -393,7 +444,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         streamingTextIdRef.current = null;
       }
     },
-    [appendMessage, consumeStream, locale, translate]
+    [appendMessage, consumeStream, locale, messages, translate]
   );
 
   const resolveConfirm = useCallback(
@@ -426,6 +477,8 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     setMessages([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
+    lastUserInputRef.current = null;
+    setHasLastInput(false);
     await fetch("/api/chat/conversation", { method: "DELETE" });
   }, []);
 
@@ -433,40 +486,53 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     try {
       const res = await fetch("/api/chat/conversation");
       if (!res.ok) return;
-      const payload = (await res.json()) as {
-        messages: Array<{
-          kind: "user" | "assistant" | "tool";
-          id: string;
-          text?: string;
-          toolName?: string;
-          ok?: boolean;
-        }>;
-      };
-      const hydrated: ChatMessageProps[] = [];
-      for (const m of payload.messages) {
-        if (m.kind === "user") {
-          hydrated.push({
-            id: m.id,
-            role: "user",
-            content: { text: stripAttachmentMarkers(m.text ?? "") },
-          });
-        } else if (m.kind === "assistant") {
-          hydrated.push({ id: m.id, role: "agent", content: { text: m.text ?? "" } });
-        } else if (m.kind === "tool") {
-          const content: MessageContent = {
-            status: {
-              state: (m.ok ? "success" : "error") as StatusState,
-              message: m.ok ? translate.success() : translate.error("generic"),
-            },
-          };
-          hydrated.push({ id: m.id, role: "agent", content });
-        }
-      }
-      setMessages(hydrated);
+      const payload = (await res.json()) as { messages: RawMessage[] };
+      setMessages(hydrateMessages(payload.messages, translate));
     } catch {
       /* swallow — empty state is fine */
     }
   }, [translate]);
+
+  const retry = useCallback(async () => {
+    if (!lastUserInputRef.current || isStreaming) return;
+    const input = lastUserInputRef.current;
+
+    // Delete last turn from DB
+    const res = await fetch("/api/chat/conversation/last-turn", { method: "DELETE" });
+    if (!res.ok) return;
+
+    // Remove messages added during the last send from local state
+    setMessages((prev) => prev.slice(0, messagesBeforeLastSendRef.current));
+    callIdToMessageIdRef.current.clear();
+    streamingTextIdRef.current = null;
+
+    // Re-send
+    await send(input.text, input.attachment);
+  }, [isStreaming, send]);
+
+  const switchSession = useCallback(async (sessionId: string) => {
+    // Clear local state
+    setMessages([]);
+    callIdToMessageIdRef.current.clear();
+    streamingTextIdRef.current = null;
+    lastUserInputRef.current = null;
+    setHasLastInput(false);
+
+    // Activate session on server + get its messages in one round-trip
+    const res = await fetch(`/api/chat/sessions/${sessionId}`, { method: "PUT" });
+    if (!res.ok) return;
+    const payload = await res.json() as { ok: boolean; messages: RawMessage[] };
+    setMessages(hydrateMessages(payload.messages, translate));
+  }, [translate]);
+
+  const createSession = useCallback(async () => {
+    setMessages([]);
+    callIdToMessageIdRef.current.clear();
+    streamingTextIdRef.current = null;
+    lastUserInputRef.current = null;
+    setHasLastInput(false);
+    await fetch("/api/chat/sessions", { method: "POST" });
+  }, []);
 
   // Hydrate on first mount.
   useEffect(() => {
@@ -474,5 +540,16 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { messages, isStreaming, send, resolveConfirm, clear, hydrate };
+  return {
+    messages,
+    isStreaming,
+    send,
+    resolveConfirm,
+    clear,
+    hydrate,
+    retry,
+    canRetry: hasLastInput && !isStreaming,
+    switchSession,
+    createSession,
+  };
 }

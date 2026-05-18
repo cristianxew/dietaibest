@@ -1274,7 +1274,8 @@
             "title": "Conversations",
             "newChat": "New chat",
             "untitled": "New conversation",
-            "empty": "No previous conversations"
+            "empty": "No previous conversations",
+            "delete": "Delete conversation"
         },
         "session": {
             "messages": "{count} messages"
