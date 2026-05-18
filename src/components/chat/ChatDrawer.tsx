@@ -7,6 +7,7 @@ import { ChatHeader } from "./ChatHeader";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessage } from "./ChatMessage";
 import { EmptyChat } from "./EmptyChat";
+import { SessionList } from "./SessionList";
 import { useChatStream, type PendingAttachment } from "./useChatStream";
 
 interface ChatDrawerProps {
@@ -70,7 +71,9 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
     [t, locale]
   );
 
-  const { messages, isStreaming, send, clear } = useChatStream({
+  const [sessionsOpen, setSessionsOpen] = useState(false);
+
+  const { messages, isStreaming, send, clear, retry, canRetry, switchSession, createSession } = useChatStream({
     locale,
     translate,
   });
@@ -101,9 +104,26 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
     setComposerInitial(text);
   }, []);
 
+  const lastUserMsgIndex = messages.reduce(
+    (acc, _m, i) => (messages[i].role === "user" ? i : acc),
+    -1
+  );
+
   return (
-    <div className="flex flex-col h-full w-full">
-      <ChatHeader onClose={onClose} onClear={handleClear} />
+    <div className="flex flex-col h-full w-full relative">
+      <SessionList
+        isOpen={sessionsOpen}
+        onClose={() => setSessionsOpen(false)}
+        onSessionSelect={(id) => { switchSession(id); setSessionsOpen(false); }}
+        onNewChat={() => { createSession(); setSessionsOpen(false); }}
+        locale={locale}
+      />
+
+      <ChatHeader
+        onClose={onClose}
+        onClear={handleClear}
+        onToggleSessions={() => setSessionsOpen((p) => !p)}
+      />
 
       <div
         ref={scrollRef}
@@ -114,8 +134,13 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
           <EmptyChat onSuggestionClick={handleSuggestionClick} />
         ) : (
           <div className="flex flex-col space-y-2">
-            {messages.map((msg) => (
-              <ChatMessage key={msg.id} {...msg} />
+            {messages.map((msg, i) => (
+              <ChatMessage
+                key={msg.id}
+                {...msg}
+                isLastUserMessage={i === lastUserMsgIndex}
+                onRetry={canRetry ? retry : undefined}
+              />
             ))}
           </div>
         )}

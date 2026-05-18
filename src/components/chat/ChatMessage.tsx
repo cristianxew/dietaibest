@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ChatStatus, StatusState } from "./ChatStatus";
@@ -41,9 +41,11 @@ export interface ChatMessageProps {
   id: string;
   role: MessageRole;
   content: MessageContent;
+  isLastUserMessage?: boolean;
+  onRetry?: () => void;
 }
 
-export function ChatMessage({ role, content }: ChatMessageProps) {
+export function ChatMessage({ role, content, isLastUserMessage, onRetry }: ChatMessageProps) {
   const t = useTranslations("chat");
   if (role === "system") {
     return (
@@ -100,6 +102,17 @@ export function ChatMessage({ role, content }: ChatMessageProps) {
           >
             {content.text}
           </div>
+        )}
+
+        {/* Retry button — only on last user message */}
+        {isUser && isLastUserMessage && onRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-1 p-1 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+            aria-label={t("retry")}
+          >
+            <RotateCcw size={12} /> {t("retry")}
+          </button>
         )}
 
         {/* Status indicator */}
