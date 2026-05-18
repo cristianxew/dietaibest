@@ -41,7 +41,7 @@ export function SessionList({
       const res = await fetch("/api/chat/sessions");
       if (res.ok) {
         const data = await res.json();
-        setSessions(data);
+        setSessions(data.sessions);
       }
     } finally {
       setIsLoading(false);
@@ -115,7 +115,7 @@ export function SessionList({
         <div className="flex-1 overflow-y-auto relative z-10">
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <span className="text-xs text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">…</span>
             </div>
           ) : sessions.length === 0 ? (
             <p className="text-xs text-muted-foreground text-center py-8">
@@ -127,10 +127,7 @@ export function SessionList({
                 key={s.id}
                 {...s}
                 locale={locale}
-                onActivate={(id) => {
-                  onSessionSelect(id);
-                  onClose();
-                }}
+                onActivate={onSessionSelect}
                 onDelete={handleDelete}
                 isDeleting={deletingId === s.id}
               />

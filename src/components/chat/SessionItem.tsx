@@ -60,7 +60,7 @@ export function SessionItem({
             {relativeDate(updatedAt, locale)}
           </span>
           <span className="text-xs text-muted-foreground">
-            {messageCount} {t("session.messages")}
+            {t("session.messages", { count: messageCount })}
           </span>
         </div>
       </button>

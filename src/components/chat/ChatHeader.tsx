@@ -18,7 +18,7 @@ export function ChatHeader({ onClose, onClear, onToggleSessions }: ChatHeaderPro
         <button
           onClick={onToggleSessions}
           className="p-2 text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
-          aria-label="Sessions"
+          aria-label={t("sessions.title")}
         >
           <LayoutList size={18} />
         </button>

@@ -496,13 +496,15 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   const retry = useCallback(async () => {
     if (!lastUserInputRef.current || isStreaming) return;
     const input = lastUserInputRef.current;
+    const targetLength = messagesBeforeLastSendRef.current;
 
     // Delete last turn from DB
     const res = await fetch("/api/chat/conversation/last-turn", { method: "DELETE" });
     if (!res.ok) return;
 
-    // Remove messages added during the last send from local state
-    setMessages((prev) => prev.slice(0, messagesBeforeLastSendRef.current));
+    // Update ref BEFORE send so send uses the correct snapshot
+    messagesBeforeLastSendRef.current = targetLength;
+    setMessages((prev) => prev.slice(0, targetLength));
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
 
