@@ -38,7 +38,7 @@ export class PrismaConversationStore implements ConversationStore {
 
     const firstUserItem = items.find(
       (item): item is ConversationTurnItem & { kind: "text"; text: string } =>
-        item.kind === "text" && (item as { role?: string }).role === "user"
+        item.kind === "text" && item.role === "user"
     );
     const firstUserText = firstUserItem ? firstUserItem.text : null;
 
@@ -60,10 +60,14 @@ export class PrismaConversationStore implements ConversationStore {
         where: { id: conversationId },
         data: { updatedAt: new Date() },
       }),
-      this.prisma.conversation.updateMany({
-        where: { id: conversationId, title: null },
-        data: { title: firstUserText !== null ? firstUserText.substring(0, 60) : null },
-      }),
+      ...(firstUserText !== null
+        ? [
+            this.prisma.conversation.updateMany({
+              where: { id: conversationId, title: null },
+              data: { title: firstUserText.substring(0, 60) },
+            }),
+          ]
+        : []),
     ]);
   }
 
@@ -179,8 +183,8 @@ export async function activateSession(
       where: { userId, archivedAt: null },
       data: { archivedAt: new Date() },
     }),
-    prisma.conversation.update({
-      where: { id: targetId },
+    prisma.conversation.updateMany({
+      where: { id: targetId, userId },
       data: { archivedAt: null },
     }),
   ]);
