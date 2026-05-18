@@ -35,6 +35,13 @@ export class PrismaConversationStore implements ConversationStore {
     items: ConversationTurnItem[]
   ): Promise<void> {
     if (items.length === 0) return;
+
+    const firstUserItem = items.find(
+      (item): item is ConversationTurnItem & { kind: "text"; text: string } =>
+        item.kind === "text" && (item as { role?: string }).role === "user"
+    );
+    const firstUserText = firstUserItem ? firstUserItem.text : null;
+
     await this.prisma.$transaction([
       this.prisma.message.createMany({
         data: items.map((item) => ({
@@ -52,6 +59,10 @@ export class PrismaConversationStore implements ConversationStore {
       this.prisma.conversation.update({
         where: { id: conversationId },
         data: { updatedAt: new Date() },
+      }),
+      this.prisma.conversation.updateMany({
+        where: { id: conversationId, title: null },
+        data: { title: firstUserText !== null ? firstUserText.substring(0, 60) : null },
       }),
     ]);
   }
@@ -111,4 +122,116 @@ function isUniqueViolation(err: unknown): boolean {
     "code" in err &&
     (err as { code?: string }).code === "P2002"
   );
+}
+
+/**
+ * Returns all conversations for a user ordered by most-recently-updated first.
+ * `isActive` is true for the single conversation where archivedAt IS NULL.
+ */
+export async function listSessionsForUser(
+  prisma: PrismaClient,
+  userId: string
+): Promise<
+  Array<{
+    id: string;
+    title: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    messageCount: number;
+    isActive: boolean;
+  }>
+> {
+  const rows = await prisma.conversation.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+      archivedAt: true,
+      _count: { select: { messages: true } },
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    messageCount: row._count.messages,
+    isActive: row.archivedAt === null,
+  }));
+}
+
+/**
+ * Makes `targetId` the active conversation for `userId`.
+ * Archives whatever is currently active first (uses updateMany so no error is
+ * thrown if there is no current active session), then unarchives the target.
+ */
+export async function activateSession(
+  prisma: PrismaClient,
+  userId: string,
+  targetId: string
+): Promise<void> {
+  await prisma.$transaction([
+    prisma.conversation.updateMany({
+      where: { userId, archivedAt: null },
+      data: { archivedAt: new Date() },
+    }),
+    prisma.conversation.update({
+      where: { id: targetId },
+      data: { archivedAt: null },
+    }),
+  ]);
+}
+
+/**
+ * Hard-deletes a session that belongs to `userId`.
+ * Guard: only deletes when archivedAt IS NOT NULL, preventing deletion of the
+ * active session. Messages cascade-delete via FK.
+ */
+export async function deleteSession(
+  prisma: PrismaClient,
+  userId: string,
+  sessionId: string
+): Promise<void> {
+  await prisma.conversation.deleteMany({
+    where: { id: sessionId, userId, archivedAt: { not: null } },
+  });
+}
+
+/**
+ * Deletes the last user turn (and any assistant/tool messages that followed it)
+ * from a conversation. Runs inside a transaction to prevent races.
+ *
+ * Returns `{ deleted: number }` on success, or an error discriminant:
+ *   - `"forbidden"` — conversationId does not belong to userId
+ *   - `"not-found"` — the conversation has no user messages to undo
+ */
+export async function deleteLastTurn(
+  prisma: PrismaClient,
+  conversationId: string,
+  userId: string
+): Promise<{ deleted: number } | { error: "not-found" | "forbidden" }> {
+  return prisma.$transaction(async (tx) => {
+    const conversation = await tx.conversation.findFirst({
+      where: { id: conversationId, userId },
+      select: { id: true },
+    });
+    if (!conversation) return { error: "forbidden" as const };
+
+    const lastUserMsg = await tx.message.findFirst({
+      where: { conversationId, role: "user" },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    });
+    if (!lastUserMsg) return { error: "not-found" as const };
+
+    const result = await tx.message.deleteMany({
+      where: { conversationId, createdAt: { gte: lastUserMsg.createdAt } },
+    });
+
+    return { deleted: result.count };
+  });
 }
