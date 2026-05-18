@@ -172,13 +172,16 @@ export async function listSessionsForUser(
  * Makes `targetId` the active conversation for `userId`.
  * Archives whatever is currently active first (uses updateMany so no error is
  * thrown if there is no current active session), then unarchives the target.
+ *
+ * Returns `true` if the target was found and activated, `false` if `targetId`
+ * does not exist or does not belong to `userId`.
  */
 export async function activateSession(
   prisma: PrismaClient,
   userId: string,
   targetId: string
-): Promise<void> {
-  await prisma.$transaction([
+): Promise<boolean> {
+  const [, step2] = await prisma.$transaction([
     prisma.conversation.updateMany({
       where: { userId, archivedAt: null },
       data: { archivedAt: new Date() },
@@ -188,21 +191,25 @@ export async function activateSession(
       data: { archivedAt: null },
     }),
   ]);
+  return step2.count > 0;
 }
 
 /**
  * Hard-deletes a session that belongs to `userId`.
  * Guard: only deletes when archivedAt IS NOT NULL, preventing deletion of the
  * active session. Messages cascade-delete via FK.
+ *
+ * Returns `{ count }` so callers can detect not-found (count === 0).
  */
 export async function deleteSession(
   prisma: PrismaClient,
   userId: string,
   sessionId: string
-): Promise<void> {
-  await prisma.conversation.deleteMany({
+): Promise<{ count: number }> {
+  const result = await prisma.conversation.deleteMany({
     where: { id: sessionId, userId, archivedAt: { not: null } },
   });
+  return { count: result.count };
 }
 
 /**

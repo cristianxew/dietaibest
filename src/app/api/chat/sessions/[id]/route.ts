@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
 import { getStore } from "@/lib/chat/runtime-instance";
-import { activateSession } from "@/lib/chat/conversation-prisma";
+import { activateSession, deleteSession } from "@/lib/chat/conversation-prisma";
 import { summarizeForClient } from "@/lib/chat/serialize";
 
 export const runtime = "nodejs";
@@ -31,12 +31,8 @@ export async function PUT(
 
   const { id } = await params;
 
-  try {
-    await activateSession(prisma, userId, id);
-  } catch {
-    // activateSession calls prisma.conversation.update which throws P2025
-    // (record not found) when the target id doesn't exist or doesn't belong
-    // to this user.
+  const activated = await activateSession(prisma, userId, id);
+  if (!activated) {
     return NextResponse.json({ error: "not-found" }, { status: 404 });
   }
 
@@ -60,11 +56,9 @@ export async function DELETE(
   const { id } = await params;
 
   // Only allow deleting sessions that are already archived (not the active one)
-  const result = await prisma.conversation.deleteMany({
-    where: { id, userId, archivedAt: { not: null } },
-  });
+  const { count } = await deleteSession(prisma, userId, id);
 
-  if (result.count === 0) {
+  if (count === 0) {
     return NextResponse.json({ error: "not-found" }, { status: 404 });
   }
 

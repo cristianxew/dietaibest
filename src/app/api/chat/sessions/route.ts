@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { prisma } from "@/lib/prisma";
-import { getStore } from "@/lib/chat/runtime-instance";
 import { listSessionsForUser } from "@/lib/chat/conversation-prisma";
 
 export const runtime = "nodejs";
@@ -36,19 +35,20 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Archive the currently-active conversation if one exists
-  const active = await prisma.conversation.findFirst({
-    where: { userId, archivedAt: null },
-    select: { id: true },
-  });
-  if (active) {
-    await getStore().clear(active.id);
-  }
-
-  // Create a new conversation
-  const newConversation = await prisma.conversation.create({
-    data: { userId },
-    select: { id: true },
+  // Archive the currently-active conversation (if any) and create a new one
+  // atomically to prevent TOCTOU races against the partial unique index.
+  const newConversation = await prisma.$transaction(async (tx) => {
+    const active = await tx.conversation.findFirst({
+      where: { userId, archivedAt: null },
+      select: { id: true },
+    });
+    if (active) {
+      await tx.conversation.update({
+        where: { id: active.id },
+        data: { archivedAt: new Date() },
+      });
+    }
+    return tx.conversation.create({ data: { userId } });
   });
 
   return NextResponse.json({ id: newConversation.id }, { status: 201 });
