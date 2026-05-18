@@ -9,7 +9,7 @@ import type {
 } from "./llm-provider";
 import type { AnyTool } from "./tools/types";
 
-const DEFAULT_MODEL = "claude-sonnet-4-6";
+const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
 const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
 
 export interface AnthropicLlmProviderOptions {
@@ -90,9 +90,9 @@ export class AnthropicLlmProvider implements LlmProvider {
             kind: "finish",
             usage: usage
               ? {
-                  inputTokens: usage.inputTokens ?? 0,
-                  outputTokens: usage.outputTokens ?? 0,
-                }
+                inputTokens: usage.inputTokens ?? 0,
+                outputTokens: usage.outputTokens ?? 0,
+              }
               : undefined,
           };
           break;
@@ -101,10 +101,10 @@ export class AnthropicLlmProvider implements LlmProvider {
           throw part.error instanceof Error
             ? part.error
             : new Error(
-                typeof part.error === "string"
-                  ? part.error
-                  : "Anthropic stream error"
-              );
+              typeof part.error === "string"
+                ? part.error
+                : "Anthropic stream error"
+            );
         }
         default:
           // text-start, text-end, tool-input-*, reasoning-*, start, start-step,
@@ -148,11 +148,11 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
   type AssistantPart =
     | { type: "text"; text: string }
     | {
-        type: "tool-call";
-        toolCallId: string;
-        toolName: string;
-        input: unknown;
-      };
+      type: "tool-call";
+      toolCallId: string;
+      toolName: string;
+      input: unknown;
+    };
 
   let buffer:
     | { role: "user"; text: string }

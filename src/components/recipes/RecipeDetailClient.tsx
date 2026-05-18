@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Prisma } from "@/generated/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine } from "lucide-react";
+import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine, ChefHat } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -53,6 +53,41 @@ const difficultyBadgeClass: Record<string, string> = {
   hard: "border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400",
 };
 
+const getCategoryStyles = (categoryName?: string) => {
+  const n = categoryName?.toLowerCase() || '';
+  if (n.includes('breakfast')) {
+    return {
+      bg: 'bg-gold-50/80 dark:bg-gold-500/10',
+      text: 'text-gold-600 dark:text-gold-400',
+      badgeBg: 'bg-gold-100/80 dark:bg-gold-900/40',
+      badgeText: 'text-gold-700 dark:text-gold-400',
+    };
+  }
+  if (n.includes('lunch')) {
+    return {
+      bg: 'bg-sage-50/80 dark:bg-sage-500/10',
+      text: 'text-sage-600 dark:text-sage-400',
+      badgeBg: 'bg-sage-100/80 dark:bg-sage-900/40',
+      badgeText: 'text-sage-700 dark:text-sage-400',
+    };
+  }
+  if (n.includes('snack')) {
+    return {
+      bg: 'bg-brand-50/50 dark:bg-brand-500/5',
+      text: 'text-brand-400 dark:text-brand-300',
+      badgeBg: 'bg-stone-100/80 dark:bg-stone-800/40',
+      badgeText: 'text-stone-600 dark:text-stone-300',
+    };
+  }
+  // Default (e.g. Dinner)
+  return {
+    bg: 'bg-brand-100/40 dark:bg-brand-500/10',
+    text: 'text-brand-600 dark:text-brand-400',
+    badgeBg: 'bg-brand-50 dark:bg-brand-900/30',
+    badgeText: 'text-brand-600 dark:text-brand-400',
+  };
+};
+
 export function RecipeDetailClient({
   recipe,
   isOwner,
@@ -67,6 +102,8 @@ export function RecipeDetailClient({
   const multiplier = selectedPortions / recipe.servings;
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
   const showImage = Boolean(recipe.imageUrl && !imageError);
+  const primaryCategory = recipe.categories[0]?.name || 'DINNER';
+  const styles = getCategoryStyles(primaryCategory);
 
   return (
     <PageContainer>
@@ -95,10 +132,29 @@ export function RecipeDetailClient({
               />
             </div>
           ) : (
-            <div className="aspect-[4/3] w-full rounded-2xl bg-muted/20 border border-border flex items-center justify-center">
-              <span className="text-sm font-semibold tracking-[0.2em] uppercase text-muted-foreground">
-                {recipe.categories[0]?.name || "Recipe"}
-              </span>
+            <div
+              className={cn(
+                "aspect-[4/3] w-full rounded-2xl border border-border/60 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 shadow-xl shadow-stone-900/5",
+                styles.bg
+              )}
+              style={{
+                backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(0,0,0,0.02) 15px, rgba(0,0,0,0.02) 30px)`
+              }}
+            >
+              <div className="flex flex-col items-center gap-4 text-center z-10 p-6">
+                <div className={cn("h-16 w-16 rounded-full flex items-center justify-center bg-background border border-border/40 shadow-sm transition-transform duration-300 hover:scale-105", styles.text)}>
+                  <ChefHat className="h-8 w-8" />
+                </div>
+                <div className="space-y-1">
+                  <span className={cn("text-xs font-bold tracking-[0.2em] uppercase", styles.text)}>
+                    {primaryCategory}
+                  </span>
+                  <p className="text-xs text-muted-foreground font-medium max-w-[200px] leading-normal truncate px-2">
+                    {recipe.title}
+                  </p>
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/5" />
             </div>
           )}
         </div>

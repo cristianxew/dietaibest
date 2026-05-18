@@ -245,7 +245,7 @@ export async function generateShoppingList(
               scheduledServings: mealServings,
               ingredients: ingredients.map((ing) => {
                 const normalizedName = normalizeIngredientName(ing.name);
-                const normalizedUnit = normalizeUnit(ing.unit);
+                const normalizedUnit = normalizeUnit(ing.unit ?? "");
                 // Simple ID: name_unit (matches consolidated ingredients)
                 const ingredientId = `${normalizedName}_${normalizedUnit}`;
                 const adjustedAmount = ing.amount * servingsMultiplier;
@@ -292,7 +292,7 @@ export async function generateShoppingList(
             collectedIngredients.push({
               originalName: ing.name,
               amount: adjustedAmount,
-              unit: ing.unit,
+              unit: ing.unit ?? "",
               recipeId: recipe.id,
             });
           }

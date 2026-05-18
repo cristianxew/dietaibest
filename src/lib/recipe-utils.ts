@@ -78,9 +78,9 @@ export function recipeToFormData(recipe: RecipeDbRecord): RecipeFormData {
 }
 
 export function ingredientsToNutritionLines(
-  ingredients: Array<{ name: string; amount: number; unit: string }>
+  ingredients: Array<{ name: string; amount: number; unit?: string }>
 ): string[] {
   return ingredients
     .filter((i) => i.name.trim())
-    .map((i) => `${i.amount} ${i.unit} ${i.name}`.trim());
+    .map((i) => `${i.amount} ${i.unit || ""} ${i.name}`.trim().replace(/\s+/g, ' '));
 }

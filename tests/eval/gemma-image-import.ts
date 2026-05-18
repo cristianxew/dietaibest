@@ -68,9 +68,9 @@ function looselyEqualName(a: string, b: string): boolean {
 
 function quantitiesMatch(
   expected: { amount: number; unit: string },
-  actual: { amount: number; unit: string }
+  actual: { amount: number; unit?: string }
 ): boolean {
-  if (normalizeName(expected.unit) !== normalizeName(actual.unit)) return false;
+  if (normalizeName(expected.unit) !== normalizeName(actual.unit || "")) return false;
   // 5% tolerance for amount — Gemma may round.
   const tol = Math.max(Math.abs(expected.amount) * 0.05, 0.01);
   return Math.abs(expected.amount - actual.amount) <= tol;

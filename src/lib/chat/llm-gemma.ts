@@ -1,29 +1,22 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText, Output, type LanguageModel } from "ai";
+import { GoogleGenAI, type GenerateContentParameters } from "@google/genai";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 import {
   importedRecipeSchema,
   type ImportedRecipeData,
 } from "@/lib/ingest/imported-recipe-schema";
 
-// DIE-41 — Gemma 4 image-extraction provider. Lives INSIDE the
-// importRecipeFromImage tool, NOT in the orchestrator loop. The orchestrator
-// (Claude Sonnet via AnthropicLlmProvider) decides to call the tool when it
-// sees an attachment ref in the user message; this provider is the tool's
-// internal call to Google's Gemini API to extract a structured ImportedRecipe
-// from raw image bytes.
+// DIE-41 — Recipe extraction provider using @google/genai (official Google Gen AI SDK).
+// Uses Vertex AI backend (vertexai: true) with Application Default Credentials —
+// the same ADC already configured for @google-cloud/documentai. No separate API key needed.
 //
-// Why Gemini API (Google AI Studio) and NOT Vertex AI:
-//   - Gemma 4 31B is serverless on Gemini API (`gemma-4-31b-it`).
-//   - On Vertex AI Model Garden, only the 26B MoE is serverless; 31B requires
-//     self-deploy on GPUs/TPUs. Eliminated to keep v1 zero-ops.
-//   - Migration to Vertex AI later is provider-class swap only — the tool
-//     and the chat flow do NOT need to change.
+// Model: gemini-2.0-flash-exp (vision + native structured output via responseSchema).
+// Previous approach (@ai-sdk/google + gemma-4-31b-it) was abandoned because that
+// model ID does not exist in the Gemini Developer API.
 //
-// Failure surface: typed errors mapped by importRecipeFromImage to the
-// tool.failed { error.kind, error.reason } shape the FE understands.
+// Lives INSIDE the importRecipeFromImage tool — not in the orchestrator loop.
 
-const DEFAULT_MODEL = "gemma-4-31b-it";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 export class GemmaExtractionError extends Error {
   readonly reason:
@@ -48,11 +41,10 @@ export interface GemmaProviderOptions {
   apiKey?: string;
   model?: string;
   /**
-   * Optional pre-built LanguageModel — used by unit tests to inject a fake
-   * model instead of going through createGoogleGenerativeAI. When provided,
-   * apiKey and model are ignored.
+   * Optional pre-built client — used by unit tests to inject a fake instead of
+   * going through GoogleGenAI. When provided, apiKey/model are ignored.
    */
-  modelOverride?: LanguageModel;
+  clientOverride?: Pick<GoogleGenAI, "models">;
 }
 
 export interface ExtractRecipeArgs {
@@ -83,65 +75,71 @@ const LOCALE_HINT: Record<NonNullable<ExtractRecipeArgs["locale"]>, string> = {
 };
 
 export class GemmaProvider {
-  private readonly model: LanguageModel;
+  private readonly client: Pick<GoogleGenAI, "models">;
+  private readonly modelId: string;
 
   constructor(opts: GemmaProviderOptions = {}) {
-    if (opts.modelOverride) {
-      this.model = opts.modelOverride;
+    this.modelId = opts.model ?? process.env.GEMMA_MODEL ?? DEFAULT_MODEL;
+
+    if (opts.clientOverride) {
+      this.client = opts.clientOverride;
     } else {
-      const apiKey = opts.apiKey ?? process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error(
-          "GemmaProvider: GEMINI_API_KEY is not set. Either pass apiKey or inject modelOverride for tests."
-        );
+      const project = process.env.GOOGLE_CLOUD_PROJECT_ID;
+      const location = process.env.GOOGLE_VERTEX_LOCATION ?? "us-central1";
+      
+      if (!project) {
+        throw new Error("GemmaProvider: GOOGLE_CLOUD_PROJECT_ID is not set in environment.");
       }
-      const google = createGoogleGenerativeAI({ apiKey });
-      this.model = google(opts.model ?? process.env.GEMMA_MODEL ?? DEFAULT_MODEL);
+
+      this.client = new GoogleGenAI({
+        vertexai: true,
+        project,
+        location,
+      });
     }
   }
 
   async extractRecipe(args: ExtractRecipeArgs): Promise<ImportedRecipeData> {
     const locale = args.locale ?? "en";
-    const systemPrompt = `${PROMPT_BASE}\n\n${LOCALE_HINT[locale]}`;
+    const systemInstruction = `${PROMPT_BASE}\n\n${LOCALE_HINT[locale]}`;
+    const base64 = Buffer.from(args.imageBytes).toString("base64");
+    const responseSchema = zodToJsonSchema(importedRecipeSchema);
+
+    const params: GenerateContentParameters = {
+      model: this.modelId,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: "Extract the recipe from this image." },
+            { inlineData: { data: base64, mimeType: args.mimeType } },
+          ],
+        },
+      ],
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema,
+      },
+    };
 
     let recipe: ImportedRecipeData;
     try {
-      const result = await generateText({
-        model: this.model,
-        output: Output.object({ schema: importedRecipeSchema }),
-        // Gemma models on Gemini API do not support native responseSchema
-        // enforcement. structuredOutputs: false makes the SDK fall back to
-        // prompt-based JSON generation, which Gemma handles correctly.
-        // Source: https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai
-        providerOptions: {
-          google: { structuredOutputs: false },
-        },
-        system: systemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract the recipe from this image.",
-              },
-              {
-                type: "image",
-                image: args.imageBytes,
-                mediaType: args.mimeType,
-              },
-            ],
-          },
-        ],
-      });
-      recipe = result.output as ImportedRecipeData;
+      const response = await this.client.models.generateContent(params);
+      const text = response.text;
+      if (!text) {
+        throw new GemmaExtractionError(
+          "transient",
+          "Gemma returned an empty response"
+        );
+      }
+      const parsed: unknown = JSON.parse(text);
+      recipe = importedRecipeSchema.parse(parsed);
     } catch (err) {
-      // Schema mismatch (model returned malformed JSON) is the most common
-      // non-transient failure. Treat anything else as transient — the tool
-      // does not retry today (one-shot extraction is cheap to ask the user to
-      // retry manually), but the reason gives us per-error telemetry.
+      if (err instanceof GemmaExtractionError) throw err;
+
       const message = err instanceof Error ? err.message : String(err);
-      if (/schema|validation|parse/i.test(message)) {
+      if (/schema|validation|parse|ZodError/i.test(message)) {
         throw new GemmaExtractionError(
           "schema-mismatch",
           `Gemma returned data that did not match the recipe schema: ${message}`,
@@ -155,13 +153,9 @@ export class GemmaProvider {
       );
     }
 
-    // The schema accepts empty ingredients on purpose so the caller can map
-    // it to a user-facing "no-ingredients" reason. Image-quality signal: if
-    // Gemma returned a title but ZERO ingredients, that's almost always "the
-    // photo is too blurry / not a recipe" rather than a legitimate recipe
-    // with no ingredients (which doesn't exist).
+    // Schema accepts empty ingredients so the caller can surface "no-ingredients".
+    // Title present + zero ingredients → blurry photo. No title → not a recipe.
     if (recipe.ingredients.length === 0) {
-      // Distinguish: title present → low quality; no title → no recipe at all.
       const reason =
         recipe.title && recipe.title.trim().length > 0
           ? "low-quality"

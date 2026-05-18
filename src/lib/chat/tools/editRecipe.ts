@@ -11,12 +11,17 @@ const inputSchema = z.object({
   ingredients: z.array(ingredientSchema).min(1).optional(),
   instructions: z.array(z.string().min(1)).min(1).optional(),
   tags: z.array(z.string()).optional(),
+  calories: z.number().min(0).optional(),
+  protein: z.number().min(0).optional(),
+  carbs: z.number().min(0).optional(),
+  fat: z.number().min(0).optional(),
+  fiber: z.number().min(0).optional(),
 });
 
 export const editRecipe: Tool<typeof inputSchema, { id: string; title: string }> = {
   name: "editRecipe",
   description:
-    "Update specific fields of an existing recipe by id. Only provide the fields the user wants to change — the rest are preserved. Do NOT emit macro numbers; use getNutrition for that.",
+    "Update specific fields of an existing recipe by id. Only provide the fields the user wants to change — the rest are preserved. You CAN update macro numbers if you have calculated them.",
   inputSchema,
   statusKey: "recipe.editing",
   requiresFeature: "aiChat",
@@ -49,11 +54,11 @@ export const editRecipe: Tool<typeof inputSchema, { id: string; title: string }>
         | "hard"
         | undefined,
       sourceUrl: current.data.sourceUrl ?? undefined,
-      calories: current.data.calories ?? undefined,
-      protein: current.data.protein ?? undefined,
-      carbs: current.data.carbs ?? undefined,
-      fat: current.data.fat ?? undefined,
-      fiber: current.data.fiber ?? undefined,
+      calories: input.calories ?? current.data.calories ?? undefined,
+      protein: input.protein ?? current.data.protein ?? undefined,
+      carbs: input.carbs ?? current.data.carbs ?? undefined,
+      fat: input.fat ?? current.data.fat ?? undefined,
+      fiber: input.fiber ?? current.data.fiber ?? undefined,
     };
 
     const result = await updateRecipe(input.id, merged);
