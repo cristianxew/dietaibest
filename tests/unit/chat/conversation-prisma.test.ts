@@ -81,6 +81,25 @@ class FakePrisma {
       this.conversations.set(where.id, merged);
       return merged;
     },
+    updateMany: async ({
+      where,
+      data,
+    }: {
+      where: { id?: string; userId?: string; title?: null; archivedAt?: null };
+      data: Partial<Conv & { title?: string | null }>;
+    }): Promise<{ count: number }> => {
+      let count = 0;
+      for (const c of this.conversations.values()) {
+        const matchId = where.id === undefined || c.id === where.id;
+        const matchUserId = where.userId === undefined || c.userId === where.userId;
+        if (matchId && matchUserId) {
+          const merged = { ...c, ...data };
+          this.conversations.set(c.id, merged);
+          count++;
+        }
+      }
+      return { count };
+    },
   };
 
   message = {
