@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateObject, type LanguageModel } from "ai";
+import { generateText, Output, type LanguageModel } from "ai";
 
 import {
   importedRecipeSchema,
@@ -106,9 +106,9 @@ export class GemmaProvider {
 
     let recipe: ImportedRecipeData;
     try {
-      const result = await generateObject({
+      const result = await generateText({
         model: this.model,
-        schema: importedRecipeSchema,
+        output: Output.object({ schema: importedRecipeSchema }),
         system: systemPrompt,
         messages: [
           {
@@ -127,7 +127,7 @@ export class GemmaProvider {
           },
         ],
       });
-      recipe = result.object as ImportedRecipeData;
+      recipe = result.output as ImportedRecipeData;
     } catch (err) {
       // Schema mismatch (model returned malformed JSON) is the most common
       // non-transient failure. Treat anything else as transient — the tool

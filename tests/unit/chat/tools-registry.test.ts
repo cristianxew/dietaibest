@@ -52,7 +52,7 @@ function ctx(entitlements: Entitlements): AgentContext {
 describe("Tool registry", () => {
   it("exposes all expected tools", () => {
     const names = allTools.map((t) => t.name).sort();
-    expect(names).toEqual([
+    const base = [
       "addMealToDay",
       "createRecipe",
       "deleteRecipe",
@@ -67,7 +67,14 @@ describe("Tool registry", () => {
       "searchMealPlans",
       "searchRecipes",
       "updateMealServings",
-    ]);
+    ];
+    const expected = [
+      ...base,
+      ...(process.env.FEATURE_MULTIMODAL_IMPORT === "true"
+        ? ["importRecipeFromImage"]
+        : []),
+    ].sort();
+    expect(names).toEqual(expected);
   });
 
   it("findTool returns the matching tool by name", () => {
