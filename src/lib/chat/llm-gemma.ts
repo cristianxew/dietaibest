@@ -109,6 +109,13 @@ export class GemmaProvider {
       const result = await generateText({
         model: this.model,
         output: Output.object({ schema: importedRecipeSchema }),
+        // Gemma models on Gemini API do not support native responseSchema
+        // enforcement. structuredOutputs: false makes the SDK fall back to
+        // prompt-based JSON generation, which Gemma handles correctly.
+        // Source: https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai
+        providerOptions: {
+          google: { structuredOutputs: false },
+        },
         system: systemPrompt,
         messages: [
           {
