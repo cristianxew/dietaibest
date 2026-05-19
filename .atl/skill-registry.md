@@ -1,55 +1,31 @@
-# Skill Registry — dietaibest
+# ATL Skill Registry
 
-Generated: 2026-03-30
+This registry tracks the available skills for Spec-Driven Development (SDD) and other specialized workflows in the DietAI project.
 
-## User Skills (`~/.claude/skills/`)
+## User Skills
 
-| Skill | Trigger |
-|-------|---------|
-| `judgment-day` | "judgment day", "dual review", "doble review", "juzgar", adversarial review |
-| `go-testing` | Writing Go tests, Bubbletea TUI testing |
-| `skill-creator` | Creating new skills, editing existing skills |
-| `branch-pr` | Creating a pull request, opening a PR, preparing changes for review |
-| `issue-creation` | Creating a GitHub issue, reporting a bug, requesting a feature |
+| Skill | Trigger | Description |
+|---|---|---|
+| branch-pr | Creating a PR, opening a PR, or preparing changes for review | PR creation workflow following issue-first system. |
+| go-testing | Writing Go tests, using teatest, or adding test coverage | Go testing patterns for Gentleman.Dots. |
+| issue-creation | Creating a GitHub issue, reporting a bug, or requesting a feature | Issue creation workflow. |
+| judgment-day | "judgment day", "review adversarial", "dual review", "doble review", "juzgar", "que lo juzguen" | Adversarial review protocol. |
+| sdd-apply | Orchestrator launches sdd-apply | Implementation of tasks from specifications. |
+| sdd-archive | Orchestrator launches sdd-archive | Closing change and syncing delta specs. |
+| sdd-design | Orchestrator launches sdd-design | Architectural and technical design. |
+| sdd-explore | Orchestrator launches sdd-explore | Investigation of codebase/requirements. |
+| sdd-init | Orchestrator launches sdd-init | Initialization of SDD capabilities. |
+| sdd-propose | Orchestrator launches sdd-propose | Proposal generation. |
+| sdd-spec | Orchestrator launches sdd-spec | Requirement and scenario specification. |
+| sdd-tasks | Orchestrator launches sdd-tasks | Task checklist breakdown. |
+| sdd-verify | Orchestrator launches sdd-verify | Test execution and verification against specs. |
+| skill-creator | Creating new skills, adding agent instructions | Authoring new agent skills. |
 
-## Project Skills (`.claude/skills/`)
+## Project Conventions
 
-| Skill | Trigger |
-|-------|---------|
-| `landing-page-copywriter` | Landing page copy, sales page content, marketing website text, high-converting copy |
-
-## Conventions
-
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` (root) | Project docs in `.agent/`, always read `.agent/README.md` before planning |
-| `~/.claude/CLAUDE.md` | Global conventions — voseo Spanish, senior architect persona, never mock DBs |
-| `.agent/README.md` | Documentation index — architecture, schema, design system, SOP, deployment |
-
-## Compact Rules
-
-### All code tasks
-- Read `.agent/README.md` before planning any implementation
-- Update `.agent/` docs after implementing a feature
-- Use Server Actions for mutations, Repository pattern for data access
-- Conventional commits only, no AI attribution
-
-### UI / Frontend
-- Skill: `landing-page-copywriter` for marketing copy
-- Design system: "Botanical Precision" — see `.agent/System/design_system.md`
-- Use ShadCN + Radix UI components
-- next-intl for all user-facing strings
-
-### Testing
-- Test runner: Vitest (`bun run test`)
-- Unit tests in `tests/unit/`
-- Integration scripts exist but no test files yet
-- E2E with Playwright (`bun run e2e`)
-- Coverage: `bun run test:coverage`
-
-### PRs & Issues
-- Skill: `branch-pr` for PRs, `issue-creation` for GitHub issues
-- Issue-first enforcement: create issue before branch
-
-### Code Review
-- Skill: `judgment-day` for adversarial review
+The following project standards are in place:
+- **Architecture**: Next.js App Router, Prisma ORM, Supabase Auth/DB, Culinary/Botanical Precision Design System.
+- **Rules**:
+  - Gated server actions in `src/actions/` must use the custom `serverAction` HOF utility in `src/lib/server-action.ts`.
+  - All modifications must preserve comments, docstrings, and not add "Co-Authored-By" or AI attribution.
+  - Strict TDD mode is enabled.

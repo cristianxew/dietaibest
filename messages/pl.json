@@ -396,6 +396,13 @@
         "minutes": "min",
         "nutritionPerServing": "Wartości odżywcze na porcję",
         "editRecipe": "Edytuj Przepis",
+        "editImage": "Edytuj Zdjęcie",
+        "deleteImage": "Usuń Zdjęcie",
+        "uploadingImage": "Przesyłanie zdjęcia...",
+        "imageUpdated": "Zdjęcie zostało pomyślnie zaktualizowane!",
+        "imageDeleted": "Zdjęcie zostało pomyślnie usunięte!",
+        "imageUpdateError": "Nie udało się zaktualizować zdjęcia",
+        "imageDeleteError": "Nie udało się usunąć zdjęcia",
         "source": {
             "importedFrom": "Zaimportowano z",
             "manual": "Utworzono ręcznie",

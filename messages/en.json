@@ -401,6 +401,13 @@
         "minutes": "min",
         "nutritionPerServing": "Nutrition per serving",
         "editRecipe": "Edit Recipe",
+        "editImage": "Edit Image",
+        "deleteImage": "Delete Image",
+        "uploadingImage": "Uploading image...",
+        "imageUpdated": "Image updated successfully!",
+        "imageDeleted": "Image deleted successfully!",
+        "imageUpdateError": "Failed to update image",
+        "imageDeleteError": "Failed to delete image",
         "source": {
             "importedFrom": "Imported from",
             "manual": "Created manually",
