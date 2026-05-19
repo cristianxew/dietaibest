@@ -362,6 +362,7 @@ model StoreCredential {
 model Conversation {
   id         String    @id @default(uuid())
   userId     String
+  title      String?   // auto-set from first user message (60 chars); null until first turn
   archivedAt DateTime? // null = active; non-null = archived "Limpiar"
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
