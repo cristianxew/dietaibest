@@ -40,47 +40,70 @@ export function SessionItem({
   const t = useTranslations("chat");
 
   return (
-    <div className="group relative">
-      <button
-        onClick={() => onActivate(id)}
-        disabled={isDeleting}
+    <div
+      className={cn(
+        "group relative flex items-center gap-3 mx-3 my-0.5 px-3 py-3 rounded-xl",
+        "cursor-pointer select-none transition-all duration-150",
+        isActive
+          ? "bg-brand-50 dark:bg-brand-950/30"
+          : "hover:bg-stone-100/60 dark:hover:bg-stone-800/40",
+        isDeleting && "opacity-50 pointer-events-none",
+      )}
+      onClick={() => !isDeleting && onActivate(id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onActivate(id);
+        }
+      }}
+    >
+      {/* Active indicator dot */}
+      <div
         className={cn(
-          "w-full text-left px-4 py-3 transition-colors",
+          "shrink-0 w-1.5 h-1.5 rounded-full transition-all duration-200",
           isActive
-            ? "bg-stone-100 dark:bg-stone-800"
-            : "hover:bg-stone-50 dark:hover:bg-stone-900",
-          isDeleting && "opacity-50 cursor-not-allowed"
+            ? "bg-brand-500 scale-100 opacity-100"
+            : "bg-muted-foreground/20 scale-75 opacity-0 group-hover:opacity-60",
         )}
-      >
-        <p className="text-sm font-medium text-foreground truncate pr-6">
+      />
+
+      {/* Text content */}
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            "text-[13px] font-medium leading-tight truncate",
+            isActive
+              ? "text-brand-700 dark:text-brand-300"
+              : "text-foreground",
+          )}
+        >
           {title ?? t("sessions.untitled")}
         </p>
-        <div className="flex items-center justify-between mt-0.5">
-          <span className="text-xs text-muted-foreground">
-            {relativeDate(updatedAt, locale)}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {t("session.messages", { count: messageCount })}
-          </span>
-        </div>
-      </button>
+        <p className="text-[11px] text-muted-foreground/60 mt-0.5 flex items-center gap-1">
+          <span>{relativeDate(updatedAt, locale)}</span>
+          <span className="opacity-40 text-[9px]">·</span>
+          <span>{t("session.messages", { count: messageCount })}</span>
+        </p>
+      </div>
 
+      {/* Delete button — appears on hover */}
       <button
+        className={cn(
+          "shrink-0 p-1.5 rounded-lg",
+          "opacity-0 group-hover:opacity-100 focus:opacity-100",
+          "text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10",
+          "transition-all duration-150",
+        )}
         onClick={(e) => {
           e.stopPropagation();
           onDelete(id);
         }}
         disabled={isDeleting}
         aria-label={t("sessions.delete")}
-        className={cn(
-          "absolute top-2.5 right-2 p-1.5 rounded-md transition-all",
-          "opacity-0 group-hover:opacity-100",
-          "hover:text-destructive hover:bg-stone-100 dark:hover:bg-stone-800",
-          "text-muted-foreground",
-          isDeleting && "cursor-not-allowed"
-        )}
       >
-        <Trash2 size={16} />
+        <Trash2 size={13} />
       </button>
     </div>
   );

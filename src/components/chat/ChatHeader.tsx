@@ -2,7 +2,8 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { X, Trash2, LayoutList } from "lucide-react";
+import { X, Trash2, History } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatHeaderProps {
   onClose: () => void;
@@ -15,13 +16,20 @@ export function ChatHeader({ onClose, onClear, onToggleSessions }: ChatHeaderPro
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
       <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleSessions}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
-          aria-label={t("sessions.title")}
-        >
-          <LayoutList size={18} />
-        </button>
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleSessions}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
+                aria-label={t("sessions.title")}
+              >
+                <History size={18} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t("sessions.title")}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <div className="flex flex-col">
           <h2 className="font-display text-lg font-semibold text-foreground">
             {t("title")}

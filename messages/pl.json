@@ -1276,7 +1276,11 @@
             "newChat": "Nowa rozmowa",
             "untitled": "Nowa rozmowa",
             "empty": "Brak poprzednich rozmów",
-            "delete": "Usuń rozmowę"
+            "delete": "Usuń rozmowę",
+            "today": "Dzisiaj",
+            "yesterday": "Wczoraj",
+            "lastWeek": "Ostatnie 7 dni",
+            "older": "Starsze"
         },
         "session": {
             "messages": "{count} wiadomości"

@@ -1282,7 +1282,11 @@
             "newChat": "New chat",
             "untitled": "New conversation",
             "empty": "No previous conversations",
-            "delete": "Delete conversation"
+            "delete": "Delete conversation",
+            "today": "Today",
+            "yesterday": "Yesterday",
+            "lastWeek": "Last 7 days",
+            "older": "Older"
         },
         "session": {
             "messages": "{count} messages"

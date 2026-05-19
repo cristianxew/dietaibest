@@ -1281,7 +1281,11 @@
             "newChat": "Nueva conversación",
             "untitled": "Nueva conversación",
             "empty": "No hay conversaciones anteriores",
-            "delete": "Eliminar conversación"
+            "delete": "Eliminar conversación",
+            "today": "Hoy",
+            "yesterday": "Ayer",
+            "lastWeek": "Últimos 7 días",
+            "older": "Anteriores"
         },
         "session": {
             "messages": "{count} mensajes"
