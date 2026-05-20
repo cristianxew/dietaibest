@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import MealPlans from "@/components/MealPlans";
+import { MealPlanner } from "@/components/meal-plans/MealPlanner";
 
 export async function generateMetadata({
   params,
@@ -20,7 +21,10 @@ export default async function MealPlansPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  await params; // Required for Next.js params resolution
-
-  return <MealPlans />;
+  await params;
+  return (
+    <Suspense>
+      <MealPlanner />
+    </Suspense>
+  );
 }
