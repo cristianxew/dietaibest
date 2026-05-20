@@ -15,7 +15,7 @@ import type { Recipe, RecipeCategory } from '@/generated/prisma';
 import { getRecipes, getCategories } from '@/actions/recipe';
 import { toast } from 'sonner';
 import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
-import { compareMacro, getMacroProgressColor } from '@/lib/meal-plan-macros';
+import { compareMacro, getMacroStatusColor } from '@/lib/meal-plan-macros';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -458,7 +458,7 @@ interface DayMacrosProps {
 
 export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) {
   const comparison = compareMacro(macros.calories, targets?.calories);
-  const statusColor = getMacroProgressColor(comparison.status);
+  const statusColor = getMacroStatusColor(comparison.status);
   const statusLabel =
     comparison.status === 'under' ? 'Bajo objetivo' :
     comparison.status === 'over'  ? 'Sobre objetivo' :
@@ -476,7 +476,7 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
           </div>
         )}
         {!compact && comparison.status && (
-          <div className={cn('text-[10px] font-semibold ml-auto', statusColor)}>
+          <div className={cn('inline-flex items-center text-[10px] font-semibold ml-auto px-1.5 py-0.5 rounded-full border', statusColor)}>
             {statusLabel}
           </div>
         )}
