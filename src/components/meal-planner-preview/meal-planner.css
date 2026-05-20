@@ -1,0 +1,60 @@
+/* DietAI Meal Planner — CSS variables + component styles */
+
+.mp-root {
+  --font-display: var(--font-playfair, 'Playfair Display', Georgia, serif);
+  --font-sans:    var(--font-dm-sans, 'DM Sans', 'Helvetica Neue', sans-serif);
+  --font-mono:    'DM Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --mp-coral: #F47B5C;
+  --mp-sage:  #6B9B6B;
+  --mp-gold:  #D4A017;
+  --mp-ease:  cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mp-root[data-theme="dark"] {
+  --mp-bg:        #0F0E0D;
+  --mp-card:      #1A1918;
+  --mp-card-soft: #221F1D;
+  --mp-input-bg:  #14130F;
+  --mp-border:    #2D2B26;
+  --mp-track:     #2D2B26;
+  --mp-fg:        #FAF9F7;
+  --mp-fg2:       #D4CEC4;
+  --mp-fg3:       #A8A092;
+  --mp-fg4:       #7A7367;
+  --mp-chip-bg:   #262422;
+}
+
+.mp-root[data-theme="light"] {
+  --mp-bg:        #FAF9F7;
+  --mp-card:      #FFFFFF;
+  --mp-card-soft: #F5F3EF;
+  --mp-input-bg:  #FFFFFF;
+  --mp-border:    #E8E4DD;
+  --mp-track:     #E8E4DD;
+  --mp-fg:        #1C1A17;
+  --mp-fg2:       #423F38;
+  --mp-fg3:       #5C574D;
+  --mp-fg4:       #A8A092;
+  --mp-chip-bg:   #F5F3EF;
+  --mp-coral:     #E07A5F;
+  --mp-sage:      #4A7C59;
+}
+
+/* Scrollbar */
+.mp-root ::-webkit-scrollbar { width: 8px; height: 8px; }
+.mp-root ::-webkit-scrollbar-track { background: transparent; }
+.mp-root ::-webkit-scrollbar-thumb { background: var(--mp-border); border-radius: 99px; }
+.mp-root ::-webkit-scrollbar-thumb:hover { background: var(--mp-fg4); }
+
+/* MealCell hover reveals close button */
+.mp-root .mp-meal-cell:hover .mp-cell-x {
+  opacity: 1 !important;
+}
+
+/* Drag active cursor */
+.mp-root [draggable="true"] { cursor: grab; }
+.mp-root [draggable="true"]:active { cursor: grabbing; }
+
+/* Button base reset */
+.mp-root button { font-family: var(--font-sans); }
+.mp-root input  { font-family: var(--font-sans); }
