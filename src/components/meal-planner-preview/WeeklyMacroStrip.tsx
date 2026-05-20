@@ -23,7 +23,7 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
       label: "Calorías",
       value: Math.round(totalMacros.calories),
       target: weeklyCaloriesTarget,
-      unit: "",
+      unit: "kcal",
       barColor: "bg-brand-500",
     },
     {
@@ -53,9 +53,9 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
     <div
       className={cn(
         "grid gap-3.5 px-[18px] py-3.5",
+        "grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
         "bg-card border border-border rounded-xl mb-5"
       )}
-      style={{ gridTemplateColumns: "1fr repeat(4, minmax(120px, 160px))" }}
     >
       {/* Label block */}
       <div>
