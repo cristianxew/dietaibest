@@ -1,13 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Plan, SlotDef } from './types';
 import type { DensityType } from './types';
-import { RECIPES, RX, DAY_NAMES_ES, MONTH_NAMES_ES, SLOT_DEFS, TARGETS, dayTotals, slotsForPlan } from './data';
+import { RX, DAY_NAMES_ES, MONTH_NAMES_ES, SLOT_DEFS, TARGETS, dayTotals, slotsForPlan } from './data';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import type { Recipe, RecipeCategory } from '@/generated/prisma';
+import { getRecipes, getCategories } from '@/actions/recipe';
+import { toast } from 'sonner';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -82,93 +87,141 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
 
 /* ── RecipeLibrary ─────────────────────────────── */
 interface RecipeLibraryProps {
-  onDragStart: (id: string) => void;
   dense?: boolean;
 }
 
-export function RecipeLibrary({ onDragStart, dense = false }: RecipeLibraryProps) {
-  const [q, setQ] = useState('');
-  const [cat, setCat] = useState('Todas');
-  const cats = ['Todas', ...Array.from(new Set(RECIPES.map(r => r.cat)))];
-  const filtered = RECIPES.filter(r =>
-    (cat === 'Todas' || r.cat === cat) &&
-    (!q || r.name.toLowerCase().includes(q.toLowerCase()))
-  );
+function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `library-${recipe.id}`,
+    data: {
+      type: 'recipe',
+      recipe,
+      recipeId: recipe.id,
+    },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>
-          <Icon name="search" size={15} color="var(--mp-fg4)" />
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        'flex gap-2.5 rounded-[10px] border border-border bg-card cursor-grab transition-all duration-150',
+        'hover:border-brand-500 hover:-translate-y-px',
+        dense ? 'p-2' : 'p-2.5',
+      )}
+    >
+      <RecipeThumb recipe={recipe} size={dense ? 40 : 48} radius={8} />
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.3]">
+          {recipe.title}
+        </div>
+        <div className="flex gap-1.5 mt-[5px] flex-wrap items-center">
+          {recipe.calories != null && (
+            <Chip color="coral" size="xs">{Math.round(recipe.calories)} kcal</Chip>
+          )}
+          {recipe.protein != null && (
+            <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
+          )}
+          {recipe.prepTime != null && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
+              <Icon name="clock" size={10} />{recipe.prepTime}m
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('Todas');
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [categories, setCategories] = useState<RecipeCategory[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const [recipesResult, catsResult] = await Promise.all([
+        getRecipes({ page: 1, limit: 50 }),
+        getCategories(),
+      ]);
+      if (recipesResult.error) {
+        toast.error(recipesResult.error);
+      } else if (recipesResult.data) {
+        setRecipes(recipesResult.data.recipes as Recipe[]);
+      }
+      if (catsResult.error) {
+        toast.error(catsResult.error);
+      } else if (catsResult.data) {
+        setCategories(catsResult.data);
+      }
+    }
+    load();
+  }, []);
+
+  const cats = ['Todas', ...categories.map(c => c.name)];
+
+  const filtered = recipes.filter(r => {
+    const matchesCat =
+      cat === 'Todas' ||
+      (r as Recipe & { categories?: RecipeCategory[] }).categories?.some(c => c.name === cat);
+    const matchesQ = !q || r.title.toLowerCase().includes(q.toLowerCase());
+    return matchesCat && matchesQ;
+  });
+
+  return (
+    <div className="flex flex-col gap-2.5 h-full">
+      {/* Search */}
+      <div className="relative">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+          <Icon name="search" size={15} />
         </div>
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder="Buscar recetas…"
-          style={{
-            width: '100%', padding: '9px 12px 9px 34px', borderRadius: 8,
-            background: 'var(--mp-input-bg)', border: '1px solid var(--mp-border)',
-            color: 'var(--mp-fg)', fontFamily: 'var(--font-sans)', fontSize: 13, outline: 'none',
-          }}
+          className={cn(
+            'w-full py-[9px] pr-3 pl-[34px] rounded-lg border border-border bg-background',
+            'text-foreground font-sans text-[13px] outline-none',
+            'focus:border-brand-300 focus:ring-1 focus:ring-brand-500/20',
+          )}
         />
       </div>
 
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+      {/* Category chips */}
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
         {cats.map(c => (
           <button
             key={c}
             onClick={() => setCat(c)}
-            style={{
-              padding: '5px 11px', borderRadius: 9999,
-              border: '1px solid var(--mp-border)',
-              background: cat === c ? 'var(--mp-coral)' : 'transparent',
-              color: cat === c ? '#1C1A17' : 'var(--mp-fg2)',
-              fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-            }}
+            className={cn(
+              'py-[5px] px-[11px] rounded-full border text-[11px] font-semibold cursor-pointer whitespace-nowrap transition-all duration-150',
+              cat === c
+                ? 'bg-brand-500 border-brand-500 text-[#1C1A17]'
+                : 'bg-transparent border-border text-muted-foreground hover:border-brand-300',
+            )}
           >
             {c}
           </button>
         ))}
       </div>
 
-      <div style={{ fontSize: 11, color: 'var(--mp-fg3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Icon name="recipes" size={12} color="var(--mp-fg3)" />{filtered.length} recetas
+      {/* Count */}
+      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+        <Icon name="recipes" size={12} />{filtered.length} recetas
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingRight: 4 }}>
+      {/* Recipe rows */}
+      <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
         {filtered.map(r => (
-          <div
-            key={r.id}
-            draggable
-            onDragStart={e => { onDragStart(r.id); e.dataTransfer.setData('text/plain', r.id); }}
-            style={{
-              display: 'flex', gap: 10, padding: dense ? 8 : 10,
-              background: 'var(--mp-card)', border: '1px solid var(--mp-border)',
-              borderRadius: 10, cursor: 'grab', transition: 'all 150ms',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-coral)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-border)';
-              (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
-            }}
-          >
-            <RecipeThumb recipe={r} size={dense ? 40 : 48} radius={8} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--mp-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
-                {r.name}
-              </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
-                <Chip color="coral" size="xs">{r.kcal} kcal</Chip>
-                <Chip color="sage" size="xs">{r.p}g P</Chip>
-                <span style={{ fontSize: 10, color: 'var(--mp-fg3)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <Icon name="clock" size={10} color="var(--mp-fg3)" />{r.time}m
-                </span>
-              </div>
-            </div>
-          </div>
+          <DraggableRecipeRow key={r.id} recipe={r} dense={dense} />
         ))}
       </div>
     </div>

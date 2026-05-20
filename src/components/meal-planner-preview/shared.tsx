@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import type { Recipe } from './types';
+import Image from 'next/image';
+import type { Recipe } from '@/generated/prisma';
 import { Icon } from './icons';
 import { cn } from '@/lib/utils';
 
@@ -14,19 +15,37 @@ interface RecipeThumbProps {
 
 export function RecipeThumb({ recipe, size = 44, radius = 8 }: RecipeThumbProps) {
   if (!recipe) return null;
-  const initials = recipe.name
-    .split(' ')
-    .filter(w => w.length > 2)
-    .slice(0, 2)
-    .map(w => w[0])
-    .join('')
-    .toUpperCase();
 
   const radiusClass =
     radius <= 6 ? 'rounded-md' :
     radius <= 8 ? 'rounded-lg' :
     radius <= 12 ? 'rounded-xl' :
     'rounded-2xl';
+
+  if (recipe.imageUrl) {
+    return (
+      <div
+        className={cn('relative flex-shrink-0 overflow-hidden', radiusClass)}
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={recipe.imageUrl}
+          alt={recipe.title}
+          fill
+          className="object-cover"
+          sizes={`${size}px`}
+        />
+      </div>
+    );
+  }
+
+  const initials = recipe.title
+    .split(' ')
+    .filter(w => w.length > 2)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join('')
+    .toUpperCase();
 
   return (
     <div
