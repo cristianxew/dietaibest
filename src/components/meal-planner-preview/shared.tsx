@@ -56,7 +56,7 @@ export function RecipeThumb({ recipe, size = 44, radius = 8 }: RecipeThumbProps)
       )}
       style={{ width: size, height: size }}
     >
-      <div className="absolute inset-0 flex items-center justify-center font-semibold text-white/85 tracking-tight">
+      <div className="absolute inset-0 flex items-center justify-center font-semibold text-brand-900/80 dark:text-white/85 tracking-tight">
         <span style={{ fontSize: size * 0.36 }}>{initials}</span>
       </div>
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />

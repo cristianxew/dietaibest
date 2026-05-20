@@ -131,7 +131,7 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
           )}
           {recipe.prepTime != null && (
             <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
-              <Icon name="clock" size={10} />{recipe.prepTime}m
+              <Icon name="Clock" size={10} />{recipe.prepTime}m
             </span>
           )}
         </div>
@@ -140,11 +140,14 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
   );
 }
 
+type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
+
 export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('Todas');
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipes, setRecipes] = useState<RecipeWithCategories[]>([]);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -155,13 +158,14 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
       if (recipesResult.error) {
         toast.error(recipesResult.error);
       } else if (recipesResult.data) {
-        setRecipes(recipesResult.data.recipes as Recipe[]);
+        setRecipes(recipesResult.data.recipes as RecipeWithCategories[]);
       }
       if (catsResult.error) {
         toast.error(catsResult.error);
       } else if (catsResult.data) {
         setCategories(catsResult.data);
       }
+      setLoading(false);
     }
     load();
   }, []);
@@ -170,8 +174,7 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
 
   const filtered = recipes.filter(r => {
     const matchesCat =
-      cat === 'Todas' ||
-      (r as Recipe & { categories?: RecipeCategory[] }).categories?.some(c => c.name === cat);
+      cat === 'Todas' || r.categories.some(c => c.name === cat);
     const matchesQ = !q || r.title.toLowerCase().includes(q.toLowerCase());
     return matchesCat && matchesQ;
   });
@@ -181,7 +184,7 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
       {/* Search */}
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icon name="search" size={15} />
+          <Icon name="Search" size={15} />
         </div>
         <input
           value={q}
@@ -215,14 +218,24 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
 
       {/* Count */}
       <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-        <Icon name="recipes" size={12} />{filtered.length} recetas
+        <Icon name="UtensilsCrossed" size={12} />{filtered.length} recetas
       </div>
 
       {/* Recipe rows */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
-        {filtered.map(r => (
-          <DraggableRecipeRow key={r.id} recipe={r} dense={dense} />
-        ))}
+        {loading ? (
+          <div className="text-[12px] text-muted-foreground py-6 text-center">
+            Cargando recetas…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-[12px] text-muted-foreground py-6 text-center">
+            No se encontraron recetas.
+          </div>
+        ) : (
+          filtered.map(r => (
+            <DraggableRecipeRow key={r.id} recipe={r} dense={dense} />
+          ))
+        )}
       </div>
     </div>
   );
