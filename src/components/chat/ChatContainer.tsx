@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ChatFAB } from "./ChatFAB";
 import { ChatDrawer } from "./ChatDrawer";
 import { useAuth } from "@/providers/AuthProvider";
@@ -25,8 +25,11 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
   // Listen for deep-link events from other pages (e.g. meal-planner AI button)
   const entitlementsRef = useRef(entitlements);
   entitlementsRef.current = entitlements;
+  const isAuthRef = useRef(isAuthenticated);
+  isAuthRef.current = isAuthenticated;
   useEffect(() => {
     const handler = (e: Event) => {
+      if (!isAuthRef.current) return;
       const detail = (e as CustomEvent<{ prompt?: string }>).detail ?? {};
       if (
         entitlementsRef.current.status === "ready" &&
@@ -41,6 +44,8 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
     window.addEventListener("dietai:open-chat", handler);
     return () => window.removeEventListener("dietai:open-chat", handler);
   }, [paywall]);
+
+  const handleSeedConsumed = useCallback(() => setSeedPrompt(""), []);
 
   const handleToggle = () => {
     if (!isAuthenticated) return;
@@ -79,7 +84,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
           }`}
           style={{ width: 420 }}
         >
-          <ChatDrawer onClose={handleClose} isMobile={false} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={() => setSeedPrompt("")} />
+          <ChatDrawer onClose={handleClose} isMobile={false} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={handleSeedConsumed} />
         </div>
       )}
 
@@ -93,7 +98,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
             isOpen ? "translate-y-0" : "translate-y-full"
           }`}
         >
-          <ChatDrawer onClose={handleClose} isMobile={true} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={() => setSeedPrompt("")} />
+          <ChatDrawer onClose={handleClose} isMobile={true} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={handleSeedConsumed} />
         </div>
       )}
 
