@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
-import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays } from "lucide-react";
+import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getMealPlans,
@@ -26,7 +26,7 @@ import {
   toTemplateDisplay,
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
-import { PlanSwitcher, GridLayout, RecipeLibrary } from "./planner";
+import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 import { DndContext, pointerWithin } from "@dnd-kit/core";
@@ -346,19 +346,97 @@ export function MealPlanner() {
               </div>
 
               {/* Layout area */}
-              <div className="overflow-x-auto">
-                {editingTemplate ? (
-                  <GridLayout
-                    template={editingTemplate}
-                    density={density}
-                    onRemove={handleRemoveMeal}
-                    onServingsChange={handleServingsChange}
-                  />
-                ) : (
-                  <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
-                    Seleccioná un plan para editarlo
+              <div className="flex flex-col gap-3">
+                {/* Layout / density toolbar */}
+                <div className="flex items-center gap-3">
+                  {/* 3-way layout switcher */}
+                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                    {(
+                      [
+                        { id: "grid", label: "Grid", Icon: LayoutGrid },
+                        { id: "stack", label: "Stack", Icon: Layers },
+                        { id: "split", label: "Split", Icon: Columns2 },
+                      ] as const
+                    ).map(({ id, label, Icon: LIcon }) => {
+                      const isActive = layout === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setLayout(id)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                            isActive
+                              ? "bg-card text-brand-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <LIcon className="w-3.5 h-3.5" />
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
+
+                  {/* Density toggle */}
+                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                    {(["regular", "compact"] as const).map((d) => {
+                      const isActive = density === d;
+                      const label = d === "regular" ? "Regular" : "Compact";
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setDensity(d)}
+                          className={cn(
+                            "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                            isActive
+                              ? "bg-card text-brand-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Grid / Stack / Split render */}
+                <div className="overflow-x-auto">
+                  {editingTemplate ? (
+                    <>
+                      {layout === "grid" && (
+                        <GridLayout
+                          template={editingTemplate}
+                          density={density}
+                          onRemove={handleRemoveMeal}
+                          onServingsChange={handleServingsChange}
+                        />
+                      )}
+                      {layout === "stack" && (
+                        <StackLayout
+                          template={editingTemplate}
+                          density={density}
+                          onRemove={handleRemoveMeal}
+                          onServingsChange={handleServingsChange}
+                        />
+                      )}
+                      {layout === "split" && (
+                        <SplitLayout
+                          template={editingTemplate}
+                          density={density}
+                          onRemove={handleRemoveMeal}
+                          onServingsChange={handleServingsChange}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
+                      Seleccioná un plan para editarlo
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </DndContext>

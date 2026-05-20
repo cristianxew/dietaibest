@@ -1,9 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import type { Plan, SlotDef } from './types';
-import type { DensityType } from './types';
-import { RX, DAY_NAMES_ES, MONTH_NAMES_ES, SLOT_DEFS, TARGETS, dayTotals, slotsForPlan } from './data';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
@@ -492,12 +489,6 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
 }
 
 /* ── GridLayout ────────────────────────────────── */
-interface LayoutProps {
-  plan: Plan;
-  onUpdate: (dayIdx: number, slotKey: string, recipeId: string | null) => void;
-  density?: DensityType;
-}
-
 interface GridLayoutProps {
   template: MealPlanTemplateDisplay;
   density: 'regular' | 'compact';
@@ -585,50 +576,54 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
 }
 
 /* ── StackLayout ───────────────────────────────── */
-export function StackLayout({ plan, onUpdate }: LayoutProps) {
-  const days = Array.from({ length: plan.days }, (_, i) => i);
-  const slots = slotsForPlan(plan);
+interface LayoutProps {
+  template: MealPlanTemplateDisplay;
+  density: 'regular' | 'compact';
+  onRemove: (mealId: string) => void;
+  onServingsChange: (mealId: string, servings: number) => void;
+}
+
+export function StackLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+  const dense = density === 'compact';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {days.map(i => {
-        const date = new Date(2026, 4, 4 + i);
-        const isToday = i === 3;
-        const tot = dayTotals(plan, i);
+    <div className="flex flex-col gap-3.5">
+      {template.days.map(day => {
+        const numSlots = template.mealSlots.length;
+        const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-3' : numSlots === 4 ? 'grid-cols-4' : 'grid-cols-5';
         return (
-          <div key={i} style={{
-            background: 'var(--mp-card)',
-            border: isToday ? '1.5px solid var(--mp-coral)' : '1px solid var(--mp-border)',
-            borderRadius: 14, padding: 18, position: 'relative',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 600,
-                  color: isToday ? 'var(--mp-coral)' : 'var(--mp-fg)', letterSpacing: '-0.01em',
-                }}>
-                  {DAY_NAMES_ES[i]} {date.getDate()}
+          <div key={day.id} className="bg-card border border-border rounded-[14px] p-[18px]">
+            <div className="flex items-start justify-between mb-3.5 gap-4">
+              <div className="flex items-baseline gap-3">
+                <div className="font-display text-2xl font-semibold text-foreground tracking-tight">
+                  Día {day.dayNumber}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--mp-fg3)' }}>{MONTH_NAMES_ES[date.getMonth()]} · Día {i + 1}</div>
-                {isToday && <Chip color="coral" size="xs">Hoy</Chip>}
               </div>
-              <DayMacros tot={tot} />
+              <DayMacros macros={day.macros} targets={template.targets} compact />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${slots.length}, 1fr)`, gap: 10 }}>
-              {slots.map(s => (
-                <div key={s.key}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                    <Icon name={s.icon} size={12} color={s.color} />
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: s.color }}>{s.label}</span>
+            <div className={cn('grid gap-2.5', colsClass)}>
+              {template.mealSlots.map(slot => {
+                const meta = MEAL_SLOT_META[slot];
+                const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+                return (
+                  <div key={slot}>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Icon name={meta.iconName} size={12} className={meta.colorClass} />
+                      <span className={cn('text-[10px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
+                        {slotLabel}
+                      </span>
+                    </div>
+                    <MealCell
+                      meal={day.meals.find(m => m.mealType === slot)}
+                      dayId={day.id}
+                      mealType={slot}
+                      onRemove={onRemove}
+                      onServingsChange={onServingsChange}
+                      dense={dense}
+                    />
                   </div>
-                  <MealCell
-                    recipeId={(plan.schedule['d' + i] || {})[s.key]}
-                    slot={s.key}
-                    onDrop={id => onUpdate(i, s.key, id)}
-                    onClear={() => onUpdate(i, s.key, null)}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -638,57 +633,47 @@ export function StackLayout({ plan, onUpdate }: LayoutProps) {
 }
 
 /* ── SplitLayout ───────────────────────────────── */
-export function SplitLayout({ plan, onUpdate }: LayoutProps) {
-  const [sel, setSel] = useState(0);
-  const days = Array.from({ length: plan.days }, (_, i) => i);
-  const date = new Date(2026, 4, 4 + sel);
-  const tot = dayTotals(plan, sel);
-  const slots = slotsForPlan(plan);
+export function SplitLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+  const [selIdx, setSelIdx] = useState(0);
+  const dense = density === 'compact';
+  const selectedDay = template.days[selIdx] ?? template.days[0];
+  const numSlots = template.mealSlots.length;
+  const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-3' : 'grid-cols-4';
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 18, alignItems: 'start' }}>
-      {/* Rail */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, position: 'sticky', top: 0 }}>
-        {days.map(i => {
-          const t = dayTotals(plan, i);
-          const a = i === sel;
-          const isToday = i === 3;
-          const dt = new Date(2026, 4, 4 + i);
-          const pct = Math.min(1, t.kcal / TARGETS.kcal);
+    <div className="grid gap-[18px] items-start" style={{ gridTemplateColumns: '200px 1fr' }}>
+      {/* Day rail */}
+      <div className="flex flex-col gap-1.5 sticky top-0">
+        {template.days.map((day, i) => {
+          const isActive = i === selIdx;
+          const calTarget = template.targets?.calories ?? 2000;
+          const pct = Math.min(1, day.macros.calories / calTarget);
+          const barColor =
+            pct < 0.85 ? 'bg-gold-500' : pct > 1.05 ? 'bg-coral-500' : 'bg-sage-500';
           return (
             <button
-              key={i}
-              onClick={() => setSel(i)}
-              style={{
-                padding: '10px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', textAlign: 'left',
-                background: a ? 'var(--mp-card-soft)' : 'transparent',
-                boxShadow: a ? `inset 0 0 0 1.5px var(--mp-coral)` : 'inset 0 0 0 1px var(--mp-border)',
-                transition: 'all 150ms', width: '100%',
-              }}
+              key={day.id}
+              onClick={() => setSelIdx(i)}
+              className={cn(
+                'w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
+                isActive
+                  ? 'bg-muted shadow-[inset_0_0_0_1.5px_theme(colors.brand.500)]'
+                  : 'bg-transparent shadow-[inset_0_0_0_1px_theme(colors.border)]',
+              )}
             >
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-                    color: isToday ? 'var(--mp-coral)' : 'var(--mp-fg3)',
-                  }}>
-                    {DAY_NAMES_ES[i]}
-                  </span>
-                  <span style={{
-                    fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600,
-                    color: a ? 'var(--mp-coral)' : 'var(--mp-fg)', marginLeft: 6,
-                  }}>
-                    {dt.getDate()}
-                  </span>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <div className="font-display text-[18px] font-semibold text-foreground">
+                  Día {day.dayNumber}
                 </div>
-                {isToday && <span style={{ fontSize: 9, color: 'var(--mp-coral)', fontWeight: 700 }}>HOY</span>}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--mp-fg3)', fontFamily: 'var(--font-mono)', marginBottom: 5 }}>{t.kcal} kcal</div>
-              <div style={{ height: 3, background: 'var(--mp-track)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  width: (pct * 100) + '%', height: '100%',
-                  background: pct < 0.85 ? 'var(--mp-gold)' : pct > 1.05 ? 'var(--mp-coral)' : 'var(--mp-sage)',
-                }} />
+              <div className="text-[10px] text-muted-foreground font-mono mb-1.5">
+                {Math.round(day.macros.calories)} kcal
+              </div>
+              <div className="h-[3px] bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn('h-full rounded-full transition-all', barColor)}
+                  style={{ width: `${pct * 100}%` }}
+                />
               </div>
             </button>
           );
@@ -696,43 +681,48 @@ export function SplitLayout({ plan, onUpdate }: LayoutProps) {
       </div>
 
       {/* Day editor */}
-      <div style={{ background: 'var(--mp-card)', border: '1px solid var(--mp-border)', borderRadius: 14, padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--mp-coral)', marginBottom: 4 }}>
-              {DAY_NAMES_ES[sel]} · {date.getDate()} {MONTH_NAMES_ES[date.getMonth()]}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 600, color: 'var(--mp-fg)', letterSpacing: '-0.015em' }}>
-              Día {sel + 1}
+      {selectedDay && (
+        <div className="bg-card border border-border rounded-[14px] p-6">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
+                Semana · Día {selectedDay.dayNumber}
+              </div>
+              <div className="font-display text-[30px] font-semibold text-foreground tracking-tight">
+                Día {selectedDay.dayNumber}
+              </div>
             </div>
           </div>
-          <button style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'rgba(244,123,92,0.12)', color: 'var(--mp-coral)',
-            border: '1px solid rgba(244,123,92,0.3)', padding: '8px 14px', borderRadius: 8,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600,
-          }}>
-            <Icon name="sparkle" size={14} color="var(--mp-coral)" /> Auto-completar día
-          </button>
+          <div className="mb-5">
+            <DayMacros macros={selectedDay.macros} targets={template.targets} />
+          </div>
+          <div className={cn('grid gap-3', colsClass)}>
+            {template.mealSlots.map(slot => {
+              const meta = MEAL_SLOT_META[slot];
+              const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+              return (
+                <div key={slot}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Icon name={meta.iconName} size={13} className={meta.colorClass} />
+                    <span className={cn('text-[11px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
+                      {slotLabel}
+                    </span>
+                  </div>
+                  <MealCell
+                    meal={selectedDay.meals.find(m => m.mealType === slot)}
+                    dayId={selectedDay.id}
+                    mealType={slot}
+                    onRemove={onRemove}
+                    onServingsChange={onServingsChange}
+                    dense={dense}
+                    compact={dense}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div style={{ marginBottom: 22 }}><DayMacros tot={tot} /></div>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(slots.length, 4)}, 1fr)`, gap: 12 }}>
-          {slots.map(s => (
-            <div key={s.key}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Icon name={s.icon} size={13} color={s.color} />
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: s.color }}>{s.label}</span>
-              </div>
-              <MealCell
-                recipeId={(plan.schedule['d' + sel] || {})[s.key]}
-                slot={s.key}
-                onDrop={id => onUpdate(sel, s.key, id)}
-                onClear={() => onUpdate(sel, s.key, null)}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
