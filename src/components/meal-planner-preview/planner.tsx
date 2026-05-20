@@ -496,6 +496,10 @@ interface GridLayoutProps {
   onServingsChange: (mealId: string, servings: number) => void;
 }
 
+function slotDisplayLabel(slot: MealType): string {
+  return slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+}
+
 export function GridLayout({ template, density, onRemove, onServingsChange }: GridLayoutProps) {
   const dense = density === 'compact';
   const numDays = template.days.length;
@@ -525,7 +529,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
       {/* Meal rows */}
       {template.mealSlots.map(slot => {
         const meta = MEAL_SLOT_META[slot];
-        const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+        const slotLabel = slotDisplayLabel(slot);
         return (
           <div
             key={slot}
@@ -604,7 +608,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
             <div className={cn('grid gap-2.5', colsClass)}>
               {template.mealSlots.map(slot => {
                 const meta = MEAL_SLOT_META[slot];
-                const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+                const slotLabel = slotDisplayLabel(slot);
                 return (
                   <div key={slot}>
                     <div className="flex items-center gap-1.5 mb-1.5">
@@ -635,6 +639,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
 /* ── SplitLayout ───────────────────────────────── */
 export function SplitLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
   const [selIdx, setSelIdx] = useState(0);
+  useEffect(() => { setSelIdx(0); }, [template.id]);
   const dense = density === 'compact';
   const selectedDay = template.days[selIdx] ?? template.days[0];
   const numSlots = template.mealSlots.length;
@@ -649,10 +654,11 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
           const calTarget = template.targets?.calories ?? 2000;
           const pct = Math.min(1, day.macros.calories / calTarget);
           const barColor =
-            pct < 0.85 ? 'bg-gold-500' : pct > 1.05 ? 'bg-coral-500' : 'bg-sage-500';
+            pct < 0.85 ? 'bg-gold-500' : pct > 1.05 ? 'bg-brand-500' : 'bg-sage-500';
           return (
             <button
               key={day.id}
+              type="button"
               onClick={() => setSelIdx(i)}
               className={cn(
                 'w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
@@ -686,7 +692,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
           <div className="flex items-start justify-between mb-5">
             <div>
               <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
-                Semana · Día {selectedDay.dayNumber}
+                {template.name}
               </div>
               <div className="font-display text-[30px] font-semibold text-foreground tracking-tight">
                 Día {selectedDay.dayNumber}
@@ -699,7 +705,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
           <div className={cn('grid gap-3', colsClass)}>
             {template.mealSlots.map(slot => {
               const meta = MEAL_SLOT_META[slot];
-              const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+              const slotLabel = slotDisplayLabel(slot);
               return (
                 <div key={slot}>
                   <div className="flex items-center gap-1.5 mb-2">
@@ -715,7 +721,6 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
                     onRemove={onRemove}
                     onServingsChange={onServingsChange}
                     dense={dense}
-                    compact={dense}
                   />
                 </div>
               );
