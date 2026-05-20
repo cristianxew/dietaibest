@@ -8,7 +8,8 @@ import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
-import { useDraggable } from '@dnd-kit/core';
+import type { MealDisplay, MealType } from '@/types/meal-plan';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Recipe, RecipeCategory } from '@/generated/prisma';
 import { getRecipes, getCategories } from '@/actions/recipe';
@@ -243,93 +244,202 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
 
 /* ── MealCell ──────────────────────────────────── */
 interface MealCellProps {
-  recipeId?: string | null;
-  slot: string;
-  onDrop: (id: string) => void;
-  onClear: () => void;
+  meal?: MealDisplay;
+  dayId: string;
+  mealType: MealType;
+  onRemove: (mealId: string) => void;
+  onServingsChange: (mealId: string, servings: number) => void;
   dense?: boolean;
   compact?: boolean;
 }
 
-export function MealCell({ recipeId, slot, onDrop, onClear, dense = false, compact = false }: MealCellProps) {
-  const [over, setOver] = useState(false);
-  const r = recipeId ? RX[recipeId] : null;
+export function MealCell({
+  meal,
+  dayId,
+  mealType,
+  onRemove,
+  onServingsChange,
+  dense = false,
+  compact = false,
+}: MealCellProps) {
+  // Drop target: always active regardless of filled/empty
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `${dayId}:${mealType}`,
+    data: { dayId, mealType },
+  });
 
-  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setOver(true); };
-  const onDragLeave = () => setOver(false);
-  const onDropEv = (e: React.DragEvent) => {
-    e.preventDefault(); setOver(false);
-    const id = e.dataTransfer.getData('text/plain');
-    if (id) onDrop(id);
+  // Drag source: only active when a meal exists
+  const {
+    attributes: dragAttributes,
+    listeners: dragListeners,
+    setNodeRef: setDragRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: meal ? `meal-${meal.id}` : `empty-${dayId}-${mealType}`,
+    data: {
+      type: 'meal',
+      meal,
+      sourceDayId: dayId,
+      sourceMealType: mealType,
+    },
+    disabled: !meal,
+  });
+
+  // Compose droppable + draggable refs onto the same element
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDropRef(node);
+    setDragRef(node);
   };
 
-  if (!r) {
+  const dragStyle: React.CSSProperties = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
+    : {};
+
+  // Empty slot
+  if (!meal) {
     return (
       <div
-        onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDropEv}
-        style={{
-          background: over ? 'rgba(244,123,92,0.08)' : 'var(--mp-card-soft)',
-          border: `1.5px dashed ${over ? 'var(--mp-coral)' : 'var(--mp-border)'}`,
-          borderRadius: 10, padding: compact ? '10px 10px' : (dense ? '10px' : '14px'),
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-          minHeight: compact ? 64 : (dense ? 72 : 88),
-          cursor: 'pointer', transition: 'all 150ms', textAlign: 'center',
-        }}
+        ref={setDropRef}
+        className={cn(
+          'flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
+          compact ? 'p-2.5 min-h-[64px]' : dense ? 'p-2.5 min-h-[72px]' : 'p-3.5 min-h-[88px]',
+          isOver
+            ? 'border-brand-500 bg-brand-500/5 text-brand-500'
+            : 'border-border bg-card/50 text-muted-foreground',
+        )}
       >
-        <Icon name="sparkle" size={14} color={over ? 'var(--mp-coral)' : 'var(--mp-fg4)'} />
-        <div style={{ fontSize: 11, color: over ? 'var(--mp-coral)' : 'var(--mp-fg4)', fontWeight: 500 }}>
-          {over ? 'Suelta aquí' : 'Arrastra o sugerir'}
+        <Icon name="Sparkles" size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
+        <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
+          {isOver ? 'Suelta aquí' : 'Arrastra o sugerir'}
         </div>
       </div>
     );
   }
 
+  // Filled slot: draggable + droppable card
   return (
     <div
-      onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDropEv}
-      className="mp-meal-cell"
-      style={{
-        background: 'var(--mp-card)',
-        border: `1px solid ${over ? 'var(--mp-coral)' : 'var(--mp-border)'}`,
-        borderRadius: 10, padding: compact ? 8 : 10,
-        position: 'relative', transition: 'all 150ms', cursor: 'pointer', overflow: 'hidden',
-      }}
+      ref={setNodeRef}
+      style={dragStyle}
+      className={cn(
+        'group relative rounded-[10px] border transition-all duration-150 overflow-hidden',
+        compact ? 'p-2' : 'p-2.5',
+        isOver ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-border bg-card',
+        isDragging ? 'cursor-grabbing' : 'cursor-grab',
+      )}
     >
+      {/* Clear button — hover-revealed, outside drag listeners */}
       <button
-        className="mp-cell-x"
-        onClick={onClear}
-        style={{
-          position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 99,
-          background: 'rgba(0,0,0,0.5)', border: 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', opacity: 0, transition: 'opacity 150ms', zIndex: 2,
-        }}
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRemove(meal.id); }}
+        className={cn(
+          'absolute top-1 right-1 z-10 w-5 h-5 rounded-full',
+          'bg-black/50 flex items-center justify-center',
+          'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+          'cursor-pointer border-none',
+        )}
+        aria-label="Quitar receta"
       >
-        <Icon name="x" size={11} color="#fff" />
+        <Icon name="X" size={11} className="text-white" />
       </button>
+
       {compact ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <RecipeThumb recipe={r} size={32} radius={6} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--mp-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
-              {r.name}
+        /* Compact layout: horizontal row */
+        <div className="flex items-center gap-2">
+          {/* Drag area: thumb + name */}
+          <div
+            className="flex items-center gap-2 flex-1 min-w-0"
+            {...dragAttributes}
+            {...dragListeners}
+          >
+            <RecipeThumb
+              recipe={{ title: meal.recipeName, imageUrl: meal.recipeImage ?? null }}
+              size={32}
+              radius={6}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.25]">
+                {meal.recipeName}
+              </div>
+              <div className="text-[10px] text-muted-foreground font-mono">{meal.calories} kcal</div>
             </div>
-            <div style={{ fontSize: 10, color: 'var(--mp-fg3)', fontFamily: 'var(--font-mono)' }}>{r.kcal} kcal</div>
+          </div>
+          {/* Servings stepper */}
+          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
+              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Reducir porciones"
+            >
+              <Icon name="Minus" size={10} />
+            </button>
+            <span className="text-[11px] font-semibold text-foreground w-4 text-center tabular-nums">
+              {meal.servings}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
+              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Aumentar porciones"
+            >
+              <Icon name="Plus" size={10} />
+            </button>
           </div>
         </div>
       ) : (
+        /* Standard layout: vertical card */
         <>
-          <RecipeThumb recipe={r} size={dense ? 40 : 48} radius={6} />
-          <div style={{
-            marginTop: 8, fontSize: 12, fontWeight: 600, color: 'var(--mp-fg)', lineHeight: 1.3,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          } as React.CSSProperties}>
-            {r.name}
+          {/* Drag area: thumb + name */}
+          <div
+            {...dragAttributes}
+            {...dragListeners}
+            className="cursor-grab active:cursor-grabbing"
+          >
+            <RecipeThumb
+              recipe={{ title: meal.recipeName, imageUrl: meal.recipeImage ?? null }}
+              size={dense ? 40 : 48}
+              radius={6}
+            />
+            <div
+              className="mt-2 text-[12px] font-semibold text-foreground leading-[1.3] line-clamp-2"
+            >
+              {meal.recipeName}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 10, color: 'var(--mp-coral)', fontFamily: 'var(--font-mono)', fontWeight: 500 }}>{r.kcal} kcal</span>
-            <span style={{ fontSize: 10, color: 'var(--mp-fg3)' }}>·</span>
-            <span style={{ fontSize: 10, color: 'var(--mp-fg3)', fontFamily: 'var(--font-mono)' }}>{r.p}g P</span>
+
+          {/* Macro line */}
+          <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
+            <Chip color="coral" size="xs">{meal.calories} kcal</Chip>
+            <Chip color="sage" size="xs">{meal.protein}g P</Chip>
+          </div>
+
+          {/* Servings stepper — outside drag listeners */}
+          <div
+            className="flex items-center gap-1 mt-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
+              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Reducir porciones"
+            >
+              <Icon name="Minus" size={10} />
+            </button>
+            <span className="text-[11px] font-semibold text-foreground w-5 text-center tabular-nums">
+              {meal.servings}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
+              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Aumentar porciones"
+            >
+              <Icon name="Plus" size={10} />
+            </button>
+            <span className="text-[10px] text-muted-foreground ml-0.5">porc.</span>
           </div>
         </>
       )}

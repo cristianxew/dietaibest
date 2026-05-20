@@ -2,13 +2,12 @@
 
 import React from 'react';
 import Image from 'next/image';
-import type { Recipe } from '@/generated/prisma';
 import { Icon } from './icons';
 import { cn } from '@/lib/utils';
 
 /* ── RecipeThumb ─────────────────────────────────── */
 interface RecipeThumbProps {
-  recipe: Recipe | null;
+  recipe: { title: string; imageUrl: string | null } | null;
   size?: number;
   radius?: number;
 }
