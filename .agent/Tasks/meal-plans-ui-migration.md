@@ -1,7 +1,7 @@
 # Design: Migrate `/meal-plans` to the new Meal Planner UI
 
 **Date:** 2026-05-20
-**Status:** Design approved — pending implementation plan
+**Status:** Implemented (2026-05-20)
 **Branch:** `feature/DIE-30` (or a dedicated migration branch)
 
 ---
