@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChatFAB } from "./ChatFAB";
 import { ChatDrawer } from "./ChatDrawer";
 import { useAuth } from "@/providers/AuthProvider";
@@ -10,6 +10,7 @@ import { usePaywall } from "@/components/billing/PaywallProvider";
 export function ChatContainer({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [seedPrompt, setSeedPrompt] = useState("");
   const { isAuthenticated } = useAuth();
   const entitlements = useEntitlements();
   const paywall = usePaywall();
@@ -20,6 +21,26 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  // Listen for deep-link events from other pages (e.g. meal-planner AI button)
+  const entitlementsRef = useRef(entitlements);
+  entitlementsRef.current = entitlements;
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ prompt?: string }>).detail ?? {};
+      if (
+        entitlementsRef.current.status === "ready" &&
+        !entitlementsRef.current.data.features.aiChat
+      ) {
+        paywall.open({ code: "PRO_ONLY", feature: "aiChat" });
+        return;
+      }
+      if (detail.prompt) setSeedPrompt(detail.prompt);
+      setIsOpen(true);
+    };
+    window.addEventListener("dietai:open-chat", handler);
+    return () => window.removeEventListener("dietai:open-chat", handler);
+  }, [paywall]);
 
   const handleToggle = () => {
     if (!isAuthenticated) return;
@@ -58,7 +79,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
           }`}
           style={{ width: 420 }}
         >
-          <ChatDrawer onClose={handleClose} isMobile={false} isOpen={isOpen} />
+          <ChatDrawer onClose={handleClose} isMobile={false} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={() => setSeedPrompt("")} />
         </div>
       )}
 
@@ -72,7 +93,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
             isOpen ? "translate-y-0" : "translate-y-full"
           }`}
         >
-          <ChatDrawer onClose={handleClose} isMobile={true} isOpen={isOpen} />
+          <ChatDrawer onClose={handleClose} isMobile={true} isOpen={isOpen} seedPrompt={seedPrompt} onSeedConsumed={() => setSeedPrompt("")} />
         </div>
       )}
 

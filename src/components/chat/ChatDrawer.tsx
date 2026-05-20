@@ -14,9 +14,11 @@ interface ChatDrawerProps {
   onClose: () => void;
   isMobile: boolean;
   isOpen: boolean;
+  seedPrompt?: string;
+  onSeedConsumed?: () => void;
 }
 
-export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
+export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: ChatDrawerProps) {
   const locale = useLocale();
   const t = useTranslations("chat");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,6 +72,15 @@ export function ChatDrawer({ onClose, isOpen }: ChatDrawerProps) {
     }),
     [t, locale]
   );
+
+  // When parent passes a seed prompt (e.g. from the meal-planner AI button),
+  // populate the composer and clear the seed so it only fires once.
+  useEffect(() => {
+    if (seedPrompt && isOpen) {
+      setComposerInitial(seedPrompt);
+      onSeedConsumed?.();
+    }
+  }, [seedPrompt, isOpen, onSeedConsumed]);
 
   const [sessionsOpen, setSessionsOpen] = useState(false);
 

@@ -51,6 +51,15 @@ export function MealPlanner() {
   const [density, setDensity] = useState<"regular" | "compact">("regular");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
+  // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
+  const handleGenerateWithAI = () => {
+    window.dispatchEvent(
+      new CustomEvent("dietai:open-chat", {
+        detail: { prompt: "Generá un plan de comidas para mí" },
+      })
+    );
+  };
+
   // ── Async state ───────────────────────────────────────────────────────────────
   const [isPending, startTransition] = useTransition();
 
@@ -267,20 +276,17 @@ export function MealPlanner() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* AI generate button — wired in a later task */}
+          {/* AI generate button — opens the chat agent pre-seeded with a generate-a-plan prompt */}
           <Button
             variant="outline"
             className={cn(
               "gap-2 h-11 px-5 border-brand-300/60 dark:border-brand-500/30",
               "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
             )}
-            disabled={isPending}
-            onClick={() => {
-              /* AI autofill — implemented in a later task */
-            }}
+            onClick={handleGenerateWithAI}
           >
             <Sparkles className="w-4 h-4" />
-            {t("createPlan")}
+            Generá con IA
           </Button>
 
           <Button
