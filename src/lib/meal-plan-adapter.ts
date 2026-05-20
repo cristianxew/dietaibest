@@ -45,12 +45,15 @@ export function toTemplateDisplay(
     return { id: day.id, dayNumber: day.dayNumber, date: undefined, meals, macros: sumMacros(meals) };
   });
 
+  // Round to 1 decimal to stay consistent with calculateWeeklyMacros in meal-plan-macros.ts
+  const avg = (pick: (d: DayDisplay) => number) =>
+    Math.round((days.reduce((s, d) => s + pick(d), 0) / days.length) * 10) / 10;
   const averageMacros: MacroSummary = days.length
     ? {
-        calories: Math.round(days.reduce((s, d) => s + d.macros.calories, 0) / days.length),
-        protein: Math.round(days.reduce((s, d) => s + d.macros.protein, 0) / days.length),
-        carbs: Math.round(days.reduce((s, d) => s + d.macros.carbs, 0) / days.length),
-        fat: Math.round(days.reduce((s, d) => s + d.macros.fat, 0) / days.length),
+        calories: avg((d) => d.macros.calories),
+        protein: avg((d) => d.macros.protein),
+        carbs: avg((d) => d.macros.carbs),
+        fat: avg((d) => d.macros.fat),
       }
     : emptyMacros();
 

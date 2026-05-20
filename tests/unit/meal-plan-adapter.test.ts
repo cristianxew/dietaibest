@@ -40,6 +40,24 @@ describe("toTemplateDisplay", () => {
     expect(result.averageMacros.calories).toBe(600);
   });
 
+  it("averages macros across multiple days with 1-decimal rounding", () => {
+    const t = {
+      ...fakeTemplate,
+      days: [
+        { id: "d1", dayNumber: 1, meals: [
+          { id: "m1", recipeId: "r", mealType: "breakfast", servings: 1,
+            recipe: { title: "A", imageUrl: null, calories: 100, protein: 10, carbs: 20, fat: 5 } },
+        ] },
+        { id: "d2", dayNumber: 2, meals: [
+          { id: "m2", recipeId: "r", mealType: "breakfast", servings: 1,
+            recipe: { title: "B", imageUrl: null, calories: 201, protein: 11, carbs: 21, fat: 6 } },
+        ] },
+      ],
+    };
+    const result = toTemplateDisplay(t as never);
+    expect(result.averageMacros.calories).toBe(150.5); // (100 + 201) / 2
+  });
+
   it("handles a meal whose recipe is missing", () => {
     const t = { ...fakeTemplate, days: [{ id: "d", dayNumber: 1, meals: [
       { id: "m", recipeId: null, mealType: "lunch", servings: 1, recipe: null },
