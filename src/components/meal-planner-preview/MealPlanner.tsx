@@ -13,15 +13,25 @@ import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
 import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getMealPlans, getMealPlan } from "@/actions/meal-plan";
+import {
+  getMealPlans,
+  getMealPlan,
+  addMealToDay,
+  removeMealFromDay,
+  moveMeal,
+  updateMealServings,
+} from "@/actions/meal-plan";
 import { toast } from "sonner";
 import {
   toTemplateDisplay,
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
-import { PlanSwitcher } from "./planner";
-import type { MealPlanTemplateDisplay } from "@/types/meal-plan";
+import { PlanSwitcher, GridLayout, RecipeLibrary } from "./planner";
+import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
+import { DndContext, pointerWithin } from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import type { Recipe } from "@/generated/prisma";
 
 export function MealPlanner() {
   const t = useTranslations("mealPlans");
@@ -75,6 +85,136 @@ export function MealPlanner() {
       });
     },
     [t]
+  );
+
+  // ── Mutation handlers ─────────────────────────────────────────────────────────
+
+  const handleRemoveMeal = useCallback(
+    (mealId: string) => {
+      startTransition(async () => {
+        const result = await removeMealFromDay(mealId);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success(t("mealRemoved"));
+          if (selectedPlanId) handleSelectPlan(selectedPlanId);
+          loadTemplates();
+        }
+      });
+    },
+    [selectedPlanId, handleSelectPlan, loadTemplates, t]
+  );
+
+  const handleServingsChange = useCallback(
+    (mealId: string, servings: number) => {
+      startTransition(async () => {
+        const result = await updateMealServings({ mealId, servings });
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          if (selectedPlanId) handleSelectPlan(selectedPlanId);
+          loadTemplates();
+        }
+      });
+    },
+    [selectedPlanId, handleSelectPlan, loadTemplates]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (!over) return;
+
+      const dragType = active.data.current?.type as "meal" | "recipe" | undefined;
+      const targetDayId = over.data.current?.dayId as string;
+      const targetMealType = over.data.current?.mealType as MealType;
+
+      if (!targetDayId || !targetMealType) return;
+
+      // Handle recipe drag from sidebar
+      if (dragType === "recipe") {
+        const recipe = active.data.current?.recipe as Recipe;
+        if (recipe) {
+          startTransition(async () => {
+            // Check if target slot already has a meal
+            const targetDay = editingTemplate?.days.find(
+              (d) => d.id === targetDayId
+            );
+            const existingMeal = targetDay?.meals.find(
+              (m) => m.mealType === targetMealType
+            );
+
+            // If slot is occupied, remove existing meal first
+            if (existingMeal) {
+              const removeResult = await removeMealFromDay(existingMeal.id);
+              if (removeResult.error) {
+                toast.error(removeResult.error);
+                return;
+              }
+            }
+
+            // Add new recipe to slot
+            const result = await addMealToDay({
+              mealPlanDayId: targetDayId,
+              recipeId: recipe.id,
+              mealType: targetMealType,
+              servings: 1,
+            });
+
+            if (result.error) {
+              toast.error(result.error);
+            } else {
+              const message = existingMeal
+                ? t("calendar.recipeReplaced", {
+                    recipe: recipe.title,
+                    existing: existingMeal.recipeName,
+                  })
+                : t("calendar.recipeAdded", {
+                    recipe: recipe.title,
+                    mealType: targetMealType,
+                  });
+              toast.success(message);
+              if (selectedPlanId) handleSelectPlan(selectedPlanId);
+              loadTemplates();
+            }
+          });
+        }
+        return;
+      }
+
+      // Handle meal drag (move between slots)
+      const sourceMeal = active.data.current?.meal as
+        | { id: string; recipeName: string }
+        | undefined;
+      const sourceDayId = active.data.current?.sourceDayId as string;
+      const sourceMealType = active.data.current?.sourceMealType as MealType;
+
+      // If dropped on same slot, do nothing
+      if (sourceDayId === targetDayId && sourceMealType === targetMealType) {
+        return;
+      }
+
+      // Move the meal
+      if (sourceMeal) {
+        startTransition(async () => {
+          const result = await moveMeal({
+            mealId: sourceMeal.id,
+            targetDayId,
+            targetMealType,
+          });
+
+          if (result.error) {
+            toast.error(result.error);
+          } else {
+            toast.success(t("mealMoved"));
+            if (selectedPlanId) handleSelectPlan(selectedPlanId);
+            loadTemplates();
+          }
+        });
+      }
+    },
+    [editingTemplate, selectedPlanId, handleSelectPlan, loadTemplates, t]
   );
 
   // ── Effects ───────────────────────────────────────────────────────────────────
@@ -172,7 +312,7 @@ export function MealPlanner() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Planner tab — body filled in by later tasks */}
+        {/* Planner tab */}
         <TabsContent value="planner" className="space-y-6">
           <PlanSwitcher
             templates={templates}
@@ -180,9 +320,48 @@ export function MealPlanner() {
             onPick={handleSelectPlan}
             onCreate={() => setShowCreateDialog(true)}
           />
-          <div data-placeholder="editor" className="text-xs text-muted-foreground/50 italic">
-            {/* editor — Task 6 */}
-          </div>
+
+          {/* Editor body */}
+          <DndContext
+            collisionDetection={pointerWithin}
+            onDragEnd={handleDragEnd}
+          >
+            <div
+              className="grid gap-[18px] items-start"
+              style={{ gridTemplateColumns: "300px 1fr" }}
+            >
+              {/* Recipe library sidebar */}
+              <div className="bg-card border border-border rounded-xl p-4 sticky top-0 h-[calc(100vh-280px)]">
+                <div className="mb-2.5">
+                  <div className="font-display text-[17px] font-semibold text-foreground">
+                    Recetas
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Arrastrá a un slot del plan
+                  </div>
+                </div>
+                <div className="h-[calc(100%-50px)]">
+                  <RecipeLibrary dense={density === "compact"} />
+                </div>
+              </div>
+
+              {/* Layout area */}
+              <div className="overflow-x-auto">
+                {editingTemplate ? (
+                  <GridLayout
+                    template={editingTemplate}
+                    density={density}
+                    onRemove={handleRemoveMeal}
+                    onServingsChange={handleServingsChange}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
+                    Seleccioná un plan para editarlo
+                  </div>
+                )}
+              </div>
+            </div>
+          </DndContext>
         </TabsContent>
 
         {/* Calendar tab — body filled in by later tasks */}

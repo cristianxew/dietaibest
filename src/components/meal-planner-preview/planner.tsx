@@ -8,12 +8,14 @@ import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
-import type { MealDisplay, MealType } from '@/types/meal-plan';
+import type { MealDisplay, MealType, MacroSummary, MacroTarget, MealPlanTemplateDisplay } from '@/types/meal-plan';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Recipe, RecipeCategory } from '@/generated/prisma';
 import { getRecipes, getCategories } from '@/actions/recipe';
 import { toast } from 'sonner';
+import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
+import { compareMacro, getMacroProgressColor } from '@/lib/meal-plan-macros';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -449,29 +451,41 @@ export function MealCell({
 
 /* ── DayMacros ─────────────────────────────────── */
 interface DayMacrosProps {
-  tot: { kcal: number; p: number; c: number; f: number };
-  target?: typeof TARGETS;
+  macros: MacroSummary;
+  targets?: MacroTarget;
   compact?: boolean;
 }
 
-export function DayMacros({ tot, target = TARGETS, compact = false }: DayMacrosProps) {
-  const pct = Math.min(1, tot.kcal / target.kcal);
-  const status =
-    pct < 0.85 ? { c: 'var(--mp-gold)',  t: 'Bajo objetivo'  } :
-    pct > 1.05 ? { c: 'var(--mp-coral)', t: 'Sobre objetivo' } :
-                 { c: 'var(--mp-sage)',  t: 'En objetivo'    };
+export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) {
+  const comparison = compareMacro(macros.calories, targets?.calories);
+  const statusColor = getMacroProgressColor(comparison.status);
+  const statusLabel =
+    comparison.status === 'under' ? 'Bajo objetivo' :
+    comparison.status === 'over'  ? 'Sobre objetivo' :
+                                    'En objetivo';
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: compact ? 0 : 200 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: compact ? 14 : 17, fontWeight: 500, color: 'var(--mp-fg)' }}>{tot.kcal}</div>
-        <div style={{ fontSize: 10, color: 'var(--mp-fg3)' }}>/ {target.kcal} kcal</div>
-        {!compact && <div style={{ fontSize: 10, color: status.c, fontWeight: 600, marginLeft: 'auto' }}>{status.t}</div>}
+    <div className={cn('flex flex-col gap-1.5', !compact && 'min-w-[200px]')}>
+      <div className="flex items-baseline gap-2">
+        <div className={cn('font-mono font-medium text-foreground', compact ? 'text-sm' : 'text-[17px]')}>
+          {Math.round(macros.calories)}
+        </div>
+        {targets?.calories != null && (
+          <div className="text-[10px] text-muted-foreground">
+            / {targets.calories} kcal
+          </div>
+        )}
+        {!compact && comparison.status && (
+          <div className={cn('text-[10px] font-semibold ml-auto', statusColor)}>
+            {statusLabel}
+          </div>
+        )}
       </div>
-      <MacroBar p={tot.p} c={tot.c} f={tot.f} height={5} />
-      <div style={{ display: 'flex', gap: 10, fontSize: 10, color: 'var(--mp-fg3)', fontFamily: 'var(--font-mono)' }}>
-        <span><span style={{ color: 'var(--mp-coral)' }}>●</span> {tot.p}g P</span>
-        <span><span style={{ color: 'var(--mp-gold)' }}>●</span> {tot.c}g C</span>
-        <span><span style={{ color: 'var(--mp-sage)' }}>●</span> {tot.f}g F</span>
+      <MacroBar p={macros.protein} c={macros.carbs} f={macros.fat} height={5} />
+      <div className="flex gap-2.5 text-[10px] text-muted-foreground font-mono">
+        <span><span className="text-brand-500">●</span> {Math.round(macros.protein)}g P</span>
+        <span><span className="text-gold-500">●</span> {Math.round(macros.carbs)}g C</span>
+        <span><span className="text-sage-500">●</span> {Math.round(macros.fat)}g F</span>
       </div>
     </div>
   );
@@ -484,93 +498,87 @@ interface LayoutProps {
   density?: DensityType;
 }
 
-export function GridLayout({ plan, onUpdate, density }: LayoutProps) {
-  const days = Array.from({ length: plan.days }, (_, i) => i);
+interface GridLayoutProps {
+  template: MealPlanTemplateDisplay;
+  density: 'regular' | 'compact';
+  onRemove: (mealId: string) => void;
+  onServingsChange: (mealId: string, servings: number) => void;
+}
+
+export function GridLayout({ template, density, onRemove, onServingsChange }: GridLayoutProps) {
   const dense = density === 'compact';
+  const numDays = template.days.length;
   const cellMin = dense ? 'minmax(110px, 1fr)' : 'minmax(132px, 1fr)';
-  const slots = slotsForPlan(plan);
+  const gridCols = `72px repeat(${numDays}, ${cellMin})`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* Day headers */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `72px repeat(${plan.days}, ${cellMin})`,
-        gap: 8, marginBottom: 10,
-        position: 'sticky', top: 0,
-        background: 'var(--mp-bg)', zIndex: 2, paddingBottom: 6,
-      }}>
+    <div className="flex flex-col">
+      {/* Day headers — sticky */}
+      <div
+        className="grid gap-2 mb-2.5 sticky top-0 bg-background z-[2] pb-1.5"
+        style={{ gridTemplateColumns: gridCols }}
+      >
         <div />
-        {days.map(i => {
-          const date = new Date(2026, 4, 4 + i);
-          const isToday = i === 3;
-          return (
-            <div key={i} style={{ textAlign: 'center', padding: '6px 4px' }}>
-              <div style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-                color: isToday ? 'var(--mp-coral)' : 'var(--mp-fg3)',
-              }}>
-                {DAY_NAMES_ES[i]}
-              </div>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600,
-                color: isToday ? 'var(--mp-coral)' : 'var(--mp-fg)',
-              }}>
-                {date.getDate()}
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--mp-fg4)' }}>{MONTH_NAMES_ES[date.getMonth()]}</div>
+        {template.days.map(day => (
+          <div key={day.id} className="text-center py-1.5 px-1">
+            <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
+              Día
             </div>
-          );
-        })}
+            <div className="font-display text-lg font-semibold text-foreground">
+              {day.dayNumber}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Meal rows */}
-      {slots.map(s => (
-        <div key={s.key} style={{
-          display: 'grid',
-          gridTemplateColumns: `72px repeat(${plan.days}, ${cellMin})`,
-          gap: 8, marginBottom: 10,
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{
-                width: 24, height: 24, borderRadius: 6,
-                background: `${s.color}22`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Icon name={s.icon} size={13} color={s.color} />
+      {template.mealSlots.map(slot => {
+        const meta = MEAL_SLOT_META[slot];
+        const slotLabel = slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
+        return (
+          <div
+            key={slot}
+            className="grid gap-2 mb-2.5"
+            style={{ gridTemplateColumns: gridCols }}
+          >
+            {/* Row label */}
+            <div className="flex flex-col items-start justify-center pt-1.5">
+              <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center">
+                <Icon name={meta.iconName} size={13} className={meta.colorClass} />
+              </div>
+              <div className="text-[11px] font-semibold text-muted-foreground mt-1.5 leading-tight">
+                {slotLabel}
               </div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--mp-fg2)', marginTop: 6 }}>{s.label}</div>
+            {/* Cells */}
+            {template.days.map(day => (
+              <MealCell
+                key={day.id}
+                meal={day.meals.find(m => m.mealType === slot)}
+                dayId={day.id}
+                mealType={slot}
+                onRemove={onRemove}
+                onServingsChange={onServingsChange}
+                dense={dense}
+              />
+            ))}
           </div>
-          {days.map(i => (
-            <MealCell
-              key={i}
-              recipeId={(plan.schedule['d' + i] || {})[s.key]}
-              slot={s.key}
-              dense={dense}
-              onDrop={id => onUpdate(i, s.key, id)}
-              onClear={() => onUpdate(i, s.key, null)}
-            />
-          ))}
-        </div>
-      ))}
+        );
+      })}
 
       {/* Macro footer */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `72px repeat(${plan.days}, ${cellMin})`,
-        gap: 8, marginTop: 8, paddingTop: 14, borderTop: '1px solid var(--mp-border)',
-      }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--mp-fg4)', alignSelf: 'center' }}>Total</div>
-        {days.map(i => {
-          const t = dayTotals(plan, i);
-          return (
-            <div key={i} style={{ padding: '4px 6px' }}>
-              <DayMacros tot={t} compact />
-            </div>
-          );
-        })}
+      <div
+        className="grid gap-2 mt-2 pt-3.5 border-t border-border"
+        style={{ gridTemplateColumns: gridCols }}
+      >
+        <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground self-center">
+          Total
+        </div>
+        {template.days.map(day => (
+          <div key={day.id} className="py-1 px-1.5">
+            <DayMacros macros={day.macros} targets={template.targets} compact />
+          </div>
+        ))}
       </div>
     </div>
   );
