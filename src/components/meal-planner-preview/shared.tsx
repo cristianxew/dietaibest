@@ -74,9 +74,9 @@ export function MacroBar({ p, c, f, height = 4 }: MacroBarProps) {
       className="flex rounded-full overflow-hidden bg-muted"
       style={{ height }}
     >
-      <div className="bg-brand-500" style={{ width: `${pP}%` }} />
-      <div className="bg-gold-500" style={{ width: `${pC}%` }} />
-      <div className="bg-sage-500" style={{ width: `${pF}%` }} />
+      <div className="bg-brand-500 flex-shrink-0" style={{ width: `${pP}%` }} />
+      <div className="bg-gold-500 flex-shrink-0" style={{ width: `${pC}%` }} />
+      <div className="bg-sage-500 flex-shrink-0" style={{ width: `${pF}%` }} />
     </div>
   );
 }
@@ -118,7 +118,7 @@ export function Chip({ children, color = 'neutral', size = 'sm', icon, style }: 
         colorCls,
         sz.wrapper,
       )}
-      style={{ fontSize: sz.fontSize, ...style }}
+      style={{ ...style, fontSize: sz.fontSize }}
     >
       {icon && <Icon name={icon} size={sz.iconSize} />}
       {children}
