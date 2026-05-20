@@ -27,6 +27,7 @@ import {
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
+import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
@@ -448,11 +449,9 @@ export function MealPlanner() {
           </DndContext>
         </TabsContent>
 
-        {/* Calendar tab — body filled in by later tasks */}
+        {/* Calendar tab */}
         <TabsContent value="calendar" className="space-y-6">
-          <div data-placeholder="schedule-calendar" className="text-xs text-muted-foreground/50 italic">
-            {/* schedule-calendar — Task 7 */}
-          </div>
+          <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
         </TabsContent>
       </Tabs>
 
