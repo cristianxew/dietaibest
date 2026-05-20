@@ -55,7 +55,7 @@ export function MealPlanner() {
   const handleGenerateWithAI = () => {
     window.dispatchEvent(
       new CustomEvent("dietai:open-chat", {
-        detail: { prompt: "Generá un plan de comidas para mí" },
+        detail: { prompt: t("aiGeneratePrompt") },
       })
     );
   };
@@ -286,7 +286,7 @@ export function MealPlanner() {
             onClick={handleGenerateWithAI}
           >
             <Sparkles className="w-4 h-4" />
-            Generá con IA
+            {t("generateWithAI")}
           </Button>
 
           <Button
@@ -342,10 +342,10 @@ export function MealPlanner() {
               <div className="bg-card border border-border rounded-xl p-4 sticky top-0 h-[calc(100vh-280px)]">
                 <div className="mb-2.5">
                   <div className="font-display text-[17px] font-semibold text-foreground">
-                    Recetas
+                    {t("recipes")}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    Arrastrá a un slot del plan
+                    {t("dragToSlot")}
                   </div>
                 </div>
                 <div className="h-[calc(100%-50px)]">
@@ -361,11 +361,11 @@ export function MealPlanner() {
                   <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
                     {(
                       [
-                        { id: "grid", label: "Grid", Icon: LayoutGrid },
-                        { id: "stack", label: "Stack", Icon: Layers },
-                        { id: "split", label: "Split", Icon: Columns2 },
+                        { id: "grid", Icon: LayoutGrid },
+                        { id: "stack", Icon: Layers },
+                        { id: "split", Icon: Columns2 },
                       ] as const
-                    ).map(({ id, label, Icon: LIcon }) => {
+                    ).map(({ id, Icon: LIcon }) => {
                       const isActive = layout === id;
                       return (
                         <button
@@ -380,7 +380,7 @@ export function MealPlanner() {
                           )}
                         >
                           <LIcon className="w-3.5 h-3.5" />
-                          {label}
+                          {t(`layout.${id}`)}
                         </button>
                       );
                     })}
@@ -390,7 +390,6 @@ export function MealPlanner() {
                   <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
                     {(["regular", "compact"] as const).map((d) => {
                       const isActive = density === d;
-                      const label = d === "regular" ? "Regular" : "Compact";
                       return (
                         <button
                           key={d}
@@ -403,7 +402,7 @@ export function MealPlanner() {
                               : "bg-transparent text-muted-foreground hover:text-foreground"
                           )}
                         >
-                          {label}
+                          {t(`density.${d}`)}
                         </button>
                       );
                     })}
@@ -446,7 +445,7 @@ export function MealPlanner() {
                     </>
                   ) : (
                     <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
-                      Seleccioná un plan para editarlo
+                      {t("selectPlanToEdit")}
                     </div>
                   )}
                 </div>

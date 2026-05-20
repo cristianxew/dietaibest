@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ interface PlanSwitcherProps {
 }
 
 export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwitcherProps) {
+  const t = useTranslations('mealPlans');
   return (
     <div className="flex flex-wrap gap-2.5 items-stretch">
       {templates.map(template => {
@@ -58,13 +60,13 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
                 <Icon name="Clock" size={11} />{template.duration}d
               </span>
               <span className="flex items-center gap-1">
-                <Icon name="Utensils" size={11} />{template.mealSlots.length}/día
+                <Icon name="Utensils" size={11} />{template.mealSlots.length}{t('perDay')}
               </span>
               <span className="flex items-center gap-1 text-brand-500">
                 <Icon name="Flame" size={11} />{template.targetCalories ?? 0} kcal
               </span>
             </div>
-            {template.isPublic && <Chip color="gold" size="xs">Público</Chip>}
+            {template.isPublic && <Chip color="gold" size="xs">{t('public')}</Chip>}
           </button>
         );
       })}
@@ -79,7 +81,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
         )}
       >
         <Icon name="Plus" size={18} />
-        <span className="text-xs font-semibold">Nuevo plan</span>
+        <span className="text-xs font-semibold">{t('createPlan')}</span>
       </button>
     </div>
   );
@@ -143,8 +145,10 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
 type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
 
 export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
+  const t = useTranslations('mealPlans');
+  const allLabel = t('allCategories');
   const [q, setQ] = useState('');
-  const [cat, setCat] = useState('Todas');
+  const [cat, setCat] = useState(allLabel);
   const [recipes, setRecipes] = useState<RecipeWithCategories[]>([]);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,11 +174,11 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
     load();
   }, []);
 
-  const cats = ['Todas', ...categories.map(c => c.name)];
+  const cats = [allLabel, ...categories.map(c => c.name)];
 
   const filtered = recipes.filter(r => {
     const matchesCat =
-      cat === 'Todas' || r.categories.some(c => c.name === cat);
+      cat === allLabel || r.categories.some(c => c.name === cat);
     const matchesQ = !q || r.title.toLowerCase().includes(q.toLowerCase());
     return matchesCat && matchesQ;
   });
@@ -189,7 +193,7 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
-          placeholder="Buscar recetas…"
+          placeholder={t('searchRecipes')}
           className={cn(
             'w-full py-[9px] pr-3 pl-[34px] rounded-lg border border-border bg-background',
             'text-foreground font-sans text-[13px] outline-none',
@@ -218,18 +222,18 @@ export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
 
       {/* Count */}
       <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-        <Icon name="UtensilsCrossed" size={12} />{filtered.length} recetas
+        <Icon name="UtensilsCrossed" size={12} />{t('recipesFound', { count: filtered.length })}
       </div>
 
       {/* Recipe rows */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
         {loading ? (
           <div className="text-[12px] text-muted-foreground py-6 text-center">
-            Cargando recetas…
+            {t('loading')}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-[12px] text-muted-foreground py-6 text-center">
-            No se encontraron recetas.
+            {t('noRecipesFound')}
           </div>
         ) : (
           filtered.map(r => (
@@ -261,6 +265,7 @@ export function MealCell({
   dense = false,
   compact = false,
 }: MealCellProps) {
+  const t = useTranslations('mealPlans');
   // Drop target: always active regardless of filled/empty
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `${dayId}:${mealType}`,
@@ -310,7 +315,7 @@ export function MealCell({
       >
         <Icon name="Sparkles" size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
         <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
-          {isOver ? 'Suelta aquí' : 'Arrastra o sugerir'}
+          {isOver ? t('dropMealHere') : t('dragOrSuggest')}
         </div>
       </div>
     );
@@ -338,7 +343,7 @@ export function MealCell({
           'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
           'cursor-pointer border-none',
         )}
-        aria-label="Quitar receta"
+        aria-label={t('slot.removeMeal')}
       >
         <Icon name="X" size={11} className="text-white" />
       </button>
@@ -370,7 +375,7 @@ export function MealCell({
               type="button"
               onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
               className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Reducir porciones"
+              aria-label={t('slot.decreaseServings')}
             >
               <Icon name="Minus" size={10} />
             </button>
@@ -381,7 +386,7 @@ export function MealCell({
               type="button"
               onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
               className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Aumentar porciones"
+              aria-label={t('slot.increaseServings')}
             >
               <Icon name="Plus" size={10} />
             </button>
@@ -423,7 +428,7 @@ export function MealCell({
               type="button"
               onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
               className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Reducir porciones"
+              aria-label={t('slot.decreaseServings')}
             >
               <Icon name="Minus" size={10} />
             </button>
@@ -434,11 +439,11 @@ export function MealCell({
               type="button"
               onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
               className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Aumentar porciones"
+              aria-label={t('slot.increaseServings')}
             >
               <Icon name="Plus" size={10} />
             </button>
-            <span className="text-[10px] text-muted-foreground ml-0.5">porc.</span>
+            <span className="text-[10px] text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
           </div>
         </>
       )}
@@ -454,12 +459,13 @@ interface DayMacrosProps {
 }
 
 export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) {
+  const t = useTranslations('mealPlans');
   const comparison = compareMacro(macros.calories, targets?.calories);
   const statusColor = getMacroStatusColor(comparison.status);
   const statusLabel =
-    comparison.status === 'under' ? 'Bajo objetivo' :
-    comparison.status === 'over'  ? 'Sobre objetivo' :
-                                    'En objetivo';
+    comparison.status === 'under' ? t('underTarget') :
+    comparison.status === 'over'  ? t('overTarget') :
+                                    t('onTrack');
 
   return (
     <div className={cn('flex flex-col gap-1.5', !compact && 'min-w-[200px]')}>
@@ -496,11 +502,8 @@ interface GridLayoutProps {
   onServingsChange: (mealId: string, servings: number) => void;
 }
 
-function slotDisplayLabel(slot: MealType): string {
-  return slot.charAt(0).toUpperCase() + slot.slice(1).replace(/([A-Z])/g, ' $1');
-}
-
 export function GridLayout({ template, density, onRemove, onServingsChange }: GridLayoutProps) {
+  const t = useTranslations('mealPlans');
   const dense = density === 'compact';
   const numDays = template.days.length;
   const cellMin = dense ? 'minmax(110px, 1fr)' : 'minmax(132px, 1fr)';
@@ -517,7 +520,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
         {template.days.map(day => (
           <div key={day.id} className="text-center py-1.5 px-1">
             <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
-              Día
+              {t('calendar.dayPrefix')}
             </div>
             <div className="font-display text-lg font-semibold text-foreground">
               {day.dayNumber}
@@ -529,7 +532,6 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
       {/* Meal rows */}
       {template.mealSlots.map(slot => {
         const meta = MEAL_SLOT_META[slot];
-        const slotLabel = slotDisplayLabel(slot);
         return (
           <div
             key={slot}
@@ -542,7 +544,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
                 <Icon name={meta.iconName} size={13} className={meta.colorClass} />
               </div>
               <div className="text-[11px] font-semibold text-muted-foreground mt-1.5 leading-tight">
-                {slotLabel}
+                {t(meta.i18nKey)}
               </div>
             </div>
             {/* Cells */}
@@ -567,7 +569,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
         style={{ gridTemplateColumns: gridCols }}
       >
         <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground self-center">
-          Total
+          {t('total')}
         </div>
         {template.days.map(day => (
           <div key={day.id} className="py-1 px-1.5">
@@ -588,6 +590,7 @@ interface LayoutProps {
 }
 
 export function StackLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+  const t = useTranslations('mealPlans');
   const dense = density === 'compact';
 
   return (
@@ -600,7 +603,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
             <div className="flex items-start justify-between mb-3.5 gap-4">
               <div className="flex items-baseline gap-3">
                 <div className="font-display text-2xl font-semibold text-foreground tracking-tight">
-                  Día {day.dayNumber}
+                  {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
               <DayMacros macros={day.macros} targets={template.targets} compact />
@@ -608,13 +611,12 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
             <div className={cn('grid gap-2.5', colsClass)}>
               {template.mealSlots.map(slot => {
                 const meta = MEAL_SLOT_META[slot];
-                const slotLabel = slotDisplayLabel(slot);
                 return (
                   <div key={slot}>
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Icon name={meta.iconName} size={12} className={meta.colorClass} />
                       <span className={cn('text-[10px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
-                        {slotLabel}
+                        {t(meta.i18nKey)}
                       </span>
                     </div>
                     <MealCell
@@ -638,6 +640,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
 
 /* ── SplitLayout ───────────────────────────────── */
 export function SplitLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+  const t = useTranslations('mealPlans');
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
   const dense = density === 'compact';
@@ -669,7 +672,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
             >
               <div className="flex items-baseline justify-between mb-1.5">
                 <div className="font-display text-[18px] font-semibold text-foreground">
-                  Día {day.dayNumber}
+                  {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
               <div className="text-[10px] text-muted-foreground font-mono mb-1.5">
@@ -695,7 +698,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
                 {template.name}
               </div>
               <div className="font-display text-[30px] font-semibold text-foreground tracking-tight">
-                Día {selectedDay.dayNumber}
+                {t('calendar.dayNumber', { number: selectedDay.dayNumber })}
               </div>
             </div>
           </div>
@@ -705,13 +708,12 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
           <div className={cn('grid gap-3', colsClass)}>
             {template.mealSlots.map(slot => {
               const meta = MEAL_SLOT_META[slot];
-              const slotLabel = slotDisplayLabel(slot);
               return (
                 <div key={slot}>
                   <div className="flex items-center gap-1.5 mb-2">
                     <Icon name={meta.iconName} size={13} className={meta.colorClass} />
                     <span className={cn('text-[11px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
-                      {slotLabel}
+                      {t(meta.i18nKey)}
                     </span>
                   </div>
                   <MealCell

@@ -708,11 +708,41 @@
             "addMealsDescription": "Add meals to each day of your meal plan",
             "dayNumber": "Day {number}",
             "scheduleTitle": "Schedule Your Meal Plans",
-            "scheduleDescription": "Drag and drop meal plans from the list onto calendar dates to schedule them. You can schedule the same meal plan multiple times."
+            "scheduleDescription": "Drag and drop meal plans from the list onto calendar dates to schedule them. You can schedule the same meal plan multiple times.",
+            "prevMonth": "Previous month",
+            "nextMonth": "Next month",
+            "clickToUnschedule": "Click a scheduled day to unschedule"
+        },
+        "generateWithAI": "Generate with AI",
+        "aiGeneratePrompt": "Generate a meal plan for me",
+        "dragToSlot": "Drag to a plan slot",
+        "selectPlanToEdit": "Select a plan to edit it",
+        "dragOrSuggest": "Drop or suggest",
+        "servingsAbbrev": "serv.",
+        "total": "Total",
+        "weeklySummary": "Weekly Summary",
+        "dailyAverageWithCalories": "Daily average · {calories} kcal",
+        "perDay": "/day",
+        "macroLabels": {
+            "calories": "Calories",
+            "protein": "Protein",
+            "carbs": "Carbs",
+            "fat": "Fat"
+        },
+        "layout": {
+            "grid": "Grid",
+            "stack": "Stack",
+            "split": "Split"
+        },
+        "density": {
+            "regular": "Regular",
+            "compact": "Compact"
         },
         "slot": {
             "dragToMove": "Drag to move meal",
-            "removeMeal": "Remove meal"
+            "removeMeal": "Remove meal",
+            "decreaseServings": "Decrease servings",
+            "increaseServings": "Increase servings"
         },
         "picker": {
             "selectRecipe": "Select Recipe",

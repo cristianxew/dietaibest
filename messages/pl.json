@@ -703,11 +703,41 @@
             "addMealsDescription": "Dodaj posiłki do każdego dnia planu posiłków",
             "dayNumber": "Dzień {number}",
             "scheduleTitle": "Zaplanuj Swoje Plany Posiłków",
-            "scheduleDescription": "Przeciągnij i upuść plany posiłków z listy na daty kalendarza, aby je zaplanować. Możesz zaplanować ten sam plan posiłków wiele razy."
+            "scheduleDescription": "Przeciągnij i upuść plany posiłków z listy na daty kalendarza, aby je zaplanować. Możesz zaplanować ten sam plan posiłków wiele razy.",
+            "prevMonth": "Poprzedni miesiąc",
+            "nextMonth": "Następny miesiąc",
+            "clickToUnschedule": "Kliknij zaplanowany dzień, aby usunąć harmonogram"
+        },
+        "generateWithAI": "Generuj z AI",
+        "aiGeneratePrompt": "Wygeneruj dla mnie plan posiłków",
+        "dragToSlot": "Przeciągnij do slotu planu",
+        "selectPlanToEdit": "Wybierz plan do edycji",
+        "dragOrSuggest": "Upuść lub zaproponuj",
+        "servingsAbbrev": "porc.",
+        "total": "Łącznie",
+        "weeklySummary": "Podsumowanie tygodniowe",
+        "dailyAverageWithCalories": "Średnia dzienna · {calories} kcal",
+        "perDay": "/dzień",
+        "macroLabels": {
+            "calories": "Kalorie",
+            "protein": "Białko",
+            "carbs": "Węglowodany",
+            "fat": "Tłuszcz"
+        },
+        "layout": {
+            "grid": "Siatka",
+            "stack": "Stos",
+            "split": "Podział"
+        },
+        "density": {
+            "regular": "Normalny",
+            "compact": "Zwarty"
         },
         "slot": {
             "dragToMove": "Przeciągnij, aby przenieść posiłek",
-            "removeMeal": "Usuń posiłek"
+            "removeMeal": "Usuń posiłek",
+            "decreaseServings": "Zmniejsz porcje",
+            "increaseServings": "Zwiększ porcje"
         },
         "picker": {
             "selectRecipe": "Wybierz Przepis",

@@ -3,12 +3,14 @@
 import { cn } from "@/lib/utils";
 import { calculateWeeklyMacros, getProgressPercentage } from "@/lib/meal-plan-macros";
 import type { MealPlanTemplateDisplay } from "@/types/meal-plan";
+import { useTranslations } from "next-intl";
 
 interface WeeklyMacroStripProps {
   template: MealPlanTemplateDisplay;
 }
 
 export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
+  const t = useTranslations("mealPlans");
   const weekly = calculateWeeklyMacros(template.days);
   const { totalMacros, averageDailyMacros } = weekly;
   const duration = template.duration;
@@ -20,28 +22,28 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
 
   const metrics = [
     {
-      label: "Calorías",
+      label: t("macroLabels.calories"),
       value: Math.round(totalMacros.calories),
       target: weeklyCaloriesTarget,
       unit: "kcal",
       barColor: "bg-brand-500",
     },
     {
-      label: "Proteína",
+      label: t("macroLabels.protein"),
       value: Math.round(totalMacros.protein),
       target: weeklyProteinTarget,
       unit: "g",
       barColor: "bg-brand-500",
     },
     {
-      label: "Carbos",
+      label: t("macroLabels.carbs"),
       value: Math.round(totalMacros.carbs),
       target: weeklyCarbsTarget,
       unit: "g",
       barColor: "bg-gold-500",
     },
     {
-      label: "Grasas",
+      label: t("macroLabels.fat"),
       value: Math.round(totalMacros.fat),
       target: weeklyFatTarget,
       unit: "g",
@@ -60,10 +62,10 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
       {/* Label block */}
       <div>
         <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1">
-          Resumen semanal
+          {t("weeklySummary")}
         </div>
         <div className="text-[12px] text-muted-foreground">
-          Promedio diario · {Math.round(averageDailyMacros.calories)} kcal
+          {t("dailyAverageWithCalories", { calories: Math.round(averageDailyMacros.calories) })}
         </div>
       </div>
 

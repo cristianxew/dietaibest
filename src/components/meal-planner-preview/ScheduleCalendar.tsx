@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { TemplateWithMealsAndSchedules } from "@/lib/meal-plan-adapter";
+import { useTranslations } from "next-intl";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ function DraggableTemplateItem({
 }: {
   template: TemplateWithMealsAndSchedules;
 }) {
+  const t = useTranslations("mealPlans");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `cal-tpl-${template.id}`,
     data: { templateId: template.id },
@@ -106,14 +108,14 @@ function DraggableTemplateItem({
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" />
             <span>
-              {template.duration} {template.duration === 1 ? "día" : "días"}
+              {template.duration} {template.duration === 1 ? t("calendar.day") : t("calendar.days")}
             </span>
             {activeSchedules > 0 && (
               <>
                 <span className="text-muted-foreground/40">·</span>
                 <span>
                   {activeSchedules}{" "}
-                  {activeSchedules === 1 ? "programado" : "programados"}
+                  {activeSchedules === 1 ? t("calendar.schedule") : t("calendar.schedules")}
                 </span>
               </>
             )}
@@ -139,6 +141,7 @@ function CalendarCell({
   scheduledInfo: ScheduledCellInfo | null;
   onCellClick: (scheduleId: string) => void;
 }) {
+  const t = useTranslations("mealPlans");
   const iso = isoOf(date);
   const today = startOfDay(new Date());
   const isPast = isBefore(date, today) && !isToday;
@@ -195,7 +198,7 @@ function CalendarCell({
             {scheduledInfo.templateName}
           </p>
           <p className="text-[9px] text-brand-600/70 dark:text-brand-400/60 mt-0.5">
-            Día {scheduledInfo.dayNumber}
+            {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
           </p>
         </div>
       )}
@@ -206,6 +209,7 @@ function CalendarCell({
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps) {
+  const t = useTranslations("mealPlans");
   const now = new Date();
   const [month, setMonth] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [, startTransition] = useTransition();
@@ -319,12 +323,12 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
     // Reject past dates
     const target = startOfDay(targetDate);
     if (isBefore(target, today)) {
-      toast.error("No se puede programar en una fecha pasada.");
+      toast.error(t("calendar.errors.pastDate"));
       return;
     }
 
     // Overlap check
-    const template = templates.find((t) => t.id === templateId);
+    const template = templates.find((tpl) => tpl.id === templateId);
     if (!template) return;
 
     const endDate = addDays(target, template.duration - 1);
@@ -338,7 +342,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
     });
 
     if (hasOverlap) {
-      toast.error("Ya hay un plan programado en ese rango de fechas.");
+      toast.error(t("calendar.errors.overlap"));
       return;
     }
 
@@ -347,7 +351,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Plan programado correctamente.");
+        toast.success(t("calendar.scheduledSuccess"));
         onUpdate();
       }
     });
@@ -368,7 +372,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
       if (result?.error) {
         toast.error(result.error);
       } else {
-        toast.success("Plan desprogramado correctamente.");
+        toast.success(t("calendar.unscheduledSuccess"));
         onUpdate();
       }
       setUnscheduleDialogOpen(false);
@@ -396,10 +400,10 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
           <div className="bg-card border border-border/60 rounded-2xl p-4 space-y-3">
             <div>
               <p className="font-display text-[17px] font-semibold text-foreground">
-                Tus planes
+                {t("calendar.yourMealPlans")}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                Arrastrá a una fecha para programar.
+                {t("calendar.dragInstruction")}
               </p>
             </div>
 
@@ -409,7 +413,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                   <CalendarDays className="w-6 h-6 text-muted-foreground/40" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  No tenés planes todavía.
+                  {t("calendar.noPlansAvailable")}
                 </p>
               </div>
             ) : (
@@ -429,7 +433,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 <button
                   onClick={prevMonth}
                   className="w-8 h-8 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
-                  aria-label="Mes anterior"
+                  aria-label={t("calendar.prevMonth")}
                 >
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
@@ -444,7 +448,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 <button
                   onClick={nextMonth}
                   className="w-8 h-8 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
-                  aria-label="Mes siguiente"
+                  aria-label={t("calendar.nextMonth")}
                 >
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </button>
@@ -454,7 +458,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 onClick={goToToday}
                 className="px-3 py-1.5 rounded-lg border border-border/60 bg-transparent text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
               >
-                Hoy
+                {t("calendar.today")}
               </button>
             </div>
 
@@ -499,15 +503,15 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-white text-[10px] font-bold">
                   {today.getDate()}
                 </div>
-                <span>Hoy</span>
+                <span>{t("calendar.today")}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-8 h-4 rounded bg-brand-500/15 border border-brand-500/30" />
-                <span>Programado</span>
+                <span>{t("calendar.scheduledLegend")}</span>
               </div>
               {templates.length > 0 && (
                 <div className="flex items-center gap-1.5 ml-auto text-[10px] text-muted-foreground/60 italic">
-                  Click en un día programado para desprogramar
+                  {t("calendar.clickToUnschedule")}
                 </div>
               )}
             </div>
@@ -528,7 +532,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {draggedTemplate.duration}{" "}
-                    {draggedTemplate.duration === 1 ? "día" : "días"}
+                    {draggedTemplate.duration === 1 ? t("calendar.day") : t("calendar.days")}
                   </p>
                 </div>
               </div>
@@ -542,19 +546,19 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-lg">
-              ¿Desprogramar este plan?
+              {t("calendar.removeScheduleTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Esto eliminará el plan del calendario. El plan en sí no se borra.
+              {t("calendar.removeScheduleDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUnschedule}
               className="rounded-xl bg-destructive hover:bg-destructive/90"
             >
-              Desprogramar
+              {t("calendar.removeScheduleAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

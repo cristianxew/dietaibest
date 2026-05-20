@@ -708,11 +708,41 @@
             "addMealsDescription": "Agrega comidas a cada día de tu plan de comidas",
             "dayNumber": "Día {number}",
             "scheduleTitle": "Programa Tus Planes de Comidas",
-            "scheduleDescription": "Arrastra y suelta planes de comidas de la lista a las fechas del calendario para programarlos. Puedes programar el mismo plan de comidas múltiples veces."
+            "scheduleDescription": "Arrastra y suelta planes de comidas de la lista a las fechas del calendario para programarlos. Puedes programar el mismo plan de comidas múltiples veces.",
+            "prevMonth": "Mes anterior",
+            "nextMonth": "Mes siguiente",
+            "clickToUnschedule": "Hacé clic en un día programado para desprogramar"
+        },
+        "generateWithAI": "Generá con IA",
+        "aiGeneratePrompt": "Generá un plan de comidas para mí",
+        "dragToSlot": "Arrastrá a un slot del plan",
+        "selectPlanToEdit": "Seleccioná un plan para editarlo",
+        "dragOrSuggest": "Soltá o sugerir",
+        "servingsAbbrev": "porc.",
+        "total": "Total",
+        "weeklySummary": "Resumen semanal",
+        "dailyAverageWithCalories": "Promedio diario · {calories} kcal",
+        "perDay": "/día",
+        "macroLabels": {
+            "calories": "Calorías",
+            "protein": "Proteína",
+            "carbs": "Carbos",
+            "fat": "Grasas"
+        },
+        "layout": {
+            "grid": "Grilla",
+            "stack": "Apilado",
+            "split": "División"
+        },
+        "density": {
+            "regular": "Regular",
+            "compact": "Compacto"
         },
         "slot": {
             "dragToMove": "Arrastra para mover comida",
-            "removeMeal": "Eliminar comida"
+            "removeMeal": "Eliminar comida",
+            "decreaseServings": "Reducir porciones",
+            "increaseServings": "Aumentar porciones"
         },
         "picker": {
             "selectRecipe": "Seleccionar Receta",
