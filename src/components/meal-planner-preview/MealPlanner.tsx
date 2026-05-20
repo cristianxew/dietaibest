@@ -27,6 +27,7 @@ import {
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
+import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 import { DndContext, pointerWithin } from "@dnd-kit/core";
@@ -401,6 +402,11 @@ export function MealPlanner() {
                     })}
                   </div>
                 </div>
+
+                {/* Weekly macro summary strip */}
+                {editingTemplate && (
+                  <WeeklyMacroStrip template={editingTemplate} />
+                )}
 
                 {/* Grid / Stack / Split render */}
                 <div className="overflow-x-auto">
