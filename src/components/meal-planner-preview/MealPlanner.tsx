@@ -19,6 +19,7 @@ import {
   toTemplateDisplay,
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
+import { PlanSwitcher } from "./planner";
 import type { MealPlanTemplateDisplay } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 
@@ -173,9 +174,12 @@ export function MealPlanner() {
 
         {/* Planner tab — body filled in by later tasks */}
         <TabsContent value="planner" className="space-y-6">
-          <div data-placeholder="plan-switcher" className="text-xs text-muted-foreground/50 italic">
-            {/* plan-switcher — Task 5 */}
-          </div>
+          <PlanSwitcher
+            templates={templates}
+            activeId={selectedPlanId}
+            onPick={handleSelectPlan}
+            onCreate={() => setShowCreateDialog(true)}
+          />
           <div data-placeholder="editor" className="text-xs text-muted-foreground/50 italic">
             {/* editor — Task 6 */}
           </div>

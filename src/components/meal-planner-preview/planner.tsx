@@ -6,83 +6,75 @@ import type { DensityType } from './types';
 import { RECIPES, RX, DAY_NAMES_ES, MONTH_NAMES_ES, SLOT_DEFS, TARGETS, dayTotals, slotsForPlan } from './data';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
+import { cn } from '@/lib/utils';
+import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
-  plans: Plan[];
-  activeId: string;
+  templates: TemplateWithMealsAndSchedules[];
+  activeId: string | null;
   onPick: (id: string) => void;
   onCreate: () => void;
 }
 
-export function PlanSwitcher({ plans, activeId, onPick, onCreate }: PlanSwitcherProps) {
+export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwitcherProps) {
   return (
-    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'stretch' }}>
-      {plans.map(p => {
-        const a = p.id === activeId;
+    <div className="flex flex-wrap gap-2.5 items-stretch">
+      {templates.map(template => {
+        const isActive = template.id === activeId;
         return (
           <button
-            key={p.id}
-            onClick={() => onPick(p.id)}
-            style={{
-              minWidth: 200, padding: '14px 16px', textAlign: 'left',
-              background: a ? 'var(--mp-card-soft)' : 'var(--mp-card)',
-              border: a ? `1.5px solid ${p.color}` : '1px solid var(--mp-border)',
-              borderRadius: 12, cursor: 'pointer', position: 'relative',
-              boxShadow: a ? `0 0 0 4px ${p.color}1a` : 'none',
-              transition: 'all 200ms var(--mp-ease)',
-            }}
+            key={template.id}
+            onClick={() => onPick(template.id)}
+            className={cn(
+              'min-w-[200px] px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200',
+              isActive
+                ? 'bg-muted border-[1.5px] border-brand-500 shadow-[0_0_0_4px_theme(colors.brand.500/10)]'
+                : 'bg-card border border-border shadow-none'
+            )}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600,
-                color: a ? p.color : 'var(--mp-fg)', letterSpacing: '-0.01em',
-              }}>
-                {p.name}
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={cn(
+                  'font-display text-base font-semibold tracking-tight',
+                  isActive ? 'text-brand-500' : 'text-foreground'
+                )}
+              >
+                {template.name}
               </div>
-              {a && (
-                <div style={{
-                  width: 18, height: 18, borderRadius: 99, background: p.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Icon name="check" size={11} color="#1C1A17" strokeWidth={2.5} />
+              {isActive && (
+                <div className="w-[18px] h-[18px] rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0 text-[#1C1A17]">
+                  <Icon name="Check" size={11} />
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--mp-fg3)', marginBottom: 8 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Icon name="clock" size={11} color="var(--mp-fg3)" />{p.days}d
+            <div className="flex gap-3.5 text-[11px] text-muted-foreground mb-2">
+              <span className="flex items-center gap-1">
+                <Icon name="Clock" size={11} />{template.duration}d
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Icon name="utensils" size={11} color="var(--mp-fg3)" />{p.meals}/día
+              <span className="flex items-center gap-1">
+                <Icon name="Utensils" size={11} />{template.mealSlots.length}/día
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--mp-coral)' }}>
-                <Icon name="flame" size={11} color="var(--mp-coral)" />{p.kcal} kcal
+              <span className="flex items-center gap-1 text-brand-500">
+                <Icon name="Flame" size={11} />{template.targetCalories ?? 0} kcal
               </span>
             </div>
-            {p.public && <Chip color="gold" size="xs">Público</Chip>}
+            {template.isPublic && <Chip color="gold" size="xs">Público</Chip>}
           </button>
         );
       })}
       <button
         onClick={onCreate}
-        style={{
-          minWidth: 140, padding: '14px 16px',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
-          background: 'transparent', border: '1.5px dashed var(--mp-border)',
-          borderRadius: 12, cursor: 'pointer', color: 'var(--mp-fg3)', transition: 'all 150ms',
-        }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-coral)';
-          (e.currentTarget as HTMLElement).style.color = 'var(--mp-coral)';
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--mp-border)';
-          (e.currentTarget as HTMLElement).style.color = 'var(--mp-fg3)';
-        }}
+        className={cn(
+          'min-w-[140px] px-4 py-3.5',
+          'flex flex-col items-center justify-center gap-1.5',
+          'bg-transparent border-[1.5px] border-dashed border-border rounded-xl cursor-pointer',
+          'text-muted-foreground transition-all duration-150',
+          'hover:border-brand-500 hover:text-brand-500'
+        )}
       >
-        <Icon name="plus" size={18} color="currentColor" />
-        <span style={{ fontSize: 12, fontWeight: 600 }}>Nuevo plan</span>
+        <Icon name="Plus" size={18} />
+        <span className="text-xs font-semibold">Nuevo plan</span>
       </button>
     </div>
   );
