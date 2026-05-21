@@ -282,14 +282,14 @@ export function MealPlanner() {
       <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20">
-              <ChefHat className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            <div className="w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] flex items-center justify-center flex-shrink-0">
+              <CalendarDays className="w-[15px] h-[15px] text-brand-500 dark:text-brand-600" />
             </div>
-            <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-widest">
+            <span className="text-xs font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
               {t("mealPlanner")}
             </span>
           </div>
-          <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
             {t("title")}
           </h1>
           <p className="text-muted-foreground max-w-lg leading-relaxed">
@@ -314,8 +314,9 @@ export function MealPlanner() {
           <Button
             onClick={() => setShowCreateDialog(true)}
             className={cn(
-              "gap-2 h-11 px-6 shadow-lg shadow-brand-500/20 transition-all duration-300",
-              "hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5"
+              "gap-2 h-11 px-6 text-[#1C1A17] transition-all duration-300",
+              "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
+              "hover:-translate-y-0.5"
             )}
             disabled={isPending}
           >
@@ -329,21 +330,28 @@ export function MealPlanner() {
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "planner" | "calendar")}
-        className="space-y-6"
+        className="space-y-0"
       >
-        <TabsList className="mb-0">
-          <TabsTrigger value="planner">
-            <Edit2 className="w-4 h-4 mr-2" />
-            {t("mealPlanner")}
-          </TabsTrigger>
-          <TabsTrigger value="calendar">
-            <CalendarDays className="w-4 h-4 mr-2" />
-            {t("calendarView")}
-          </TabsTrigger>
-        </TabsList>
+        <div className="pb-5 border-b border-border">
+          <TabsList className="mb-0">
+            <TabsTrigger value="planner">
+              <Edit2 className="w-4 h-4 mr-2" />
+              {t("mealPlanner")}
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <CalendarDays className="w-4 h-4 mr-2" />
+              {t("calendarView")}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Planner tab */}
-        <TabsContent value="planner" className="space-y-6">
+        <TabsContent value="planner" className="pt-6 space-y-5">
+          {/* Plan count */}
+          <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
+            {templates.length} {t("savedPlans").toLowerCase()}
+          </p>
+
           <PlanSwitcher
             templates={templates}
             activeId={selectedPlanId}
@@ -357,87 +365,87 @@ export function MealPlanner() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <div
-              className="grid gap-[18px] items-start"
-              style={{ gridTemplateColumns: "300px 1fr" }}
-            >
-              {/* Recipe library sidebar */}
-              <div className="bg-card border border-border rounded-xl p-4 sticky top-0 h-[calc(100vh-280px)]">
-                <div className="mb-2.5">
-                  <div className="font-display text-[17px] font-semibold text-foreground">
-                    {t("recipes")}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {t("dragToSlot")}
-                  </div>
+            <div className="flex flex-col gap-4">
+              {/* Layout / density toolbar — full width above the grid */}
+              <div className="flex items-center gap-3">
+                {/* 3-way layout switcher */}
+                <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                  {(
+                    [
+                      { id: "grid", Icon: LayoutGrid },
+                      { id: "stack", Icon: Layers },
+                      { id: "split", Icon: Columns2 },
+                    ] as const
+                  ).map(({ id, Icon: LIcon }) => {
+                    const isActive = layout === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setLayout(id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                          isActive
+                            ? "bg-card text-brand-500 shadow-sm"
+                            : "bg-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <LIcon className="w-3.5 h-3.5" />
+                        {t(`layout.${id}`)}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="h-[calc(100%-50px)]">
-                  <RecipeLibrary dense={density === "compact"} />
+
+                {/* Density toggle */}
+                <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                  {(["regular", "compact"] as const).map((d) => {
+                    const isActive = density === d;
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDensity(d)}
+                        className={cn(
+                          "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                          isActive
+                            ? "bg-card text-brand-500 shadow-sm"
+                            : "bg-transparent text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {t(`density.${d}`)}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Layout area */}
-              <div className="flex flex-col gap-3">
-                {/* Layout / density toolbar */}
-                <div className="flex items-center gap-3">
-                  {/* 3-way layout switcher */}
-                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                    {(
-                      [
-                        { id: "grid", Icon: LayoutGrid },
-                        { id: "stack", Icon: Layers },
-                        { id: "split", Icon: Columns2 },
-                      ] as const
-                    ).map(({ id, Icon: LIcon }) => {
-                      const isActive = layout === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setLayout(id)}
-                          className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                            isActive
-                              ? "bg-card text-brand-500 shadow-sm"
-                              : "bg-transparent text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          <LIcon className="w-3.5 h-3.5" />
-                          {t(`layout.${id}`)}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* Weekly macro summary strip — full width */}
+              {editingTemplate && (
+                <WeeklyMacroStrip template={editingTemplate} />
+              )}
 
-                  {/* Density toggle */}
-                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                    {(["regular", "compact"] as const).map((d) => {
-                      const isActive = density === d;
-                      return (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setDensity(d)}
-                          className={cn(
-                            "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                            isActive
-                              ? "bg-card text-brand-500 shadow-sm"
-                              : "bg-transparent text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {t(`density.${d}`)}
-                        </button>
-                      );
-                    })}
+              {/* 2-column grid: recipe library + meal layout */}
+              <div
+                className="grid gap-[18px] items-start"
+                style={{ gridTemplateColumns: "300px 1fr" }}
+              >
+                {/* Recipe library sidebar */}
+                <div className="bg-card border border-border rounded-xl p-4 sticky top-0 h-[calc(100vh-280px)]">
+                  <div className="mb-2.5">
+                    <div className="font-display text-[17px] font-semibold text-foreground">
+                      {t("recipes")}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {t("dragToSlot")}
+                    </div>
+                  </div>
+                  <div className="h-[calc(100%-50px)]">
+                    <RecipeLibrary dense={density === "compact"} />
                   </div>
                 </div>
 
-                {/* Weekly macro summary strip */}
-                {editingTemplate && (
-                  <WeeklyMacroStrip template={editingTemplate} />
-                )}
-
-                {/* Grid / Stack / Split render */}
+                {/* Meal layout */}
                 <div className="overflow-x-auto">
                   {editingTemplate ? (
                     <>
@@ -504,7 +512,7 @@ export function MealPlanner() {
         </TabsContent>
 
         {/* Calendar tab */}
-        <TabsContent value="calendar" className="space-y-6">
+        <TabsContent value="calendar" className="pt-6 space-y-6">
           <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
         </TabsContent>
       </Tabs>

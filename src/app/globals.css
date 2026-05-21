@@ -136,7 +136,7 @@
   --secondary: #F5F3EF;
   --secondary-foreground: #5C574D;
   --muted: #F5F3EF;
-  --muted-foreground: #7A7367;
+  --muted-foreground: #A8A092;
   --accent: #FEF3C7;
   --accent-foreground: #92400E;
   --destructive: #DC2626;
@@ -228,16 +228,16 @@
   --popover-foreground: #FAF9F7;
   --primary: #F47B5C;
   --primary-foreground: #1C1A17;
-  --secondary: #262422;
+  --secondary: #221F1D;
   --secondary-foreground: #D4CEC4;
-  --muted: #262422;
+  --muted: #221F1D;
   --muted-foreground: #A8A092;
   --accent: #D4A017;
   --accent-foreground: #FAF9F7;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #3D3A36;
-  --input: #3D3A36;
+  --border: #2D2B26;
+  --input: #2D2B26;
   --ring: #F47B5C;
 
   /* Success - Sage Green */
@@ -258,7 +258,7 @@
   --sidebar-primary-foreground: #1C1A17;
   --sidebar-accent: #1A1918;
   --sidebar-accent-foreground: #FAF9F7;
-  --sidebar-border: #3D3A36;
+  --sidebar-border: #2D2B26;
   --sidebar-ring: #F47B5C;
 
   /* Brand Coral Palette - Adjusted for dark mode visibility */

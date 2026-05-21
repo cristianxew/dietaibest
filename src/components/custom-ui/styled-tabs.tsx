@@ -11,7 +11,7 @@ const StyledTabsList = React.forwardRef<
     <TabsList
         ref={ref}
         className={cn(
-            "bg-muted/60 backdrop-blur-sm border border-border/50 p-1 h-auto",
+            "bg-muted border border-border p-1 h-auto",
             className
         )}
         {...props}
@@ -26,7 +26,7 @@ const StyledTabsTrigger = React.forwardRef<
     <TabsTrigger
         ref={ref}
         className={cn(
-            "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow px-4 py-2.5 rounded-lg transition-all",
+            "data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm px-4 py-2.5 rounded-lg transition-all",
             className
         )}
         {...props}

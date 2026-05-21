@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
-import { GripVertical, Clock, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { GripVertical, Clock, CalendarDays, ChevronLeft, ChevronRight, Utensils, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,15 +22,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
-import type { MealType } from "@/types/meal-plan";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { TemplateWithMealsAndSchedules } from "@/lib/meal-plan-adapter";
@@ -39,14 +35,14 @@ import { useTranslations } from "next-intl";
 // ── Per-plan color palette ─────────────────────────────────────────────────────
 // Uses inline styles (not Tailwind classes) so dynamic values are never purged.
 const CALENDAR_COLORS = [
-  { bg: "rgba(99,102,241,0.10)",  border: "rgba(99,102,241,0.35)", text: "#6366f1", badge: "rgba(99,102,241,0.18)" }, // indigo
-  { bg: "rgba(20,184,166,0.10)",  border: "rgba(20,184,166,0.35)", text: "#14b8a6", badge: "rgba(20,184,166,0.18)" }, // teal
-  { bg: "rgba(249,115,22,0.10)",  border: "rgba(249,115,22,0.35)", text: "#f97316", badge: "rgba(249,115,22,0.18)" }, // orange
-  { bg: "rgba(168,85,247,0.10)",  border: "rgba(168,85,247,0.35)", text: "#a855f7", badge: "rgba(168,85,247,0.18)" }, // purple
-  { bg: "rgba(236,72,153,0.10)",  border: "rgba(236,72,153,0.35)", text: "#ec4899", badge: "rgba(236,72,153,0.18)" }, // pink
-  { bg: "rgba(234,179,8,0.10)",   border: "rgba(234,179,8,0.35)",  text: "#ca8a04", badge: "rgba(234,179,8,0.18)"  }, // amber
-  { bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.35)", text: "#3b82f6", badge: "rgba(59,130,246,0.18)" }, // blue
-  { bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.35)",  text: "#ef4444", badge: "rgba(239,68,68,0.18)"  }, // red
+  { bg: "rgba(224,122,95,0.12)",  border: "rgba(224,122,95,0.35)",  text: "#E07A5F", badge: "rgba(224,122,95,0.20)"  }, // coral (brand)
+  { bg: "rgba(74,124,89,0.12)",   border: "rgba(74,124,89,0.35)",   text: "#4A7C59", badge: "rgba(74,124,89,0.20)"   }, // sage
+  { bg: "rgba(212,160,23,0.12)",  border: "rgba(212,160,23,0.35)",  text: "#B8860B", badge: "rgba(212,160,23,0.20)"  }, // warm gold
+  { bg: "rgba(190,100,120,0.12)", border: "rgba(190,100,120,0.35)", text: "#BE6478", badge: "rgba(190,100,120,0.20)" }, // dusty rose
+  { bg: "rgba(52,130,140,0.12)",  border: "rgba(52,130,140,0.35)",  text: "#34828C", badge: "rgba(52,130,140,0.20)"  }, // warm teal
+  { bg: "rgba(120,100,155,0.12)", border: "rgba(120,100,155,0.35)", text: "#78649B", badge: "rgba(120,100,155,0.20)" }, // warm purple
+  { bg: "rgba(160,82,45,0.12)",   border: "rgba(160,82,45,0.35)",   text: "#A0522D", badge: "rgba(160,82,45,0.20)"   }, // clay
+  { bg: "rgba(100,116,139,0.12)", border: "rgba(100,116,139,0.35)", text: "#64748B", badge: "rgba(100,116,139,0.20)" }, // warm slate
 ] as const;
 
 type PlanColor = typeof CALENDAR_COLORS[number];
@@ -124,7 +120,7 @@ function DraggableTemplateItem({
       ref={setNodeRef}
       className={cn(
         "relative p-3 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing",
-        "bg-card/80 border-border/60 hover:border-brand-300/60 dark:hover:border-brand-500/40",
+        "bg-muted border-border hover:border-brand-300/60 dark:hover:border-brand-500/40",
         "hover:shadow-md hover:-translate-y-0.5",
         isDragging && "opacity-40 scale-95"
       )}
@@ -169,50 +165,67 @@ function CalendarCell({
   inMonth,
   isToday,
   scheduledInfo,
-  onCellClick,
+  templates,
+  onUnschedule,
 }: {
   date: Date;
   inMonth: boolean;
   isToday: boolean;
   scheduledInfo: ScheduledCellInfo | null;
-  onCellClick: (scheduleId: string) => void;
+  templates: TemplateWithMealsAndSchedules[];
+  onUnschedule: (scheduleId: string) => void;
 }) {
   const t = useTranslations("mealPlans");
   const iso = isoOf(date);
   const today = startOfDay(new Date());
   const isPast = isBefore(date, today) && !isToday;
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const { setNodeRef, isOver } = useDroppable({
     id: `cal-date-${iso}`,
     data: { date },
   });
 
-  return (
+  const meals = (() => {
+    if (!scheduledInfo) return [];
+    const tpl = templates.find((tpl) => tpl.id === scheduledInfo.templateId);
+    if (!tpl) return [];
+    const day = tpl.days.find((d) => d.dayNumber === scheduledInfo.dayNumber);
+    return day?.meals ?? [];
+  })();
+
+  const handleUnschedule = () => {
+    setPopoverOpen(false);
+    if (scheduledInfo) onUnschedule(scheduledInfo.scheduleId);
+  };
+
+  const cellDiv = (
     <div
       ref={setNodeRef}
       className={cn(
         "min-h-[90px] p-2 rounded-lg border transition-all duration-150 relative",
-        // Base
         !inMonth && "opacity-30",
-        inMonth && !scheduledInfo && "border-border/40 bg-transparent",
+        inMonth && !scheduledInfo && "border-border bg-transparent",
         inMonth && scheduledInfo && "border-transparent",
-        // Past day
         isPast && inMonth && !scheduledInfo && "opacity-50",
-        // Today ring
-        isToday && "ring-2 ring-brand-500/50 ring-inset border-brand-500/50",
-        // Drop hover
+        isToday && !scheduledInfo && "border-[1.5px] border-brand-500",
         isOver && "bg-brand-50/60 dark:bg-brand-500/10 ring-2 ring-brand-500/40 ring-inset border-brand-400/50",
-        // Cursor
         scheduledInfo ? "cursor-pointer" : isOver ? "cursor-copy" : "cursor-default"
       )}
+      onMouseEnter={() => { if (scheduledInfo) setIsHovered(true); }}
+      onMouseLeave={() => setIsHovered(false)}
       style={
         scheduledInfo && !isOver
-          ? { backgroundColor: scheduledInfo.color.bg, borderColor: scheduledInfo.color.border, borderWidth: 1, borderStyle: "solid" }
+          ? {
+              backgroundColor: scheduledInfo.color.bg,
+              borderColor: isToday ? "var(--color-brand-500)" : scheduledInfo.color.border,
+              borderWidth: isToday ? 1.5 : 1,
+              borderStyle: "solid",
+              boxShadow: isHovered ? `0 0 0 2px ${scheduledInfo.color.text}` : undefined,
+            }
           : undefined
       }
-      onClick={() => {
-        if (scheduledInfo) onCellClick(scheduledInfo.scheduleId);
-      }}
     >
       {/* Day number */}
       <div className="flex items-center justify-between mb-1">
@@ -222,7 +235,7 @@ function CalendarCell({
             !inMonth && "text-muted-foreground/50",
             inMonth && !isToday && !scheduledInfo && "text-muted-foreground",
             inMonth && scheduledInfo && !isToday && "text-foreground font-semibold",
-            isToday && "bg-brand-500 text-white font-bold"
+            isToday && "text-brand-500 font-bold"
           )}
         >
           {date.getDate()}
@@ -235,18 +248,108 @@ function CalendarCell({
       {/* Schedule badge */}
       {scheduledInfo && (
         <div
-          className="mt-1 px-2 py-1 rounded-md transition-colors"
-          style={{ backgroundColor: scheduledInfo.color.badge, borderWidth: 1, borderStyle: "solid", borderColor: scheduledInfo.color.border }}
+          className="mt-1 px-2 py-1 rounded-md"
+          style={{ backgroundColor: scheduledInfo.color.text }}
         >
-          <p className="text-[10px] font-bold leading-tight line-clamp-1" style={{ color: scheduledInfo.color.text }}>
+          <p className="text-[10px] font-bold leading-tight line-clamp-1" style={{ color: "#1C1A17" }}>
             {scheduledInfo.templateName}
           </p>
-          <p className="text-[9px] mt-0.5" style={{ color: scheduledInfo.color.text, opacity: 0.7 }}>
+          <p className="text-[9px] mt-0.5" style={{ color: "rgba(28,26,23,0.65)" }}>
             {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
           </p>
         </div>
       )}
     </div>
+  );
+
+  if (!scheduledInfo) return cellDiv;
+
+  const weekdayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date);
+  const dateFullLabel = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric" }).format(date);
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>{cellDiv}</PopoverTrigger>
+      <PopoverContent className="w-96 p-0" align="start">
+        <div className="max-h-[440px] overflow-y-auto p-4">
+          {/* Date header */}
+          <div className="mb-4 pb-3 border-b border-border/50">
+            <p className="text-xs font-medium text-brand-500 dark:text-brand-600 uppercase tracking-wider mb-1 capitalize">
+              {weekdayLabel}
+            </p>
+            <h4 className="font-display font-semibold text-lg text-foreground tracking-tight capitalize">
+              {dateFullLabel}
+            </h4>
+          </div>
+
+          {/* Plan + meals */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: scheduledInfo.color.badge, color: scheduledInfo.color.text }}
+                >
+                  {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
+                </span>
+                <span className="text-sm font-display font-medium text-foreground line-clamp-1">
+                  {scheduledInfo.templateName}
+                </span>
+              </div>
+              <button
+                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground flex-shrink-0"
+                onClick={handleUnschedule}
+                aria-label={t("calendar.removeScheduleAction")}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {meals.filter((m) => m.recipe).length > 0 ? (
+              <div className="space-y-2 pl-1">
+                {meals
+                  .filter((m) => m.recipe)
+                  .map((meal, idx) => (
+                    <div
+                      key={meal.id ?? idx}
+                      className="flex items-center gap-3 p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <Avatar className="w-10 h-10 rounded-lg flex-shrink-0 border border-border/50">
+                        {meal.recipe?.imageUrl ? (
+                          <AvatarImage
+                            src={meal.recipe.imageUrl}
+                            alt={meal.recipe.title || t("calendar.recipe")}
+                            className="object-cover"
+                          />
+                        ) : null}
+                        <AvatarFallback className="rounded-lg bg-brand-50 dark:bg-brand-500/10">
+                          <Utensils className="w-4 h-4 text-brand-500" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-wider capitalize">
+                          {meal.mealType}
+                        </p>
+                        <p className="text-sm font-medium text-foreground line-clamp-1">
+                          {meal.recipe?.title || t("calendar.unknownRecipe")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {meal.servings}{" "}
+                          {meal.servings === 1 ? t("serving") : t("servings")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic pl-1">
+                {t("calendar.noMealsForDay")}
+              </p>
+            )}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -260,8 +363,6 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
   const [unscheduleDialogOpen, setUnscheduleDialogOpen] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewingSlot, setViewingSlot] = useState<ScheduledCellInfo | null>(null);
 
   // ── Flatten active schedules from all templates ────────────────────────────
 
@@ -407,14 +508,9 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
   // ── Unschedule flow ─────────────────────────────────────────────────────────
 
-  const handleCellClick = (scheduleId: string) => {
-    const info = cells
-      .map((cell) => getScheduledInfo(startOfDay(cell.date)))
-      .find((s) => s?.scheduleId === scheduleId);
-    if (info) {
-      setViewingSlot(info);
-      setViewerOpen(true);
-    }
+  const handleUnschedule = (scheduleId: string) => {
+    setScheduleToDelete(scheduleId);
+    setUnscheduleDialogOpen(true);
   };
 
   const confirmUnschedule = () => {
@@ -433,16 +529,6 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
     });
   };
 
-  // ── Viewer: meals for the clicked scheduled day ────────────────────────────
-
-  const viewingMeals = (() => {
-    if (!viewingSlot) return [];
-    const tpl = templates.find((t) => t.id === viewingSlot.templateId);
-    if (!tpl) return [];
-    const day = tpl.days.find((d) => d.dayNumber === viewingSlot.dayNumber);
-    return day?.meals ?? [];
-  })();
-
   // ── Dragged template name (for overlay) ────────────────────────────────────
 
   const draggedTemplate = draggedTemplateId
@@ -460,7 +546,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
       >
         <div className="grid gap-5" style={{ gridTemplateColumns: "260px 1fr" }}>
           {/* ── Left rail: template list ─────────────────────────────────── */}
-          <div className="bg-card border border-border/60 rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-[14px] p-4 space-y-3">
             <div>
               <p className="font-display text-[17px] font-semibold text-foreground">
                 {t("calendar.yourMealPlans")}
@@ -489,20 +575,20 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
           </div>
 
           {/* ── Calendar ─────────────────────────────────────────────────── */}
-          <div className="bg-card border border-border/60 rounded-2xl p-5">
+          <div className="bg-card border border-border rounded-[14px] p-5">
             {/* Calendar header */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <button
                   onClick={prevMonth}
-                  className="w-8 h-8 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
+                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
                   aria-label={t("calendar.prevMonth")}
                 >
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
 
                 <div className="min-w-[140px] text-center">
-                  <p className="font-display text-xl font-semibold text-foreground capitalize">
+                  <p className="font-display text-2xl font-semibold text-foreground capitalize">
                     {monthName}
                   </p>
                   <p className="text-xs text-muted-foreground">{month.y}</p>
@@ -510,7 +596,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
                 <button
                   onClick={nextMonth}
-                  className="w-8 h-8 rounded-lg bg-muted/60 border border-border/60 flex items-center justify-center hover:bg-muted transition-colors"
+                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
                   aria-label={t("calendar.nextMonth")}
                 >
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -519,7 +605,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
               <button
                 onClick={goToToday}
-                className="px-3 py-1.5 rounded-lg border border-border/60 bg-transparent text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                className="px-3 py-1.5 rounded-lg border border-border bg-transparent text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
               >
                 {t("calendar.today")}
               </button>
@@ -554,7 +640,8 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                     inMonth={cell.inMonth}
                     isToday={isToday}
                     scheduledInfo={scheduledInfo}
-                    onCellClick={handleCellClick}
+                    templates={templates}
+                    onUnschedule={handleUnschedule}
                   />
                 );
               })}
@@ -617,83 +704,6 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
           ) : null}
         </DragOverlay>
       </DndContext>
-
-      {/* Schedule slot viewer — shows meals for the clicked day */}
-      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
-        <DialogContent className="rounded-2xl max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-display text-lg">
-              {viewingSlot?.templateName}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-sm">
-              {viewingSlot && t("calendar.dayNumber", { number: viewingSlot.dayNumber })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2 py-1">
-            {viewingMeals.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic text-center py-4">
-                {t("calendar.noMealsForDay")}
-              </p>
-            ) : (
-              viewingMeals.map((meal) => {
-                const meta = MEAL_SLOT_META[meal.mealType as MealType];
-                return (
-                  <div
-                    key={meal.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/40"
-                  >
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                        meta?.colorClass ?? "bg-muted"
-                      )}
-                    >
-                      <span className="text-[11px] font-bold text-foreground/70">
-                        {(meta?.i18nKey ?? meal.mealType).slice(0, 2).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground truncate">
-                        {meal.recipe?.title ?? t("calendar.unknownRecipe")}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground capitalize">
-                        {meal.mealType}
-                        {" · "}
-                        {meal.servings}{" "}
-                        {meal.servings === 1 ? t("serving") : t("servings")}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="flex gap-2 pt-1">
-            <Button
-              variant="outline"
-              className="flex-1 rounded-xl"
-              onClick={() => setViewerOpen(false)}
-            >
-              {t("common.close")}
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1 rounded-xl"
-              onClick={() => {
-                setViewerOpen(false);
-                if (viewingSlot) {
-                  setScheduleToDelete(viewingSlot.scheduleId);
-                  setUnscheduleDialogOpen(true);
-                }
-              }}
-            >
-              {t("calendar.removeScheduleAction")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Unschedule confirmation dialog */}
       <AlertDialog open={unscheduleDialogOpen} onOpenChange={setUnscheduleDialogOpen}>
