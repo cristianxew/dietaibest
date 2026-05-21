@@ -15,6 +15,7 @@ export type ToolStatusKey =
   | "recipe.analyzing"
   | "recipe.saving"
   | "recipe.loading"
+  | "recipe.generatingImage"
   | "import.fetching"
   | "import.extracting"
   | "import.analyzing"

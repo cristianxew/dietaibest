@@ -277,244 +277,249 @@ export function MealPlanner() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <PageContainer className="space-y-8">
-      {/* Hero Header */}
-      <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] flex items-center justify-center flex-shrink-0">
-              <CalendarDays className="w-[15px] h-[15px] text-brand-500 dark:text-brand-600" />
-            </div>
-            <span className="text-xs font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
-              {t("mealPlanner")}
-            </span>
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
-            {t("title")}
-          </h1>
-          <p className="text-muted-foreground max-w-lg leading-relaxed">
-            {t("subtitle")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* AI generate button — opens the chat agent pre-seeded with a generate-a-plan prompt */}
-          <Button
-            variant="outline"
-            className={cn(
-              "gap-2 h-11 px-5 border-brand-300/60 dark:border-brand-500/30",
-              "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-            )}
-            onClick={handleGenerateWithAI}
-          >
-            <Sparkles className="w-4 h-4" />
-            {t("generateWithAI")}
-          </Button>
-
-          <Button
-            onClick={() => setShowCreateDialog(true)}
-            className={cn(
-              "gap-2 h-11 px-6 text-[#1C1A17] transition-all duration-300",
-              "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
-              "hover:-translate-y-0.5"
-            )}
-            disabled={isPending}
-          >
-            <PlusIcon className="w-4 h-4" />
-            {t("createPlan")}
-          </Button>
-        </div>
-      </div>
-
-      {/* Tabs */}
+    <PageContainer viewport>
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "planner" | "calendar")}
-        className="space-y-0"
+        className="flex flex-col flex-1 min-h-0 overflow-hidden"
       >
-        <div className="pb-5 border-b border-border">
-          <TabsList className="mb-0">
-            <TabsTrigger value="planner">
-              <Edit2 className="w-4 h-4 mr-2" />
-              {t("mealPlanner")}
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <CalendarDays className="w-4 h-4 mr-2" />
-              {t("calendarView")}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Planner tab */}
-        <TabsContent value="planner" className="pt-6 space-y-5">
-          {/* Plan count */}
-          <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
-            {templates.length} {t("savedPlans").toLowerCase()}
-          </p>
-
-          <PlanSwitcher
-            templates={templates}
-            activeId={selectedPlanId}
-            onPick={handleSelectPlan}
-            onCreate={() => setShowCreateDialog(true)}
-          />
-
-          {/* Editor body */}
-          <DndContext
-            collisionDetection={pointerWithin}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex flex-col gap-4">
-              {/* Layout / density toolbar — full width above the grid */}
-              <div className="flex items-center gap-3">
-                {/* 3-way layout switcher */}
-                <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                  {(
-                    [
-                      { id: "grid", Icon: LayoutGrid },
-                      { id: "stack", Icon: Layers },
-                      { id: "split", Icon: Columns2 },
-                    ] as const
-                  ).map(({ id, Icon: LIcon }) => {
-                    const isActive = layout === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => setLayout(id)}
-                        className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                          isActive
-                            ? "bg-card text-brand-500 shadow-sm"
-                            : "bg-transparent text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <LIcon className="w-3.5 h-3.5" />
-                        {t(`layout.${id}`)}
-                      </button>
-                    );
-                  })}
+        {/* ── Fixed header: hero + tab nav ── */}
+        <div className="flex-shrink-0 px-6 lg:px-10 pt-6 lg:pt-8 bg-background">
+          {/* Hero Header */}
+          <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end pb-5">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] flex items-center justify-center flex-shrink-0">
+                  <CalendarDays className="w-[15px] h-[15px] text-brand-500 dark:text-brand-600" />
                 </div>
-
-                {/* Density toggle */}
-                <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                  {(["regular", "compact"] as const).map((d) => {
-                    const isActive = density === d;
-                    return (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => setDensity(d)}
-                        className={cn(
-                          "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                          isActive
-                            ? "bg-card text-brand-500 shadow-sm"
-                            : "bg-transparent text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {t(`density.${d}`)}
-                      </button>
-                    );
-                  })}
-                </div>
+                <span className="text-xs font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
+                  {t("mealPlanner")}
+                </span>
               </div>
-
-              {/* Weekly macro summary strip — full width */}
-              {editingTemplate && (
-                <WeeklyMacroStrip template={editingTemplate} />
-              )}
-
-              {/* 2-column grid: recipe library + meal layout */}
-              <div
-                className="grid gap-[18px] items-start"
-                style={{ gridTemplateColumns: "300px 1fr" }}
-              >
-                {/* Recipe library sidebar */}
-                <div className="bg-card border border-border rounded-xl p-4 sticky top-0 h-[calc(100vh-280px)]">
-                  <div className="mb-2.5">
-                    <div className="font-display text-[17px] font-semibold text-foreground">
-                      {t("recipes")}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {t("dragToSlot")}
-                    </div>
-                  </div>
-                  <div className="h-[calc(100%-50px)]">
-                    <RecipeLibrary dense={density === "compact"} />
-                  </div>
-                </div>
-
-                {/* Meal layout */}
-                <div className="overflow-x-auto">
-                  {editingTemplate ? (
-                    <>
-                      {layout === "grid" && (
-                        <GridLayout
-                          template={editingTemplate}
-                          density={density}
-                          onRemove={handleRemoveMeal}
-                          onServingsChange={handleServingsChange}
-                        />
-                      )}
-                      {layout === "stack" && (
-                        <StackLayout
-                          template={editingTemplate}
-                          density={density}
-                          onRemove={handleRemoveMeal}
-                          onServingsChange={handleServingsChange}
-                        />
-                      )}
-                      {layout === "split" && (
-                        <SplitLayout
-                          template={editingTemplate}
-                          density={density}
-                          onRemove={handleRemoveMeal}
-                          onServingsChange={handleServingsChange}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
-                      {t("selectPlanToEdit")}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <h1 className="text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
+                {t("title")}
+              </h1>
+              <p className="text-muted-foreground max-w-lg leading-relaxed">
+                {t("subtitle")}
+              </p>
             </div>
 
-            {/* DragOverlay renders into a portal — immune to overflow-y-auto clipping */}
-            <DragOverlay dropAnimation={null}>
-              {activeDrag ? (
-                <div className="flex gap-2.5 rounded-[10px] border border-brand-400 dark:border-brand-500/60 bg-card shadow-xl shadow-brand-500/20 p-2.5 w-[260px] opacity-95">
-                  {activeDrag.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={activeDrag.image}
-                      alt=""
-                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center flex-shrink-0">
-                      <ChefHat className="w-5 h-5 text-brand-500" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{activeDrag.name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {activeDrag.type === "recipe" ? t("dragToSlot") : t("moveMeal")}
-                    </p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                className={cn(
+                  "gap-2 h-11 px-5 border-brand-300/60 dark:border-brand-500/30",
+                  "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                )}
+                onClick={handleGenerateWithAI}
+              >
+                <Sparkles className="w-4 h-4" />
+                {t("generateWithAI")}
+              </Button>
+
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                className={cn(
+                  "gap-2 h-11 px-6 text-[#1C1A17] transition-all duration-300",
+                  "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
+                  "hover:-translate-y-0.5"
+                )}
+                disabled={isPending}
+              >
+                <PlusIcon className="w-4 h-4" />
+                {t("createPlan")}
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab nav */}
+          <div className="pb-4 border-b border-border">
+            <TabsList className="mb-0">
+              <TabsTrigger value="planner">
+                <Edit2 className="w-4 h-4 mr-2" />
+                {t("mealPlanner")}
+              </TabsTrigger>
+              <TabsTrigger value="calendar">
+                <CalendarDays className="w-4 h-4 mr-2" />
+                {t("calendarView")}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
+
+        {/* ── Scrollable body ── */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Planner tab */}
+          <TabsContent value="planner" className="px-6 lg:px-10 pt-6 pb-8 space-y-5">
+            {/* Plan count */}
+            <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
+              {templates.length} {t("savedPlans").toLowerCase()}
+            </p>
+
+            <PlanSwitcher
+              templates={templates}
+              activeId={selectedPlanId}
+              onPick={handleSelectPlan}
+              onCreate={() => setShowCreateDialog(true)}
+            />
+
+            {/* Editor body */}
+            <DndContext
+              collisionDetection={pointerWithin}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex flex-col gap-4">
+                {/* Layout / density toolbar — full width above the grid */}
+                <div className="flex items-center gap-3">
+                  {/* 3-way layout switcher */}
+                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                    {(
+                      [
+                        { id: "grid", Icon: LayoutGrid },
+                        { id: "stack", Icon: Layers },
+                        { id: "split", Icon: Columns2 },
+                      ] as const
+                    ).map(({ id, Icon: LIcon }) => {
+                      const isActive = layout === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setLayout(id)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                            isActive
+                              ? "bg-card text-brand-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          <LIcon className="w-3.5 h-3.5" />
+                          {t(`layout.${id}`)}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Density toggle */}
+                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                    {(["regular", "compact"] as const).map((d) => {
+                      const isActive = density === d;
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setDensity(d)}
+                          className={cn(
+                            "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                            isActive
+                              ? "bg-card text-brand-500 shadow-sm"
+                              : "bg-transparent text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {t(`density.${d}`)}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </TabsContent>
 
-        {/* Calendar tab */}
-        <TabsContent value="calendar" className="pt-6 space-y-6">
-          <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
-        </TabsContent>
+                {/* Weekly macro summary strip — full width */}
+                {editingTemplate && (
+                  <WeeklyMacroStrip template={editingTemplate} />
+                )}
+
+                {/* 2-column grid: recipe library + meal layout */}
+                <div
+                  className="grid gap-[18px] items-start"
+                  style={{ gridTemplateColumns: "300px 1fr" }}
+                >
+                  {/* Recipe library sidebar */}
+                  <div className="bg-card border border-border rounded-xl p-4 sticky top-6 h-[calc(100vh-280px)]">
+                    <div className="mb-2.5">
+                      <div className="font-display text-[17px] font-semibold text-foreground">
+                        {t("recipes")}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t("dragToSlot")}
+                      </div>
+                    </div>
+                    <div className="h-[calc(100%-60px)] pt-2.5">
+                      <RecipeLibrary dense={density === "compact"} />
+                    </div>
+                  </div>
+
+                  {/* Meal layout */}
+                  <div className="overflow-x-auto">
+                    {editingTemplate ? (
+                      <>
+                        {layout === "grid" && (
+                          <GridLayout
+                            template={editingTemplate}
+                            density={density}
+                            onRemove={handleRemoveMeal}
+                            onServingsChange={handleServingsChange}
+                          />
+                        )}
+                        {layout === "stack" && (
+                          <StackLayout
+                            template={editingTemplate}
+                            density={density}
+                            onRemove={handleRemoveMeal}
+                            onServingsChange={handleServingsChange}
+                          />
+                        )}
+                        {layout === "split" && (
+                          <SplitLayout
+                            template={editingTemplate}
+                            density={density}
+                            onRemove={handleRemoveMeal}
+                            onServingsChange={handleServingsChange}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
+                        {t("selectPlanToEdit")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* DragOverlay renders into a portal — immune to overflow-y-auto clipping */}
+              <DragOverlay dropAnimation={null}>
+                {activeDrag ? (
+                  <div className="flex gap-2.5 rounded-[10px] border border-brand-400 dark:border-brand-500/60 bg-card shadow-xl shadow-brand-500/20 p-2.5 w-[260px] opacity-95">
+                    {activeDrag.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={activeDrag.image}
+                        alt=""
+                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center flex-shrink-0">
+                        <ChefHat className="w-5 h-5 text-brand-500" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <p className="text-[13px] font-semibold text-foreground truncate">{activeDrag.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {activeDrag.type === "recipe" ? t("dragToSlot") : t("moveMeal")}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          </TabsContent>
+
+          {/* Calendar tab */}
+          <TabsContent value="calendar" className="px-6 lg:px-10 pt-6 pb-8 space-y-6">
+            <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
+          </TabsContent>
+        </div>
       </Tabs>
 
       {/* Create Meal Plan Dialog */}

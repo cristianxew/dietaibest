@@ -15,6 +15,7 @@ import { moveMeal } from "./moveMeal";
 import { updateMealServings } from "./updateMealServings";
 import { removeMealFromDay } from "./removeMealFromDay";
 import { generateMealPlan } from "./generateMealPlan";
+import { generateRecipeImage } from "./generateRecipeImage";
 
 export type { Tool, ToolResult, AnyTool } from "./types";
 
@@ -47,6 +48,7 @@ export const allTools: ReadonlyArray<AnyTool> = [
   updateMealServings,
   removeMealFromDay,
   generateMealPlan,
+  generateRecipeImage,
 ];
 
 /**
