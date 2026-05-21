@@ -21,6 +21,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
+import type { MealType } from "@/types/meal-plan";
 import { cn } from "@/lib/utils";
 import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { TemplateWithMealsAndSchedules } from "@/lib/meal-plan-adapter";
@@ -250,6 +260,8 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
   const [unscheduleDialogOpen, setUnscheduleDialogOpen] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewingSlot, setViewingSlot] = useState<ScheduledCellInfo | null>(null);
 
   // ── Flatten active schedules from all templates ────────────────────────────
 
@@ -396,8 +408,13 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
   // ── Unschedule flow ─────────────────────────────────────────────────────────
 
   const handleCellClick = (scheduleId: string) => {
-    setScheduleToDelete(scheduleId);
-    setUnscheduleDialogOpen(true);
+    const info = cells
+      .map((cell) => getScheduledInfo(startOfDay(cell.date)))
+      .find((s) => s?.scheduleId === scheduleId);
+    if (info) {
+      setViewingSlot(info);
+      setViewerOpen(true);
+    }
   };
 
   const confirmUnschedule = () => {
@@ -415,6 +432,16 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
       setScheduleToDelete(null);
     });
   };
+
+  // ── Viewer: meals for the clicked scheduled day ────────────────────────────
+
+  const viewingMeals = (() => {
+    if (!viewingSlot) return [];
+    const tpl = templates.find((t) => t.id === viewingSlot.templateId);
+    if (!tpl) return [];
+    const day = tpl.days.find((d) => d.dayNumber === viewingSlot.dayNumber);
+    return day?.meals ?? [];
+  })();
 
   // ── Dragged template name (for overlay) ────────────────────────────────────
 
@@ -590,6 +617,83 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Schedule slot viewer — shows meals for the clicked day */}
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">
+              {viewingSlot?.templateName}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              {viewingSlot && t("calendar.dayNumber", { number: viewingSlot.dayNumber })}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-1">
+            {viewingMeals.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic text-center py-4">
+                {t("calendar.noMealsForDay")}
+              </p>
+            ) : (
+              viewingMeals.map((meal) => {
+                const meta = MEAL_SLOT_META[meal.mealType as MealType];
+                return (
+                  <div
+                    key={meal.id}
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 border border-border/40"
+                  >
+                    <div
+                      className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                        meta?.colorClass ?? "bg-muted"
+                      )}
+                    >
+                      <span className="text-[11px] font-bold text-foreground/70">
+                        {(meta?.i18nKey ?? meal.mealType).slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">
+                        {meal.recipe?.title ?? t("calendar.unknownRecipe")}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground capitalize">
+                        {meal.mealType}
+                        {" · "}
+                        {meal.servings}{" "}
+                        {meal.servings === 1 ? t("serving") : t("servings")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl"
+              onClick={() => setViewerOpen(false)}
+            >
+              {t("common.close")}
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 rounded-xl"
+              onClick={() => {
+                setViewerOpen(false);
+                if (viewingSlot) {
+                  setScheduleToDelete(viewingSlot.scheduleId);
+                  setUnscheduleDialogOpen(true);
+                }
+              }}
+            >
+              {t("calendar.removeScheduleAction")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Unschedule confirmation dialog */}
       <AlertDialog open={unscheduleDialogOpen} onOpenChange={setUnscheduleDialogOpen}>
