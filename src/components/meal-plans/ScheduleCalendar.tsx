@@ -26,6 +26,27 @@ import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { TemplateWithMealsAndSchedules } from "@/lib/meal-plan-adapter";
 import { useTranslations } from "next-intl";
 
+// ── Per-plan color palette ─────────────────────────────────────────────────────
+// Uses inline styles (not Tailwind classes) so dynamic values are never purged.
+const CALENDAR_COLORS = [
+  { bg: "rgba(99,102,241,0.10)",  border: "rgba(99,102,241,0.35)", text: "#6366f1", badge: "rgba(99,102,241,0.18)" }, // indigo
+  { bg: "rgba(20,184,166,0.10)",  border: "rgba(20,184,166,0.35)", text: "#14b8a6", badge: "rgba(20,184,166,0.18)" }, // teal
+  { bg: "rgba(249,115,22,0.10)",  border: "rgba(249,115,22,0.35)", text: "#f97316", badge: "rgba(249,115,22,0.18)" }, // orange
+  { bg: "rgba(168,85,247,0.10)",  border: "rgba(168,85,247,0.35)", text: "#a855f7", badge: "rgba(168,85,247,0.18)" }, // purple
+  { bg: "rgba(236,72,153,0.10)",  border: "rgba(236,72,153,0.35)", text: "#ec4899", badge: "rgba(236,72,153,0.18)" }, // pink
+  { bg: "rgba(234,179,8,0.10)",   border: "rgba(234,179,8,0.35)",  text: "#ca8a04", badge: "rgba(234,179,8,0.18)"  }, // amber
+  { bg: "rgba(59,130,246,0.10)",  border: "rgba(59,130,246,0.35)", text: "#3b82f6", badge: "rgba(59,130,246,0.18)" }, // blue
+  { bg: "rgba(239,68,68,0.10)",   border: "rgba(239,68,68,0.35)",  text: "#ef4444", badge: "rgba(239,68,68,0.18)"  }, // red
+] as const;
+
+type PlanColor = typeof CALENDAR_COLORS[number];
+
+function hashTemplateColor(id: string): PlanColor {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return CALENDAR_COLORS[Math.abs(h) % CALENDAR_COLORS.length];
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function isoOf(d: Date): string {
@@ -66,8 +87,10 @@ interface ScheduleEntry {
 
 interface ScheduledCellInfo {
   scheduleId: string;
+  templateId: string;
   templateName: string;
   dayNumber: number; // 1-based position within the schedule
+  color: PlanColor;
 }
 
 // ── Draggable Template Card ───────────────────────────────────────────────────
@@ -98,7 +121,10 @@ function DraggableTemplateItem({
       {...attributes}
       {...listeners}
     >
-      <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-brand-500 ml-0" />
+      <div
+        className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full ml-0"
+        style={{ backgroundColor: hashTemplateColor(template.id).text }}
+      />
       <div className="flex items-start gap-2 pl-2">
         <GripVertical className="w-3.5 h-3.5 mt-0.5 text-muted-foreground/40 flex-shrink-0" />
         <div className="flex-1 min-w-0 space-y-1">
@@ -159,7 +185,7 @@ function CalendarCell({
         // Base
         !inMonth && "opacity-30",
         inMonth && !scheduledInfo && "border-border/40 bg-transparent",
-        inMonth && scheduledInfo && "border-brand-500/30 bg-brand-500/8",
+        inMonth && scheduledInfo && "border-transparent",
         // Past day
         isPast && inMonth && !scheduledInfo && "opacity-50",
         // Today ring
@@ -169,6 +195,11 @@ function CalendarCell({
         // Cursor
         scheduledInfo ? "cursor-pointer" : isOver ? "cursor-copy" : "cursor-default"
       )}
+      style={
+        scheduledInfo && !isOver
+          ? { backgroundColor: scheduledInfo.color.bg, borderColor: scheduledInfo.color.border, borderWidth: 1, borderStyle: "solid" }
+          : undefined
+      }
       onClick={() => {
         if (scheduledInfo) onCellClick(scheduledInfo.scheduleId);
       }}
@@ -193,11 +224,14 @@ function CalendarCell({
 
       {/* Schedule badge */}
       {scheduledInfo && (
-        <div className="mt-1 px-2 py-1 rounded-md bg-brand-500/15 border border-brand-500/30 group hover:bg-brand-500/25 transition-colors">
-          <p className="text-[10px] font-bold text-brand-700 dark:text-brand-400 leading-tight line-clamp-1">
+        <div
+          className="mt-1 px-2 py-1 rounded-md transition-colors"
+          style={{ backgroundColor: scheduledInfo.color.badge, borderWidth: 1, borderStyle: "solid", borderColor: scheduledInfo.color.border }}
+        >
+          <p className="text-[10px] font-bold leading-tight line-clamp-1" style={{ color: scheduledInfo.color.text }}>
             {scheduledInfo.templateName}
           </p>
-          <p className="text-[9px] text-brand-600/70 dark:text-brand-400/60 mt-0.5">
+          <p className="text-[9px] mt-0.5" style={{ color: scheduledInfo.color.text, opacity: 0.7 }}>
             {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
           </p>
         </div>
@@ -242,8 +276,10 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
       if (ts >= start && ts <= end) {
         return {
           scheduleId: entry.scheduleId,
+          templateId: entry.templateId,
           templateName: entry.templateName,
           dayNumber: Math.floor((ts - start) / (1000 * 60 * 60 * 24)) + 1,
+          color: hashTemplateColor(entry.templateId),
         };
       }
     }
@@ -505,10 +541,24 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 </div>
                 <span>{t("calendar.today")}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-8 h-4 rounded bg-brand-500/15 border border-brand-500/30" />
-                <span>{t("calendar.scheduledLegend")}</span>
-              </div>
+              {templates.length === 0 && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-8 h-4 rounded bg-brand-500/15 border border-brand-500/30" />
+                  <span>{t("calendar.scheduledLegend")}</span>
+                </div>
+              )}
+              {templates.map((tpl) => {
+                const color = hashTemplateColor(tpl.id);
+                return (
+                  <div key={tpl.id} className="flex items-center gap-1.5">
+                    <div
+                      className="w-8 h-4 rounded flex-shrink-0"
+                      style={{ backgroundColor: color.badge, borderWidth: 1, borderStyle: "solid", borderColor: color.border }}
+                    />
+                    <span className="truncate max-w-[100px]">{tpl.name}</span>
+                  </div>
+                );
+              })}
               {templates.length > 0 && (
                 <div className="flex items-center gap-1.5 ml-auto text-[10px] text-muted-foreground/60 italic">
                   {t("calendar.clickToUnschedule")}
