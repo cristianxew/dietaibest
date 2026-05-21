@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
 import type { MealDisplay, MealType, MacroSummary, MacroTarget, MealPlanTemplateDisplay } from '@/types/meal-plan';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import type { Recipe, RecipeCategory } from '@/generated/prisma';
 import { getRecipes, getCategories } from '@/actions/recipe';
 import { toast } from 'sonner';
@@ -93,7 +92,7 @@ interface RecipeLibraryProps {
 }
 
 function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `library-${recipe.id}`,
     data: {
       type: 'recipe',
@@ -102,9 +101,11 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
     },
   });
 
+  // Hide source in place while dragging — MealPlanner's DragOverlay renders the
+  // floating preview outside overflow-y-auto so it's never clipped.
   const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0 : 1,
+    transition: isDragging ? undefined : "opacity 150ms",
   };
 
   return (
@@ -277,7 +278,6 @@ export function MealCell({
     attributes: dragAttributes,
     listeners: dragListeners,
     setNodeRef: setDragRef,
-    transform,
     isDragging,
   } = useDraggable({
     id: meal ? `meal-${meal.id}` : `empty-${dayId}-${mealType}`,
@@ -296,9 +296,8 @@ export function MealCell({
     setDragRef(node);
   };
 
-  const dragStyle: React.CSSProperties = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, opacity: isDragging ? 0.5 : 1 }
-    : {};
+  // Hide source while dragging — DragOverlay in MealPlanner handles the floating preview.
+  const dragStyle: React.CSSProperties = isDragging ? { opacity: 0 } : {};
 
   // Empty slot
   if (!meal) {

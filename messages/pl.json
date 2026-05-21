@@ -745,7 +745,8 @@
       "loadingRecipes": "Ładowanie przepisów...",
       "searchPrompt": "Szukaj przepisów, aby dodać do planu posiłków",
       "noResults": "Nie znaleziono przepisów. Spróbuj innego terminu wyszukiwania."
-    }
+    },
+    "moveMeal": "Przesuń posiłek"
   },
   "shopping": {
     "title": "Lista Zakupów",

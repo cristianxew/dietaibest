@@ -31,8 +31,8 @@ import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
-import { DndContext, pointerWithin } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { Recipe } from "@/generated/prisma";
 
 export function MealPlanner() {
@@ -47,6 +47,11 @@ export function MealPlanner() {
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"planner" | "calendar">("planner");
+  const [activeDrag, setActiveDrag] = useState<{
+    type: "recipe" | "meal";
+    name: string;
+    image?: string | null;
+  } | null>(null);
   const [layout, setLayout] = useState<"grid" | "stack" | "split">("grid");
   const [density, setDensity] = useState<"regular" | "compact">("regular");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -131,8 +136,25 @@ export function MealPlanner() {
     [selectedPlanId, handleSelectPlan, loadTemplates]
   );
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current;
+    if (data?.type === "recipe") {
+      setActiveDrag({
+        type: "recipe",
+        name: (data.recipe as Recipe).title,
+        image: (data.recipe as Recipe).imageUrl ?? null,
+      });
+    } else if (data?.type === "meal") {
+      setActiveDrag({
+        type: "meal",
+        name: (data.meal as { recipeName: string }).recipeName,
+      });
+    }
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveDrag(null);
       const { active, over } = event;
 
       if (!over) return;
@@ -332,6 +354,7 @@ export function MealPlanner() {
           {/* Editor body */}
           <DndContext
             collisionDetection={pointerWithin}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <div
@@ -451,6 +474,32 @@ export function MealPlanner() {
                 </div>
               </div>
             </div>
+
+            {/* DragOverlay renders into a portal — immune to overflow-y-auto clipping */}
+            <DragOverlay dropAnimation={null}>
+              {activeDrag ? (
+                <div className="flex gap-2.5 rounded-[10px] border border-brand-400 dark:border-brand-500/60 bg-card shadow-xl shadow-brand-500/20 p-2.5 w-[260px] opacity-95">
+                  {activeDrag.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={activeDrag.image}
+                      alt=""
+                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-brand-100 dark:bg-brand-500/20 flex items-center justify-center flex-shrink-0">
+                      <ChefHat className="w-5 h-5 text-brand-500" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <p className="text-[13px] font-semibold text-foreground truncate">{activeDrag.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {activeDrag.type === "recipe" ? t("dragToSlot") : t("moveMeal")}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
         </TabsContent>
 

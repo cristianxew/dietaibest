@@ -750,7 +750,8 @@
       "loadingRecipes": "Cargando recetas...",
       "searchPrompt": "Busca recetas para agregar a tu plan de comidas",
       "noResults": "No se encontraron recetas. Intenta con un término de búsqueda diferente."
-    }
+    },
+    "moveMeal": "Mover comida"
   },
   "shopping": {
     "title": "Lista de Compras",

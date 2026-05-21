@@ -750,7 +750,8 @@
       "loadingRecipes": "Loading recipes...",
       "searchPrompt": "Search for recipes to add to your meal plan",
       "noResults": "No recipes found. Try a different search term."
-    }
+    },
+    "moveMeal": "Move meal"
   },
   "shopping": {
     "title": "Shopping List",
