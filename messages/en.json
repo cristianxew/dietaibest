@@ -1322,6 +1322,22 @@
     "session": {
       "messages": "{count} messages"
     },
-    "retry": "Retry"
+    "retry": "Retry",
+    "assistant": "Assistant",
+    "newChat": "New chat",
+    "copied": "Copied",
+    "notDelivered": "Not delivered",
+    "actions": {
+      "copy": "Copy",
+      "copyResponse": "Copy response",
+      "edit": "Edit & resend",
+      "delete": "Delete"
+    },
+    "history": {
+      "searchPlaceholder": "Search conversations…",
+      "noResults": "No conversations match \"{query}\"",
+      "active": "Active",
+      "back": "Back to conversation"
+    }
   }
 }

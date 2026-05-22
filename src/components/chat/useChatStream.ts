@@ -86,12 +86,30 @@ interface UseChatStreamResult {
   hydrate: () => Promise<void>;
   retry: () => Promise<void>;
   canRetry: boolean;
+  /** Delete the last turn server-side + locally. Returns the user text of that
+   *  turn (for "edit & resend" the caller refills the composer with it). */
+  deleteLastTurn: () => Promise<string | null>;
   switchSession: (sessionId: string) => Promise<void>;
   createSession: () => Promise<void>;
 }
 
 let messageIdCounter = 0;
 const nextId = () => `m-${++messageIdCounter}-${Date.now()}`;
+
+/** Short "10:23 AM"-style label for live messages. */
+const timeLabel = (locale: string): string => {
+  try {
+    return new Date().toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return new Date().toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+};
 
 function statusKeyToI18n(key: string): string {
   // "recipe.creating" → "chat.status.recipe.creating"
@@ -151,6 +169,9 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   const [isStreaming, setIsStreaming] = useState(false);
   const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
   const streamingTextIdRef = useRef<string | null>(null);
+  // handleEvent is a stable callback with no deps — read locale through a ref.
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
 
   // For retry
   const lastUserInputRef = useRef<{ text: string; attachment?: PendingAttachment } | null>(null);
@@ -213,6 +234,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           appendMessage({
             id,
             role: "agent",
+            timestamp: timeLabel(localeRef.current),
             content: { text: event.text },
           });
         } else {
@@ -304,6 +326,8 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           appendMessage({
             id: nextId(),
             role: "agent",
+            error: true,
+            timestamp: timeLabel(localeRef.current),
             content: { text: errorText },
           });
         }
@@ -364,6 +388,8 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         appendMessage({
           id: nextId(),
           role: "agent",
+          error: true,
+          timestamp: timeLabel(localeRef.current),
           content: { text: event.message },
         });
         break;
@@ -396,6 +422,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       const userMsg: ChatMessageProps = {
         id: userMsgId,
         role: "user",
+        timestamp: timeLabel(locale),
         content: {
           text,
           ...(attachment && {
@@ -423,9 +450,12 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         });
         if (!res.ok) {
           const payload = await res.json().catch(() => ({}));
+          updateMessage(userMsgId, (prev) => ({ ...prev, failed: true }));
           appendMessage({
             id: nextId(),
             role: "agent",
+            error: true,
+            timestamp: timeLabel(locale),
             content: {
               text: typeof payload.error === "string" ? payload.error : translate.error("generic"),
             },
@@ -434,9 +464,12 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         }
         await consumeStream(res);
       } catch {
+        updateMessage(userMsgId, (prev) => ({ ...prev, failed: true }));
         appendMessage({
           id: nextId(),
           role: "agent",
+          error: true,
+          timestamp: timeLabel(locale),
           content: { text: translate.error("generic") },
         });
       } finally {
@@ -512,6 +545,22 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     await send(input.text, input.attachment);
   }, [isStreaming, send]);
 
+  const deleteLastTurn = useCallback(async (): Promise<string | null> => {
+    if (!lastUserInputRef.current || isStreaming) return null;
+    const text = lastUserInputRef.current.text;
+    const targetLength = messagesBeforeLastSendRef.current;
+
+    const res = await fetch("/api/chat/conversation/last-turn", { method: "DELETE" });
+    if (!res.ok) return null;
+
+    setMessages((prev) => prev.slice(0, targetLength));
+    callIdToMessageIdRef.current.clear();
+    streamingTextIdRef.current = null;
+    lastUserInputRef.current = null;
+    setHasLastInput(false);
+    return text;
+  }, [isStreaming]);
+
   const switchSession = useCallback(async (sessionId: string) => {
     // Clear local state
     setMessages([]);
@@ -551,6 +600,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     hydrate,
     retry,
     canRetry: hasLastInput && !isStreaming,
+    deleteLastTurn,
     switchSession,
     createSession,
   };

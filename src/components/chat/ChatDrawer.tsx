@@ -7,7 +7,7 @@ import { ChatHeader } from "./ChatHeader";
 import { ChatComposer } from "./ChatComposer";
 import { ChatMessage } from "./ChatMessage";
 import { EmptyChat } from "./EmptyChat";
-import { SessionList } from "./SessionList";
+import { HistoryPanel } from "./HistoryPanel";
 import { useChatStream, type PendingAttachment } from "./useChatStream";
 
 interface ChatDrawerProps {
@@ -23,6 +23,9 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
   const t = useTranslations("chat");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [composerInitial, setComposerInitial] = useState("");
+  const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const translate = useMemo(
     () => ({
@@ -73,6 +76,17 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
     [t, locale]
   );
 
+  const {
+    messages,
+    isStreaming,
+    send,
+    retry,
+    canRetry,
+    deleteLastTurn,
+    switchSession,
+    createSession,
+  } = useChatStream({ locale, translate });
+
   // When parent passes a seed prompt (e.g. from the meal-planner AI button),
   // populate the composer and clear the seed so it only fires once.
   useEffect(() => {
@@ -82,25 +96,23 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
     }
   }, [seedPrompt, isOpen, onSeedConsumed]);
 
-  const [sessionsOpen, setSessionsOpen] = useState(false);
-
-  const { messages, isStreaming, send, clear, retry, canRetry, switchSession, createSession } = useChatStream({
-    locale,
-    translate,
-  });
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isOpen]);
 
-  const handleClear = useCallback(async () => {
-    const confirmText = t("confirmClear" as Parameters<typeof t>[0]) as string;
-    if (typeof window !== "undefined" && window.confirm(confirmText)) {
-      await clear();
-    }
-  }, [clear, t]);
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const flashToast = useCallback((text: string) => {
+    setToast(text);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 1500);
+  }, []);
 
   const handleSend = useCallback(
     async (text: string, attachment?: PendingAttachment) => {
@@ -115,45 +127,60 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
     setComposerInitial(text);
   }, []);
 
+  const handleNewChat = useCallback(() => {
+    createSession();
+    setSessionsOpen(false);
+  }, [createSession]);
+
+  const handleEditLastTurn = useCallback(async () => {
+    const text = await deleteLastTurn();
+    if (text != null) setComposerInitial(text);
+  }, [deleteLastTurn]);
+
+  const handleDeleteLastTurn = useCallback(async () => {
+    await deleteLastTurn();
+  }, [deleteLastTurn]);
+
   const lastUserMsgIndex = messages.reduce(
     (acc, _m, i) => (messages[i].role === "user" ? i : acc),
     -1
   );
+  const lastIndex = messages.length - 1;
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <SessionList
-        isOpen={sessionsOpen}
-        onClose={() => setSessionsOpen(false)}
-        onSessionSelect={(id) => { switchSession(id); setSessionsOpen(false); }}
-        onNewChat={() => { createSession(); setSessionsOpen(false); }}
-        locale={locale}
-      />
-
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
       <ChatHeader
         onClose={onClose}
-        onClear={handleClear}
         onToggleSessions={() => setSessionsOpen((p) => !p)}
+        onNewChat={handleNewChat}
       />
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth"
+        className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden p-4 scroll-smooth"
         aria-live="polite"
       >
         {messages.length === 0 ? (
           <EmptyChat onSuggestionClick={handleSuggestionClick} />
         ) : (
-          <div className="flex flex-col space-y-2">
-            {messages.map((msg, i) => (
-              <ChatMessage
-                key={msg.id}
-                {...msg}
-                isLastUserMessage={i === lastUserMsgIndex}
-                onRetry={canRetry ? retry : undefined}
-              />
-            ))}
-          </div>
+          messages.map((msg, i) => (
+            <ChatMessage
+              key={msg.id}
+              {...msg}
+              streaming={
+                isStreaming &&
+                i === lastIndex &&
+                msg.role === "agent" &&
+                !!msg.content.text
+              }
+              isLastUserMessage={i === lastUserMsgIndex}
+              canModify={i === lastUserMsgIndex && canRetry && !msg.failed}
+              onRetry={canRetry ? retry : undefined}
+              onCopied={() => flashToast(t("copied"))}
+              onEdit={handleEditLastTurn}
+              onDelete={handleDeleteLastTurn}
+            />
+          ))
         )}
       </div>
 
@@ -162,6 +189,23 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
         initialValue={composerInitial}
         disabled={isStreaming}
       />
+
+      <HistoryPanel
+        visible={sessionsOpen}
+        onClose={() => setSessionsOpen(false)}
+        onSelect={(id) => {
+          switchSession(id);
+          setSessionsOpen(false);
+        }}
+        onNewChat={handleNewChat}
+        locale={locale}
+      />
+
+      {toast && (
+        <div className="pointer-events-none absolute bottom-20 left-1/2 z-10 -translate-x-1/2 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background shadow-lg">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

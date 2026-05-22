@@ -33,9 +33,9 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
             key={template.id}
             onClick={() => onPick(template.id)}
             className={cn(
-              'min-w-[200px] px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200',
+              'min-w-[200px] px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200 ease-in-out',
               isActive
-                ? 'bg-muted border-[1.5px] border-brand-500 shadow-[0_0_0_4px_theme(colors.brand.500/10)]'
+                ? 'bg-muted border border-brand-500 shadow-[0_12px_20px_-8px_rgba(224,122,95,0.35),0_4px_12px_-2px_rgba(0,0,0,0.12),0_0_0_4px_rgba(224,122,95,0.1)]'
                 : 'bg-card border border-border shadow-none'
             )}
           >

@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
 
 interface ConfirmInlineProps {
   onConfirm: () => void;
@@ -33,24 +32,16 @@ export function ConfirmInline({
   if (resolved) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mt-2">
+    <div className="mt-2 flex flex-wrap items-center gap-2">
       <button
         onClick={handleConfirm}
-        className={cn(
-          "px-4 py-1.5 rounded-lg text-sm font-medium",
-          "bg-destructive text-destructive-foreground",
-          "hover:bg-destructive/90 transition-colors shadow-sm"
-        )}
+        className="rounded-md bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground transition-opacity duration-150 hover:opacity-85"
       >
         {confirmText ?? t("yes")}
       </button>
       <button
         onClick={handleCancel}
-        className={cn(
-          "px-4 py-1.5 rounded-lg text-sm font-medium",
-          "bg-secondary text-secondary-foreground border border-border",
-          "hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
-        )}
+        className="rounded-md border-[1.5px] border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors duration-150 hover:bg-muted"
       >
         {cancelText ?? t("no")}
       </button>

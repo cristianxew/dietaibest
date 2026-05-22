@@ -79,7 +79,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
           role="dialog"
           aria-modal="false"
           aria-label="DietAI Assistant"
-          className={`absolute top-0 right-0 h-full bg-white dark:bg-stone-900 border-l border-stone-200 dark:border-stone-800 transition-transform duration-300 ease-in-out z-30 shadow-2xl ${
+          className={`absolute top-0 right-0 h-full bg-background border-l border-border transition-transform duration-300 ease-in-out z-30 shadow-xl ${
             isOpen ? "translate-x-0" : "translate-x-full"
           }`}
           style={{ width: 420 }}
@@ -94,7 +94,7 @@ export function ChatContainer({ children }: { children: React.ReactNode }) {
           role="dialog"
           aria-modal="false"
           aria-label="DietAI Assistant"
-          className={`fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800 transition-transform duration-300 ease-in-out shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl h-[90vh] ${
+          className={`fixed inset-x-0 bottom-0 z-50 bg-background border-t border-border transition-transform duration-300 ease-in-out shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-3xl h-[90vh] overflow-hidden ${
             isOpen ? "translate-y-0" : "translate-y-full"
           }`}
         >

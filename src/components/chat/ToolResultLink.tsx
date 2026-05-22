@@ -2,8 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { FileText, CalendarDays, ShoppingCart, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileText, Calendar, ShoppingBag, ArrowRight } from "lucide-react";
 
 export type LinkType = "recipe" | "mealplan" | "shoppinglist";
 
@@ -13,29 +12,29 @@ interface ToolResultLinkProps {
   href: string;
 }
 
+const CONFIG: Record<LinkType, { Icon: typeof FileText; color: string }> = {
+  recipe: { Icon: FileText, color: "var(--primary)" },
+  mealplan: { Icon: Calendar, color: "var(--gold-500)" },
+  shoppinglist: { Icon: ShoppingBag, color: "var(--success)" },
+};
+
 export function ToolResultLink({ type, label, href }: ToolResultLinkProps) {
-  const Icon = 
-    type === "recipe" ? FileText :
-    type === "mealplan" ? CalendarDays :
-    ShoppingCart;
+  const { Icon, color } = CONFIG[type] ?? CONFIG.recipe;
 
   return (
-    <Link 
+    <Link
       href={href}
-      className={cn(
-        "flex items-center gap-3 p-3 mt-2 rounded-xl border max-w-[280px]",
-        "bg-card border-border",
-        "hover:border-brand-300 dark:hover:border-brand-500/50 hover:bg-brand-50/50 dark:hover:bg-brand-500/5",
-        "transition-all duration-200 group"
-      )}
+      className="group inline-flex items-center gap-2 rounded-lg border-[1.5px] border-border bg-card px-4 py-2 text-sm font-semibold text-foreground no-underline transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-px hover:shadow-sm"
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = color;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "";
+      }}
     >
-      <div className="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-        <Icon size={16} />
-      </div>
-      <span className="text-sm font-medium text-foreground truncate flex-1">
-        {label}
-      </span>
-      <ChevronRight size={16} className="text-muted-foreground group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all" />
+      <Icon size={16} style={{ color }} className="shrink-0" />
+      <span className="truncate">{label}</span>
+      <ArrowRight size={14} className="shrink-0 text-muted-foreground" />
     </Link>
   );
 }

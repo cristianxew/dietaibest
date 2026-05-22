@@ -2,72 +2,46 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { ChefHat, Link as LinkIcon, Camera, CalendarDays } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { FileText, Link as LinkIcon, Image as ImageIcon, Calendar } from "lucide-react";
+import { LogoSymbol } from "./LogoSymbol";
 
 interface EmptyChatProps {
   onSuggestionClick: (text: string) => void;
 }
 
 export function EmptyChat({ onSuggestionClick }: EmptyChatProps) {
-  const t = useTranslations("chat.empty");
+  const t = useTranslations("chat");
+  const te = useTranslations("chat.empty");
 
   const suggestions = [
-    {
-      icon: <ChefHat size={18} className="text-brand-500" />,
-      text: t("suggestion1"),
-      prompt: t("suggestion1Prompt"),
-    },
-    {
-      icon: <LinkIcon size={18} className="text-brand-500" />,
-      text: t("suggestion2"),
-      prompt: t("suggestion2Prompt"),
-    },
-    {
-      icon: <Camera size={18} className="text-brand-500" />,
-      text: t("suggestion3"),
-      prompt: t("suggestion3Prompt"),
-    },
-    {
-      icon: <CalendarDays size={18} className="text-brand-500" />,
-      text: t("suggestion4"),
-      prompt: t("suggestion4Prompt"),
-    },
+    { Icon: FileText, text: te("suggestion1"), prompt: te("suggestion1Prompt") },
+    { Icon: LinkIcon, text: te("suggestion2"), prompt: te("suggestion2Prompt") },
+    { Icon: ImageIcon, text: te("suggestion3"), prompt: te("suggestion3Prompt") },
+    { Icon: Calendar, text: te("suggestion4"), prompt: te("suggestion4Prompt") },
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-6">
-      <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center border border-brand-100 dark:border-brand-500/20 mb-2">
-        <ChefHat size={32} className="text-brand-500" />
+    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
+        <LogoSymbol size={40} tone="auto" />
       </div>
 
-      <div className="space-y-2">
-        <h3 className="font-display text-2xl font-semibold text-foreground">
-          {t("title")}
-        </h3>
-        <p className="text-muted-foreground text-sm max-w-[240px] mx-auto">
-          {t("subtitle")}
-        </p>
-      </div>
+      <h2 className="mb-2 font-display text-2xl font-semibold text-foreground">
+        {t("assistant")}
+      </h2>
+      <p className="mb-8 max-w-[32ch] text-sm leading-relaxed text-muted-foreground">
+        {te("subtitle")}
+      </p>
 
-      <div className="w-full space-y-2 mt-4">
-        {suggestions.map((suggestion, i) => (
+      <div className="flex w-full max-w-[360px] flex-col gap-2">
+        {suggestions.map(({ Icon, text, prompt }, i) => (
           <button
             key={i}
-            onClick={() => onSuggestionClick(suggestion.prompt)}
-            className={cn(
-              "w-full flex items-center gap-3 p-3 rounded-xl text-left",
-              "bg-card border border-border",
-              "hover:border-brand-200 dark:hover:border-brand-500/30 hover:bg-stone-50 dark:hover:bg-stone-800/50",
-              "transition-all duration-200 group"
-            )}
+            onClick={() => onSuggestionClick(prompt)}
+            className="flex items-center gap-3 rounded-md border-[1.5px] border-border bg-card px-4 py-3 text-left text-sm font-medium text-foreground transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 hover:border-primary hover:bg-muted"
           >
-            <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center group-hover:scale-105 transition-transform">
-              {suggestion.icon}
-            </div>
-            <span className="text-sm font-medium text-stone-700 dark:text-stone-300 group-hover:text-foreground">
-              {suggestion.text}
-            </span>
+            <Icon size={18} className="shrink-0 text-primary" />
+            {text}
           </button>
         ))}
       </div>

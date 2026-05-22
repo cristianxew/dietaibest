@@ -1321,6 +1321,22 @@
     "session": {
       "messages": "{count} mensajes"
     },
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "assistant": "Asistente",
+    "newChat": "Nueva conversación",
+    "copied": "Copiado",
+    "notDelivered": "No se envió",
+    "actions": {
+      "copy": "Copiar",
+      "copyResponse": "Copiar respuesta",
+      "edit": "Editar y reenviar",
+      "delete": "Borrar"
+    },
+    "history": {
+      "searchPlaceholder": "Buscá una conversación…",
+      "noResults": "Ninguna conversación coincide con \"{query}\"",
+      "active": "Activa",
+      "back": "Volver a la conversación"
+    }
   }
 }

@@ -1316,6 +1316,22 @@
     "session": {
       "messages": "{count} wiadomości"
     },
-    "retry": "Ponów"
+    "retry": "Ponów",
+    "assistant": "Asystent",
+    "newChat": "Nowa rozmowa",
+    "copied": "Skopiowano",
+    "notDelivered": "Nie wysłano",
+    "actions": {
+      "copy": "Kopiuj",
+      "copyResponse": "Kopiuj odpowiedź",
+      "edit": "Edytuj i wyślij ponownie",
+      "delete": "Usuń"
+    },
+    "history": {
+      "searchPlaceholder": "Szukaj rozmów…",
+      "noResults": "Brak rozmów pasujących do \"{query}\"",
+      "active": "Aktywna",
+      "back": "Powrót do rozmowy"
+    }
   }
 }

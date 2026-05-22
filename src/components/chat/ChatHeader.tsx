@@ -2,60 +2,52 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { X, Trash2, History } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { X, SquarePen, History } from "lucide-react";
+import { LogoSymbol } from "./LogoSymbol";
 
 interface ChatHeaderProps {
   onClose: () => void;
-  onClear: () => void;
   onToggleSessions: () => void;
+  onNewChat: () => void;
 }
 
-export function ChatHeader({ onClose, onClear, onToggleSessions }: ChatHeaderProps) {
+export function ChatHeader({ onClose, onToggleSessions, onNewChat }: ChatHeaderProps) {
   const t = useTranslations("chat");
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-      <div className="flex items-center gap-2">
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={onToggleSessions}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
-                aria-label={t("sessions.title")}
-              >
-                <History size={18} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t("sessions.title")}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <div className="flex flex-col">
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            {t("title")}
-          </h2>
-          <span className="text-xs text-sage-600 dark:text-sage-400 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sage-500 animate-pulse" />
-            {t("online")}
-          </span>
+    <div className="flex shrink-0 items-center justify-between border-b border-border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+          <LogoSymbol size={22} tone="auto" />
         </div>
+        <h3 className="text-base font-semibold text-foreground">
+          {t("assistant")}
+        </h3>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <button
-          onClick={onClear}
-          className="p-2 text-muted-foreground hover:text-destructive hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
-          aria-label={t("clearConversation")}
-          title={t("clearConversation")}
+          onClick={onToggleSessions}
+          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={t("sessions.title")}
+          title={t("sessions.title")}
         >
-          <Trash2 size={18} />
+          <History size={18} />
+        </button>
+        <button
+          onClick={onNewChat}
+          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={t("newChat")}
+          title={t("newChat")}
+        >
+          <SquarePen size={18} />
         </button>
         <button
           onClick={onClose}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors md:hidden"
+          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
           aria-label={t("close")}
         >
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
     </div>
