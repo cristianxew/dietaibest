@@ -11,8 +11,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
-import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2 } from "lucide-react";
+import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getCategories } from "@/actions/recipe";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   getMealPlans,
   getMealPlan,
@@ -55,6 +63,9 @@ export function MealPlanner() {
   const [layout, setLayout] = useState<"grid" | "stack" | "split">("grid");
   const [density, setDensity] = useState<"regular" | "compact">("regular");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
@@ -256,6 +267,16 @@ export function MealPlanner() {
     loadTemplates();
   }, [loadTemplates]);
 
+  useEffect(() => {
+    async function loadCats() {
+      const catsResult = await getCategories();
+      if (catsResult.data) {
+        setCategories(catsResult.data);
+      }
+    }
+    loadCats();
+  }, []);
+
   // Honor ?selected=<id> from URL (e.g. deep link from chat after generateMealPlan)
   useEffect(() => {
     const requested = searchParams.get("selected");
@@ -370,57 +391,101 @@ export function MealPlanner() {
               onDragEnd={handleDragEnd}
             >
               <div className="flex flex-col gap-4">
-                {/* Layout / density toolbar — full width above the grid */}
-                <div className="flex items-center gap-3">
-                  {/* 3-way layout switcher */}
-                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                    {(
-                      [
-                        { id: "grid", Icon: LayoutGrid },
-                        { id: "stack", Icon: Layers },
-                        { id: "split", Icon: Columns2 },
-                      ] as const
-                    ).map(({ id, Icon: LIcon }) => {
-                      const isActive = layout === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setLayout(id)}
-                          className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                            isActive
-                              ? "bg-card text-brand-500 shadow-sm"
-                              : "bg-transparent text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          <LIcon className="w-3.5 h-3.5" />
-                          {t(`layout.${id}`)}
-                        </button>
-                      );
-                    })}
+                {/* Unified control panel: Search + Categories + Layout + Density */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                  {/* Left: Search & Category Filters */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl w-full">
+                    {/* Search Input */}
+                    <div className="relative flex-1">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Search className="w-4 h-4" />
+                      </div>
+                      <input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={t("searchRecipes")}
+                        className={cn(
+                          "w-full py-2 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] outline-none transition-all duration-200",
+                          "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
+                        )}
+                      />
+                    </div>
+
+                    {/* Category Dropdown Selector */}
+                    <div className="flex-shrink-0">
+                      <Select
+                        value={selectedCategory}
+                        onValueChange={setSelectedCategory}
+                      >
+                        <SelectTrigger className="w-full sm:w-[180px] h-9 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+                          <SelectValue placeholder={t("allCategories")} />
+                        </SelectTrigger>
+                        <SelectContent className="border-border">
+                          <SelectItem value="all" className="text-xs">
+                            {t("allCategories")}
+                          </SelectItem>
+                          {categories.map((c) => (
+                            <SelectItem key={c.id} value={c.name} className="text-xs">
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  {/* Density toggle */}
-                  <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                    {(["regular", "compact"] as const).map((d) => {
-                      const isActive = density === d;
-                      return (
-                        <button
-                          key={d}
-                          type="button"
-                          onClick={() => setDensity(d)}
-                          className={cn(
-                            "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                            isActive
-                              ? "bg-card text-brand-500 shadow-sm"
-                              : "bg-transparent text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {t(`density.${d}`)}
-                        </button>
-                      );
-                    })}
+                  {/* Right: Layout & Density controls */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* 3-way layout switcher */}
+                    <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                      {(
+                        [
+                          { id: "grid", Icon: LayoutGrid },
+                          { id: "stack", Icon: Layers },
+                          { id: "split", Icon: Columns2 },
+                        ] as const
+                      ).map(({ id, Icon: LIcon }) => {
+                        const isActive = layout === id;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setLayout(id)}
+                            className={cn(
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                              isActive
+                                ? "bg-card text-brand-500 shadow-sm"
+                                : "bg-transparent text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <LIcon className="w-3.5 h-3.5" />
+                            {t(`layout.${id}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Density toggle */}
+                    <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                      {(["regular", "compact"] as const).map((d) => {
+                        const isActive = density === d;
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            onClick={() => setDensity(d)}
+                            className={cn(
+                              "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                              isActive
+                                ? "bg-card text-brand-500 shadow-sm"
+                                : "bg-transparent text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {t(`density.${d}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
@@ -445,7 +510,11 @@ export function MealPlanner() {
                       </div>
                     </div>
                     <div className="h-[calc(100%-60px)] pt-2.5">
-                      <RecipeLibrary dense={density === "compact"} />
+                      <RecipeLibrary 
+                        dense={density === "compact"} 
+                        searchQuery={searchQuery}
+                        selectedCategory={selectedCategory}
+                      />
                     </div>
                   </div>
 

@@ -89,6 +89,8 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
 /* ── RecipeLibrary ─────────────────────────────── */
 interface RecipeLibraryProps {
   dense?: boolean;
+  searchQuery?: string;
+  selectedCategory?: string;
 }
 
 function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean }) {
@@ -145,84 +147,36 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
 
 type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
 
-export function RecipeLibrary({ dense = false }: RecipeLibraryProps) {
+export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategory = 'all' }: RecipeLibraryProps) {
   const t = useTranslations('mealPlans');
-  const allLabel = t('allCategories');
-  const [q, setQ] = useState('');
-  const [cat, setCat] = useState(allLabel);
   const [recipes, setRecipes] = useState<RecipeWithCategories[]>([]);
-  const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [recipesResult, catsResult] = await Promise.all([
-        getRecipes({ page: 1, limit: 50 }),
-        getCategories(),
-      ]);
+      const recipesResult = await getRecipes({ page: 1, limit: 50 });
+
       if (recipesResult.error) {
         toast.error(recipesResult.error);
       } else if (recipesResult.data) {
         setRecipes(recipesResult.data.recipes as RecipeWithCategories[]);
-      }
-      if (catsResult.error) {
-        toast.error(catsResult.error);
-      } else if (catsResult.data) {
-        setCategories(catsResult.data);
       }
       setLoading(false);
     }
     load();
   }, []);
 
-  const cats = [allLabel, ...categories.map(c => c.name)];
-
   const filtered = recipes.filter(r => {
     const matchesCat =
-      cat === allLabel || r.categories.some(c => c.name === cat);
-    const matchesQ = !q || r.title.toLowerCase().includes(q.toLowerCase());
+      selectedCategory === 'all' || r.categories.some(c => c.name === selectedCategory);
+    const matchesQ = !searchQuery || r.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesQ;
   });
 
   return (
     <div className="flex flex-col gap-2.5 h-full">
-      {/* Search */}
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-          <Icon name="Search" size={15} />
-        </div>
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder={t('searchRecipes')}
-          className={cn(
-            'w-full py-[9px] pr-3 pl-[34px] rounded-lg border border-border bg-background',
-            'text-foreground font-sans text-[13px] outline-none',
-            'focus:border-brand-300 focus:ring-1 focus:ring-brand-500/20',
-          )}
-        />
-      </div>
-
-      {/* Category chips */}
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-        {cats.map(c => (
-          <button
-            key={c}
-            onClick={() => setCat(c)}
-            className={cn(
-              'py-[5px] px-[11px] rounded-full border text-[11px] font-semibold cursor-pointer whitespace-nowrap transition-all duration-150',
-              cat === c
-                ? 'bg-brand-500 border-brand-500 text-[#1C1A17]'
-                : 'bg-transparent border-border text-muted-foreground hover:border-brand-300',
-            )}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
-
       {/* Count */}
-      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pb-1">
         <Icon name="UtensilsCrossed" size={12} />{t('recipesFound', { count: filtered.length })}
       </div>
 
