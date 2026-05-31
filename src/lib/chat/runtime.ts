@@ -275,9 +275,7 @@ export class AgentRuntime {
       if (!sawToolCall) break;
 
       // Execute the tools requested in this LLM turn.
-      let cancelled = false;
       for (const call of toolCallBatch) {
-        if (cancelled) break;
         if (call.kind !== "tool-call") continue;
         const tool = this.findTool(call.toolName);
         if (!tool) {
