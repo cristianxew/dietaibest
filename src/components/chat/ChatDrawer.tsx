@@ -41,6 +41,11 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
       },
       confirmDelete: (name: string) =>
         t("confirm.delete.recipe" as Parameters<typeof t>[0], { name }) as string,
+      confirmGenerateImage: (name: string) =>
+        t("confirm.generateImage.recipe" as Parameters<typeof t>[0], { name }) as string,
+      generateImageYes: () => t("confirm.generateImage.yes" as Parameters<typeof t>[0]) as string,
+      generateImageNo: () => t("confirm.generateImage.no" as Parameters<typeof t>[0]) as string,
+      generateImageSkipped: () => t("confirm.generateImage.skipped" as Parameters<typeof t>[0]) as string,
       error: (reason: "generic" | "quota" | "notFound" | "unauthorized") => {
         switch (reason) {
           case "quota":

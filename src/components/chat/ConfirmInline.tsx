@@ -2,12 +2,14 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface ConfirmInlineProps {
   onConfirm: () => void;
   onCancel: () => void;
   confirmText?: string;
   cancelText?: string;
+  variant?: "destructive" | "primary";
 }
 
 export function ConfirmInline({
@@ -15,6 +17,7 @@ export function ConfirmInline({
   onCancel,
   confirmText,
   cancelText,
+  variant = "destructive",
 }: ConfirmInlineProps) {
   const t = useTranslations("chat.confirm");
   const [resolved, setResolved] = useState(false);
@@ -35,7 +38,12 @@ export function ConfirmInline({
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <button
         onClick={handleConfirm}
-        className="rounded-md bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground transition-opacity duration-150 hover:opacity-85"
+        className={cn(
+          "rounded-md px-3 py-1.5 text-xs font-semibold transition-opacity duration-150 hover:opacity-85",
+          variant === "primary"
+            ? "bg-primary text-primary-foreground"
+            : "bg-destructive text-destructive-foreground"
+        )}
       >
         {confirmText ?? t("yes")}
       </button>

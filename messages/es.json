@@ -1216,7 +1216,8 @@
         "deleting": "Eliminando receta…",
         "analyzing": "Analizando macros…",
         "saving": "Guardando…",
-        "loading": "Cargando receta…"
+        "loading": "Cargando receta…",
+        "generatingImage": "Generando imagen culinaria…"
       },
       "import": {
         "fetching": "Trayendo el contenido…",
@@ -1286,7 +1287,13 @@
       "yes": "Sí, eliminar",
       "no": "No, cancelar",
       "deleted": "Eliminado",
-      "cancelled": "Cancelado"
+      "cancelled": "Cancelado",
+      "generateImage": {
+        "recipe": "¿Querés generar automáticamente una imagen culinaria premium para \"{name}\"?",
+        "yes": "Sí, generar",
+        "no": "No, omitir",
+        "skipped": "Generación de imagen omitida"
+      }
     },
     "attach": {
       "label": "Adjuntar imagen",

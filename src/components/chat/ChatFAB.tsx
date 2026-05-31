@@ -46,20 +46,24 @@ export function ChatFAB({ isOpen, onClick }: ChatFABProps) {
         aria-expanded={isOpen}
         aria-controls="chat-drawer"
         className={cn(
-          "absolute inset-0 flex items-center justify-center rounded-full text-primary-foreground shadow-lg",
+          "absolute inset-0 flex items-center justify-center rounded-full shadow-lg",
           "transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "glow-gold",
           isOpen
-            ? "scale-95 bg-brand-600 dark:bg-brand-300"
-            : "scale-100 bg-primary hover:scale-105 hover:bg-brand-600 dark:hover:bg-brand-300",
+            ? "scale-95 bg-gold-600 dark:bg-gold-200 text-gold-950 dark:text-gold-950"
+            : "scale-100 bg-gold-500 hover:scale-105 hover:bg-gold-600 dark:bg-gold-300 dark:hover:bg-gold-400 text-gold-950 dark:text-gold-950",
         )}
       >
         <div className="relative flex items-center justify-center">
           <div className={cn(!isOpen && "animate-ai-float")}>
-            <LogoSymbol size={28} tone="light" />
+            <LogoSymbol size={28} tone="dark" />
           </div>
           {!isOpen && (
-            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-primary bg-success" />
+            <span className={cn(
+              "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-success",
+              "border-gold-500 dark:border-gold-300"
+            )} />
           )}
         </div>
       </button>

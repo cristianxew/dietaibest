@@ -1211,7 +1211,8 @@
         "deleting": "Usuwam przepis…",
         "analyzing": "Analizuję makro…",
         "saving": "Zapisuję…",
-        "loading": "Ładuję przepis…"
+        "loading": "Ładuję przepis…",
+        "generatingImage": "Generuję obraz kulinarny…"
       },
       "import": {
         "fetching": "Pobieram zawartość…",
@@ -1281,7 +1282,13 @@
       "yes": "Tak, usuń",
       "no": "Nie, anuluj",
       "deleted": "Usunięto",
-      "cancelled": "Anulowano"
+      "cancelled": "Anulowano",
+      "generateImage": {
+        "recipe": "Czy chcesz automatycznie wygenerować piękne zdjęcie kulinarne dla „{name}”?",
+        "yes": "Tak, wygeneruj",
+        "no": "Nie, pomiń",
+        "skipped": "Pominięto generowanie obrazu"
+      }
     },
     "attach": {
       "label": "Załącz obraz",

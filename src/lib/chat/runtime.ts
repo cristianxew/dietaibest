@@ -165,6 +165,17 @@ export class AgentRuntime {
           history.push(callItem);
           yield* this.runOneTool(tool, callItem, ctx, history, pendingPersist);
         }
+      } else {
+        // User cancelled! Supply a tool-result so the AI SDK doesn't crash
+        // with AI_MissingToolResultsError for the pending tool call.
+        const resultItem: ConversationTurnItem = {
+          kind: "tool-result",
+          callId: req.pendingResolve.callId,
+          toolName: req.pendingResolve.toolName,
+          result: { ok: false, reason: "cancelled", message: "User skipped or cancelled the tool execution." },
+        };
+        pendingPersist.push(resultItem);
+        history.push(resultItem);
       }
       // After resolving (accepted or not), loop back into the LLM for an ack.
     }
@@ -179,7 +190,7 @@ export class AgentRuntime {
       history.push(userItem);
     }
 
-    const systemPrompt = buildSystemPrompt(ctx.locale);
+    const systemPrompt = buildSystemPrompt(ctx.locale, ctx.page);
     const guardrail = new StreamingGuardrail();
 
     // Refusal-telemetry accumulators (decision #117). A turn is flagged as a

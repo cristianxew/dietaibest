@@ -16,6 +16,7 @@ type MealSummary = {
 };
 
 type DaySummary = {
+  id: string;
   dayNumber: number;
   meals: MealSummary[];
 };
@@ -51,6 +52,7 @@ export const getMealPlan: Tool<typeof inputSchema, PlanDetail> = {
     const template = result.data;
 
     const days: DaySummary[] = (template.days ?? []).map((day) => ({
+      id: day.id,
       dayNumber: day.dayNumber,
       meals: (day.meals ?? []).map((meal) => ({
         id: meal.id,

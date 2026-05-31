@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import type { LinkType } from "./ToolResultLink";
 import type { ChatMessageProps, MessageContent } from "./ChatMessage";
@@ -52,6 +53,10 @@ interface UseChatStreamProps {
   translate: {
     status: (key: string, params?: Record<string, string | number>) => string;
     confirmDelete: (name: string) => string;
+    confirmGenerateImage: (name: string) => string;
+    generateImageYes: () => string;
+    generateImageNo: () => string;
+    generateImageSkipped: () => string;
     error: (reason: "generic" | "quota" | "notFound" | "unauthorized") => string;
     guardrailRedacted: () => string;
     success: () => string;
@@ -95,6 +100,19 @@ interface UseChatStreamResult {
 
 let messageIdCounter = 0;
 const nextId = () => `m-${++messageIdCounter}-${Date.now()}`;
+
+/**
+ * Tools whose successful completion should auto-navigate the browser to the
+ * created recipe. Whitelisted by tool name on purpose: editRecipe, getRecipe
+ * and generateRecipeImage also emit `link.type === "recipe"` but must NOT
+ * navigate — and generateRecipeImage runs in the same turn right after a
+ * create, so filtering by link type alone would be wrong.
+ */
+const AUTO_NAV_TOOLS = new Set([
+  "createRecipe",
+  "importRecipeFromUrl",
+  "importRecipeFromImage",
+]);
 
 /** Short "10:23 AM"-style label for live messages. */
 const timeLabel = (locale: string): string => {
@@ -172,6 +190,20 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   // handleEvent is a stable callback with no deps — read locale through a ref.
   const localeRef = useRef(locale);
   localeRef.current = locale;
+
+  // Auto-navigation after recipe create/import. handleEvent captures the
+  // recipe href on tool.completed and consumes it on `finish` — both read
+  // the router through a ref since handleEvent has no deps.
+  const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
+  const pendingNavHrefRef = useRef<string | null>(null);
+
+  // Current page path, sent with each message so the agent knows where the
+  // user is. Read through a ref so `send` doesn't rebuild on navigation.
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   // For retry
   const lastUserInputRef = useRef<{ text: string; attachment?: PendingAttachment } | null>(null);
@@ -277,6 +309,9 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           },
         }));
         callIdToMessageIdRef.current.delete(event.callId);
+        if (AUTO_NAV_TOOLS.has(event.toolName) && link?.href) {
+          pendingNavHrefRef.current = link.href;
+        }
         break;
       }
       case "tool.progress": {
@@ -336,24 +371,37 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       case "confirm.request": {
         streamingTextIdRef.current = null;
         const id = nextId();
+        const isGenerateImage = event.toolName === "generateRecipeImage";
         appendMessage({
           id,
           role: "agent",
           content: {
-            text: translate.confirmDelete(event.message),
+            text: isGenerateImage
+              ? translate.confirmGenerateImage(event.message)
+              : translate.confirmDelete(event.message),
             confirm: {
+              confirmText: isGenerateImage ? translate.generateImageYes() : undefined,
+              cancelText: isGenerateImage ? translate.generateImageNo() : undefined,
+              variant: isGenerateImage ? "primary" : "destructive",
               onConfirm: async () => {
                 removeMessage(id);
                 await resolveConfirm(event.callId, event.toolName, true, event.payload);
               },
-              onCancel: () => {
+              onCancel: async () => {
                 updateMessage(id, (prev) => ({
                   ...prev,
                   content: {
-                    text: prev.content.text,
-                    status: { state: "success", message: translate.cancelled() },
+                    ...prev.content,
+                    confirm: undefined,
+                    status: {
+                      state: "success",
+                      message: isGenerateImage
+                        ? translate.generateImageSkipped()
+                        : translate.cancelled(),
+                    },
                   },
                 }));
+                await resolveConfirm(event.callId, event.toolName, false, event.payload);
               },
             },
           },
@@ -381,6 +429,9 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       }
       case "finish": {
         streamingTextIdRef.current = null;
+        const href = pendingNavHrefRef.current;
+        pendingNavHrefRef.current = null;
+        if (href) routerRef.current.push(href);
         break;
       }
       case "error": {
@@ -400,6 +451,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
 
   const send = useCallback(
     async (text: string, attachment?: PendingAttachment) => {
+      pendingNavHrefRef.current = null;
       messagesBeforeLastSendRef.current = messages.length;
       lastUserInputRef.current = { text, attachment };
       setHasLastInput(true);
@@ -443,6 +495,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           body: JSON.stringify({
             message: text,
             locale,
+            pagePath: pathnameRef.current,
             ...(attachment && {
               attachments: [{ eventId: attachment.eventId, kind: attachment.kind }],
             }),
@@ -482,6 +535,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
 
   const resolveConfirm = useCallback(
     async (callId: string, toolName: string, accepted: boolean, payload: unknown) => {
+      pendingNavHrefRef.current = null;
       setIsStreaming(true);
       try {
         const res = await fetch("/api/chat", {

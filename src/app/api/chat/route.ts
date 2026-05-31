@@ -9,6 +9,7 @@ import {
 } from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
 import type { AgentContext, Locale } from "@/lib/chat/context";
+import { describePage } from "@/lib/chat/page-context";
 import { getRuntime } from "@/lib/chat/runtime-instance";
 import { resolveActiveConversation } from "@/lib/chat/conversation-prisma";
 import {
@@ -34,6 +35,7 @@ const attachmentSchema = z.object({
 const requestSchema = z.object({
   message: z.string().max(8000).optional(),
   locale: localeSchema.default("en"),
+  pagePath: z.string().max(512).optional(),
   attachments: z.array(attachmentSchema).max(4).optional(),
   resolve: z
     .object({
@@ -103,7 +105,7 @@ export async function POST(req: NextRequest) {
       { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
-  const { message, locale, resolve, attachments } = parsed.data;
+  const { message, locale, pagePath, resolve, attachments } = parsed.data;
   const attachmentList = attachments ?? [];
 
   if (!message && !resolve && attachmentList.length === 0) {
@@ -165,6 +167,7 @@ export async function POST(req: NextRequest) {
     locale: locale as Locale,
     entitlements: getEntitlements(user),
     conversationId: active.id,
+    page: pagePath ? describePage(pagePath, locale as Locale) : undefined,
   };
 
   const runtime = getRuntime();

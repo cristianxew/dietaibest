@@ -15,6 +15,8 @@ import type { Tool } from "./types";
 const inputSchema = z.object({
   recipeId: z.string().min(1),
   promptDescription: z.string().max(500).optional(),
+  confirmed: z.boolean().optional(),
+  askFirst: z.boolean().optional(),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -38,7 +40,31 @@ export const generateRecipeImage: Tool<
   inputSchema,
   statusKey: "recipe.generatingImage",
   requiresFeature: "aiChat",
+  async requiresConfirmation(input) {
+    if (input.askFirst && !input.confirmed) {
+      const recipe = await prisma.recipe.findUnique({
+        where: { id: input.recipeId },
+        select: { title: true },
+      });
+      const name = recipe?.title ?? "this recipe";
+      return {
+        message: name,
+        payload: {
+          ...input,
+          confirmed: true,
+        },
+      };
+    }
+    return null;
+  },
   async execute(input: Input, ctx, emit) {
+    if (input.askFirst && !input.confirmed) {
+      return {
+        ok: false,
+        reason: "generic",
+        message: "Image generation requires confirmation",
+      };
+    }
     const { recipeId, promptDescription } = input;
 
     // 1. Verify recipe exists and ownership

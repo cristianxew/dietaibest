@@ -862,6 +862,12 @@ export async function addMealToDay(data: AddMealData) {
       },
       include: {
         recipe: true,
+        mealPlanDay: {
+          select: {
+            templateId: true,
+            template: { select: { name: true } },
+          },
+        },
       },
     });
 

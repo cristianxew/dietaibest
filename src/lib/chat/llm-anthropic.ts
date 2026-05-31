@@ -154,9 +154,17 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
       input: unknown;
     };
 
+  type ToolResultPart = {
+    type: "tool-result";
+    toolCallId: string;
+    toolName: string;
+    output: { type: "json"; value: never };
+  };
+
   let buffer:
     | { role: "user"; text: string }
     | { role: "assistant"; parts: AssistantPart[] }
+    | { role: "tool"; parts: ToolResultPart[] }
     | null = null;
 
   const flush = () => {
@@ -165,7 +173,7 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
       if (buffer.text.length > 0) {
         out.push({ role: "user", content: buffer.text });
       }
-    } else {
+    } else if (buffer.role === "assistant") {
       const parts = buffer.parts;
       if (parts.length === 0) {
         // nothing to emit
@@ -173,6 +181,10 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
         out.push({ role: "assistant", content: parts[0].text });
       } else {
         out.push({ role: "assistant", content: parts });
+      }
+    } else if (buffer.role === "tool") {
+      if (buffer.parts.length > 0) {
+        out.push({ role: "tool", content: buffer.parts });
       }
     }
     buffer = null;
@@ -190,6 +202,14 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
     } else {
       parts.push(part);
     }
+  };
+
+  const pushToolResultPart = (part: ToolResultPart) => {
+    if (!buffer || buffer.role !== "tool") {
+      flush();
+      buffer = { role: "tool", parts: [] };
+    }
+    buffer.parts.push(part);
   };
 
   for (const item of items) {
@@ -213,20 +233,14 @@ export function toModelMessages(items: ConversationTurnItem[]): ModelMessage[] {
         input: item.input,
       });
     } else if (item.kind === "tool-result") {
-      flush();
-      out.push({
-        role: "tool",
-        content: [
-          {
-            type: "tool-result",
-            toolCallId: item.callId,
-            toolName: item.toolName,
-            output: {
-              type: "json",
-              value: (item.result ?? null) as never,
-            },
-          },
-        ],
+      pushToolResultPart({
+        type: "tool-result",
+        toolCallId: item.callId,
+        toolName: item.toolName,
+        output: {
+          type: "json",
+          value: (item.result ?? null) as never,
+        },
       });
     }
   }

@@ -39,6 +39,7 @@ export interface MessageContent {
     onCancel: () => void;
     confirmText?: string;
     cancelText?: string;
+    variant?: "destructive" | "primary";
   };
 }
 
@@ -265,6 +266,7 @@ function AgentMessage({
             onCancel={content.confirm.onCancel}
             confirmText={content.confirm.confirmText}
             cancelText={content.confirm.cancelText}
+            variant={content.confirm.variant}
           />
         )}
 

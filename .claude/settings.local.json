@@ -35,7 +35,8 @@
       "mcp__45eaeeb0-147e-4de4-ace4-04cf4fdead4c__list_issues",
       "Bash(eza -la /Users/bernal/dietai-project/dietaibest/src/app --tree --level=3)",
       "Bash(eza -la /Users/bernal/dietai-project/dietaibest/messages)",
-      "Bash(eza -la /Users/bernal/dietai-project/dietaibest/src/components/billing/)"
+      "Bash(eza -la /Users/bernal/dietai-project/dietaibest/src/components/billing/)",
+      "WebFetch(domain:docs.supadata.ai)"
     ]
   },
   "enableAllProjectMcpServers": true,

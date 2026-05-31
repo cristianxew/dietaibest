@@ -20,7 +20,8 @@ type AddMealResult = {
 
 export const addMealToDay: Tool<typeof inputSchema, AddMealResult> = {
   name: "addMealToDay",
-  description: "Add a recipe to a specific day and meal slot in a meal plan.",
+  description:
+    "Add a recipe to a specific day and meal slot in a meal plan. mealPlanDayId is the `id` field of the target day from getMealPlan's days array — not the day number.",
   inputSchema,
   statusKey: "mealplan.addingMeal",
   requiresFeature: "aiChat",
@@ -53,6 +54,11 @@ export const addMealToDay: Tool<typeof inputSchema, AddMealResult> = {
         recipeName: meal.recipe?.title ?? null,
         mealType: meal.mealType,
         servings: meal.servings,
+      },
+      link: {
+        type: "mealplan",
+        href: `/meal-plans?selected=${meal.mealPlanDay.templateId}`,
+        label: meal.mealPlanDay.template.name,
       },
     };
   },

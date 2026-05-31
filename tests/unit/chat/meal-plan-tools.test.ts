@@ -80,6 +80,10 @@ const fakeMeal = {
   sortOrder: 0,
   mealPlanDayId: DAY_ID,
   recipe: { id: RECIPE_ID, title: "Oatmeal Bowl" },
+  mealPlanDay: {
+    templateId: PLAN_ID,
+    template: { name: "Weekly Wellness" },
+  },
 };
 
 // ===========================================================================
@@ -177,6 +181,20 @@ describe("getMealPlan tool", () => {
     }
   });
 
+  it("exposes each day's id so addMealToDay can target a slot", async () => {
+    mockFn(mealPlanActions.getMealPlan).mockResolvedValueOnce({
+      data: fakePlan as never,
+      error: null,
+    });
+
+    const result = await getMealPlan.execute({ id: PLAN_ID }, makeCtx());
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.days[0].id).toBe(DAY_ID);
+    }
+  });
+
   it("always returns a mealplan link", async () => {
     mockFn(mealPlanActions.getMealPlan).mockResolvedValueOnce({
       data: fakePlan as never,
@@ -242,6 +260,32 @@ describe("addMealToDay tool", () => {
       expect(result.data.recipeName).toBe("Oatmeal Bowl");
       expect(result.data.mealType).toBe("breakfast");
       expect(result.data.servings).toBe(2);
+    }
+  });
+
+  it("returns a mealplan link card to the parent plan", async () => {
+    mockFn(mealPlanActions.addMealToDay).mockResolvedValueOnce({
+      data: fakeMeal as never,
+      error: null,
+    });
+
+    const result = await addMealToDay.execute(
+      {
+        mealPlanDayId: DAY_ID,
+        recipeId: RECIPE_ID,
+        mealType: "breakfast",
+        servings: 2,
+      },
+      makeCtx()
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.link).toEqual({
+        type: "mealplan",
+        href: `/meal-plans?selected=${PLAN_ID}`,
+        label: "Weekly Wellness",
+      });
     }
   });
 

@@ -197,4 +197,60 @@ describe("generateRecipeImage tool", () => {
       expect(result.message).toContain("Google Imagen generation failed: Imagen service offline");
     }
   });
+
+  describe("gated confirmation", () => {
+    it("requires confirmation when askFirst is true and confirmed is not set", async () => {
+      prismaFake.recipe.findUnique.mockResolvedValue({ title: "Super Food Recipe" } as any);
+
+      const confirmReq = await generateRecipeImage.requiresConfirmation?.(
+        { recipeId: "recipe-123", askFirst: true },
+        makeCtx()
+      );
+
+      expect(confirmReq).not.toBeNull();
+      expect(confirmReq?.message).toBe("Super Food Recipe");
+      expect(confirmReq?.payload).toEqual({
+        recipeId: "recipe-123",
+        askFirst: true,
+        confirmed: true,
+      });
+    });
+
+    it("does not require confirmation when askFirst is false/undefined", async () => {
+      const confirmReq1 = await generateRecipeImage.requiresConfirmation?.(
+        { recipeId: "recipe-123" },
+        makeCtx()
+      );
+      const confirmReq2 = await generateRecipeImage.requiresConfirmation?.(
+        { recipeId: "recipe-123", askFirst: false },
+        makeCtx()
+      );
+
+      expect(confirmReq1).toBeNull();
+      expect(confirmReq2).toBeNull();
+    });
+
+    it("does not require confirmation when askFirst is true but confirmed is also true", async () => {
+      const confirmReq = await generateRecipeImage.requiresConfirmation?.(
+        { recipeId: "recipe-123", askFirst: true, confirmed: true },
+        makeCtx()
+      );
+
+      expect(confirmReq).toBeNull();
+    });
+
+    it("fails execution immediately if askFirst is true but confirmed is not set", async () => {
+      const result = await generateRecipeImage.execute(
+        { recipeId: "recipe-123", askFirst: true },
+        makeCtx()
+      );
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.reason).toBe("generic");
+        expect(result.message).toBe("Image generation requires confirmation");
+      }
+    });
+  });
 });
+
