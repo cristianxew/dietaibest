@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { LinkType } from "./ToolResultLink";
 import type { ChatMessageProps, MessageContent } from "./ChatMessage";
 import type { StatusState } from "./ChatStatus";
+import type { RecipePreview } from "./RecipePreviewCard";
 
 /**
  * AgentEvent shape — must match src/lib/chat/events.ts. Duplicated here to
@@ -370,6 +371,55 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       }
       case "confirm.request": {
         streamingTextIdRef.current = null;
+
+        // Recipe import preview: render the rich read-only card. Reuse the
+        // tool.invoked bubble for this callId so the resume turn's
+        // tool.completed updates the same message (and auto-nav fires).
+        if (event.toolName === "importRecipeFromUrl") {
+          const payload = event.payload as { recipe?: RecipePreview } | null;
+          const recipe = payload?.recipe;
+          if (recipe) {
+            const existingId = callIdToMessageIdRef.current.get(event.callId);
+            const targetId = existingId ?? nextId();
+            const previewContent = {
+              recipePreview: {
+                recipe,
+                onSave: async () => {
+                  updateMessage(targetId, (prev) => ({
+                    ...prev,
+                    content: {
+                      status: {
+                        state: "pending" as StatusState,
+                        message: translate.status(statusKeyToI18n("import.saving")),
+                      },
+                    },
+                  }));
+                  await resolveConfirm(event.callId, event.toolName, true, event.payload);
+                },
+                onCancel: async () => {
+                  updateMessage(targetId, (prev) => ({
+                    ...prev,
+                    content: {
+                      status: {
+                        state: "success" as StatusState,
+                        message: translate.cancelled(),
+                      },
+                    },
+                  }));
+                  await resolveConfirm(event.callId, event.toolName, false, event.payload);
+                },
+              },
+            };
+            if (existingId) {
+              updateMessage(targetId, (prev) => ({ ...prev, content: previewContent }));
+            } else {
+              callIdToMessageIdRef.current.set(event.callId, targetId);
+              appendMessage({ id: targetId, role: "agent", content: previewContent });
+            }
+            break;
+          }
+        }
+
         const id = nextId();
         const isGenerateImage = event.toolName === "generateRecipeImage";
         appendMessage({
