@@ -2,7 +2,11 @@ import { z } from "zod";
 
 import { persistRecipe } from "@/actions/recipe";
 import prisma from "@/lib/prisma";
-import { GemmaExtractionError, GemmaProvider } from "@/lib/chat/llm-gemma";
+import {
+  GemmaExtractionError,
+  getGemmaProvider,
+  setGemmaProviderForTest,
+} from "@/lib/chat/llm-gemma";
 import {
   MULTIMODAL_DAILY_CAP,
   getMultimodalImportCountToday,
@@ -60,20 +64,8 @@ function logImageImportFailure(failure: ImageImportFailureLog): void {
   console.warn("[importRecipeFromImage] ImageImportFailure", failure);
 }
 
-// Lazy provider so the module is importable in test environments without
-// GEMINI_API_KEY set, and so unit tests can inject a mock via setGemmaProvider.
-let providerOverride: GemmaProvider | null = null;
-let providerSingleton: GemmaProvider | null = null;
-
-export function setGemmaProviderForTest(p: GemmaProvider | null): void {
-  providerOverride = p;
-}
-
-function getProvider(): GemmaProvider {
-  if (providerOverride) return providerOverride;
-  if (!providerSingleton) providerSingleton = new GemmaProvider();
-  return providerSingleton;
-}
+// Re-exported for tests that import the hook from this module's path.
+export { setGemmaProviderForTest };
 
 function mapGemmaErrorReason(
   reason: GemmaExtractionError["reason"]
@@ -234,7 +226,7 @@ export const importRecipeFromImage: Tool<
 
     let imported: ImportedRecipeData;
     try {
-      imported = await getProvider().extractRecipe({
+      imported = await getGemmaProvider().extractRecipe({
         imageBytes: bytes,
         mimeType: event.mimeType,
         locale: ctx.locale,

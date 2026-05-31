@@ -169,3 +169,21 @@ export class GemmaProvider {
     return recipe;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Shared lazy singleton. Lives here (not in a tool) so importRecipeFromImage
+// and importRecipeFromUrl share one provider, and tests inject one fake via
+// setGemmaProviderForTest.
+// ---------------------------------------------------------------------------
+let providerOverride: GemmaProvider | null = null;
+let providerSingleton: GemmaProvider | null = null;
+
+export function setGemmaProviderForTest(p: GemmaProvider | null): void {
+  providerOverride = p;
+}
+
+export function getGemmaProvider(): GemmaProvider {
+  if (providerOverride) return providerOverride;
+  if (!providerSingleton) providerSingleton = new GemmaProvider();
+  return providerSingleton;
+}
