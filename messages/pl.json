@@ -1290,6 +1290,16 @@
         "skipped": "Pominięto generowanie obrazu"
       }
     },
+    "preview": {
+      "save": "Zapisz przepis",
+      "cancel": "Anuluj",
+      "ingredients": "Składniki",
+      "steps": "Kroki",
+      "servings": "Porcje",
+      "prep": "Przyg.",
+      "cook": "Gotowanie",
+      "minutesShort": "min"
+    },
     "attach": {
       "label": "Załącz obraz",
       "maxSize": "Plik jest za duży (maks. 10 MB).",

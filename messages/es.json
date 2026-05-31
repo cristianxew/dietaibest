@@ -1295,6 +1295,16 @@
         "skipped": "Generación de imagen omitida"
       }
     },
+    "preview": {
+      "save": "Guardar receta",
+      "cancel": "Cancelar",
+      "ingredients": "Ingredientes",
+      "steps": "Pasos",
+      "servings": "Porciones",
+      "prep": "Prep.",
+      "cook": "Cocción",
+      "minutesShort": "min"
+    },
     "attach": {
       "label": "Adjuntar imagen",
       "maxSize": "El archivo es demasiado grande (máximo 10 MB).",

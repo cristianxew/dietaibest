@@ -1296,6 +1296,16 @@
         "skipped": "Image generation skipped"
       }
     },
+    "preview": {
+      "save": "Save recipe",
+      "cancel": "Cancel",
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "servings": "Servings",
+      "prep": "Prep",
+      "cook": "Cook",
+      "minutesShort": "min"
+    },
     "attach": {
       "label": "Attach image",
       "maxSize": "File is too large (max 10 MB).",
