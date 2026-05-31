@@ -53,6 +53,37 @@ export interface ExtractRecipeArgs {
   locale?: "en" | "es" | "pl";
 }
 
+export interface ExtractRecipeFromTextArgs {
+  content: string;
+  locale?: "en" | "es" | "pl";
+  sourceUrl?: string;
+}
+
+/** Hard cap on markdown sent to the model — recipes fit comfortably; this
+ * bounds token cost on blog pages with huge preamble. */
+const MAX_CONTENT_CHARS = 24_000;
+
+const PROMPT_BASE_TEXT = `You are a kitchen assistant extracting a structured recipe from the scraped Markdown of a web page. The Markdown may include navigation, ads, comments, related-recipe lists, and other noise around the recipe.
+
+Output a JSON object that conforms to the provided schema. Be precise:
+
+- title: the dish's name. Trim quotation marks and ellipses.
+- ingredients: each line as { name, amount, unit }. Amount is a number (use 0 only if quantity is literally absent). Unit is the singular form ("cup", "tbsp", "g", "ml"). Keep ingredient names in the source language.
+- instructions: each step as one string in the source language. Skip section headers ("Preparation", "For the sauce").
+- servings: integer >= 1, only if explicitly stated.
+- prepTime / cookTime: integer minutes, only if explicitly stated.
+- description, cuisine, difficulty, tags, nutrition fields: omit entirely if not present.
+
+Do NOT invent ingredients or quantities. If the page does not contain a recipe (e.g. a category listing, a blog index, a product page), return an empty ingredients array — the calling tool surfaces "no-ingredients" to the user.
+
+If multiple recipes appear, extract only the main one the page is about.`;
+
+const LOCALE_HINT_TEXT: Record<NonNullable<ExtractRecipeFromTextArgs["locale"]>, string> = {
+  en: "If the page is in another language, keep ingredient/instruction text in that language — the user picked an English UI but the recipe stays in its source language.",
+  es: "Si la página está en otro idioma, mantené los ingredientes e instrucciones en ese idioma. El usuario eligió español pero la receta queda en su idioma fuente.",
+  pl: "Jeśli strona jest w innym języku, zachowaj składniki i instrukcje w tym języku. Użytkownik wybrał polski interfejs, ale przepis pozostaje w języku źródłowym.",
+};
+
 const PROMPT_BASE = `You are a kitchen assistant extracting a structured recipe from a single image. The image may be a cookbook page, a social-media screenshot, a restaurant chalkboard, a handwritten note, or a phone photo of a printed recipe.
 
 Output a JSON object that conforms to the provided schema. Be precise:
@@ -103,9 +134,8 @@ export class GemmaProvider {
     const locale = args.locale ?? "en";
     const systemInstruction = `${PROMPT_BASE}\n\n${LOCALE_HINT[locale]}`;
     const base64 = Buffer.from(args.imageBytes).toString("base64");
-    const responseSchema = zodToJsonSchema(importedRecipeSchema);
 
-    const params: GenerateContentParameters = {
+    return this.runExtraction({
       model: this.modelId,
       contents: [
         {
@@ -119,27 +149,93 @@ export class GemmaProvider {
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        responseSchema,
+        responseSchema: zodToJsonSchema(importedRecipeSchema),
       },
-    };
+    });
+  }
 
-    let recipe: ImportedRecipeData;
+  async extractRecipeFromText(
+    args: ExtractRecipeFromTextArgs
+  ): Promise<ImportedRecipeData> {
+    const locale = args.locale ?? "en";
+    const systemInstruction = `${PROMPT_BASE_TEXT}\n\n${LOCALE_HINT_TEXT[locale]}`;
+    const content = args.content.slice(0, MAX_CONTENT_CHARS);
+
+    const recipe = await this.runExtraction({
+      model: this.modelId,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `Extract the recipe from this web page content:\n\n${content}` }],
+        },
+      ],
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: zodToJsonSchema(importedRecipeSchema),
+      },
+    });
+
+    if (args.sourceUrl) recipe.sourceUrl = args.sourceUrl;
+    return recipe;
+  }
+
+  /** Shared transport + parse + validation + error mapping for both extractors. */
+  private async runExtraction(
+    params: GenerateContentParameters
+  ): Promise<ImportedRecipeData> {
+    let rawText: string;
     try {
       const response = await this.client.models.generateContent(params);
       const text = response.text;
       if (!text) {
-        throw new GemmaExtractionError(
-          "transient",
-          "Gemma returned an empty response"
-        );
+        throw new GemmaExtractionError("transient", "Gemma returned an empty response");
       }
-      const parsed: unknown = JSON.parse(text);
+      rawText = text;
+    } catch (err) {
+      if (err instanceof GemmaExtractionError) throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      throw new GemmaExtractionError(
+        "transient",
+        `Gemma extraction failed: ${message}`,
+        { cause: err }
+      );
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new GemmaExtractionError(
+        "transient",
+        `Gemma returned non-JSON response: ${message}`,
+        { cause: err }
+      );
+    }
+
+    // Check for the no-ingredients signal BEFORE strict schema validation so we
+    // surface a meaningful reason even when the title field is empty/invalid.
+    // A model that found no recipe typically returns { title: "", ingredients: [] }.
+    const asRecord = parsed as Record<string, unknown>;
+    const ingredients = asRecord?.ingredients;
+    if (Array.isArray(ingredients) && ingredients.length === 0) {
+      const title = typeof asRecord?.title === "string" ? asRecord.title : "";
+      const reason = title.trim().length > 0 ? "low-quality" : "no-ingredients";
+      throw new GemmaExtractionError(
+        reason,
+        `Gemma extracted no usable ingredients (title=${JSON.stringify(title)})`
+      );
+    }
+
+    let recipe: ImportedRecipeData;
+    try {
       recipe = importedRecipeSchema.parse(parsed);
     } catch (err) {
       if (err instanceof GemmaExtractionError) throw err;
-
+      const name = err instanceof Error ? err.name : "";
       const message = err instanceof Error ? err.message : String(err);
-      if (/schema|validation|parse|ZodError/i.test(message)) {
+      if (/schema|validation|parse|ZodError/i.test(message) || name === "ZodError") {
         throw new GemmaExtractionError(
           "schema-mismatch",
           `Gemma returned data that did not match the recipe schema: ${message}`,
@@ -150,19 +246,6 @@ export class GemmaProvider {
         "transient",
         `Gemma extraction failed: ${message}`,
         { cause: err }
-      );
-    }
-
-    // Schema accepts empty ingredients so the caller can surface "no-ingredients".
-    // Title present + zero ingredients → blurry photo. No title → not a recipe.
-    if (recipe.ingredients.length === 0) {
-      const reason =
-        recipe.title && recipe.title.trim().length > 0
-          ? "low-quality"
-          : "no-ingredients";
-      throw new GemmaExtractionError(
-        reason,
-        `Gemma extracted no usable ingredients (title=${JSON.stringify(recipe.title)})`
       );
     }
 
