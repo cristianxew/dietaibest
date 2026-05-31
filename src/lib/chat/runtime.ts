@@ -162,8 +162,17 @@ export class AgentRuntime {
             toolName: tool.name,
             input: req.pendingResolve.payload,
           };
-          pendingPersist.push(callItem);
-          history.push(callItem);
+          // The tool-call was already persisted on the turn that paused at
+          // confirm.request, so it is already in `history`. Re-adding it sends a
+          // duplicate `tool_use` id to the provider on the follow-up ack and
+          // 400s ("tool_use ids must be unique"). Only add it if missing.
+          const alreadyPersisted = history.some(
+            (i) => i.kind === "tool-call" && i.callId === callItem.callId
+          );
+          if (!alreadyPersisted) {
+            pendingPersist.push(callItem);
+            history.push(callItem);
+          }
           yield* this.runOneTool(tool, callItem, ctx, history, pendingPersist);
         }
       } else {

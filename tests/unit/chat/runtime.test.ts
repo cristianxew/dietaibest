@@ -350,3 +350,39 @@ describe("AgentRuntime — confirmation gate failure", () => {
     expect(events.find((e) => e.type === "confirm.request")).toBeUndefined();
   });
 });
+
+describe("AgentRuntime — confirm resume does not duplicate the tool-call", () => {
+  it("persists the tool-call exactly once across the confirm pause and resume", async () => {
+    const store = new FakeStore();
+    // Turn 1 stream yields the tool-call; turn 2 (post-resume ack) just finishes.
+    const provider = new ScriptedProvider([
+      [{ kind: "tool-call", callId: "del-1", toolName: "deleteThing", input: { id: "x1" } }],
+      [{ kind: "finish" }],
+    ]);
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [confirmTool] });
+
+    // Turn 1: pauses at confirm.request and persists the tool-call.
+    await collect(runtime.run({ ctx: makeCtx(), userMessage: "delete x1" }));
+
+    // Turn 2: user confirms → resume runs the tool, then loops back for an ack.
+    await collect(
+      runtime.run({
+        ctx: makeCtx(),
+        userMessage: "",
+        pendingResolve: {
+          callId: "del-1",
+          toolName: "deleteThing",
+          accepted: true,
+          payload: { id: "x1", confirmed: true },
+        },
+      })
+    );
+
+    // The tool-call must appear once — a duplicate sends two tool_use blocks
+    // with the same id to the provider and 400s ("tool_use ids must be unique").
+    const toolCalls = store.history.filter(
+      (i) => i.kind === "tool-call" && i.callId === "del-1"
+    );
+    expect(toolCalls).toHaveLength(1);
+  });
+});
