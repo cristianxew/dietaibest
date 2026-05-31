@@ -10,11 +10,12 @@ import {
 // Uses Vertex AI backend (vertexai: true) with Application Default Credentials —
 // the same ADC already configured for @google-cloud/documentai. No separate API key needed.
 //
-// Model: gemini-2.0-flash-exp (vision + native structured output via responseSchema).
-// Previous approach (@ai-sdk/google + gemma-4-31b-it) was abandoned because that
-// model ID does not exist in the Gemini Developer API.
+// Default model: gemini-2.5-flash (see DEFAULT_MODEL) — vision + native structured
+// output. Extraction runs through models.generateContent() with a responseSchema
+// (responseMimeType "application/json") derived from importedRecipeSchema.
 //
-// Lives INSIDE the importRecipeFromImage tool — not in the orchestrator loop.
+// The provider factory (getGemmaProvider/setGemmaProviderForTest) lives here and is
+// shared by both import tools — importRecipeFromImage and importRecipeFromUrl.
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
