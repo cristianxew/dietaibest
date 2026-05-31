@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AgentRuntime } from "@/lib/chat/runtime";
 import type { LlmProvider } from "@/lib/chat/llm-provider";
 import type { AnyTool } from "@/lib/chat/tools/types";
+import { ToolFailure } from "@/lib/chat/tools/types";
 
 import { PRO, FREE, makeCtx, FakeStore, ScriptedProvider, collect } from "./_fixtures";
 
@@ -43,6 +44,20 @@ const confirmTool: AnyTool = {
   },
   async execute() {
     return { ok: true, data: { deleted: true } };
+  },
+};
+
+const failingConfirmTool: AnyTool = {
+  name: "previewThing",
+  description: "preview that can fail",
+  inputSchema: z.object({ id: z.string(), confirmed: z.boolean().optional() }),
+  statusKey: "import.fetching",
+  async requiresConfirmation(input) {
+    if ((input as { confirmed?: boolean }).confirmed) return null;
+    throw new ToolFailure("notFound", "ingest-failed: no-ingredients");
+  },
+  async execute() {
+    return { ok: true, data: { saved: true } };
   },
 };
 
@@ -300,5 +315,38 @@ describe("AgentRuntime — proactive filter (Layer A)", () => {
     );
     // echo (no requiresFeature) stays; proOnly (requiresFeature: aiChat) is filtered.
     expect(observedToolCount).toBe(1);
+  });
+});
+
+describe("AgentRuntime — confirmation gate failure", () => {
+  it("maps a ToolFailure thrown in requiresConfirmation to tool.failed", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        {
+          kind: "tool-call",
+          callId: "p-1",
+          toolName: "previewThing",
+          input: { id: "x1" },
+        },
+      ],
+      [{ kind: "finish" }],
+    ]);
+
+    const runtime = new AgentRuntime({
+      llm: provider,
+      store,
+      tools: [failingConfirmTool],
+    });
+    const events = await collect(
+      runtime.run({ ctx: makeCtx(), userMessage: "preview x1" })
+    );
+
+    const failed = events.find((e) => e.type === "tool.failed");
+    expect(failed).toBeDefined();
+    if (failed && failed.type === "tool.failed") {
+      expect(failed.reason).toBe("notFound");
+    }
+    expect(events.find((e) => e.type === "confirm.request")).toBeUndefined();
   });
 });

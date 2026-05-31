@@ -9,6 +9,7 @@ import type {
 import type { ConversationStore } from "./conversation-store";
 import { looksLikeRefusal } from "./refusal-heuristic";
 import type { AnyTool, ToolEmit } from "./tools/types";
+import { ToolFailure } from "./tools/types";
 import { buildSystemPrompt } from "./system-prompt";
 
 /**
@@ -290,10 +291,25 @@ export class AgentRuntime {
         }
 
         // Confirmation gate. If the tool requires confirmation, emit a
-        // confirm.request and STOP. The client will re-call run() with
-        // pendingResolve once the user has answered.
+        // confirm.request and STOP. The client re-calls run() with
+        // pendingResolve once the user has answered. A ToolFailure thrown
+        // during this phase (e.g. no recipe extracted) fails cleanly.
         if (tool.requiresConfirmation) {
-          const descriptor = await tool.requiresConfirmation(call.input, ctx);
+          let descriptor;
+          try {
+            descriptor = await tool.requiresConfirmation(call.input, ctx);
+          } catch (err) {
+            if (err instanceof ToolFailure) {
+              yield {
+                type: "tool.failed",
+                toolName: tool.name,
+                callId: call.callId,
+                reason: err.reason,
+              };
+              continue;
+            }
+            throw err;
+          }
           if (descriptor) {
             yield {
               type: "confirm.request",

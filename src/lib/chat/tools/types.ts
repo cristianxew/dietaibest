@@ -51,3 +51,20 @@ export interface Tool<TSchema extends ZodTypeAny = ZodTypeAny, TData = unknown> 
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyTool = Tool<any, any>;
+
+/**
+ * Thrown from a tool's `requiresConfirmation` to fail the preview phase cleanly.
+ * The runtime catches it at the confirmation gate and emits `tool.failed` with
+ * this reason — without this, a throw there would error the whole turn.
+ */
+export class ToolFailure extends Error {
+  readonly reason: "generic" | "quota" | "notFound" | "unauthorized";
+  constructor(
+    reason: ToolFailure["reason"],
+    message: string
+  ) {
+    super(message);
+    this.name = "ToolFailure";
+    this.reason = reason;
+  }
+}
