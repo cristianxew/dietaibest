@@ -11,7 +11,7 @@ export interface RecipePreview {
   servings?: number;
   prepTime?: number;
   cookTime?: number;
-  ingredients: { name: string; amount: number; unit: string }[];
+  ingredients: { name: string; amount: number; unit?: string }[];
   instructions: string[];
 }
 
@@ -21,8 +21,9 @@ interface RecipePreviewCardProps {
   onCancel: () => void;
 }
 
-function formatIngredient(i: { name: string; amount: number; unit: string }): string {
-  const qty = i.amount > 0 ? `${i.amount} ${i.unit === "unit" ? "" : i.unit}`.trim() : "";
+function formatIngredient(i: { name: string; amount: number; unit?: string }): string {
+  const unit = i.unit && i.unit !== "unit" ? i.unit : "";
+  const qty = i.amount > 0 ? `${i.amount} ${unit}`.trim() : "";
   return qty ? `${qty} ${i.name}` : i.name;
 }
 

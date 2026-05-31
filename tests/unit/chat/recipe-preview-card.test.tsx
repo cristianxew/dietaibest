@@ -48,6 +48,16 @@ describe("RecipePreviewCard", () => {
     expect(screen.getByText("Mix")).toBeTruthy();
   });
 
+  it("renders an ingredient with no unit without printing 'undefined'", () => {
+    renderCard({
+      recipe: { ...recipe, ingredients: [{ name: "salt", amount: 1 }] },
+      onSave: vi.fn(),
+      onCancel: vi.fn(),
+    });
+    const item = screen.getByText(/salt/);
+    expect(item.textContent).not.toContain("undefined");
+  });
+
   it("fires onSave and onCancel", () => {
     const onSave = vi.fn();
     const onCancel = vi.fn();
