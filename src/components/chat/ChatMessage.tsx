@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { ChatStatus, StatusState } from "./ChatStatus";
 import { ToolResultLink, LinkType } from "./ToolResultLink";
 import { ConfirmInline } from "./ConfirmInline";
+import { RecipePreviewCard, type RecipePreview } from "./RecipePreviewCard";
 import { LogoSymbol } from "./LogoSymbol";
 
 export type MessageRole = "user" | "agent" | "system";
@@ -40,6 +41,11 @@ export interface MessageContent {
     confirmText?: string;
     cancelText?: string;
     variant?: "destructive" | "primary";
+  };
+  recipePreview?: {
+    recipe: RecipePreview;
+    onSave: () => void;
+    onCancel: () => void;
   };
 }
 
@@ -270,6 +276,14 @@ function AgentMessage({
           />
         )}
 
+        {content.recipePreview && (
+          <RecipePreviewCard
+            recipe={content.recipePreview.recipe}
+            onSave={content.recipePreview.onSave}
+            onCancel={content.recipePreview.onCancel}
+          />
+        )}
+
         {error && onRetry && (
           <button
             onClick={onRetry}
@@ -323,7 +337,7 @@ export function ChatMessage(props: ChatMessageProps) {
   }
 
   // Agent: a message carries EITHER text (+confirm) OR a status (+link).
-  if (content.text || content.confirm) {
+  if (content.text || content.confirm || content.recipePreview) {
     return (
       <>
         <AgentMessage {...props} />
