@@ -5,33 +5,30 @@ import {
   selectIngestStrategy,
   type IngestStrategy,
 } from "@/lib/chat/ingestion/select-strategy";
-import { parseRecipeFromScrape } from "@/lib/chat/ingestion/markdown-recipe-parser";
 import { getSupadataClient, SupadataError } from "@/lib/supadata";
+import {
+  GemmaExtractionError,
+  getGemmaProvider,
+} from "@/lib/chat/llm-gemma";
+import { importedRecipeSchema } from "@/lib/ingest/imported-recipe-schema";
 import type { ImportedRecipe } from "@/types/recipe";
-import type { Tool } from "./types";
+import type { ScrapeResult } from "@/lib/supadata";
+import type { AgentContext } from "../context";
+import { ToolFailure, type ConfirmDescriptor, type Tool } from "./types";
 
 /**
- * Tool: importRecipeFromUrl (DIE-35).
+ * Tool: importRecipeFromUrl.
  *
- * Routes a URL through the Supadata ingest pipeline:
- *  - `supadata-video` strategy → POST /extract with the recipe JSON Schema,
- *    polls the job, and maps the structured result to `ImportedRecipe`.
- *  - `supadata-web` strategy   → GET /web/scrape and parses the returned
- *    markdown into `ImportedRecipe` via the canonical-section heuristic.
- *
- * Decisión 8: there is NO Browser-Use fallback in v1. Any failure (5xx, 4xx,
- * timeout, missing title, no ingredients) surfaces as `tool.failed` with a
- * specific reason. The runtime maps this to a single user-facing message and
- * we log the failure for later host-level fallback decisions.
- *
- * Persistence is delegated to `persistRecipe` with `source: "url"`, which
- * already enforces `assertCanImportRecipe`, tags the recipe `imported`, and
- * runs Edamam nutrition analysis when macros are missing — closing US-10's
- * "see progress while a long-running task is happening" loop end-to-end.
+ * Two-phase:
+ *  - requiresConfirmation(): routes the URL through Supadata, extracts a
+ *    structured recipe (web -> /web/scrape + Gemma; video -> /extract), and
+ *    returns a preview descriptor whose payload carries the recipe. Any failure
+ *    throws ToolFailure -> the runtime emits tool.failed.
+ *  - execute(): runs only after the user confirms; persists input.recipe with
+ *    NO re-extraction.
  */
 
-// Recipe JSON Schema sent to Supadata's /extract endpoint. Mirrors the
-// canonical `ImportedRecipe` shape so the AI returns data we can map directly.
+// Recipe JSON Schema sent to Supadata's /extract endpoint (video path only).
 const RECIPE_EXTRACT_SCHEMA = {
   type: "object",
   properties: {
@@ -62,6 +59,8 @@ const RECIPE_EXTRACT_SCHEMA = {
 const inputSchema = z.object({
   url: z.string().url(),
   hint: z.string().max(200).optional(),
+  confirmed: z.boolean().optional(),
+  recipe: importedRecipeSchema.optional(),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -83,8 +82,6 @@ interface ImportFailureLog {
 }
 
 function logImportFailure(failure: ImportFailureLog): void {
-  // Lightweight telemetry — stdout for v1 (Decisión 8 / AC). Wire to a real
-  // structured store (PostHog, OpenObserve) when we have aggregate volume.
   console.warn("[importRecipeFromUrl] ImportFailure", failure);
 }
 
@@ -94,24 +91,6 @@ function safeHost(url: string): string | null {
   } catch {
     return null;
   }
-}
-
-async function extractViaSupadata(
-  strategy: IngestStrategy,
-  url: string,
-  signal?: AbortSignal
-): Promise<ImportedRecipe> {
-  const client = getSupadataClient();
-  if (strategy === "supadata-video") {
-    const data = await client.extractVideo<Partial<ImportedRecipe>>(
-      url,
-      RECIPE_EXTRACT_SCHEMA,
-      { signal }
-    );
-    return normaliseExtracted(data, url);
-  }
-  const scrape = await client.scrapeWeb(url, { signal });
-  return parseRecipeFromScrape(scrape, url);
 }
 
 function normaliseExtracted(
@@ -133,17 +112,77 @@ function normaliseExtracted(
   };
 }
 
+/** Map a Gemma-extracted recipe + scrape metadata into the canonical shape. */
+function mapScrapeToImported(
+  data: {
+    title: string;
+    description?: string;
+    prepTime?: number;
+    cookTime?: number;
+    servings?: number;
+    ingredients: ImportedRecipe["ingredients"];
+    instructions: string[];
+    tags?: string[];
+    imageUrl?: string;
+  },
+  scrape: ScrapeResult,
+  sourceUrl: string
+): ImportedRecipe {
+  return {
+    title: (data.title || scrape.name || "").trim(),
+    description: data.description?.trim() || scrape.description?.trim() || undefined,
+    prepTime: data.prepTime,
+    cookTime: data.cookTime,
+    servings: data.servings,
+    ingredients: data.ingredients,
+    instructions: data.instructions,
+    tags: data.tags ?? [],
+    imageUrl: data.imageUrl || scrape.ogUrl || undefined,
+    sourceUrl,
+    extractedAt: new Date().toISOString(),
+  };
+}
+
+async function extractRecipe(
+  strategy: IngestStrategy,
+  url: string,
+  ctx: AgentContext
+): Promise<ImportedRecipe> {
+  const client = getSupadataClient();
+  if (strategy === "supadata-video") {
+    const data = await client.extractVideo<Partial<ImportedRecipe>>(
+      url,
+      RECIPE_EXTRACT_SCHEMA
+    );
+    return normaliseExtracted(data, url);
+  }
+  const scrape = await client.scrapeWeb(url);
+  const extracted = await getGemmaProvider().extractRecipeFromText({
+    content: scrape.content ?? "",
+    locale: ctx.locale,
+    sourceUrl: url,
+  });
+  return mapScrapeToImported(extracted, scrape, url);
+}
+
 export const importRecipeFromUrl: Tool<
   typeof inputSchema,
   { id: string; title: string }
 > = {
   name: "importRecipeFromUrl",
   description:
-    "Import a recipe from a URL (YouTube, TikTok, Instagram, Facebook, X, or a recipe website) and save it to the user's library. Returns a link to the saved recipe.",
+    "Import a recipe from a URL (YouTube, TikTok, Instagram, Facebook, X, or a recipe website) and save it to the user's library. The user is shown a preview to confirm before it is saved. Returns a link to the saved recipe.",
   inputSchema,
   statusKey: "import.fetching",
   requiresFeature: "aiChat",
-  async execute(input: Input, ctx) {
+
+  async requiresConfirmation(
+    input: Input,
+    ctx: AgentContext
+  ): Promise<ConfirmDescriptor | null> {
+    // Resume path: the recipe was already previewed + confirmed.
+    if (input.confirmed) return null;
+
     const { url } = input;
     const host = safeHost(url);
 
@@ -157,18 +196,23 @@ export const importRecipeFromUrl: Tool<
         errorReason: "invalid-url",
         createdAt: new Date().toISOString(),
       });
-      return {
-        ok: false,
-        reason: "generic",
-        message: "ingest-failed: invalid-url",
-      };
+      throw new ToolFailure("generic", "ingest-failed: invalid-url");
     }
 
-    // Step 1: Fetch + extract via the selected Supadata path.
     let imported: ImportedRecipe;
     try {
-      imported = await extractViaSupadata(strategy, url);
+      imported = await extractRecipe(strategy, url, ctx);
     } catch (error) {
+      if (error instanceof GemmaExtractionError) {
+        logImportFailure({
+          host,
+          strategy,
+          errorReason: "no-ingredients",
+          errorCode: error.reason,
+          createdAt: new Date().toISOString(),
+        });
+        throw new ToolFailure("notFound", `ingest-failed: ${error.reason}`);
+      }
       const errorCode = error instanceof SupadataError ? error.code : "UNKNOWN";
       const status = error instanceof SupadataError ? error.status : undefined;
       logImportFailure({
@@ -179,14 +223,12 @@ export const importRecipeFromUrl: Tool<
         status,
         createdAt: new Date().toISOString(),
       });
-      return {
-        ok: false,
-        reason: status === 404 ? "notFound" : "generic",
-        message: `ingest-failed: ${errorCode}`,
-      };
+      throw new ToolFailure(
+        status === 404 ? "notFound" : "generic",
+        `ingest-failed: ${errorCode}`
+      );
     }
 
-    // Step 2: Partial-success guard. Recipe with no ingredients is unusable.
     if (
       !imported.title ||
       imported.title.length < 3 ||
@@ -198,16 +240,43 @@ export const importRecipeFromUrl: Tool<
         errorReason: "no-ingredients",
         createdAt: new Date().toISOString(),
       });
+      throw new ToolFailure("notFound", "ingest-failed: no-ingredients");
+    }
+
+    return {
+      message: imported.title,
+      payload: { url, hint: input.hint, confirmed: true, recipe: imported },
+    };
+  },
+
+  async execute(input: Input, ctx) {
+    const { url } = input;
+    const host = safeHost(url);
+    const imported = input.recipe;
+
+    if (!imported) {
+      // Defensive: execute runs only after requiresConfirmation supplies a recipe.
+      logImportFailure({
+        host,
+        strategy: "unknown",
+        errorReason: "no-recipe-data",
+        createdAt: new Date().toISOString(),
+      });
       return {
         ok: false,
-        reason: "notFound",
-        message: "ingest-failed: no-ingredients",
+        reason: "generic",
+        message: "ingest-failed: no-recipe-data",
       };
     }
 
-    // Step 3: Persist. `persistRecipe` enforces `assertCanImportRecipe`,
-    // tags the recipe `imported`, and auto-runs Edamam nutrition analysis
-    // because shouldAnalyze defaults to true for url/imported sources.
+    const strategy: IngestStrategy | "unknown" = (() => {
+      try {
+        return selectIngestStrategy(url);
+      } catch {
+        return "unknown";
+      }
+    })();
+
     const persisted = await persistRecipe(
       {
         title: imported.title,
@@ -223,7 +292,7 @@ export const importRecipeFromUrl: Tool<
         tags: imported.tags ?? [],
         categoryIds: [],
         isPublic: false,
-        sourceUrl: imported.sourceUrl,
+        sourceUrl: imported.sourceUrl ?? url,
         imageUrl: imported.imageUrl,
       },
       { source: "url", sourceUrl: url, locale: ctx.locale }
