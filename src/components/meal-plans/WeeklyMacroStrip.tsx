@@ -56,7 +56,7 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
       className={cn(
         "grid gap-3.5 px-[18px] py-3.5",
         "grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
-        "bg-card border border-border rounded-xl mb-5"
+        "bg-card border border-border rounded-xl"
       )}
     >
       {/* Label block */}

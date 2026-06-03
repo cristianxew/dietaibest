@@ -152,7 +152,7 @@ function UserMessage({
         {content.text && (
           <div
             className={cn(
-              "rounded-lg rounded-br-[4px] px-4 py-3 text-sm leading-relaxed break-words",
+              "max-w-full rounded-lg rounded-br-[4px] px-4 py-3 text-sm leading-relaxed break-words",
               failed
                 ? "border-[1.5px] border-dashed border-destructive bg-transparent text-destructive opacity-85"
                 : "bg-primary text-white",

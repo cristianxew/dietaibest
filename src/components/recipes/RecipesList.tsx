@@ -354,7 +354,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
   return (
     <div className="space-y-8">
       {/* Unified control panel wrapper */}
-      <div className="sticky top-16 md:top-0 z-30 pt-4 pb-2 bg-background/95 backdrop-blur-sm transition-all">
+      <div className="sticky top-16 md:top-0 z-30 pt-4 pb-2  backdrop-blur-sm transition-all">
         {/* Unified control panel: Search + Categories + Difficulties + Tabs + Layout + Add Recipe */}
         <div className="flex flex-col gap-4 p-4 bg-card border border-border/60 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
           {/* Top Row: Search Input + Select Dropdowns */}
@@ -630,8 +630,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 {selectedCategory !== "all" &&
                   categories.find((c) => c.id === selectedCategory) && (
                     <Badge variant="brand" className="ml-2 text-[10px]">
-                      {categories.find((c) => c.id === selectedCategory)?.slug && t.has(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`) 
-                        ? t(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`) 
+                      {categories.find((c) => c.id === selectedCategory)?.slug && t.has(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`)
+                        ? t(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`)
                         : categories.find((c) => c.id === selectedCategory)?.name}
                     </Badge>
                   )}
@@ -691,8 +691,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
       ) : (
         <>
           <div className={cn(
-            viewMode === "list" 
-              ? "flex flex-col gap-4" 
+            viewMode === "list"
+              ? "flex flex-col gap-4"
               : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           )}>
             {recipes.map((recipe) => (
