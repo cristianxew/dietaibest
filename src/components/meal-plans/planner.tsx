@@ -604,7 +604,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
   return (
     <div className="grid gap-[18px] items-start" style={{ gridTemplateColumns: '200px 1fr' }}>
       {/* Day rail */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 sticky top-[290px] md:top-[178px] z-10">
         {template.days.map((day, i) => {
           const isActive = i === selIdx;
           const calTarget = template.targets?.calories ?? 2000;

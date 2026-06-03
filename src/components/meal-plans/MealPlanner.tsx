@@ -501,7 +501,7 @@ export function MealPlanner() {
                   style={{ gridTemplateColumns: "300px 1fr" }}
                 >
                   {/* Recipe library sidebar */}
-                  <div className="bg-card border border-border rounded-xl p-4 h-[calc(100vh-190px)]">
+                  <div className="bg-card border border-border rounded-xl p-4 sticky top-[290px] md:top-[178px] h-[calc(100vh-320px)] md:h-[calc(100vh-210px)] z-10">
                     <div className="mb-2.5">
                       <div className="font-display text-[17px] font-semibold text-foreground">
                         {t("recipes")}

@@ -33,6 +33,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   Globe,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 // Tabs removed - using custom toggle buttons
 import { toast } from "sonner";
@@ -43,6 +45,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+import { AddRecipeButton } from "@/components/recipes/AddRecipeButton";
 
 const RECENT_SEARCHES_KEY = "DietAI-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -52,8 +55,9 @@ type SearchSuggestion = {
   value: string;
 };
 
-export function RecipesList({ viewMode = "grid" }: { viewMode?: "grid" | "list" } = {}) {
+export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "grid" | "list" } = {}) {
   const t = useTranslations("recipes");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(initialViewMode);
   const [recipes, setRecipes] = useState<
     (Recipe & {
       categories: RecipeCategory[];
@@ -349,240 +353,252 @@ export function RecipesList({ viewMode = "grid" }: { viewMode?: "grid" | "list" 
 
   return (
     <div className="space-y-8">
-      {/* Search and filters container */}
-      <div className="space-y-4">
-        {/* Search bar */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
-            <Search className="h-4 w-4 text-brand-500" />
-          </div>
-          <Input
-            ref={searchInputRef}
-            placeholder={t("searchPlaceholder") || "Search recipes, tags, ingredients..."}
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                applySearch(searchInput);
-              }
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            className={cn(
-              "h-12 pl-11 pr-12 text-sm",
-              "rounded-xl border border-border/40",
-              "bg-muted/40 hover:bg-muted/80",
-              "focus:bg-background focus:border-brand-300 focus:ring-1 focus:ring-brand-200",
-              "placeholder:text-muted-foreground/60 transition-all duration-200",
-              "shadow-sm"
-            )}
-          />
-          {searchInput && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setSearchInput("");
-                setSearchTerm("");
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Search suggestions dropdown */}
-          {showSuggestions && (searchInput || recentSearches.length > 0) && (
-            <Card
-              ref={suggestionsRef}
-              className={cn(
-                "absolute top-full left-0 right-0 mt-2 z-50",
-                "max-h-80 overflow-auto",
-                "shadow-xl border-border/50 rounded-xl"
-              )}
-            >
-              {loadingSuggestions && (
-                <div className="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4 animate-pulse text-brand-500" />
-                  Searching...
-                </div>
+      {/* Unified control panel wrapper */}
+      <div className="sticky top-16 md:top-0 z-30 pt-4 pb-2 bg-background/95 backdrop-blur-sm transition-all">
+        {/* Unified control panel: Search + Categories + Difficulties + Tabs + Layout + Add Recipe */}
+        <div className="flex flex-col gap-4 p-4 bg-card border border-border/60 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+          {/* Top Row: Search Input + Select Dropdowns */}
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+            {/* Search Input & Suggestions */}
+            <div className="relative flex-1">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                <Search className="h-4 w-4 text-brand-500" />
+              </div>
+              <Input
+                ref={searchInputRef}
+                placeholder={t("searchPlaceholder") || "Search recipes, tags, ingredients..."}
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    applySearch(searchInput);
+                  }
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                className={cn(
+                  "h-11 pl-11 pr-12 text-sm",
+                  "rounded-xl border border-border/40",
+                  "bg-muted/40 hover:bg-muted/80",
+                  "focus:bg-background focus:border-brand-300 focus:ring-1 focus:ring-brand-200",
+                  "placeholder:text-muted-foreground/60 transition-all duration-200",
+                  "shadow-sm"
+                )}
+              />
+              {searchInput && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearchTerm("");
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
 
-              {!loadingSuggestions && suggestions.length > 0 && (
-                <div className="p-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
-                    Suggestions
-                  </div>
-                  {suggestions.map((suggestion, idx) => (
-                    <button
-                      key={`${suggestion.type}-${idx}`}
-                      onClick={() => applySearch(suggestion.value)}
-                      className={cn(
-                        "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
-                        "hover:bg-brand-50 dark:hover:bg-brand-950/30",
-                        "rounded-lg transition-colors"
-                      )}
-                    >
-                      <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted">
-                        {getSuggestionIcon(suggestion.type)}
+              {/* Search suggestions dropdown */}
+              {showSuggestions && (searchInput || recentSearches.length > 0) && (
+                <Card
+                  ref={suggestionsRef}
+                  className={cn(
+                    "absolute top-full left-0 right-0 mt-2 z-50",
+                    "max-h-80 overflow-auto",
+                    "shadow-xl border-border/50 rounded-xl"
+                  )}
+                >
+                  {loadingSuggestions && (
+                    <div className="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Sparkles className="h-4 w-4 animate-pulse text-brand-500" />
+                      Searching...
+                    </div>
+                  )}
+
+                  {!loadingSuggestions && suggestions.length > 0 && (
+                    <div className="p-2">
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
+                        Suggestions
                       </div>
-                      <span className="flex-1 text-left font-medium">
-                        {suggestion.value}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] uppercase tracking-wider"
-                      >
-                        {suggestion.type}
-                      </Badge>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {!searchInput && recentSearches.length > 0 && (
-                <div className="p-2">
-                  <div className="flex items-center justify-between px-3 py-2">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Recent Searches
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearRecentSearches}
-                      className="h-6 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                  {recentSearches.map((search, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => applySearch(search)}
-                      className={cn(
-                        "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
-                        "hover:bg-muted/50 rounded-lg transition-colors"
-                      )}
-                    >
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex-1 text-left">{search}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {!loadingSuggestions && searchInput && suggestions.length === 0 && (
-                <div className="p-6 text-center text-sm text-muted-foreground">
-                  No suggestions found
-                </div>
-              )}
-            </Card>
-          )}
-        </div>
-
-        {/* Filter row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Category Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setSelectedCategory("all")}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
-                  selectedCategory === "all"
-                    ? "bg-brand-500 text-white"
-                    : "bg-card border border-border text-muted-foreground hover:bg-muted"
-                )}
-              >
-                {t("all")}
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer",
-                    selectedCategory === category.id
-                      ? "bg-brand-500 text-white"
-                      : "bg-card border border-border text-muted-foreground hover:bg-muted"
+                      {suggestions.map((suggestion, idx) => (
+                        <button
+                          key={`${suggestion.type}-${idx}`}
+                          onClick={() => applySearch(suggestion.value)}
+                          className={cn(
+                            "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
+                            "hover:bg-brand-50 dark:hover:bg-brand-950/30",
+                            "rounded-lg transition-colors"
+                          )}
+                        >
+                          <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted">
+                            {getSuggestionIcon(suggestion.type)}
+                          </div>
+                          <span className="flex-1 text-left font-medium">
+                            {suggestion.value}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] uppercase tracking-wider"
+                          >
+                            {suggestion.type}
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
                   )}
-                >
-                  {category.slug && t.has(`categoryNames.${category.slug}`) 
-                    ? t(`categoryNames.${category.slug}`) 
-                    : category.name}
-                </button>
-              ))}
+
+                  {!searchInput && recentSearches.length > 0 && (
+                    <div className="p-2">
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Recent Searches
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearRecentSearches}
+                          className="h-6 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                      {recentSearches.map((search, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => applySearch(search)}
+                          className={cn(
+                            "flex items-center gap-3 w-full px-3 py-2.5 text-sm",
+                            "hover:bg-muted/50 rounded-lg transition-colors"
+                          )}
+                        >
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="flex-1 text-left">{search}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {!loadingSuggestions && searchInput && suggestions.length === 0 && (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      No suggestions found
+                    </div>
+                  )}
+                </Card>
+              )}
             </div>
 
-            <div className="hidden sm:block h-6 w-px bg-border mx-1" />
-
-            {/* Difficulty Pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => setSelectedDifficulty("all")}
-                className={cn(
-                  "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
-                  selectedDifficulty === "all"
-                    ? "bg-sage-600/20 text-sage-600 bg-sage-50 border-sage-200"
-                    : "bg-card border border-border text-muted-foreground hover:bg-muted"
-                )}
-              >
-                {t("all")}
-              </button>
-              {["easy", "medium", "hard"].map((diff) => (
-                <button
-                  key={diff}
-                  onClick={() => setSelectedDifficulty(diff)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors capitalize",
-                    selectedDifficulty === diff
-                      ? "bg-sage-600/20 text-sage-600 bg-sage-50 border border-sage-200"
-                      : "bg-card border border-border text-muted-foreground hover:bg-muted"
-                  )}
+            {/* Dropdown filters (Category & Difficulty) */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Category Dropdown */}
+              <div className="flex-shrink-0 w-full sm:w-[180px]">
+                <Select
+                  value={selectedCategory}
+                  onValueChange={setSelectedCategory}
                 >
-                  {t(`difficulty.${diff}`)}
-                </button>
-              ))}
+                  <SelectTrigger className="w-full h-11 border-border/60 bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+                    <SelectValue placeholder={t("allCategories")} />
+                  </SelectTrigger>
+                  <SelectContent className="border-border">
+                    <SelectItem value="all" className="text-xs">
+                      {t("allCategories")}
+                    </SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id} className="text-xs">
+                        {c.slug && t.has(`categoryNames.${c.slug}`)
+                          ? t(`categoryNames.${c.slug}`)
+                          : c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Difficulty Dropdown */}
+              <div className="flex-shrink-0 w-full sm:w-[160px]">
+                <Select
+                  value={selectedDifficulty}
+                  onValueChange={setSelectedDifficulty}
+                >
+                  <SelectTrigger className="w-full h-11 border-border/60 bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+                    <SelectValue placeholder={t("allDifficulties") || "All Difficulties"} />
+                  </SelectTrigger>
+                  <SelectContent className="border-border">
+                    <SelectItem value="all" className="text-xs">
+                      {t("allDifficulties") || "All Difficulties"}
+                    </SelectItem>
+                    {["easy", "medium", "hard"].map((diff) => (
+                      <SelectItem key={diff} value={diff} className="text-xs capitalize">
+                        {t(`difficulty.${diff}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          {/* Source/Tabs Pills */}
-          <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end">
-            <button
-              onClick={() => setActiveTab("my")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
-                activeTab === "my"
-                  ? "bg-brand-500 text-white"
-                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {t("allRecipes")}
-            </button>
-            <button
-              onClick={() => setActiveTab("public")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
-                activeTab === "public"
-                  ? "bg-brand-500 text-white"
-                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {t("publicRecipes")}
-            </button>
-            <button
-              onClick={() => setActiveTab("favorites")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-colors",
-                activeTab === "favorites"
-                  ? "bg-brand-500 text-white"
-                  : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              )}
-            >
-              {t("saved")}
-            </button>
+          {/* Bottom Row: Tab Pills + Layout switcher + Add recipe button */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-border/50 pt-3">
+            {/* Source/Tabs Pills */}
+            <div className="flex gap-1 p-0.5 bg-muted border border-border rounded-lg self-start">
+              {[
+                { id: "my", label: t("allRecipes") },
+                { id: "public", label: t("publicRecipes") },
+                { id: "favorites", label: t("saved") },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={cn(
+                      "px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 cursor-pointer",
+                      isActive
+                        ? "bg-card text-brand-500 shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Layout switcher + Add button */}
+            <div className="flex items-center gap-3 justify-end w-full sm:w-auto">
+              <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                {(
+                  [
+                    { id: "grid", Icon: LayoutGrid },
+                    { id: "list", Icon: List },
+                  ] as const
+                ).map(({ id, Icon: LIcon }) => {
+                  const isActive = viewMode === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setViewMode(id)}
+                      className={cn(
+                        "flex items-center justify-center p-2 rounded-md transition-all duration-150 cursor-pointer",
+                        isActive
+                          ? "bg-card text-brand-500 shadow-sm"
+                          : "bg-transparent text-muted-foreground hover:text-foreground"
+                      )}
+                      title={id === "grid" ? "Grid view" : "List view"}
+                    >
+                      <LIcon className="w-4 h-4" />
+                    </button>
+                  );
+                })}
+              </div>
+
+              <AddRecipeButton label={t("addRecipe")} className="flex-shrink-0" />
+            </div>
           </div>
         </div>
       </div>
