@@ -18,6 +18,8 @@ export const createRecipe: Tool<typeof inputSchema, { id: string; title: string 
   name: "createRecipe",
   description:
     "Create and save a recipe described in natural language. Provide title, servings, ingredients (with quantities + units), and step-by-step instructions. Nutrition is calculated separately via getNutrition; do NOT emit macro numbers.",
+  guidance:
+    "createRecipe — be coarse-grained: one createRecipe call with the full recipe, not a sequence of granular calls.",
   inputSchema,
   statusKey: "recipe.creating",
   requiresFeature: "aiChat",

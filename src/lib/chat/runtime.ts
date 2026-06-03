@@ -200,7 +200,10 @@ export class AgentRuntime {
       history.push(userItem);
     }
 
-    const systemPrompt = buildSystemPrompt(ctx.locale, ctx.page);
+    // Compose the prompt from the entitlement-filtered tool set (`tools`), so
+    // each active tool's `guidance` is folded in and a filtered-out tool can
+    // never leak into the prompt.
+    const systemPrompt = buildSystemPrompt(ctx.locale, ctx.page, tools);
     const guardrail = new StreamingGuardrail();
 
     // Refusal-telemetry accumulators (decision #117). A turn is flagged as a

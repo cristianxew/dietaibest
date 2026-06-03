@@ -37,6 +37,11 @@ export const generateRecipeImage: Tool<
   name: "generateRecipeImage",
   description:
     "Generate a professional, beautiful recipe image using AI. Pass recipeId, and optionally promptDescription. Call this when a recipe is created/imported without an image, or when explicitly asked.",
+  guidance: `IMAGE GENERATION — generateRecipeImage.
+- When a recipe has just been created or imported (from a URL or an image) without an image, or when the user explicitly asks to generate an image for a recipe, you MUST call generateRecipeImage to create a beautiful 4:3 food photography image for that recipe.
+- If a recipe was just created FROM SCRATCH, immediately trigger generateRecipeImage with askFirst: false as a subsequent tool call in the same turn, using the recipe's returned ID. Do NOT wait for the user to ask.
+- If a recipe was just IMPORTED (from a URL or image attachment) and has no image, immediately trigger generateRecipeImage with askFirst: true as a subsequent tool call in the same turn. This gates the generation behind a user confirmation prompt.
+- Only call generateRecipeImage for existing recipes (it requires a recipeId). If the user asks to generate an image but no recipe is loaded/active in context, search for it using searchRecipes or ask for clarification first.`,
   inputSchema,
   statusKey: "recipe.generatingImage",
   requiresFeature: "aiChat",

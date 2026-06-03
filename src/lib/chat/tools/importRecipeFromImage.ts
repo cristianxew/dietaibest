@@ -116,6 +116,12 @@ export const importRecipeFromImage: Tool<
   name: "importRecipeFromImage",
   description:
     "Extract and save a recipe from an image the user has attached to their message. Look for an [attachment kind=image eventId=<uuid>] marker in the most recent user message and pass that uuid as eventId. Returns a link to the saved recipe.",
+  guidance: `IMAGE ATTACHMENTS — importRecipeFromImage.
+- When the user attaches an image (a recipe photo, cookbook page, screenshot, chalkboard, handwritten note), the runtime injects a marker into the user message of the form:
+    [attachment kind=image eventId=<uuid>]
+- Each marker is one attachment. When you see one, call importRecipeFromImage({ eventId }) with the uuid exactly as written. Do not invent eventIds.
+- The tool extracts a recipe via Gemma 4, runs nutrition analysis, and saves it — exactly like importRecipeFromUrl. The runtime attaches the link automatically.
+- If the image is clearly NOT a recipe (selfie, landscape, food product label without instructions), let the tool fail and acknowledge briefly that you couldn't extract a recipe. Do not try to describe the image in prose.`,
   inputSchema,
   statusKey: "media.extracting",
   requiresFeature: "aiChat",

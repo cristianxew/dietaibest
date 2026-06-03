@@ -2,7 +2,7 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2025-12-11
+Last Updated: 2026-06-03
 
 ---
 
@@ -73,6 +73,26 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Debugging extraction issues
 - Understanding Browser-Use API integration
 - Learning React hooks patterns
+
+---
+
+#### [Chat AI Agent](./System/chat_agent.md)
+**Purpose:** Architecture of the in-app chat agent — runtime, LLM layer, tools, prompt composition
+
+**Contains:**
+- AgentRuntime contract (`run → AsyncIterable<AgentEvent>`)
+- LlmProvider seam (Anthropic / Mock) and the "no-execute" tool contract
+- ConversationStore seam
+- Tool definition shape: `description` (schema channel) vs `guidance` (system-prompt channel)
+- Entitlement filtering (hybrid C+B) and feature-flag gating at the registry
+- System prompt composition: the three-category split + desync elimination
+- Medical-refusal classifier constraint (decision #117) → links ADR-0001 + the refusal eval
+
+**When to read:**
+- Adding or changing a chat tool
+- Touching the system prompt or agent behavior
+- Adding an LLM provider or conversation store backend
+- Working on the medical-refusal / nutrition guardrails
 
 ---
 

@@ -25,6 +25,15 @@ export interface Tool<TSchema extends ZodTypeAny = ZodTypeAny, TData = unknown> 
   name: string;
   description: string;
   inputSchema: TSchema;
+  /**
+   * Behavioral usage prose for the LLM — *when and how* to call this tool
+   * (sequencing, post-conditions, confirmation, attachment protocol). Composed
+   * into the system prompt from the ACTIVE tool set, so a tool the runtime
+   * filtered out (entitlement or feature flag) cannot leak into the prompt.
+   * Distinct from `description`, which is the function-calling schema text
+   * (*what* the tool is) sent on the tool definition itself.
+   */
+  guidance?: string;
   statusKey: ToolStatusKey;
   /**
    * If set, the agent must request user confirmation before calling execute.
