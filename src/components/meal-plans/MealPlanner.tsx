@@ -211,13 +211,13 @@ export function MealPlanner() {
             } else {
               const message = existingMeal
                 ? t("calendar.recipeReplaced", {
-                    recipe: recipe.title,
-                    existing: existingMeal.recipeName,
-                  })
+                  recipe: recipe.title,
+                  existing: existingMeal.recipeName,
+                })
                 : t("calendar.recipeAdded", {
-                    recipe: recipe.title,
-                    mealType: targetMealType,
-                  });
+                  recipe: recipe.title,
+                  mealType: targetMealType,
+                });
               toast.success(message);
               if (selectedPlanId) handleSelectPlan(selectedPlanId);
               loadTemplates();
@@ -302,12 +302,11 @@ export function MealPlanner() {
       <Tabs
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "planner" | "calendar")}
-        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        className="flex flex-col flex-1 min-h-0 overflow-y-auto relative scrollbar-thin"
       >
-        {/* ── Fixed header: hero + tab nav ── */}
-        <div className="flex-shrink-0 px-6 lg:px-10 pt-6 lg:pt-8 bg-background">
-          {/* Hero Header */}
-          <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-end pb-5">
+        {/* Hero Header */}
+        <div className="px-6 lg:px-10 pt-6 lg:pt-8 bg-background">
+          <div className="flex flex-col gap-6 justify-between items-start pb-5">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <div className="w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] flex items-center justify-center flex-shrink-0">
@@ -324,52 +323,52 @@ export function MealPlanner() {
                 {t("subtitle")}
               </p>
             </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                className={cn(
-                  "gap-2 h-11 px-5 border-brand-300/60 dark:border-brand-500/30",
-                  "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
-                )}
-                onClick={handleGenerateWithAI}
-              >
-                <Sparkles className="w-4 h-4" />
-                {t("generateWithAI")}
-              </Button>
-
-              <Button
-                onClick={() => setShowCreateDialog(true)}
-                className={cn(
-                  "gap-2 h-11 px-6 text-[#1C1A17] transition-all duration-300",
-                  "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
-                  "hover:-translate-y-0.5"
-                )}
-                disabled={isPending}
-              >
-                <PlusIcon className="w-4 h-4" />
-                {t("createPlan")}
-              </Button>
-            </div>
-          </div>
-
-          {/* Tab nav */}
-          <div className="pb-4 border-b border-border">
-            <TabsList className="mb-0">
-              <TabsTrigger value="planner">
-                <Edit2 className="w-4 h-4 mr-2" />
-                {t("mealPlanner")}
-              </TabsTrigger>
-              <TabsTrigger value="calendar">
-                <CalendarDays className="w-4 h-4 mr-2" />
-                {t("calendarView")}
-              </TabsTrigger>
-            </TabsList>
           </div>
         </div>
 
-        {/* ── Scrollable body ── */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        {/* Tab nav */}
+        <div className="sticky top-0 z-30 px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <TabsList className="mb-0">
+            <TabsTrigger value="planner">
+              <Edit2 className="w-4 h-4 mr-2" />
+              {t("mealPlanner")}
+            </TabsTrigger>
+            <TabsTrigger value="calendar">
+              <CalendarDays className="w-4 h-4 mr-2" />
+              {t("calendarView")}
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className={cn(
+                "gap-2 h-10 px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
+                "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+              )}
+              onClick={handleGenerateWithAI}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {t("generateWithAI")}
+            </Button>
+
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className={cn(
+                "gap-2 h-10 px-5 text-[#1C1A17] transition-all duration-300 text-xs",
+                "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
+                "hover:-translate-y-0.5"
+              )}
+              disabled={isPending}
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+              {t("createPlan")}
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Non-scrollable body container (main viewport handles scroll) ── */}
+        <div className="flex-1 min-h-0">
           {/* Planner tab */}
           <TabsContent value="planner" className="px-6 lg:px-10 pt-6 pb-8 space-y-5">
             {/* Plan count */}
@@ -391,108 +390,110 @@ export function MealPlanner() {
               onDragEnd={handleDragEnd}
             >
               <div className="flex flex-col gap-4">
-                {/* Unified control panel: Search + Categories + Layout + Density */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Left: Search & Category Filters */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl w-full">
-                    {/* Search Input */}
-                    <div className="relative flex-1">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <Search className="w-4 h-4" />
-                      </div>
-                      <input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={t("searchRecipes")}
-                        className={cn(
-                          "w-full py-2 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] outline-none transition-all duration-200",
-                          "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
-                        )}
-                      />
-                    </div>
-
-                    {/* Category Dropdown Selector */}
-                    <div className="flex-shrink-0">
-                      <Select
-                        value={selectedCategory}
-                        onValueChange={setSelectedCategory}
-                      >
-                        <SelectTrigger className="w-full sm:w-[180px] h-9 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
-                          <SelectValue placeholder={t("allCategories")} />
-                        </SelectTrigger>
-                        <SelectContent className="border-border">
-                          <SelectItem value="all" className="text-xs">
-                            {t("allCategories")}
-                          </SelectItem>
-                          {categories.map((c) => (
-                            <SelectItem key={c.id} value={c.name} className="text-xs">
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Right: Layout & Density controls */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* 3-way layout switcher */}
-                    <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                      {(
-                        [
-                          { id: "grid", Icon: LayoutGrid },
-                          { id: "stack", Icon: Layers },
-                          { id: "split", Icon: Columns2 },
-                        ] as const
-                      ).map(({ id, Icon: LIcon }) => {
-                        const isActive = layout === id;
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => setLayout(id)}
-                            className={cn(
-                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                              isActive
-                                ? "bg-card text-brand-500 shadow-sm"
-                                : "bg-transparent text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            <LIcon className="w-3.5 h-3.5" />
-                            {t(`layout.${id}`)}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Density toggle */}
-                    <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
-                      {(["regular", "compact"] as const).map((d) => {
-                        const isActive = density === d;
-                        return (
-                          <button
-                            key={d}
-                            type="button"
-                            onClick={() => setDensity(d)}
-                            className={cn(
-                              "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
-                              isActive
-                                ? "bg-card text-brand-500 shadow-sm"
-                                : "bg-transparent text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            {t(`density.${d}`)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Weekly macro summary strip — full width */}
                 {editingTemplate && (
                   <WeeklyMacroStrip template={editingTemplate} />
                 )}
+                {/* Unified control panel wrapper */}
+                <div className="sticky top-[138px] sm:top-[78px] z-20 pt-5 pb-3 bg-background">
+                  {/* Unified control panel: Search + Categories + Layout + Density */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                    {/* Left: Search & Category Filters */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl w-full">
+                      {/* Search Input */}
+                      <div className="relative flex-1">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Search className="w-4 h-4" />
+                        </div>
+                        <input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder={t("searchRecipes")}
+                          className={cn(
+                            "w-full py-2 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] outline-none transition-all duration-200",
+                            "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
+                          )}
+                        />
+                      </div>
+
+                      {/* Category Dropdown Selector */}
+                      <div className="flex-shrink-0">
+                        <Select
+                          value={selectedCategory}
+                          onValueChange={setSelectedCategory}
+                        >
+                          <SelectTrigger className="w-full sm:w-[180px] h-9 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+                            <SelectValue placeholder={t("allCategories")} />
+                          </SelectTrigger>
+                          <SelectContent className="border-border">
+                            <SelectItem value="all" className="text-xs">
+                              {t("allCategories")}
+                            </SelectItem>
+                            {categories.map((c) => (
+                              <SelectItem key={c.id} value={c.name} className="text-xs">
+                                {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Right: Layout & Density controls */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* 3-way layout switcher */}
+                      <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                        {(
+                          [
+                            { id: "grid", Icon: LayoutGrid },
+                            { id: "stack", Icon: Layers },
+                            { id: "split", Icon: Columns2 },
+                          ] as const
+                        ).map(({ id, Icon: LIcon }) => {
+                          const isActive = layout === id;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setLayout(id)}
+                              className={cn(
+                                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                                isActive
+                                  ? "bg-card text-brand-500 shadow-sm"
+                                  : "bg-transparent text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              <LIcon className="w-3.5 h-3.5" />
+                              {t(`layout.${id}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Density toggle */}
+                      <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
+                        {(["regular", "compact"] as const).map((d) => {
+                          const isActive = density === d;
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setDensity(d)}
+                              className={cn(
+                                "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                                isActive
+                                  ? "bg-card text-brand-500 shadow-sm"
+                                  : "bg-transparent text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {t(`density.${d}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 {/* 2-column grid: recipe library + meal layout */}
                 <div
@@ -500,7 +501,7 @@ export function MealPlanner() {
                   style={{ gridTemplateColumns: "300px 1fr" }}
                 >
                   {/* Recipe library sidebar */}
-                  <div className="bg-card border border-border rounded-xl p-4 sticky top-6 h-[calc(100vh-280px)]">
+                  <div className="bg-card border border-border rounded-xl p-4 h-[calc(100vh-190px)]">
                     <div className="mb-2.5">
                       <div className="font-display text-[17px] font-semibold text-foreground">
                         {t("recipes")}
@@ -510,8 +511,8 @@ export function MealPlanner() {
                       </div>
                     </div>
                     <div className="h-[calc(100%-60px)] pt-2.5">
-                      <RecipeLibrary 
-                        dense={density === "compact"} 
+                      <RecipeLibrary
+                        dense={density === "compact"}
                         searchQuery={searchQuery}
                         selectedCategory={selectedCategory}
                       />
