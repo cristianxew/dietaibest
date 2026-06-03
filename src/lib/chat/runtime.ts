@@ -313,6 +313,14 @@ export class AgentRuntime {
                 callId: call.callId,
                 reason: err.reason,
               };
+              const failItem: ConversationTurnItem = {
+                kind: "tool-result",
+                callId: call.callId,
+                toolName: tool.name,
+                result: { ok: false, reason: err.reason, message: err.message },
+              };
+              pendingPersist.push(failItem);
+              history.push(failItem);
               continue;
             }
             throw err;
