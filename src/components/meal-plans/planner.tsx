@@ -13,6 +13,7 @@ import { getRecipes, getCategories } from '@/actions/recipe';
 import { toast } from 'sonner';
 import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
 import { compareMacro, getMacroStatusColor } from '@/lib/meal-plan-macros';
+import { RecipeSidebarSkeleton } from './MealPlannerSkeletons';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -183,9 +184,7 @@ export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategor
       {/* Recipe rows */}
       <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
         {loading ? (
-          <div className="text-[12px] text-muted-foreground py-6 text-center">
-            {t('loading')}
-          </div>
+          <RecipeSidebarSkeleton dense={dense} />
         ) : filtered.length === 0 ? (
           <div className="text-[12px] text-muted-foreground py-6 text-center">
             {t('noRecipesFound')}

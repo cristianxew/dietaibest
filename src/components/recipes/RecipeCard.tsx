@@ -10,6 +10,8 @@ import { useState, useTransition } from "react";
 import { toggleFavorite } from "@/actions/recipe";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/providers/AuthProvider";
+import { RecipeDeleteButton } from "./RecipeDeleteButton";
 
 interface RecipeCardProps {
   recipe: Recipe & {
@@ -63,6 +65,8 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
   const [isPending, startTransition] = useTransition();
   const [isFavorited, setIsFavorited] = useState(recipe.favoritedBy.length > 0);
   const [imageError, setImageError] = useState(false);
+  const { user } = useAuth();
+  const isOwner = user ? recipe.userId === user.id : false;
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -125,13 +129,42 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
             </span>
           )}
 
+          {/* Conditional Delete button inside image ONLY for GRID view! */}
+          {viewMode === "grid" && isOwner && (
+            <div
+              className="absolute left-3 top-3 z-10 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <RecipeDeleteButton
+                recipeId={recipe.id}
+                recipeName={recipe.title}
+                showText={false}
+                variant="ghost"
+                className={cn(
+                  "h-8 w-8 rounded-full shadow-sm hover:scale-110",
+                  showImage
+                    ? "bg-white/80 dark:bg-stone-900/80 backdrop-blur-md text-stone-600 dark:text-stone-300 border border-stone-200/50 dark:border-stone-800/50 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+                    : "bg-white dark:bg-stone-900 border border-border/60 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 text-stone-500 dark:text-stone-400"
+                )}
+              />
+            </div>
+          )}
+
           {/* Conditional Heart inside image ONLY for GRID view! */}
           {viewMode === "grid" && (
             <button
               className={cn(
                 "absolute right-3 top-3 z-10 flex items-center justify-center",
-                "h-8 w-8 rounded-full shadow-sm transition-transform hover:scale-110",
-                showImage ? "bg-white/20 backdrop-blur-md" : "bg-white dark:bg-stone-900"
+                "h-8 w-8 rounded-full shadow-sm transition-all duration-200 hover:scale-110",
+                isFavorited
+                  ? "opacity-100 scale-100"
+                  : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto",
+                showImage
+                  ? "bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/50 dark:border-stone-800/50 text-stone-600 dark:text-stone-300 hover:text-brand-500 dark:hover:text-brand-400"
+                  : "bg-white dark:bg-stone-900 border border-border/60 text-muted-foreground hover:text-brand-500 dark:hover:text-brand-400"
               )}
               onClick={handleToggleFavorite}
               disabled={isPending}
@@ -141,7 +174,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                   "h-4 w-4 transition-colors",
                   isFavorited
                     ? "fill-brand-500 text-brand-500"
-                    : showImage ? "text-white fill-transparent" : "text-muted-foreground fill-transparent"
+                    : "text-current fill-transparent"
                 )}
               />
             </button>
@@ -271,13 +304,37 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                     {primaryCategory}
                   </span>
                 </div>
-                <button
-                  onClick={handleToggleFavorite}
-                  disabled={isPending}
-                  className="p-1.5 hover:bg-muted rounded-full transition-colors mt-auto"
-                >
-                  <Heart className={cn("w-4 h-4", isFavorited ? "fill-brand-500 text-brand-500" : "text-muted-foreground")} />
-                </button>
+                <div className="flex gap-2 items-center mt-auto">
+                  {isOwner && (
+                    <div
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <RecipeDeleteButton
+                        recipeId={recipe.id}
+                        recipeName={recipe.title}
+                        showText={false}
+                        variant="ghost"
+                        className="h-8 w-8 rounded-full border-0 p-1.5 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 text-muted-foreground transition-colors"
+                      />
+                    </div>
+                  )}
+                  <button
+                    onClick={handleToggleFavorite}
+                    disabled={isPending}
+                    className={cn(
+                      "p-1.5 hover:bg-muted rounded-full transition-all duration-200",
+                      isFavorited
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+                    )}
+                  >
+                    <Heart className={cn("w-4 h-4", isFavorited ? "fill-brand-500 text-brand-500" : "text-muted-foreground")} />
+                  </button>
+                </div>
               </div>
             </div>
           )}

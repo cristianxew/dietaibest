@@ -19,8 +19,8 @@ const REFUSAL_PATTERNS: RegExp[] = [
   /\b(?:registered\s+)?dietitian\b/i,
   /talk\s+to\s+(?:a|your)\s+(?:doctor|gp|physician|dietitian|nutritionist)/i,
 
-  // Spanish (Rioplatense + neutral): consultá / no soy médico / no te puedo asesorar
-  /no\s+(?:te\s+)?puedo\s+(?:asesorar|aconsejar|dar\s+(?:un\s+)?consejo\s+m[eé]dic)/i,
+  // Spanish
+  /no\s+(?:te\s+)?puedo\s+(?:asesorar|aconsejar|dar(?:te|le)?\s+(?:un\s+)?consejos?\s+m[eé]dic)/i,
   /no\s+soy\s+m[eé]dic[oa]/i,
   /consult[aá]\s+(?:con\s+)?(?:un|una|tu|el|la)?\s*(?:profesional|m[eé]dic[oa]|nutricionista)/i,
   /profesional\s+de\s+la\s+salud/i,

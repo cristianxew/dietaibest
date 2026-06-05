@@ -42,6 +42,14 @@ import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { Recipe } from "@/generated/prisma";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  PlanSwitcherSkeleton,
+  WeeklyMacroStripSkeleton,
+  GridLayoutSkeleton,
+  StackLayoutSkeleton,
+  SplitLayoutSkeleton,
+} from "./MealPlannerSkeletons";
 
 export function MealPlanner() {
   const t = useTranslations("mealPlans");
@@ -52,6 +60,8 @@ export function MealPlanner() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] =
     useState<MealPlanTemplateDisplay | null>(null);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  const [isLoadingPlan, setIsLoadingPlan] = useState(false);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"planner" | "calendar">("planner");
@@ -82,14 +92,19 @@ export function MealPlanner() {
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
   const loadTemplates = useCallback(() => {
+    setIsLoadingTemplates(true);
     startTransition(async () => {
-      const result = await getMealPlans({ page: 1, limit: 50 });
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.data) {
-        setTemplates(
-          (result.data.templates as TemplateWithMealsAndSchedules[]) || []
-        );
+      try {
+        const result = await getMealPlans({ page: 1, limit: 50 });
+        if (result.error) {
+          toast.error(result.error);
+        } else if (result.data) {
+          setTemplates(
+            (result.data.templates as TemplateWithMealsAndSchedules[]) || []
+          );
+        }
+      } finally {
+        setIsLoadingTemplates(false);
       }
     });
   }, []);
@@ -97,17 +112,22 @@ export function MealPlanner() {
   const handleSelectPlan = useCallback(
     (templateId: string) => {
       setSelectedPlanId(templateId);
+      setIsLoadingPlan(true);
       startTransition(async () => {
-        const result = await getMealPlan(templateId);
-        if (result.error) {
-          toast.error(result.error);
-        } else if (result.data) {
-          setEditingTemplate(
-            toTemplateDisplay(
-              result.data as TemplateWithMealsAndSchedules,
-              t("calendar.unknownRecipe")
-            )
-          );
+        try {
+          const result = await getMealPlan(templateId);
+          if (result.error) {
+            toast.error(result.error);
+          } else if (result.data) {
+            setEditingTemplate(
+              toTemplateDisplay(
+                result.data as TemplateWithMealsAndSchedules,
+                t("calendar.unknownRecipe")
+              )
+            );
+          }
+        } finally {
+          setIsLoadingPlan(false);
         }
       });
     },
@@ -372,16 +392,24 @@ export function MealPlanner() {
           {/* Planner tab */}
           <TabsContent value="planner" className="px-6 lg:px-10 pt-6 pb-8 space-y-5">
             {/* Plan count */}
-            <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
-              {templates.length} {t("savedPlans").toLowerCase()}
-            </p>
+            {isLoadingTemplates ? (
+              <Skeleton className="h-4 w-24 bg-stone-200 dark:bg-slate-800" />
+            ) : (
+              <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
+                {templates.length} {t("savedPlans").toLowerCase()}
+              </p>
+            )}
 
-            <PlanSwitcher
-              templates={templates}
-              activeId={selectedPlanId}
-              onPick={handleSelectPlan}
-              onCreate={() => setShowCreateDialog(true)}
-            />
+            {isLoadingTemplates ? (
+              <PlanSwitcherSkeleton />
+            ) : (
+              <PlanSwitcher
+                templates={templates}
+                activeId={selectedPlanId}
+                onPick={handleSelectPlan}
+                onCreate={() => setShowCreateDialog(true)}
+              />
+            )}
 
             {/* Editor body */}
             <DndContext
@@ -391,8 +419,12 @@ export function MealPlanner() {
             >
               <div className="flex flex-col gap-4">
                 {/* Weekly macro summary strip — full width */}
-                {editingTemplate && (
-                  <WeeklyMacroStrip template={editingTemplate} />
+                {isLoadingTemplates || isLoadingPlan ? (
+                  <WeeklyMacroStripSkeleton />
+                ) : (
+                  editingTemplate && (
+                    <WeeklyMacroStrip template={editingTemplate} />
+                  )
                 )}
                 {/* Unified control panel wrapper */}
                 <div className="sticky top-[138px] sm:top-[78px] z-20 pt-5 pb-3 bg-background">
@@ -521,7 +553,19 @@ export function MealPlanner() {
 
                   {/* Meal layout */}
                   <div className="overflow-x-auto">
-                    {editingTemplate ? (
+                    {isLoadingTemplates || isLoadingPlan ? (
+                      <>
+                        {layout === "grid" && (
+                          <GridLayoutSkeleton density={density} />
+                        )}
+                        {layout === "stack" && (
+                          <StackLayoutSkeleton density={density} />
+                        )}
+                        {layout === "split" && (
+                          <SplitLayoutSkeleton density={density} />
+                        )}
+                      </>
+                    ) : editingTemplate ? (
                       <>
                         {layout === "grid" && (
                           <GridLayout

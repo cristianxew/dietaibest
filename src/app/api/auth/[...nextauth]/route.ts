@@ -152,7 +152,10 @@ function createHandler() {
       // Attach user id and other claims to session
       if (session.user) {
         // Type assertion is used here because NextAuth's default type does not include 'id' on user
-        (session.user as { id?: string; provider?: string }).id = token.sub;
+        // Expose the canonical Prisma User.id (resolved in the jwt callback), NOT
+        // the provider `sub`, so client-side ownership checks match `recipe.userId`.
+        (session.user as { id?: string; provider?: string }).id =
+          (token.userId as string) || token.sub;
         (session.user as { id?: string; provider?: string }).provider =
           token.provider as string;
       }
@@ -175,6 +178,26 @@ function createHandler() {
         // Generate a unique session ID for this login session
         if (!token.sessionId) {
           token.sessionId = crypto.randomUUID();
+        }
+      }
+
+      // Resolve the canonical domain user id (Prisma User.id) and persist it on
+      // the token. The provider id (Supabase/Google `sub`) is NOT the same as our
+      // database User.id, so client-side ownership checks must use this id to
+      // match `recipe.userId` set on the server. Runs whenever it's missing
+      // (login OR an existing session minted before this fix), so it self-heals
+      // without forcing a re-login, and only hits the DB until it's resolved.
+      if (!token.userId && token.email) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email as string },
+            select: { id: true },
+          });
+          if (dbUser) {
+            token.userId = dbUser.id;
+          }
+        } catch (error) {
+          console.error("[NextAuth] jwt callback - failed to resolve db user id:", error);
         }
       }
 

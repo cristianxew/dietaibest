@@ -19,16 +19,22 @@ import { Trash2 } from "lucide-react";
 import { deleteRecipe } from "@/actions/recipe";
 import { toast } from "sonner";
 
+import { cn } from "@/lib/utils";
+
 interface RecipeDeleteButtonProps {
   recipeId: string;
   recipeName: string;
   showText?: boolean;
+  className?: string;
+  variant?: "outline" | "ghost" | "destructive" | "secondary" | "link" | "default";
 }
 
 export function RecipeDeleteButton({
   recipeId,
   recipeName,
   showText = false,
+  className,
+  variant = "outline",
 }: RecipeDeleteButtonProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
@@ -52,10 +58,11 @@ export function RecipeDeleteButton({
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
-          variant="outline"
+          variant={variant}
           size={showText ? "default" : "icon"}
-          className={showText ? "w-full" : ""}
+          className={cn(showText ? "w-full" : "h-9 w-9 shrink-0", className)}
           disabled={isDeleting}
+          aria-label={showText ? undefined : "Delete Recipe"}
         >
           <Trash2 className={showText ? "h-4 w-4 mr-2" : "h-4 w-4"} />
           {showText && "Delete Recipe"}

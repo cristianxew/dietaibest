@@ -11,6 +11,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/ui/page-container";
 import { RecipeFavoriteButton } from "./RecipeFavoriteButton";
+import { RecipeDeleteButton } from "./RecipeDeleteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
@@ -386,14 +387,21 @@ export function RecipeDetailClient({
               Add to Plan
             </Button>
             {isOwner && (
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 shrink-0"
-                onClick={() => openEdit(recipe.id, recipeToFormData(recipe))}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => openEdit(recipe.id, recipeToFormData(recipe))}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <RecipeDeleteButton
+                  recipeId={recipe.id}
+                  recipeName={recipe.title}
+                  showText={false}
+                />
+              </>
             )}
           </div>
 
