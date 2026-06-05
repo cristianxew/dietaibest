@@ -19,6 +19,12 @@
 # - SUPABASE_SERVICE_ROLE_KEY
 # - EDAMAM_APP_ID
 # - EDAMAM_APP_KEY
+# - STRIPE_SECRET_KEY (sk_live_... in prod)
+# - STRIPE_WEBHOOK_SECRET (whsec_... from the Stripe dashboard Webhooks page)
+# - ANTHROPIC_API_KEY (in-app AI Chat Agent + Mastra workflows)
+# - SUPADATA_API_KEY (recipe import)
+# - FDC_API_KEY (FoodData Central nutrition lookups)
+# - STORE_CREDENTIALS_ENCRYPTION_KEY (shopping automation credential encryption)
 # ===========================================
 
 services:
@@ -79,11 +85,44 @@ services:
       - EDAMAM_APP_KEY=${EDAMAM_APP_KEY}
       - BROWSER_USE_API_KEY=${BROWSER_USE_API_KEY:-}
 
-      # Google Cloud Document AI (Optional)
+      # Stripe (server-side runtime — read via process.env in src/lib/stripe.ts
+      # and src/app/api/webhooks/stripe/route.ts). Must be declared HERE or the
+      # container never receives them, even when set in the Dokploy Environment UI.
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_TRIAL_DAYS=${STRIPE_TRIAL_DAYS:-14}
+
+      # AI Chat Agent — ANTHROPIC_API_KEY is REQUIRED for the in-app chat (DIE-30)
+      # and Mastra workflows; the app throws without it.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CHAT_LLM_MODEL=${CHAT_LLM_MODEL:-}
+      - CHAT_COST_CAP_ENFORCED=${CHAT_COST_CAP_ENFORCED:-}
+      # Optional Vertex/Gemma path (fallback LLM + recipe image generation)
+      - GEMMA_MODEL=${GEMMA_MODEL:-}
+      - GOOGLE_VERTEX_LOCATION=${GOOGLE_VERTEX_LOCATION:-}
+
+      # Recipe import (Supadata) + nutrition lookups (FoodData Central) — required
+      - SUPADATA_API_KEY=${SUPADATA_API_KEY}
+      - FDC_API_KEY=${FDC_API_KEY}
+
+      # Store-credentials encryption for shopping automation — REQUIRED (throws if unset)
+      - STORE_CREDENTIALS_ENCRYPTION_KEY=${STORE_CREDENTIALS_ENCRYPTION_KEY}
+
+      # Entitlements / feature flags
+      - ENTITLEMENTS_ENFORCED=${ENTITLEMENTS_ENFORCED:-}
+      - FEATURE_MULTIMODAL_IMPORT=${FEATURE_MULTIMODAL_IMPORT:-}
+
+      # Cron endpoint auth (src/app/api/cron/*)
+      - CRON_SECRET=${CRON_SECRET:-}
+
+      # Google Cloud Document AI (Optional — recipe OCR import)
       - GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID:-}
       - DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION:-}
       - DOCUMENT_AI_CUSTOM_PROCESSOR_ID=${DOCUMENT_AI_CUSTOM_PROCESSOR_ID:-}
-      - GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY=${GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY:-}
+      # Path to the service-account JSON, used as keyFilename by the Document AI
+      # client (src/app/api/recipes/import/document/route.ts:51). The file itself
+      # is NOT committed — provide it via a Dokploy File Mount at this exact path.
+      - GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=${GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH:-/app/secrets/gcp-service-account.json}
     ports:
       - "3000"
     networks:
