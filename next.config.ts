@@ -159,12 +159,20 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // sharp has native bindings; let Next leave it as an external CJS import
+  // so the prebuilt platform-specific binaries resolve at runtime. Required
+  // for DIE-41's HEIC->JPEG conversion in /api/chat/upload.
+  serverExternalPackages: ["sharp"],
   // Explicitly include ws module for all routes
   // Required because @supabase/realtime-js transitively requires 'ws'
   // and standalone mode doesn't automatically trace this dependency
   // Using '/*' ensures the module is included in the standalone build
   outputFileTracingIncludes: {
-    "/*": ["./node_modules/ws/**/*"],
+    "/*": [
+      "./node_modules/ws/**/*",
+      "./node_modules/sharp/**/*",
+      "./node_modules/@img/**/*",
+    ],
   },
   images: {
     remotePatterns: [

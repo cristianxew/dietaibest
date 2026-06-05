@@ -23,7 +23,11 @@ import { isPro } from "@/lib/plan";
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type FeatureKey = "aiMealPlan" | "shoppingAutomation" | "recipeImport";
+export type FeatureKey =
+  | "aiMealPlan"
+  | "shoppingAutomation"
+  | "recipeImport"
+  | "aiChat";
 
 export type QuotaKey =
   | "savedRecipes"
@@ -72,12 +76,14 @@ const PRO_FEATURES: Record<FeatureKey, boolean> = {
   aiMealPlan: true,
   shoppingAutomation: true,
   recipeImport: true,
+  aiChat: true,
 };
 
 const FREE_FEATURES: Record<FeatureKey, boolean> = {
   aiMealPlan: false,
   shoppingAutomation: false,
   recipeImport: false,
+  aiChat: false,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,6 +172,12 @@ export function checkCanUseShoppingAutomation(
 ): EntitlementViolation | null {
   const ent = getEntitlements(user);
   if (!ent.features.shoppingAutomation) return new ProOnlyError("shoppingAutomation");
+  return null;
+}
+
+export function checkCanUseAiChat(user: UserLike): EntitlementViolation | null {
+  const ent = getEntitlements(user);
+  if (!ent.features.aiChat) return new ProOnlyError("aiChat");
   return null;
 }
 
@@ -290,6 +302,10 @@ export async function assertCanUseShoppingAutomation(
   user: UserLike
 ): Promise<void> {
   enforce(checkCanUseShoppingAutomation(user));
+}
+
+export async function assertCanUseAiChat(user: UserLike): Promise<void> {
+  enforce(checkCanUseAiChat(user));
 }
 
 export async function assertCanCreateMealPlanTemplate(

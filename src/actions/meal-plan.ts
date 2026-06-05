@@ -88,6 +88,59 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
         }
       }
 
+      // Build days payload outside the Prisma call for clarity.
+      const daysPayload = Array.from(
+        { length: validatedData.duration },
+        (_, index) => {
+          const dayNumber = index + 1;
+
+          // Priority 1: explicit days[] from AI generator (includes nullable
+          // recipeId + failed-slot metadata).
+          const explicitDay = validatedData.days?.find(
+            (d) => d.dayNumber === dayNumber
+          );
+          if (explicitDay) {
+            return {
+              dayNumber,
+              ...(explicitDay.meals?.length
+                ? {
+                    meals: {
+                      create: explicitDay.meals.map((meal, i) => ({
+                        recipeId: meal.recipeId ?? null,
+                        mealType: meal.mealType,
+                        servings: meal.servings ?? 1,
+                        sortOrder: meal.sortOrder ?? i,
+                        generationFailed: meal.generationFailed ?? false,
+                        generationError: meal.generationError ?? null,
+                      })),
+                    },
+                  }
+                : {}),
+            };
+          }
+
+          // Priority 2: copy from source template (original behavior).
+          const templateDay =
+            templatePlan?.days[index % (templatePlan.days.length || 1)];
+
+          return {
+            dayNumber,
+            ...(templateDay
+              ? {
+                  meals: {
+                    create: templateDay.meals.map((meal) => ({
+                      recipeId: meal.recipeId,
+                      mealType: meal.mealType,
+                      servings: meal.servings,
+                      sortOrder: meal.sortOrder,
+                    })),
+                  },
+                }
+              : {}),
+          };
+        }
+      );
+
       return prisma.mealPlanTemplate.create({
         data: {
           userId: ctx.user.id,
@@ -101,28 +154,7 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
           isPublic: validatedData.isPublic,
           shareToken: validatedData.isPublic ? generateShareToken() : null,
           days: {
-            create: Array.from(
-              { length: validatedData.duration },
-              (_, index) => {
-                const dayNumber = index + 1;
-                const templateDay =
-                  templatePlan?.days[index % (templatePlan.days.length || 1)];
-
-                return {
-                  dayNumber,
-                  meals: templateDay
-                    ? {
-                        create: templateDay.meals.map((meal) => ({
-                          recipeId: meal.recipeId,
-                          mealType: meal.mealType,
-                          servings: meal.servings,
-                          sortOrder: meal.sortOrder,
-                        })),
-                      }
-                    : undefined,
-                };
-              }
-            ),
+            create: daysPayload,
           },
         },
         include: {
@@ -830,6 +862,12 @@ export async function addMealToDay(data: AddMealData) {
       },
       include: {
         recipe: true,
+        mealPlanDay: {
+          select: {
+            templateId: true,
+            template: { select: { name: true } },
+          },
+        },
       },
     });
 

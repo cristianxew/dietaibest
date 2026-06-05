@@ -1,6 +1,6 @@
 # DietAI - Project Architecture
 
-**Last Updated:** 2026-05-02
+**Last Updated:** 2026-05-20
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
@@ -248,20 +248,31 @@ dietaibest/
 
 **Capabilities:**
 - Create weekly meal plans with customizable date ranges
-- Configure 2-6 meals per day (breakfast, lunch, dinner, snacks)
-- Drag-and-drop recipe assignment using dnd-kit
+- Configure 2-6 meals per day (7 `MealType`s: breakfast, lunch, dinner, snacks, etc.)
+- Drag-and-drop recipe assignment using `@dnd-kit/core`
 - Real-time macro calculation per day/week
 - Template system (duplicate/schedule plans)
+- 3 editor layout modes (grid / stack / split) + regular/compact density toggle
+- Month-grid schedule calendar for placing templates on dates
 - Active plan management
 - Public sharing with share tokens
+- "Generate with AI" header button deep-links to the in-app chat agent
 
-**Key Components:**
-- `MealPlanForm.tsx` - Create/edit meal plans
-- `MealPlanCalendar.tsx` - Drag-and-drop calendar view
-- `MealSlotCard.tsx` - Individual meal slot
-- `MacroTracker.tsx` - Real-time macro display
+**Key Components (`src/components/meal-plans/`):**
+- `MealPlanner.tsx` - Shell: header, planner/calendar tabs, loads templates, wires mutations
+- `planner.tsx` - Exports `PlanSwitcher`, `RecipeLibrary`, `MealCell`, `DayMacros`, and the 3 editor layouts (`GridLayout` / `StackLayout` / `SplitLayout`)
+- `ScheduleCalendar.tsx` - Month-grid calendar for scheduling templates on specific dates
+- `WeeklyMacroStrip.tsx` - Weekly macro summary strip
+- `shared.tsx` - Shared primitives: `RecipeThumb`, `MacroBar`, `Chip`
+- `icons.tsx` - Lucide-react icon wrapper
+- `MealPlanForm.tsx` - Create/edit meal plan dialog (unchanged)
 
-**Server Actions:**
+**Shared Libraries:**
+- `src/lib/meal-plan-adapter.ts` - `toTemplateDisplay()`: converts a Prisma `MealPlanTemplate` payload to the `MealPlanTemplateDisplay` display type
+- `src/lib/meal-slot-meta.ts` - `MEAL_SLOT_META`: per-`MealType` icon / color / i18n-key metadata map (7 entries)
+- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()` (unchanged)
+
+**Server Actions (`src/actions/meal-plan.ts` — unchanged from pre-migration):**
 - `createMealPlan()` - Create new plan
 - `updateMealPlan()` - Edit plan with date adjustment
 - `deleteMealPlan()` - Remove plan
@@ -276,6 +287,10 @@ dietaibest/
 - Per-meal macros: `calculateMealMacros()` in `src/lib/meal-plan-macros.ts`
 - Daily totals: `sumMacros()`
 - Weekly averages: Calculated in `getMealPlan()`
+
+**Styling & i18n:**
+- All styling uses Tailwind/shadcn tokens — no custom CSS-variable system
+- Full `next-intl` i18n across `en` / `es` / `pl` under the existing `mealPlans.*` namespace
 
 ### 3. Nutritional Analysis
 **Location:** `src/lib/edamam-service.ts`, `src/components/nutrition/`

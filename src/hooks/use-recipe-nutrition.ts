@@ -22,7 +22,7 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
   const analyze = useCallback(
     async (
       title: string,
-      ingredients: Array<{ name: string; amount: number; unit: string }>,
+      ingredients: Array<{ name: string; amount: number; unit?: string }>,
       servings: number,
       url: string | undefined,
       instructions: string[]

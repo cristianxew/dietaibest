@@ -228,6 +228,8 @@ export async function generateShoppingList(
         for (const meal of day.meals) {
           totalMeals++;
           const recipe = meal.recipe;
+          // Skip slots without a resolved recipe (DIE-37 partial-fail rows).
+          if (!recipe) continue;
           const ingredients = parseIngredients(recipe.ingredients);
           const mealServings = meal.servings;
           const recipeServings = recipe.servings;
@@ -243,7 +245,7 @@ export async function generateShoppingList(
               scheduledServings: mealServings,
               ingredients: ingredients.map((ing) => {
                 const normalizedName = normalizeIngredientName(ing.name);
-                const normalizedUnit = normalizeUnit(ing.unit);
+                const normalizedUnit = normalizeUnit(ing.unit ?? "");
                 // Simple ID: name_unit (matches consolidated ingredients)
                 const ingredientId = `${normalizedName}_${normalizedUnit}`;
                 const adjustedAmount = ing.amount * servingsMultiplier;
@@ -290,7 +292,7 @@ export async function generateShoppingList(
             collectedIngredients.push({
               originalName: ing.name,
               amount: adjustedAmount,
-              unit: ing.unit,
+              unit: ing.unit ?? "",
               recipeId: recipe.id,
             });
           }

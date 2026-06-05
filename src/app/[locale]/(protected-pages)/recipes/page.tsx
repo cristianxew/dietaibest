@@ -1,10 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { RecipesList } from "../../../../components/recipes/RecipesList";
-import { LayoutGrid, List } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { PageContainer } from "@/components/ui/page-container";
-import { AddRecipeButton } from "@/components/recipes/AddRecipeButton";
 
 export async function generateMetadata({
   params,
@@ -42,7 +38,7 @@ export default async function RecipesPage({
 
       <PageContainer className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div className="flex flex-col justify-between items-start gap-1">
           <div>
             <span className="text-xs tracking-widest text-brand-500 uppercase mb-1">
               Recipe Library
@@ -51,34 +47,10 @@ export default async function RecipesPage({
               {t("title") || "My Recipes"}
             </h1>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center border border-border/60 rounded-lg p-1 bg-card">
-              <Link
-                href={`/${locale}/recipes?view=grid`}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  view === 'grid' ? "bg-brand-50 text-brand-500 dark:bg-brand-500/20 dark:text-brand-400" : "text-muted-foreground hover:bg-muted/50"
-                )}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </Link>
-              <Link
-                href={`/${locale}/recipes?view=list`}
-                className={cn(
-                  "p-2 rounded-md transition-colors",
-                  view === 'list' ? "bg-brand-50 text-brand-500 dark:bg-brand-500/20 dark:text-brand-400" : "text-muted-foreground hover:bg-muted/50"
-                )}
-              >
-                <List className="w-4 h-4" />
-              </Link>
-            </div>
-            <AddRecipeButton label={t("addRecipe")} />
-          </div>
         </div>
 
         {/* Main Content */}
-        <RecipesList viewMode={view as "grid" | "list"} />
+        <RecipesList initialViewMode={view as "grid" | "list"} />
       </PageContainer>
     </div>
   );

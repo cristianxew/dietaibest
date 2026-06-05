@@ -1,17 +1,22 @@
+"use client"
+
 import * as React from "react"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
 import { cn } from "@/lib/utils"
 
-const StyledTabs = Tabs
+// Built directly on Radix primitives to avoid fighting shadcn's hardcoded
+// dark:data-[state=active]:* overrides which can't be reliably overridden via cn().
+
+const StyledTabs = TabsPrimitive.Root
 
 const StyledTabsList = React.forwardRef<
-    React.ElementRef<typeof TabsList>,
-    React.ComponentPropsWithoutRef<typeof TabsList>
+    React.ElementRef<typeof TabsPrimitive.List>,
+    React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
-    <TabsList
+    <TabsPrimitive.List
         ref={ref}
         className={cn(
-            "bg-muted/60 backdrop-blur-sm border border-border/50 p-1 h-auto",
+            "inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted p-1 h-auto",
             className
         )}
         {...props}
@@ -20,13 +25,17 @@ const StyledTabsList = React.forwardRef<
 StyledTabsList.displayName = "StyledTabsList"
 
 const StyledTabsTrigger = React.forwardRef<
-    React.ElementRef<typeof TabsTrigger>,
-    React.ComponentPropsWithoutRef<typeof TabsTrigger>
+    React.ElementRef<typeof TabsPrimitive.Trigger>,
+    React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => (
-    <TabsTrigger
+    <TabsPrimitive.Trigger
         ref={ref}
         className={cn(
-            "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow px-4 py-2.5 rounded-lg transition-all",
+            "inline-flex items-center justify-center px-4 py-2.5 rounded-lg",
+            "text-sm font-medium border border-transparent transition-all",
+            "text-muted-foreground",
+            "data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+            "disabled:pointer-events-none disabled:opacity-50",
             className
         )}
         {...props}
@@ -34,6 +43,6 @@ const StyledTabsTrigger = React.forwardRef<
 ))
 StyledTabsTrigger.displayName = "StyledTabsTrigger"
 
-const StyledTabsContent = TabsContent
+const StyledTabsContent = TabsPrimitive.Content
 
 export { StyledTabs, StyledTabsList, StyledTabsTrigger, StyledTabsContent }

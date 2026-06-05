@@ -3,8 +3,8 @@ import { z } from "zod";
 // Ingredient schema
 export const ingredientSchema = z.object({
   name: z.string().min(1, "Ingredient name is required"),
-  amount: z.number().positive("Amount must be positive"),
-  unit: z.string().min(1, "Unit is required"),
+  amount: z.number().nonnegative("Amount cannot be negative"),
+  unit: z.string().optional(),
 });
 
 export type Ingredient = z.infer<typeof ingredientSchema>;

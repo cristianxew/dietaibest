@@ -1,0 +1,61 @@
+# DIE-41 — Daily retention cron for the chat-recipe-media Supabase bucket.
+#
+# Hits the production /api/cron/cleanup-chat-media endpoint with the shared
+# CRON_SECRET. The endpoint deletes Supabase Storage blobs whose
+# MultimodalImportEvent has aged out:
+#   success → 7 days post-processedAt
+#   failure → 30 days post-createdAt
+#   pending → 7 days post-createdAt (orphans)
+#
+# SECURITY NOTE: This workflow consumes only secrets — never untrusted event
+# input (no issue title, PR body, commit message, head_ref, etc.). The two
+# secrets are passed via env: and referenced as bash $VARS, not ${{ }}
+# interpolation inside run blocks. Safe per
+# https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+#
+# Required GitHub repo secrets:
+#   - PROD_BASE_URL  : e.g. https://dietaimanager.com
+#   - CRON_SECRET    : same value as the prod env var
+#
+# Manual run: Actions tab → "Chat media retention cleanup" → Run workflow.
+
+name: Chat media retention cleanup
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: cleanup-chat-media
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Hit /api/cron/cleanup-chat-media
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Invoke cron endpoint
+        env:
+          PROD_BASE_URL: ${{ secrets.PROD_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PROD_BASE_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::Missing required secret(s): PROD_BASE_URL and/or CRON_SECRET"
+            exit 1
+          fi
+          response=$(mktemp)
+          status=$(curl -sS -o "$response" -w "%{http_code}" \
+            -X POST "$PROD_BASE_URL/api/cron/cleanup-chat-media" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            --max-time 300)
+          echo "HTTP $status"
+          cat "$response"
+          echo
+          if [ "$status" != "200" ]; then
+            echo "::error::Cron endpoint returned non-200 status: $status"
+            exit 1
+          fi

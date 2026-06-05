@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js dev (app)",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "Vitest UI",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "test:ui"],
+      "port": 51204
+    }
+  ]
+}

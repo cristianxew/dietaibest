@@ -10,11 +10,11 @@ datasource db {
 }
 
 model User {
-  id                  String                 @id @default(uuid())
-  email               String                 @unique
-  password            String
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Stripe subscription
   stripeCustomerId     String?   @unique
@@ -32,6 +32,8 @@ model User {
   mealPlanSchedules   MealPlanSchedule[] // User's scheduled meal plans
   shoppingPreferences ShoppingPreferences? // User's shopping automation preferences
   storeCredentials    StoreCredential[] // Per-store encrypted credentials for auto-login
+  conversations       Conversation[] // In-app AI chat conversations
+  multimodalImports   MultimodalImportEvent[] // DIE-41 image-based recipe imports
 }
 
 model UserProfile {
@@ -108,6 +110,7 @@ model Recipe {
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
   edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
   mealPlanMeals     MealPlanMeal[] // Usage in meal plans
+  multimodalImports MultimodalImportEvent[] // DIE-41 image-based imports that produced this recipe
 }
 
 model RecipeCategory {
@@ -259,7 +262,7 @@ model MealPlanSchedule {
   updatedAt DateTime @updatedAt
 
   template MealPlanTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([templateId])
@@ -285,18 +288,20 @@ model MealPlanDay {
 
 // MealPlanMeal: Individual recipe assignments (unchanged structure)
 model MealPlanMeal {
-  id            String @id @default(uuid())
-  mealPlanDayId String
-  recipeId      String
-  mealType      String // breakfast, lunch, dinner, snack
-  servings      Int    @default(1) // Can override recipe default servings
-  sortOrder     Int    @default(0) // For ordering meals within a slot
+  id               String  @id @default(uuid())
+  mealPlanDayId    String
+  recipeId         String? // nullable: AI-generated slots may fail before a recipe exists
+  mealType         String // breakfast, lunch, dinner, snack
+  servings         Int     @default(1) // Can override recipe default servings
+  sortOrder        Int     @default(0) // For ordering meals within a slot
+  generationFailed Boolean @default(false)
+  generationError  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   mealPlanDay MealPlanDay @relation(fields: [mealPlanDayId], references: [id], onDelete: Cascade)
-  recipe      Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe      Recipe?     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([mealPlanDayId])
   @@index([recipeId])
@@ -309,14 +314,14 @@ model MealPlanMeal {
 
 // ShoppingPreferences: User's preferred store and shopping automation settings
 model ShoppingPreferences {
-  id                 String   @id @default(uuid())
-  userId             String   @unique
-  selectedStore      String?  // "auchan" | "frisco" | "carrefour"
-  deliveryPreference String   @default("delivery") // "delivery" | "pickup"
+  id                 String  @id @default(uuid())
+  userId             String  @unique
+  selectedStore      String? // "auchan" | "frisco" | "carrefour"
+  deliveryPreference String  @default("delivery") // "delivery" | "pickup"
   zipCode            String?
-  preferOrganic      Boolean  @default(false)
-  preferStoreBrand   Boolean  @default(false)
-  allowSubstitutions Boolean  @default(true)
+  preferOrganic      Boolean @default(false)
+  preferStoreBrand   Boolean @default(false)
+  allowSubstitutions Boolean @default(true)
   maxPricePerItem    Float?
 
   createdAt DateTime @default(now())
@@ -329,13 +334,13 @@ model ShoppingPreferences {
 
 // StoreCredential: Per-store encrypted credentials for auto-login during shopping automation
 model StoreCredential {
-  id                String   @id @default(uuid())
+  id                String @id @default(uuid())
   userId            String
-  store             String   // "auchan" | "frisco" | "carrefour"
+  store             String // "auchan" | "frisco" | "carrefour"
   email             String
-  encryptedPassword String   // AES-256-GCM encrypted
-  iv                String   // Initialization vector for decryption
-  authTag           String   // Authentication tag for GCM verification
+  encryptedPassword String // AES-256-GCM encrypted
+  iv                String // Initialization vector for decryption
+  authTag           String // Authentication tag for GCM verification
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -344,4 +349,92 @@ model StoreCredential {
 
   @@unique([userId, store]) // One credential per store per user
   @@index([userId])
+}
+
+// ============================================================================
+// AI Chat Agent — Conversation Persistence (DIE-39)
+// ============================================================================
+// Decision #112 (locked 2026-05-15): ONE active conversation per user. The
+// "Limpiar" action sets archivedAt; the next user turn creates a fresh
+// conversation. Partial unique index added in the migration enforces this at
+// the DB level: UNIQUE (userId) WHERE archivedAt IS NULL.
+
+model Conversation {
+  id         String    @id @default(uuid())
+  userId     String
+  title      String?   // auto-set from first user message (60 chars); null until first turn
+  archivedAt DateTime? // null = active; non-null = archived "Limpiar"
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          Message[]
+  multimodalImports MultimodalImportEvent[]
+
+  @@index([userId, archivedAt])
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String
+  role           String // "user" | "assistant" | "tool" | "metadata"
+  content        Json // ConversationTurnItem: { kind: "text"|"tool-call"|"tool-result"|"metadata", ... }
+  createdAt      DateTime @default(now())
+
+  // DIE-38 cost cap (shadow-mode). Filled on the assistant message that closes
+  // an LLM step, derived from finish.usage. Sum-over-month gives per-user cost.
+  inputTokens  Int?
+  outputTokens Int?
+
+  // DIE-41 attachments. Array of { kind: "image", mediaRef, eventId }. Null for
+  // text-only messages. Populated on user messages that carry an upload.
+  attachments Json?
+
+  conversation      Conversation            @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  multimodalImports MultimodalImportEvent[]
+
+  @@index([conversationId, createdAt])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// AI Chat Agent — Multimodal Imports (DIE-41)
+// ============================================================================
+// Tracks every image upload + extraction attempt by the in-app chat agent.
+// Two purposes: (1) per-user daily cap (count rows for userId where createdAt
+// >= startOfDay), (2) Supabase Storage retention cleanup (cron deletes blob
+// 7d post-success, 30d post-failure, then sets deletedAt).
+//
+// Storage path scheme: {userId}/{eventId}/{filename}. eventId is the row id,
+// generated at upload time — eliminates the need for conversationId/messageId
+// in the path (those are filled AFTER the message is sent and are nullable).
+
+model MultimodalImportEvent {
+  id             String  @id @default(uuid())
+  userId         String
+  conversationId String? // filled when the message carrying this upload is persisted
+  messageId      String? // filled when the message carrying this upload is persisted
+  recipeId       String? // filled on successful extraction + persist
+
+  kind      String // "image" (audio reserved for v1.1)
+  mediaPath String // Supabase Storage path: {userId}/{id}/{filename}
+  mimeType  String // image/jpeg | image/png | image/webp | image/heic
+  sizeBytes Int
+
+  outcome String // "pending" | "success" | "failure"
+  reason  String? // failure reason: "no-ingredients" | "low-quality" | "unsupported-format" | "cost-cap-day" | ...
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime? // set when the tool finishes (success or failure)
+  deletedAt   DateTime? // set when bucket blob is wiped (cron or user-initiated)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  message      Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  recipe       Recipe?       @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt]) // daily cap query
+  @@index([outcome, processedAt]) // success cleanup (outcome=success AND processedAt < now - 7d)
+  @@index([outcome, createdAt]) // failure cleanup (outcome=failure AND createdAt < now - 30d)
+  @@index([deletedAt])
 }

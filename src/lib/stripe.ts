@@ -29,7 +29,7 @@ function getInstance(): Stripe {
     );
   }
   _stripe = new Stripe(key, {
-    apiVersion: "2026-03-25.dahlia",
+    apiVersion: "2026-04-22.dahlia",
     typescript: true,
     appInfo: { name: "DietAI", version: "0.1.0" },
   });

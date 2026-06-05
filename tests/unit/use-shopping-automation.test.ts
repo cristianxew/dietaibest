@@ -69,7 +69,7 @@ describe("useShoppingAutomation — paywall integration", () => {
     error: "Network error",
   };
 
-  const baseInput = { store: "carrefour-ar" as const, items: [] };
+  const baseInput = { store: "carrefour" as const, items: [] };
 
   it("opens the paywall when startShoppingTask returns a PRO_ONLY entitlement error", async () => {
     (startShoppingTaskMock as Mock).mockResolvedValueOnce(proOnlyResult);
