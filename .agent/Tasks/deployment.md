@@ -72,6 +72,18 @@ EDAMAM_APP_ID=<your-app-id>
 EDAMAM_APP_KEY=<your-app-key>
 ```
 
+**Billing (Stripe) — required for the /subscribe page and webhooks:**
+```
+STRIPE_SECRET_KEY=<sk_live_...>
+STRIPE_WEBHOOK_SECRET=<whsec_... from Stripe dashboard → Webhooks>
+STRIPE_TRIAL_DAYS=14   # optional, defaults to 14
+```
+
+> ⚠️ These are **server-side runtime** vars. Beyond adding them in the Dokploy
+> Environment UI, they MUST also be declared in the `app` service `environment:`
+> block of `docker-compose.yml` — otherwise the container never receives them.
+> See "Env Var Set in Dokploy But Container Can't See It" below.
+
 **Important:** `NEXT_PUBLIC_*` variables are embedded into the JavaScript at **build time**.
 If you change these values, you must trigger a **full rebuild** (not just restart) for changes to take effect.
 
@@ -81,8 +93,36 @@ GOOGLE_CLIENT_ID=<for-google-oauth>
 GOOGLE_CLIENT_SECRET=<for-google-oauth>
 SUPABASE_SERVICE_ROLE_KEY=<for-admin-operations>
 BROWSER_USE_API_KEY=<for-ai-web-automation>
+CRON_SECRET=<auth for /api/cron/* endpoints>
+ENTITLEMENTS_ENFORCED=true        # gate Pro features
+CHAT_COST_CAP_ENFORCED=true       # enforce chat spend cap
+CHAT_LLM_MODEL=<override chat model>
+GEMMA_MODEL=<vertex gemma model>
+GOOGLE_VERTEX_LOCATION=<vertex region>
+FEATURE_MULTIMODAL_IMPORT=true
+# Document AI (recipe OCR import) — see "Document AI Service Account" below
 GOOGLE_CLOUD_PROJECT_ID=<for-document-ai>
+DOCUMENT_AI_LOCATION=eu
+DOCUMENT_AI_CUSTOM_PROCESSOR_ID=<processor-id>
+GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=/app/secrets/gcp-service-account.json
 ```
+
+> All of these must be declared in the `app` service `environment:` block of
+> `docker-compose.yml` to reach the container — the Dokploy Environment UI alone
+> is not enough (see the env troubleshooting section).
+
+#### Document AI Service Account (file mount, not an env var)
+
+The Document AI client reads credentials from a **JSON file on disk** via
+`keyFilename` (`src/app/api/recipes/import/document/route.ts:51`), pointed at by
+`GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH`. The JSON is a **secret** — never commit it or
+bind-mount it from the repo. Provide it with a **Dokploy File Mount**:
+
+1. Dokploy → service → **Advanced → Volumes → Add File Mount**
+2. **Mount Path**: `/app/secrets/gcp-service-account.json`
+3. **Content**: paste the full service-account JSON
+4. Set `GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=/app/secrets/gcp-service-account.json` in Environment
+5. Redeploy
 
 ### 4. Configure Domain & SSL
 1. Go to **Domains** section
@@ -177,6 +217,31 @@ docker exec -it DietAI-app npx prisma db push
 ---
 
 ## Troubleshooting
+
+### Env Var Set in Dokploy But Container Can't See It
+
+**Symptom:** A feature fails with `<VAR> is not set` even though you added the
+variable in the Dokploy **Environment** section. (E.g. `STRIPE_SECRET_KEY is not set`
+on the `/subscribe` page.)
+
+**Cause:** The Dokploy Environment UI only writes a `.env` file next to the compose
+file. Compose uses it for `${VAR}` **interpolation** — it does NOT inject the
+variable into the container. The container only receives vars **explicitly listed**
+in the service's `environment:` (or `env_file:`) block.
+
+**Solution:**
+1. Add the variable to the `app` service `environment:` block in `docker-compose.yml`:
+   ```yaml
+   environment:
+     - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+   ```
+2. Commit + push (triggers Dokploy auto-deploy) **or** redeploy in Dokploy.
+3. A plain restart is NOT enough if the compose file changed — redeploy so the new
+   compose definition is applied.
+
+> Reminder: `NEXT_PUBLIC_*` vars also need a **build arg** in `build.args` +
+> `Dockerfile`, plus a full rebuild — runtime `environment:` alone won't reach the
+> client bundle.
 
 ### Container Won't Start
 1. Check logs in Dokploy dashboard
