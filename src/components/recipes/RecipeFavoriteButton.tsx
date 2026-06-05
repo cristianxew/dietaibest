@@ -6,6 +6,7 @@ import { Heart } from "lucide-react";
 import { toggleFavorite } from "@/actions/recipe";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface RecipeFavoriteButtonProps {
   recipeId: string;
@@ -22,6 +23,7 @@ export function RecipeFavoriteButton({
   compact = false,
   className,
 }: RecipeFavoriteButtonProps) {
+  const t = useTranslations("recipes");
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isToggling, setIsToggling] = useState(false);
 
@@ -40,7 +42,7 @@ export function RecipeFavoriteButton({
       toast.error(error);
     } else {
       toast.success(
-        data?.favorited ? "Added to favorites" : "Removed from favorites"
+        data?.favorited ? t("favoriteAdded") : t("favoriteRemoved")
       );
     }
 
@@ -48,8 +50,8 @@ export function RecipeFavoriteButton({
   };
 
   const label = compact
-    ? isFavorited ? "Saved" : "Save"
-    : isFavorited ? "Remove from Favorites" : "Add to Favorites";
+    ? isFavorited ? t("favorited") : t("favorite")
+    : isFavorited ? t("removeFavorite") : t("addFavorite");
 
   return (
     <Button

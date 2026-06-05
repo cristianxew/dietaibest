@@ -208,6 +208,7 @@ interface MealCellProps {
   onServingsChange: (mealId: string, servings: number) => void;
   dense?: boolean;
   compact?: boolean;
+  showServings?: boolean;
 }
 
 export function MealCell({
@@ -218,6 +219,7 @@ export function MealCell({
   onServingsChange,
   dense = false,
   compact = false,
+  showServings = false,
 }: MealCellProps) {
   const t = useTranslations('mealPlans');
   // Drop target: always active regardless of filled/empty
@@ -322,27 +324,29 @@ export function MealCell({
             </div>
           </div>
           {/* Servings stepper */}
-          <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label={t('slot.decreaseServings')}
-            >
-              <Icon name="Minus" size={10} />
-            </button>
-            <span className="text-[11px] font-semibold text-foreground w-4 text-center tabular-nums">
-              {meal.servings}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label={t('slot.increaseServings')}
-            >
-              <Icon name="Plus" size={10} />
-            </button>
-          </div>
+          {showServings && (
+            <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
+                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label={t('slot.decreaseServings')}
+              >
+                <Icon name="Minus" size={10} />
+              </button>
+              <span className="text-[11px] font-semibold text-foreground w-4 text-center tabular-nums">
+                {meal.servings}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
+                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label={t('slot.increaseServings')}
+              >
+                <Icon name="Plus" size={10} />
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* Standard layout: vertical card */
@@ -372,31 +376,33 @@ export function MealCell({
           </div>
 
           {/* Servings stepper — outside drag listeners */}
-          <div
-            className="flex items-center gap-1 mt-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label={t('slot.decreaseServings')}
+          {showServings && (
+            <div
+              className="flex items-center gap-1 mt-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Icon name="Minus" size={10} />
-            </button>
-            <span className="text-[11px] font-semibold text-foreground w-5 text-center tabular-nums">
-              {meal.servings}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
-              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label={t('slot.increaseServings')}
-            >
-              <Icon name="Plus" size={10} />
-            </button>
-            <span className="text-[10px] text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
-          </div>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
+                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label={t('slot.decreaseServings')}
+              >
+                <Icon name="Minus" size={10} />
+              </button>
+              <span className="text-[11px] font-semibold text-foreground w-5 text-center tabular-nums">
+                {meal.servings}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
+                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label={t('slot.increaseServings')}
+              >
+                <Icon name="Plus" size={10} />
+              </button>
+              <span className="text-[10px] text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -416,8 +422,8 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
   const statusColor = getMacroStatusColor(comparison.status);
   const statusLabel =
     comparison.status === 'under' ? t('underTarget') :
-    comparison.status === 'over'  ? t('overTarget') :
-                                    t('onTrack');
+      comparison.status === 'over' ? t('overTarget') :
+        t('onTrack');
 
   return (
     <div className={cn('flex flex-col gap-1.5', !compact && 'min-w-[200px]')}>
@@ -452,9 +458,10 @@ interface GridLayoutProps {
   density: 'regular' | 'compact';
   onRemove: (mealId: string) => void;
   onServingsChange: (mealId: string, servings: number) => void;
+  showServings?: boolean;
 }
 
-export function GridLayout({ template, density, onRemove, onServingsChange }: GridLayoutProps) {
+export function GridLayout({ template, density, onRemove, onServingsChange, showServings = false }: GridLayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
   const numDays = template.days.length;
@@ -509,6 +516,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange }: Gr
                 onRemove={onRemove}
                 onServingsChange={onServingsChange}
                 dense={dense}
+                showServings={showServings}
               />
             ))}
           </div>
@@ -539,9 +547,10 @@ interface LayoutProps {
   density: 'regular' | 'compact';
   onRemove: (mealId: string) => void;
   onServingsChange: (mealId: string, servings: number) => void;
+  showServings?: boolean;
 }
 
-export function StackLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+export function StackLayout({ template, density, onRemove, onServingsChange, showServings = false }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
 
@@ -578,6 +587,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
                       onRemove={onRemove}
                       onServingsChange={onServingsChange}
                       dense={dense}
+                      showServings={showServings}
                     />
                   </div>
                 );
@@ -591,7 +601,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange }: L
 }
 
 /* ── SplitLayout ───────────────────────────────── */
-export function SplitLayout({ template, density, onRemove, onServingsChange }: LayoutProps) {
+export function SplitLayout({ template, density, onRemove, onServingsChange, showServings = true }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
@@ -675,6 +685,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange }: L
                     onRemove={onRemove}
                     onServingsChange={onServingsChange}
                     dense={dense}
+                    showServings={showServings}
                   />
                 </div>
               );

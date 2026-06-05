@@ -49,20 +49,20 @@ export function ChatFAB({ isOpen, onClick }: ChatFABProps) {
           "absolute inset-0 flex items-center justify-center rounded-full shadow-lg",
           "transition-[background-color,transform] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          "glow-gold",
+          "glow-success",
           isOpen
-            ? "scale-95 bg-gold-600 dark:bg-gold-200 text-gold-950 dark:text-gold-950"
-            : "scale-100 bg-gold-500 hover:scale-105 hover:bg-gold-600 dark:bg-gold-300 dark:hover:bg-gold-400 text-gold-950 dark:text-gold-950",
+            ? "scale-95 bg-sage-600 dark:bg-sage-200 text-white"
+            : "scale-100 bg-sage-500 hover:scale-105 hover:bg-sage-600 dark:bg-sage-300 dark:hover:bg-sage-200 text-white",
         )}
       >
         <div className="relative flex items-center justify-center">
           <div className={cn(!isOpen && "animate-ai-float")}>
-            <LogoSymbol size={28} tone="dark" />
+            <LogoSymbol size={28} tone="light" />
           </div>
           {!isOpen && (
             <span className={cn(
               "absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 bg-success",
-              "border-gold-500 dark:border-gold-300"
+              "border-sage-500 dark:border-sage-300"
             )} />
           )}
         </div>

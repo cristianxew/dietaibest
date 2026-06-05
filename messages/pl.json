@@ -387,6 +387,8 @@
     "favoriteError": "Błąd aktualizacji ulubionych",
     "addFavorite": "Dodaj do ulubionych",
     "removeFavorite": "Usuń z ulubionych",
+    "favorite": "Ulubione",
+    "favorited": "Ulubione",
     "backToDashboard": "Powrót do Pulpitu",
     "backToRecipes": "Powrót do Przepisów",
     "backToRecipe": "Powrót do Przepisu",
@@ -733,6 +735,7 @@
       "regular": "Normalny",
       "compact": "Zwarty"
     },
+    "showServings": "Pokaż Porcje",
     "slot": {
       "dragToMove": "Przeciągnij, aby przenieść posiłek",
       "removeMeal": "Usuń posiłek",

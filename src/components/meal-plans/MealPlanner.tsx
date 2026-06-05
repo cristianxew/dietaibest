@@ -9,6 +9,7 @@ import {
   StyledTabsTrigger as TabsTrigger,
 } from "@/components/custom-ui/styled-tabs";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
 import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search } from "lucide-react";
@@ -70,12 +71,13 @@ export function MealPlanner() {
     name: string;
     image?: string | null;
   } | null>(null);
-  const [layout, setLayout] = useState<"grid" | "stack" | "split">("grid");
+  const [layout, setLayout] = useState<"grid" | "stack" | "split">("stack");
   const [density, setDensity] = useState<"regular" | "compact">("regular");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showServings, setShowServings] = useState(false);
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
@@ -91,8 +93,11 @@ export function MealPlanner() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
-  const loadTemplates = useCallback(() => {
-    setIsLoadingTemplates(true);
+  const loadTemplates = useCallback((options?: { showLoading?: boolean }) => {
+    const showLoading = options?.showLoading ?? true;
+    if (showLoading) {
+      setIsLoadingTemplates(true);
+    }
     startTransition(async () => {
       try {
         const result = await getMealPlans({ page: 1, limit: 50 });
@@ -104,15 +109,20 @@ export function MealPlanner() {
           );
         }
       } finally {
-        setIsLoadingTemplates(false);
+        if (showLoading) {
+          setIsLoadingTemplates(false);
+        }
       }
     });
   }, []);
 
   const handleSelectPlan = useCallback(
-    (templateId: string) => {
+    (templateId: string, options?: { showLoading?: boolean }) => {
+      const showLoading = options?.showLoading ?? true;
       setSelectedPlanId(templateId);
-      setIsLoadingPlan(true);
+      if (showLoading) {
+        setIsLoadingPlan(true);
+      }
       startTransition(async () => {
         try {
           const result = await getMealPlan(templateId);
@@ -127,7 +137,9 @@ export function MealPlanner() {
             );
           }
         } finally {
-          setIsLoadingPlan(false);
+          if (showLoading) {
+            setIsLoadingPlan(false);
+          }
         }
       });
     },
@@ -144,8 +156,8 @@ export function MealPlanner() {
           toast.error(result.error);
         } else {
           toast.success(t("mealRemoved"));
-          if (selectedPlanId) handleSelectPlan(selectedPlanId);
-          loadTemplates();
+          if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+          loadTemplates({ showLoading: false });
         }
       });
     },
@@ -159,8 +171,8 @@ export function MealPlanner() {
         if (result.error) {
           toast.error(result.error);
         } else {
-          if (selectedPlanId) handleSelectPlan(selectedPlanId);
-          loadTemplates();
+          if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+          loadTemplates({ showLoading: false });
         }
       });
     },
@@ -239,8 +251,8 @@ export function MealPlanner() {
                   mealType: targetMealType,
                 });
               toast.success(message);
-              if (selectedPlanId) handleSelectPlan(selectedPlanId);
-              loadTemplates();
+              if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+              loadTemplates({ showLoading: false });
             }
           });
         }
@@ -272,8 +284,8 @@ export function MealPlanner() {
             toast.error(result.error);
           } else {
             toast.success(t("mealMoved"));
-            if (selectedPlanId) handleSelectPlan(selectedPlanId);
-            loadTemplates();
+            if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+            loadTemplates({ showLoading: false });
           }
         });
       }
@@ -523,6 +535,17 @@ export function MealPlanner() {
                           );
                         })}
                       </div>
+
+                      {/* Servings toggle */}
+                      <div className="flex items-center gap-2.5 px-2.5 py-1 bg-muted border border-border rounded-lg h-[30px]">
+                        <span className="text-[11px] font-semibold text-muted-foreground">
+                          {t("showServings")}
+                        </span>
+                        <Switch
+                          checked={showServings}
+                          onCheckedChange={setShowServings}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -573,6 +596,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            showServings={showServings}
                           />
                         )}
                         {layout === "stack" && (
@@ -581,6 +605,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            showServings={showServings}
                           />
                         )}
                         {layout === "split" && (
@@ -589,6 +614,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            showServings={showServings}
                           />
                         )}
                       </>

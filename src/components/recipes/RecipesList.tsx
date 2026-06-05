@@ -547,7 +547,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
               {[
                 { id: "my", label: t("allRecipes") },
                 { id: "public", label: t("publicRecipes") },
-                { id: "favorites", label: t("saved") },
+                { id: "favorites", label: t("favorites") },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (

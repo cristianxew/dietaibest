@@ -335,7 +335,7 @@
     "allRecipes": "Mis Recetas",
     "publicRecipes": "Recetas Públicas",
     "byAuthor": "por {author}",
-    "favorites": "Favoritos",
+    "favorites": "Favoritas",
     "noRecipes": "No se encontraron recetas. ¡Crea tu primera receta!",
     "noRecipesFoundTitle": "No se encontraron recetas",
     "showing": "Mostrando",
@@ -392,6 +392,8 @@
     "favoriteError": "Error al actualizar favorito",
     "addFavorite": "Agregar a favoritos",
     "removeFavorite": "Quitar de favoritos",
+    "favorite": "Favorito",
+    "favorited": "Favorito",
     "backToDashboard": "Volver al Panel",
     "backToRecipes": "Volver a Recetas",
     "backToRecipe": "Volver a la Receta",
@@ -738,6 +740,7 @@
       "regular": "Regular",
       "compact": "Compacto"
     },
+    "showServings": "Mostrar Porciones",
     "slot": {
       "dragToMove": "Arrastra para mover comida",
       "removeMeal": "Eliminar comida",

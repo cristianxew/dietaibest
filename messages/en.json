@@ -392,6 +392,8 @@
     "favoriteError": "Failed to update favorite",
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites",
+    "favorite": "Favorite",
+    "favorited": "Favorited",
     "backToDashboard": "Back to Dashboard",
     "backToRecipes": "Back to Recipes",
     "backToRecipe": "Back to Recipe",
@@ -738,6 +740,7 @@
       "regular": "Regular",
       "compact": "Compact"
     },
+    "showServings": "Show Servings",
     "slot": {
       "dragToMove": "Drag to move meal",
       "removeMeal": "Remove meal",
