@@ -9,6 +9,7 @@ export {
   currencyForLocale,
   proPriceLookupKey,
   stripeLocaleForNextLocale,
+  resolveCurrentPeriodEnd,
 } from "./stripe-helpers";
 
 /**

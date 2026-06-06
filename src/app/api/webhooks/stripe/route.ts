@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import { NextResponse } from "next/server";
 
-import { stripe } from "@/lib/stripe";
+import { stripe, resolveCurrentPeriodEnd } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { planFromStripeStatus } from "@/lib/plan";
 
@@ -150,15 +150,10 @@ async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
   // with status=canceled. We clear the fields and drop the user to starter.
   const isDeleted = sub.status === "canceled";
 
-  // Stripe types `current_period_end` as `number` on the subscription
-  // object but occasionally types lag; access defensively.
-  const currentPeriodEndSeconds = (
-    sub as unknown as { current_period_end?: number | null }
-  ).current_period_end;
-  const currentPeriodEnd =
-    typeof currentPeriodEndSeconds === "number"
-      ? new Date(currentPeriodEndSeconds * 1000)
-      : null;
+  // Stripe Basil (2025-03-31) moved `current_period_end` off the subscription
+  // and onto its items; our pinned API version is post-Basil. `resolveCurrentPeriodEnd`
+  // reads from `items.data[0]` with a legacy fallback. See stripe-helpers.ts.
+  const currentPeriodEnd = resolveCurrentPeriodEnd(sub);
 
   await prisma.user.update({
     where: { id: user.id },
