@@ -54,13 +54,13 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
   return (
     <div
       className={cn(
-        "grid gap-3.5 px-[18px] py-3.5",
-        "grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
+        "grid gap-x-3.5 gap-y-4 px-4 sm:px-[18px] py-3.5",
+        "grid-cols-2 lg:grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
         "bg-card border border-border rounded-xl"
       )}
     >
       {/* Label block */}
-      <div>
+      <div className="col-span-2 lg:col-span-1">
         <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1">
           {t("weeklySummary")}
         </div>

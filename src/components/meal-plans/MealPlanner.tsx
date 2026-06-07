@@ -337,7 +337,7 @@ export function MealPlanner() {
         className="flex flex-col flex-1 min-h-0 overflow-y-auto relative scrollbar-thin"
       >
         {/* Hero Header */}
-        <div className="px-6 lg:px-10 pt-6 lg:pt-8 bg-background">
+        <div className="px-4 sm:px-6 lg:px-10 pt-5 sm:pt-6 lg:pt-8 bg-background">
           <div className="flex flex-col gap-6 justify-between items-start pb-5">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -348,10 +348,10 @@ export function MealPlanner() {
                   {t("mealPlanner")}
                 </span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
                 {t("title")}
               </h1>
-              <p className="text-muted-foreground max-w-lg leading-relaxed">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-lg leading-relaxed">
                 {t("subtitle")}
               </p>
             </div>
@@ -359,42 +359,42 @@ export function MealPlanner() {
         </div>
 
         {/* Tab nav */}
-        <div className="sticky top-0 z-30 px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <TabsList className="mb-0">
-            <TabsTrigger value="planner">
+        <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-stretch sm:items-center">
+          <TabsList className="mb-0 w-full sm:w-auto">
+            <TabsTrigger value="planner" className="flex-1 sm:flex-none">
               <Edit2 className="w-4 h-4 mr-2" />
               {t("mealPlanner")}
             </TabsTrigger>
-            <TabsTrigger value="calendar">
+            <TabsTrigger value="calendar" className="flex-1 sm:flex-none">
               <CalendarDays className="w-4 h-4 mr-2" />
               {t("calendarView")}
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               className={cn(
-                "gap-2 h-10 px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
                 "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
               )}
               onClick={handleGenerateWithAI}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              {t("generateWithAI")}
+              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{t("generateWithAI")}</span>
             </Button>
 
             <Button
               onClick={() => setShowCreateDialog(true)}
               className={cn(
-                "gap-2 h-10 px-5 text-[#1C1A17] transition-all duration-300 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-5 text-[#1C1A17] transition-all duration-300 text-xs",
                 "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
                 "hover:-translate-y-0.5"
               )}
               disabled={isPending}
             >
-              <PlusIcon className="w-3.5 h-3.5" />
-              {t("createPlan")}
+              <PlusIcon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{t("createPlan")}</span>
             </Button>
           </div>
         </div>
@@ -402,7 +402,7 @@ export function MealPlanner() {
         {/* ── Non-scrollable body container (main viewport handles scroll) ── */}
         <div className="flex-1 min-h-0">
           {/* Planner tab */}
-          <TabsContent value="planner" className="px-6 lg:px-10 pt-6 pb-8 space-y-5">
+          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-5">
             {/* Plan count */}
             {isLoadingTemplates ? (
               <Skeleton className="h-4 w-24 bg-stone-200 dark:bg-slate-800" />
@@ -439,7 +439,7 @@ export function MealPlanner() {
                   )
                 )}
                 {/* Unified control panel wrapper */}
-                <div className="sticky top-[138px] sm:top-[78px] z-20 pt-5 pb-3 bg-background">
+                <div className="relative lg:sticky lg:top-[78px] z-20 pt-5 pb-3 bg-background">
                   {/* Unified control panel: Search + Categories + Layout + Density */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
                     {/* Left: Search & Category Filters */}
@@ -551,12 +551,9 @@ export function MealPlanner() {
                 </div>
 
                 {/* 2-column grid: recipe library + meal layout */}
-                <div
-                  className="grid gap-[18px] items-start"
-                  style={{ gridTemplateColumns: "300px 1fr" }}
-                >
+                <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-[18px] items-start">
                   {/* Recipe library sidebar */}
-                  <div className="bg-card border border-border rounded-xl p-4 sticky top-[290px] md:top-[178px] h-[calc(100vh-320px)] md:h-[calc(100vh-210px)] z-10">
+                  <div className="order-2 lg:order-1 bg-card border border-border rounded-xl p-4 h-[420px] lg:h-[calc(100vh-210px)] lg:sticky lg:top-[178px] z-10">
                     <div className="mb-2.5">
                       <div className="font-display text-[17px] font-semibold text-foreground">
                         {t("recipes")}
@@ -575,7 +572,7 @@ export function MealPlanner() {
                   </div>
 
                   {/* Meal layout */}
-                  <div className="overflow-x-auto">
+                  <div className="order-1 lg:order-2 min-w-0 overflow-x-auto">
                     {isLoadingTemplates || isLoadingPlan ? (
                       <>
                         {layout === "grid" && (
@@ -656,7 +653,7 @@ export function MealPlanner() {
           </TabsContent>
 
           {/* Calendar tab */}
-          <TabsContent value="calendar" className="px-6 lg:px-10 pt-6 pb-8 space-y-6">
+          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-6">
             <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
           </TabsContent>
         </div>

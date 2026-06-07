@@ -558,10 +558,10 @@ export function StackLayout({ template, density, onRemove, onServingsChange, sho
     <div className="flex flex-col gap-3.5">
       {template.days.map(day => {
         const numSlots = template.mealSlots.length;
-        const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-3' : numSlots === 4 ? 'grid-cols-4' : 'grid-cols-5';
+        const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-2 sm:grid-cols-3' : numSlots === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
         return (
-          <div key={day.id} className="bg-card border border-border rounded-[14px] p-[18px]">
-            <div className="flex items-start justify-between mb-3.5 gap-4">
+          <div key={day.id} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-[18px]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-3.5">
               <div className="flex items-baseline gap-3">
                 <div className="font-display text-2xl font-semibold text-foreground tracking-tight">
                   {t('calendar.dayNumber', { number: day.dayNumber })}
@@ -608,12 +608,12 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, sho
   const dense = density === 'compact';
   const selectedDay = template.days[selIdx] ?? template.days[0];
   const numSlots = template.mealSlots.length;
-  const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-3' : 'grid-cols-4';
+  const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
 
   return (
-    <div className="grid gap-[18px] items-start" style={{ gridTemplateColumns: '200px 1fr' }}>
+    <div className="grid gap-3 lg:gap-[18px] items-start grid-cols-1 lg:grid-cols-[200px_1fr]">
       {/* Day rail */}
-      <div className="flex flex-col gap-1.5 sticky top-[290px] md:top-[178px] z-10">
+      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 lg:sticky lg:top-[178px] z-10 scrollbar-thin">
         {template.days.map((day, i) => {
           const isActive = i === selIdx;
           const calTarget = template.targets?.calories ?? 2000;
@@ -626,7 +626,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, sho
               type="button"
               onClick={() => setSelIdx(i)}
               className={cn(
-                'w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
+                'flex-shrink-0 min-w-[130px] lg:min-w-0 lg:w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
                 isActive
                   ? 'bg-muted shadow-[inset_0_0_0_1.5px_theme(colors.brand.500)]'
                   : 'bg-transparent shadow-[inset_0_0_0_1px_theme(colors.border)]',
@@ -653,13 +653,13 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, sho
 
       {/* Day editor */}
       {selectedDay && (
-        <div className="bg-card border border-border rounded-[14px] p-6">
+        <div className="bg-card border border-border rounded-[14px] p-4 sm:p-6 min-w-0">
           <div className="flex items-start justify-between mb-5">
             <div>
               <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
                 {template.name}
               </div>
-              <div className="font-display text-[30px] font-semibold text-foreground tracking-tight">
+              <div className="font-display text-2xl sm:text-[30px] font-semibold text-foreground tracking-tight">
                 {t('calendar.dayNumber', { number: selectedDay.dayNumber })}
               </div>
             </div>

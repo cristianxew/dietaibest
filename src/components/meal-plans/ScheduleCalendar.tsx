@@ -204,7 +204,7 @@ function CalendarCell({
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-[90px] p-2 rounded-lg border transition-all duration-150 relative",
+        "min-h-[58px] sm:min-h-[90px] p-1 sm:p-2 rounded-lg border transition-all duration-150 relative",
         !inMonth && "opacity-30",
         inMonth && !scheduledInfo && "border-border bg-transparent",
         inMonth && scheduledInfo && "border-transparent",
@@ -270,7 +270,7 @@ function CalendarCell({
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>{cellDiv}</PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="start">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="start">
         <div className="max-h-[440px] overflow-y-auto p-4">
           {/* Date header */}
           <div className="mb-4 pb-3 border-b border-border/50">
@@ -544,7 +544,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid gap-5" style={{ gridTemplateColumns: "260px 1fr" }}>
+        <div className="grid gap-4 lg:gap-5 grid-cols-1 lg:grid-cols-[260px_1fr]">
           {/* ── Left rail: template list ─────────────────────────────────── */}
           <div className="bg-card border border-border rounded-[14px] p-4 space-y-3">
             <div>
@@ -575,10 +575,10 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
           </div>
 
           {/* ── Calendar ─────────────────────────────────────────────────── */}
-          <div className="bg-card border border-border rounded-[14px] p-5">
+          <div className="bg-card border border-border rounded-[14px] p-3 sm:p-5 min-w-0">
             {/* Calendar header */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between mb-5 gap-2">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={prevMonth}
                   className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
@@ -587,8 +587,8 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
 
-                <div className="min-w-[140px] text-center">
-                  <p className="font-display text-2xl font-semibold text-foreground capitalize">
+                <div className="min-w-[100px] sm:min-w-[140px] text-center">
+                  <p className="font-display text-xl sm:text-2xl font-semibold text-foreground capitalize">
                     {monthName}
                   </p>
                   <p className="text-xs text-muted-foreground">{month.y}</p>
