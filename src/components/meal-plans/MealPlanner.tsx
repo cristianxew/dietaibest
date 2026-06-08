@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
-import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2 } from "lucide-react";
+import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategories } from "@/actions/recipe";
 import {
@@ -137,10 +137,22 @@ export function MealPlanner() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showServings, setShowServings] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Tap-to-add: which (day, slot) the recipe picker is targeting (primary add
-  // path on touch devices, where drag-and-drop from the sidebar is impractical).
+  // Tap-to-add: which (day, slot) the recipe picker is targeting. This is a
+  // mobile-only add path (drag-and-drop from the sidebar stays the desktop flow).
   const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
+  // True below the `lg` breakpoint, where the drag library is hidden and meal
+  // slots become tap-to-add. Kept in sync with the CSS breakpoint so desktop
+  // behavior is never altered.
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsCompactViewport(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
   // ── Debounced Servings mutation refs ─────────────────────────────────────────
   const servingsTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const pendingServingsRef = useRef<Record<string, number>>({});
@@ -617,10 +629,27 @@ export function MealPlanner() {
                 )}
                 {/* Unified control panel wrapper */}
                 <div className="relative lg:sticky lg:top-[78px] z-20 pt-5 pb-3 bg-background">
-                  {/* Unified control panel: Categories + Layout + Density */}
+                  {/* Unified control panel: Search + Categories + Layout + Density */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                    {/* Left: Category Filter (recipe search now lives in the picker modal) */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl w-full">
+                    {/* Left: Search & Category Filters — desktop only (drag library
+                        is hidden on mobile, where recipe search lives in the picker modal) */}
+                    <div className="hidden lg:flex lg:flex-row lg:items-center gap-3 flex-1 max-w-2xl w-full">
+                      {/* Search Input */}
+                      <div className="relative flex-1">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Search className="w-4 h-4" />
+                        </div>
+                        <input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder={t("searchRecipes")}
+                          className={cn(
+                            "w-full py-2 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] outline-none transition-all duration-200",
+                            "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
+                          )}
+                        />
+                      </div>
+
                       {/* Category Dropdown Selector */}
                       <div className="flex-shrink-0">
                         <Select
@@ -727,6 +756,7 @@ export function MealPlanner() {
                     <div className="h-[calc(100%-60px)] pt-2.5">
                       <RecipeLibrary
                         dense={density === "compact"}
+                        searchQuery={searchQuery}
                         selectedCategory={selectedCategory}
                       />
                     </div>
@@ -754,7 +784,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={handleOpenPicker}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}
@@ -764,7 +794,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={handleOpenPicker}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}
@@ -774,7 +804,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={handleOpenPicker}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}

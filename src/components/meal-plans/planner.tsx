@@ -256,35 +256,50 @@ export function MealCell({
   // Hide source while dragging — DragOverlay in MealPlanner handles the floating preview.
   const dragStyle: React.CSSProperties = isDragging ? { opacity: 0 } : {};
 
-  // Empty slot — tappable to open the recipe picker (primary path on touch),
-  // still a drop target for drag-and-drop on desktop.
+  // Empty slot.
+  // Mobile (onSlotSelect provided): a tappable button that opens the recipe
+  // picker — the touch add path, since the drag library is hidden.
+  // Desktop (no onSlotSelect): the original drop-target div, unchanged.
   if (!meal) {
+    if (onSlotSelect) {
+      return (
+        <button
+          ref={setDropRef}
+          type="button"
+          onClick={() => onSlotSelect(dayId, mealType)}
+          aria-label={t('tapToAdd')}
+          className={cn(
+            'w-full flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
+            compact ? 'p-2.5 min-h-[64px]' : dense ? 'p-2.5 min-h-[72px]' : 'p-3.5 min-h-[88px]',
+            isOver
+              ? 'border-brand-500 bg-brand-500/5 text-brand-500'
+              : 'border-border bg-card/50 text-muted-foreground hover:border-brand-300 dark:hover:border-brand-500/50',
+          )}
+        >
+          <Icon name={isOver ? 'Sparkles' : 'Plus'} size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
+          <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
+            {isOver ? t('dropMealHere') : t('tapToAdd')}
+          </div>
+        </button>
+      );
+    }
+
     return (
-      <button
+      <div
         ref={setDropRef}
-        type="button"
-        onClick={() => onSlotSelect?.(dayId, mealType)}
-        aria-label={t('tapToAdd')}
         className={cn(
-          'w-full flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
+          'flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
           compact ? 'p-2.5 min-h-[64px]' : dense ? 'p-2.5 min-h-[72px]' : 'p-3.5 min-h-[88px]',
           isOver
             ? 'border-brand-500 bg-brand-500/5 text-brand-500'
-            : 'border-border bg-card/50 text-muted-foreground hover:border-brand-300 dark:hover:border-brand-500/50',
+            : 'border-border bg-card/50 text-muted-foreground',
         )}
       >
-        <Icon name={isOver ? 'Sparkles' : 'Plus'} size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
+        <Icon name="Sparkles" size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
         <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
-          {isOver ? (
-            t('dropMealHere')
-          ) : (
-            <>
-              <span className="lg:hidden">{t('tapToAdd')}</span>
-              <span className="hidden lg:inline">{t('dragOrSuggest')}</span>
-            </>
-          )}
+          {isOver ? t('dropMealHere') : t('dragOrSuggest')}
         </div>
-      </button>
+      </div>
     );
   }
 
