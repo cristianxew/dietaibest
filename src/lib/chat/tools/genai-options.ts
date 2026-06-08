@@ -19,11 +19,13 @@ export interface GenAIVertexOptions {
   googleAuthOptions?: { keyFilename: string };
 }
 
-export interface GenAIEnv {
-  GOOGLE_CLOUD_PROJECT_ID?: string;
-  GOOGLE_VERTEX_LOCATION?: string;
-  GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH?: string;
-}
+/**
+ * An environment-variable bag, e.g. `process.env`. Typed as an index signature
+ * (not an interface of optional keys) so `process.env` is assignable without
+ * tripping TypeScript's weak-type detection. Reads: GOOGLE_CLOUD_PROJECT_ID,
+ * GOOGLE_VERTEX_LOCATION, GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH.
+ */
+export type GenAIEnv = Record<string, string | undefined>;
 
 const DEFAULT_LOCATION = "us-central1";
 
