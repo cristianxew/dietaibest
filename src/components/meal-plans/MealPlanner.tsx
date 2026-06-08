@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   StyledTabs as Tabs,
@@ -53,6 +53,64 @@ import {
   StackLayoutSkeleton,
   SplitLayoutSkeleton,
 } from "./MealPlannerSkeletons";
+import { sumMacros } from "@/lib/meal-plan-macros";
+import type { DayDisplay, MacroSummary } from "@/types/meal-plan";
+
+function updateTemplateServingsOptimistically(
+  template: MealPlanTemplateDisplay,
+  mealId: string,
+  newServings: number,
+  // Always derive per-serving base from the pre-click snapshot to avoid
+  // compounding rounding drift when the user changes servings rapidly
+  originalTemplate: MealPlanTemplateDisplay | undefined
+): MealPlanTemplateDisplay {
+  const originalMeal = originalTemplate?.days
+    .flatMap((d) => d.meals)
+    .find((m) => m.id === mealId);
+
+  const updatedDays = template.days.map((day) => {
+    const updatedMeals = day.meals.map((meal) => {
+      if (meal.id !== mealId) return meal;
+
+      const base = originalMeal ?? meal;
+      const baseServings = base.servings || 1;
+      const scale = (v: number) => Math.round((v / baseServings) * newServings * 10) / 10;
+
+      return {
+        ...meal,
+        servings: newServings,
+        calories: scale(base.calories),
+        protein: scale(base.protein),
+        carbs: scale(base.carbs),
+        fat: scale(base.fat),
+      };
+    });
+
+    return {
+      ...day,
+      meals: updatedMeals,
+      macros: sumMacros(updatedMeals),
+    };
+  });
+
+  const avg = (pick: (d: DayDisplay) => number) =>
+    Math.round((updatedDays.reduce((s, d) => s + pick(d), 0) / updatedDays.length) * 10) / 10;
+
+  const averageMacros: MacroSummary = updatedDays.length
+    ? {
+      calories: avg((d) => d.macros.calories),
+      protein: avg((d) => d.macros.protein),
+      carbs: avg((d) => d.macros.carbs),
+      fat: avg((d) => d.macros.fat),
+    }
+    : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+  return {
+    ...template,
+    days: updatedDays,
+    averageMacros,
+  };
+}
 
 export function MealPlanner() {
   const t = useTranslations("mealPlans");
@@ -84,6 +142,19 @@ export function MealPlanner() {
   // Tap-to-add: which (day, slot) the recipe picker is targeting (primary add
   // path on touch devices, where drag-and-drop from the sidebar is impractical).
   const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
+  // ── Debounced Servings mutation refs ─────────────────────────────────────────
+  const servingsTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const pendingServingsRef = useRef<Record<string, number>>({});
+  const originalTemplatesRef = useRef<Record<string, MealPlanTemplateDisplay>>({});
+  const inFlightServingsRef = useRef<Set<string>>(new Set());
+
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    const timeouts = servingsTimeoutRef.current;
+    return () => {
+      Object.values(timeouts).forEach(clearTimeout);
+    };
+  }, []);
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
@@ -172,17 +243,67 @@ export function MealPlanner() {
 
   const handleServingsChange = useCallback(
     (mealId: string, servings: number) => {
-      startTransition(async () => {
-        const result = await updateMealServings({ mealId, servings });
-        if (result.error) {
-          toast.error(result.error);
-        } else {
-          if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
-          loadTemplates({ showLoading: false });
-        }
-      });
+      const prevTemplate = editingTemplate;
+      if (!prevTemplate) return;
+
+      // Save the original template before the sequence of fast clicks if we haven't already
+      if (!originalTemplatesRef.current[mealId]) {
+        originalTemplatesRef.current[mealId] = prevTemplate;
+      }
+
+      // 1. Instantly update the UI state optimistically
+      setEditingTemplate(
+        updateTemplateServingsOptimistically(prevTemplate, mealId, servings, originalTemplatesRef.current[mealId])
+      );
+
+      // 2. Track the latest servings value
+      pendingServingsRef.current[mealId] = servings;
+
+      // 3. If a write is already in-flight, skip scheduling — the in-flight
+      //    write's finally block will flush the pending value when it settles
+      if (inFlightServingsRef.current.has(mealId)) return;
+
+      // 4. Debounce the server write
+      clearTimeout(servingsTimeoutRef.current[mealId]);
+      servingsTimeoutRef.current[mealId] = setTimeout(() => {
+        delete servingsTimeoutRef.current[mealId];
+
+        // Drains pending writes sequentially; called recursively from finally
+        // to flush any value that arrived while a write was in-flight
+        const doWrite = () => {
+          const finalServings = pendingServingsRef.current[mealId];
+          if (finalServings === undefined) return;
+          delete pendingServingsRef.current[mealId];
+          inFlightServingsRef.current.add(mealId);
+
+          startTransition(async () => {
+            try {
+              const result = await updateMealServings({ mealId, servings: finalServings });
+              if (result.error) {
+                toast.error(result.error);
+                const original = originalTemplatesRef.current[mealId];
+                if (original) setEditingTemplate(original);
+              } else if (pendingServingsRef.current[mealId] === undefined) {
+                // Only refresh from the server after the last write in this sequence;
+                // intermediate successes would overwrite the optimistic UI state
+                if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+                loadTemplates({ showLoading: false });
+              }
+            } finally {
+              inFlightServingsRef.current.delete(mealId);
+              if (pendingServingsRef.current[mealId] !== undefined) {
+                doWrite();
+              } else {
+                delete originalTemplatesRef.current[mealId];
+              }
+            }
+          });
+        };
+
+        doWrite();
+      }, 300);
     },
-    [selectedPlanId, handleSelectPlan, loadTemplates]
+    [editingTemplate, selectedPlanId, handleSelectPlan, loadTemplates]
   );
 
   const handleOpenPicker = useCallback((dayId: string, mealType: MealType) => {
