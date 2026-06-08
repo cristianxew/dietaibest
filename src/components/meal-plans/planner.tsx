@@ -206,6 +206,7 @@ interface MealCellProps {
   mealType: MealType;
   onRemove: (mealId: string) => void;
   onServingsChange: (mealId: string, servings: number) => void;
+  onSlotSelect?: (dayId: string, mealType: MealType) => void;
   dense?: boolean;
   compact?: boolean;
   showServings?: boolean;
@@ -217,6 +218,7 @@ export function MealCell({
   mealType,
   onRemove,
   onServingsChange,
+  onSlotSelect,
   dense = false,
   compact = false,
   showServings = false,
@@ -254,24 +256,35 @@ export function MealCell({
   // Hide source while dragging — DragOverlay in MealPlanner handles the floating preview.
   const dragStyle: React.CSSProperties = isDragging ? { opacity: 0 } : {};
 
-  // Empty slot
+  // Empty slot — tappable to open the recipe picker (primary path on touch),
+  // still a drop target for drag-and-drop on desktop.
   if (!meal) {
     return (
-      <div
+      <button
         ref={setDropRef}
+        type="button"
+        onClick={() => onSlotSelect?.(dayId, mealType)}
+        aria-label={t('tapToAdd')}
         className={cn(
-          'flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
+          'w-full flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed transition-all duration-150 cursor-pointer text-center',
           compact ? 'p-2.5 min-h-[64px]' : dense ? 'p-2.5 min-h-[72px]' : 'p-3.5 min-h-[88px]',
           isOver
             ? 'border-brand-500 bg-brand-500/5 text-brand-500'
-            : 'border-border bg-card/50 text-muted-foreground',
+            : 'border-border bg-card/50 text-muted-foreground hover:border-brand-300 dark:hover:border-brand-500/50',
         )}
       >
-        <Icon name="Sparkles" size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
+        <Icon name={isOver ? 'Sparkles' : 'Plus'} size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
         <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
-          {isOver ? t('dropMealHere') : t('dragOrSuggest')}
+          {isOver ? (
+            t('dropMealHere')
+          ) : (
+            <>
+              <span className="lg:hidden">{t('tapToAdd')}</span>
+              <span className="hidden lg:inline">{t('dragOrSuggest')}</span>
+            </>
+          )}
         </div>
-      </div>
+      </button>
     );
   }
 
@@ -294,7 +307,8 @@ export function MealCell({
         className={cn(
           'absolute top-1 right-1 z-10 w-5 h-5 rounded-full',
           'bg-black/50 flex items-center justify-center',
-          'opacity-0 group-hover:opacity-100 transition-opacity duration-150',
+          // Always visible on touch; hover-revealed on pointer devices.
+          'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150',
           'cursor-pointer border-none',
         )}
         aria-label={t('slot.removeMeal')}
@@ -458,10 +472,11 @@ interface GridLayoutProps {
   density: 'regular' | 'compact';
   onRemove: (mealId: string) => void;
   onServingsChange: (mealId: string, servings: number) => void;
+  onSlotSelect?: (dayId: string, mealType: MealType) => void;
   showServings?: boolean;
 }
 
-export function GridLayout({ template, density, onRemove, onServingsChange, showServings = false }: GridLayoutProps) {
+export function GridLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false }: GridLayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
   const numDays = template.days.length;
@@ -515,6 +530,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange, show
                 mealType={slot}
                 onRemove={onRemove}
                 onServingsChange={onServingsChange}
+                onSlotSelect={onSlotSelect}
                 dense={dense}
                 showServings={showServings}
               />
@@ -547,10 +563,11 @@ interface LayoutProps {
   density: 'regular' | 'compact';
   onRemove: (mealId: string) => void;
   onServingsChange: (mealId: string, servings: number) => void;
+  onSlotSelect?: (dayId: string, mealType: MealType) => void;
   showServings?: boolean;
 }
 
-export function StackLayout({ template, density, onRemove, onServingsChange, showServings = false }: LayoutProps) {
+export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
 
@@ -586,6 +603,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, sho
                       mealType={slot}
                       onRemove={onRemove}
                       onServingsChange={onServingsChange}
+                      onSlotSelect={onSlotSelect}
                       dense={dense}
                       showServings={showServings}
                     />
@@ -601,7 +619,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, sho
 }
 
 /* ── SplitLayout ───────────────────────────────── */
-export function SplitLayout({ template, density, onRemove, onServingsChange, showServings = true }: LayoutProps) {
+export function SplitLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = true }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
@@ -684,6 +702,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, sho
                     mealType={slot}
                     onRemove={onRemove}
                     onServingsChange={onServingsChange}
+                    onSlotSelect={onSlotSelect}
                     dense={dense}
                     showServings={showServings}
                   />

@@ -38,6 +38,8 @@ import {
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
+import { RecipePicker } from "./RecipePicker";
+import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
@@ -78,6 +80,10 @@ export function MealPlanner() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showServings, setShowServings] = useState(false);
+
+  // Tap-to-add: which (day, slot) the recipe picker is targeting (primary add
+  // path on touch devices, where drag-and-drop from the sidebar is impractical).
+  const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
@@ -177,6 +183,57 @@ export function MealPlanner() {
       });
     },
     [selectedPlanId, handleSelectPlan, loadTemplates]
+  );
+
+  const handleOpenPicker = useCallback((dayId: string, mealType: MealType) => {
+    setPickerSlot({ dayId, mealType });
+  }, []);
+
+  const handlePickRecipe = useCallback(
+    (recipeId: string, recipeName: string) => {
+      const slot = pickerSlot;
+      if (!slot) return;
+      setPickerSlot(null);
+      startTransition(async () => {
+        // Replace any existing meal in the slot (mirrors the drag-drop path).
+        const targetDay = editingTemplate?.days.find((d) => d.id === slot.dayId);
+        const existingMeal = targetDay?.meals.find((m) => m.mealType === slot.mealType);
+
+        if (existingMeal) {
+          const removeResult = await removeMealFromDay(existingMeal.id);
+          if (removeResult.error) {
+            toast.error(removeResult.error);
+            return;
+          }
+        }
+
+        const result = await addMealToDay({
+          mealPlanDayId: slot.dayId,
+          recipeId,
+          mealType: slot.mealType,
+          servings: 1,
+        });
+
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success(
+            existingMeal
+              ? t("calendar.recipeReplaced", {
+                recipe: recipeName,
+                existing: existingMeal.recipeName,
+              })
+              : t("calendar.recipeAdded", {
+                recipe: recipeName,
+                mealType: slot.mealType,
+              })
+          );
+          if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+          loadTemplates({ showLoading: false });
+        }
+      });
+    },
+    [pickerSlot, editingTemplate, selectedPlanId, handleSelectPlan, loadTemplates, t]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -552,8 +609,9 @@ export function MealPlanner() {
 
                 {/* 2-column grid: recipe library + meal layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-[18px] items-start">
-                  {/* Recipe library sidebar */}
-                  <div className="order-2 lg:order-1 bg-card border border-border rounded-xl p-4 h-[420px] lg:h-[calc(100vh-210px)] lg:sticky lg:top-[178px] z-10">
+                  {/* Recipe library sidebar — drag source, desktop only.
+                      On touch, adding happens by tapping a slot (RecipePicker). */}
+                  <div className="hidden lg:block bg-card border border-border rounded-xl p-4 lg:h-[calc(100vh-210px)] lg:sticky lg:top-[178px] z-10">
                     <div className="mb-2.5">
                       <div className="font-display text-[17px] font-semibold text-foreground">
                         {t("recipes")}
@@ -572,7 +630,7 @@ export function MealPlanner() {
                   </div>
 
                   {/* Meal layout */}
-                  <div className="order-1 lg:order-2 min-w-0 overflow-x-auto">
+                  <div className="min-w-0 overflow-x-auto">
                     {isLoadingTemplates || isLoadingPlan ? (
                       <>
                         {layout === "grid" && (
@@ -593,6 +651,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={handleOpenPicker}
                             showServings={showServings}
                           />
                         )}
@@ -602,6 +661,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={handleOpenPicker}
                             showServings={showServings}
                           />
                         )}
@@ -611,6 +671,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={handleOpenPicker}
                             showServings={showServings}
                           />
                         )}
@@ -667,6 +728,16 @@ export function MealPlanner() {
           loadTemplates();
           if (id) handleSelectPlan(id);
         }}
+      />
+
+      {/* Tap-to-add recipe picker (touch-friendly add path) */}
+      <RecipePicker
+        open={pickerSlot !== null}
+        onOpenChange={(open) => {
+          if (!open) setPickerSlot(null);
+        }}
+        onSelectRecipe={handlePickRecipe}
+        mealTypeLabel={pickerSlot ? t(MEAL_SLOT_META[pickerSlot.mealType].i18nKey) : undefined}
       />
     </PageContainer>
   );
