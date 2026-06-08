@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   StyledTabs as Tabs,
@@ -38,6 +38,8 @@ import {
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
+import { RecipePicker } from "./RecipePicker";
+import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
@@ -51,6 +53,64 @@ import {
   StackLayoutSkeleton,
   SplitLayoutSkeleton,
 } from "./MealPlannerSkeletons";
+import { sumMacros } from "@/lib/meal-plan-macros";
+import type { DayDisplay, MacroSummary } from "@/types/meal-plan";
+
+function updateTemplateServingsOptimistically(
+  template: MealPlanTemplateDisplay,
+  mealId: string,
+  newServings: number,
+  // Always derive per-serving base from the pre-click snapshot to avoid
+  // compounding rounding drift when the user changes servings rapidly
+  originalTemplate: MealPlanTemplateDisplay | undefined
+): MealPlanTemplateDisplay {
+  const originalMeal = originalTemplate?.days
+    .flatMap((d) => d.meals)
+    .find((m) => m.id === mealId);
+
+  const updatedDays = template.days.map((day) => {
+    const updatedMeals = day.meals.map((meal) => {
+      if (meal.id !== mealId) return meal;
+
+      const base = originalMeal ?? meal;
+      const baseServings = base.servings || 1;
+      const scale = (v: number) => Math.round((v / baseServings) * newServings * 10) / 10;
+
+      return {
+        ...meal,
+        servings: newServings,
+        calories: scale(base.calories),
+        protein: scale(base.protein),
+        carbs: scale(base.carbs),
+        fat: scale(base.fat),
+      };
+    });
+
+    return {
+      ...day,
+      meals: updatedMeals,
+      macros: sumMacros(updatedMeals),
+    };
+  });
+
+  const avg = (pick: (d: DayDisplay) => number) =>
+    Math.round((updatedDays.reduce((s, d) => s + pick(d), 0) / updatedDays.length) * 10) / 10;
+
+  const averageMacros: MacroSummary = updatedDays.length
+    ? {
+      calories: avg((d) => d.macros.calories),
+      protein: avg((d) => d.macros.protein),
+      carbs: avg((d) => d.macros.carbs),
+      fat: avg((d) => d.macros.fat),
+    }
+    : { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+  return {
+    ...template,
+    days: updatedDays,
+    averageMacros,
+  };
+}
 
 export function MealPlanner() {
   const t = useTranslations("mealPlans");
@@ -74,10 +134,38 @@ export function MealPlanner() {
   const [layout, setLayout] = useState<"grid" | "stack" | "split">("stack");
   const [density, setDensity] = useState<"regular" | "compact">("regular");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showServings, setShowServings] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Tap-to-add: which (day, slot) the recipe picker is targeting. This is a
+  // mobile-only add path (drag-and-drop from the sidebar stays the desktop flow).
+  const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
+  // True below the `lg` breakpoint, where the drag library is hidden and meal
+  // slots become tap-to-add. Kept in sync with the CSS breakpoint so desktop
+  // behavior is never altered.
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsCompactViewport(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  // ── Debounced Servings mutation refs ─────────────────────────────────────────
+  const servingsTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const pendingServingsRef = useRef<Record<string, number>>({});
+  const originalTemplatesRef = useRef<Record<string, MealPlanTemplateDisplay>>({});
+  const inFlightServingsRef = useRef<Set<string>>(new Set());
+
+  // Clean up timeouts on unmount
+  useEffect(() => {
+    const timeouts = servingsTimeoutRef.current;
+    return () => {
+      Object.values(timeouts).forEach(clearTimeout);
+    };
+  }, []);
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
@@ -166,17 +254,118 @@ export function MealPlanner() {
 
   const handleServingsChange = useCallback(
     (mealId: string, servings: number) => {
+      const prevTemplate = editingTemplate;
+      if (!prevTemplate) return;
+
+      // Save the original template before the sequence of fast clicks if we haven't already
+      if (!originalTemplatesRef.current[mealId]) {
+        originalTemplatesRef.current[mealId] = prevTemplate;
+      }
+
+      // 1. Instantly update the UI state optimistically
+      setEditingTemplate(
+        updateTemplateServingsOptimistically(prevTemplate, mealId, servings, originalTemplatesRef.current[mealId])
+      );
+
+      // 2. Track the latest servings value
+      pendingServingsRef.current[mealId] = servings;
+
+      // 3. If a write is already in-flight, skip scheduling — the in-flight
+      //    write's finally block will flush the pending value when it settles
+      if (inFlightServingsRef.current.has(mealId)) return;
+
+      // 4. Debounce the server write
+      clearTimeout(servingsTimeoutRef.current[mealId]);
+      servingsTimeoutRef.current[mealId] = setTimeout(() => {
+        delete servingsTimeoutRef.current[mealId];
+
+        // Drains pending writes sequentially; called recursively from finally
+        // to flush any value that arrived while a write was in-flight
+        const doWrite = () => {
+          const finalServings = pendingServingsRef.current[mealId];
+          if (finalServings === undefined) return;
+          delete pendingServingsRef.current[mealId];
+          inFlightServingsRef.current.add(mealId);
+
+          startTransition(async () => {
+            try {
+              const result = await updateMealServings({ mealId, servings: finalServings });
+              if (result.error) {
+                toast.error(result.error);
+                const original = originalTemplatesRef.current[mealId];
+                if (original) setEditingTemplate(original);
+              } else if (pendingServingsRef.current[mealId] === undefined) {
+                // Only refresh from the server after the last write in this sequence;
+                // intermediate successes would overwrite the optimistic UI state
+                if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
+                loadTemplates({ showLoading: false });
+              }
+            } finally {
+              inFlightServingsRef.current.delete(mealId);
+              if (pendingServingsRef.current[mealId] !== undefined) {
+                doWrite();
+              } else {
+                delete originalTemplatesRef.current[mealId];
+              }
+            }
+          });
+        };
+
+        doWrite();
+      }, 300);
+    },
+    [editingTemplate, selectedPlanId, handleSelectPlan, loadTemplates]
+  );
+
+  const handleOpenPicker = useCallback((dayId: string, mealType: MealType) => {
+    setPickerSlot({ dayId, mealType });
+  }, []);
+
+  const handlePickRecipe = useCallback(
+    (recipeId: string, recipeName: string) => {
+      const slot = pickerSlot;
+      if (!slot) return;
+      setPickerSlot(null);
       startTransition(async () => {
-        const result = await updateMealServings({ mealId, servings });
+        // Replace any existing meal in the slot (mirrors the drag-drop path).
+        const targetDay = editingTemplate?.days.find((d) => d.id === slot.dayId);
+        const existingMeal = targetDay?.meals.find((m) => m.mealType === slot.mealType);
+
+        if (existingMeal) {
+          const removeResult = await removeMealFromDay(existingMeal.id);
+          if (removeResult.error) {
+            toast.error(removeResult.error);
+            return;
+          }
+        }
+
+        const result = await addMealToDay({
+          mealPlanDayId: slot.dayId,
+          recipeId,
+          mealType: slot.mealType,
+          servings: 1,
+        });
+
         if (result.error) {
           toast.error(result.error);
         } else {
+          toast.success(
+            existingMeal
+              ? t("calendar.recipeReplaced", {
+                recipe: recipeName,
+                existing: existingMeal.recipeName,
+              })
+              : t("calendar.recipeAdded", {
+                recipe: recipeName,
+                mealType: slot.mealType,
+              })
+          );
           if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
           loadTemplates({ showLoading: false });
         }
       });
     },
-    [selectedPlanId, handleSelectPlan, loadTemplates]
+    [pickerSlot, editingTemplate, selectedPlanId, handleSelectPlan, loadTemplates, t]
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -337,7 +526,7 @@ export function MealPlanner() {
         className="flex flex-col flex-1 min-h-0 overflow-y-auto relative scrollbar-thin"
       >
         {/* Hero Header */}
-        <div className="px-6 lg:px-10 pt-6 lg:pt-8 bg-background">
+        <div className="px-4 sm:px-6 lg:px-10 pt-5 sm:pt-6 lg:pt-8 bg-background">
           <div className="flex flex-col gap-6 justify-between items-start pb-5">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -348,10 +537,10 @@ export function MealPlanner() {
                   {t("mealPlanner")}
                 </span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
                 {t("title")}
               </h1>
-              <p className="text-muted-foreground max-w-lg leading-relaxed">
+              <p className="text-sm sm:text-base text-muted-foreground max-w-lg leading-relaxed">
                 {t("subtitle")}
               </p>
             </div>
@@ -359,42 +548,42 @@ export function MealPlanner() {
         </div>
 
         {/* Tab nav */}
-        <div className="sticky top-0 z-30 px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <TabsList className="mb-0">
-            <TabsTrigger value="planner">
+        <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-stretch sm:items-center">
+          <TabsList className="mb-0 w-full sm:w-auto">
+            <TabsTrigger value="planner" className="flex-1 sm:flex-none">
               <Edit2 className="w-4 h-4 mr-2" />
               {t("mealPlanner")}
             </TabsTrigger>
-            <TabsTrigger value="calendar">
+            <TabsTrigger value="calendar" className="flex-1 sm:flex-none">
               <CalendarDays className="w-4 h-4 mr-2" />
               {t("calendarView")}
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               className={cn(
-                "gap-2 h-10 px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
                 "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
               )}
               onClick={handleGenerateWithAI}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              {t("generateWithAI")}
+              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{t("generateWithAI")}</span>
             </Button>
 
             <Button
               onClick={() => setShowCreateDialog(true)}
               className={cn(
-                "gap-2 h-10 px-5 text-[#1C1A17] transition-all duration-300 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-5 text-[#1C1A17] transition-all duration-300 text-xs",
                 "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
                 "hover:-translate-y-0.5"
               )}
               disabled={isPending}
             >
-              <PlusIcon className="w-3.5 h-3.5" />
-              {t("createPlan")}
+              <PlusIcon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{t("createPlan")}</span>
             </Button>
           </div>
         </div>
@@ -402,7 +591,7 @@ export function MealPlanner() {
         {/* ── Non-scrollable body container (main viewport handles scroll) ── */}
         <div className="flex-1 min-h-0">
           {/* Planner tab */}
-          <TabsContent value="planner" className="px-6 lg:px-10 pt-6 pb-8 space-y-5">
+          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-5">
             {/* Plan count */}
             {isLoadingTemplates ? (
               <Skeleton className="h-4 w-24 bg-stone-200 dark:bg-slate-800" />
@@ -439,11 +628,12 @@ export function MealPlanner() {
                   )
                 )}
                 {/* Unified control panel wrapper */}
-                <div className="sticky top-[138px] sm:top-[78px] z-20 pt-5 pb-3 bg-background">
+                <div className="relative lg:sticky lg:top-[78px] z-20 pt-5 pb-3 bg-background">
                   {/* Unified control panel: Search + Categories + Layout + Density */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                    {/* Left: Search & Category Filters */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl w-full">
+                    {/* Left: Search & Category Filters — desktop only (drag library
+                        is hidden on mobile, where recipe search lives in the picker modal) */}
+                    <div className="hidden lg:flex lg:flex-row lg:items-center gap-3 flex-1 max-w-2xl w-full">
                       {/* Search Input */}
                       <div className="relative flex-1">
                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -551,12 +741,10 @@ export function MealPlanner() {
                 </div>
 
                 {/* 2-column grid: recipe library + meal layout */}
-                <div
-                  className="grid gap-[18px] items-start"
-                  style={{ gridTemplateColumns: "300px 1fr" }}
-                >
-                  {/* Recipe library sidebar */}
-                  <div className="bg-card border border-border rounded-xl p-4 sticky top-[290px] md:top-[178px] h-[calc(100vh-320px)] md:h-[calc(100vh-210px)] z-10">
+                <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-[18px] items-start">
+                  {/* Recipe library sidebar — drag source, desktop only.
+                      On touch, adding happens by tapping a slot (RecipePicker). */}
+                  <div className="hidden lg:block bg-card border border-border rounded-xl p-4 lg:h-[calc(100vh-210px)] lg:sticky lg:top-[178px] z-10">
                     <div className="mb-2.5">
                       <div className="font-display text-[17px] font-semibold text-foreground">
                         {t("recipes")}
@@ -575,7 +763,7 @@ export function MealPlanner() {
                   </div>
 
                   {/* Meal layout */}
-                  <div className="overflow-x-auto">
+                  <div className="min-w-0 overflow-x-auto">
                     {isLoadingTemplates || isLoadingPlan ? (
                       <>
                         {layout === "grid" && (
@@ -596,6 +784,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}
@@ -605,6 +794,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}
@@ -614,6 +804,7 @@ export function MealPlanner() {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
+                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                           />
                         )}
@@ -656,7 +847,7 @@ export function MealPlanner() {
           </TabsContent>
 
           {/* Calendar tab */}
-          <TabsContent value="calendar" className="px-6 lg:px-10 pt-6 pb-8 space-y-6">
+          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-6">
             <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
           </TabsContent>
         </div>
@@ -670,6 +861,16 @@ export function MealPlanner() {
           loadTemplates();
           if (id) handleSelectPlan(id);
         }}
+      />
+
+      {/* Tap-to-add recipe picker (touch-friendly add path) */}
+      <RecipePicker
+        open={pickerSlot !== null}
+        onOpenChange={(open) => {
+          if (!open) setPickerSlot(null);
+        }}
+        onSelectRecipe={handlePickRecipe}
+        mealTypeLabel={pickerSlot ? t(MEAL_SLOT_META[pickerSlot.mealType].i18nKey) : undefined}
       />
     </PageContainer>
   );
