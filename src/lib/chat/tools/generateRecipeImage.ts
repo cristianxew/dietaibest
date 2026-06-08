@@ -11,6 +11,7 @@ import {
   RECIPE_IMAGES_BUCKET,
 } from "@/lib/storage/recipe-images";
 import type { Tool } from "./types";
+import { buildGenAIVertexOptions } from "./genai-options";
 
 const inputSchema = z.object({
   recipeId: z.string().min(1),
@@ -99,10 +100,11 @@ export const generateRecipeImage: Tool<
     if (clientOverride) {
       client = clientOverride;
     } else {
-      const project = process.env.GOOGLE_CLOUD_PROJECT_ID;
-      const location = process.env.GOOGLE_VERTEX_LOCATION ?? "us-central1";
-
-      if (!project) {
+      // Reuse the Document AI service-account key file (GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH)
+      // for Vertex auth. Without it the SDK falls back to ADC → the GCP metadata
+      // server, which doesn't exist off-GCP (our VPS) → "All promises were rejected".
+      const options = buildGenAIVertexOptions(process.env);
+      if (!options) {
         return {
           ok: false,
           reason: "generic",
@@ -110,11 +112,7 @@ export const generateRecipeImage: Tool<
         };
       }
 
-      client = new GoogleGenAI({
-        vertexai: true,
-        project,
-        location,
-      });
+      client = new GoogleGenAI(options);
     }
 
     // 3. Formulate premium prompt
