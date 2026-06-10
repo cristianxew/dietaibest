@@ -7,6 +7,8 @@
 
 import "server-only";
 
+import { EXTENDED_NUTRIENT_NUMBERS } from "@/lib/nutrients/registry";
+
 const API_BASE = "https://api.nal.usda.gov/fdc/v1";
 
 /**
@@ -162,7 +164,7 @@ export async function fdcSearch(
 
 /**
  * Fetch detailed food information for multiple FDC IDs
- * Uses abridged format with only core nutrients for efficiency
+ * Uses abridged format with the extended nutrient registry (macros + micros)
  *
  * @param fdcIds - Array of FDC food IDs to fetch
  * @returns Array of food objects with nutritional data
@@ -170,7 +172,7 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${CORE_NUTRIENTS.join(
+  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${EXTENDED_NUTRIENT_NUMBERS.join(
     ","
   )}`;
 

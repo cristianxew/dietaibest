@@ -144,14 +144,15 @@ model UserFavorite {
 // ============================================================================
 
 model FdcCache {
-  fdcId          Int      @id
-  description    String
-  dataType       String
-  brandOwner     String?  @db.VarChar(255)
-  foodPortions   Json? // from FDC foodPortions array
-  foodNutrients  Json? // from FDC foodNutrients (abridged or full)
-  labelNutrients Json? // Branded foods per serving info if present
-  lastFetchedAt  DateTime @default(now())
+  fdcId           Int      @id
+  description     String
+  dataType        String
+  brandOwner      String?  @db.VarChar(255)
+  foodPortions    Json? // from FDC foodPortions array
+  foodNutrients   Json? // from FDC foodNutrients (abridged or full)
+  labelNutrients  Json? // Branded foods per serving info if present
+  nutrientProfile String   @default("core") // "core" = 5 macros only; "extended" = full nutrient registry
+  lastFetchedAt   DateTime @default(now())
 
   @@index([dataType])
   @@index([description])

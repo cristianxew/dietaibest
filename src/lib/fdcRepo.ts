@@ -27,6 +27,13 @@ const TTL_BY_DATATYPE: Record<string, number> = {
 };
 
 /**
+ * Nutrient profile stored in a cache row:
+ * - "core": legacy rows holding only the 5 macro nutrients
+ * - "extended": rows holding the full nutrient registry (macros + micros)
+ */
+export type NutrientProfile = "core" | "extended";
+
+/**
  * Check if a cached entry is stale based on its data type and last fetch time
  *
  * @param dataType - FDC data type (Foundation, Survey, SR Legacy, Branded)
@@ -55,10 +62,18 @@ function isStale(
  * 6. Return combined cached + fresh data in requested order
  *
  * @param fdcIds - Array of FDC food IDs to fetch
+ * @param opts.profile - "core" (default) accepts any cached row; "extended"
+ *   treats legacy macro-only rows as stale so they get refetched once with
+ *   the full nutrient registry
  * @returns Array of food objects with nutritional data, in same order as input
  */
-export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
+export async function getFoodsCached(
+  fdcIds: number[],
+  opts?: { profile?: NutrientProfile }
+): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
+
+  const requiredProfile = opts?.profile ?? "core";
 
   // 1. Query existing cache entries
   const cached = await prisma.fdcCache.findMany({
@@ -70,7 +85,10 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
 
   // 2. Check which entries are still fresh
   for (const row of cached) {
-    if (isStale(row.dataType, row.lastFetchedAt)) {
+    const profileTooNarrow =
+      requiredProfile === "extended" && row.nutrientProfile === "core";
+
+    if (profileTooNarrow || isStale(row.dataType, row.lastFetchedAt)) {
       missingOrStale.add(row.fdcId);
     } else {
       // Entry is fresh, reconstruct food object from cache
@@ -116,6 +134,7 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
               food.foodNutrients as unknown as Prisma.InputJsonValue,
             labelNutrients:
               food.labelNutrients as unknown as Prisma.InputJsonValue,
+            nutrientProfile: "extended",
             lastFetchedAt: new Date(),
           },
           create: {
@@ -128,6 +147,7 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
               food.foodNutrients as unknown as Prisma.InputJsonValue,
             labelNutrients:
               food.labelNutrients as unknown as Prisma.InputJsonValue,
+            nutrientProfile: "extended",
           },
         });
 
