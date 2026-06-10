@@ -1068,6 +1068,31 @@
       "moreBy": "{winner} has {diff} {unit} more {nutrient}",
       "onlyOneHas": "Only {winner} has {nutrient}"
     },
+    "vsDay": {
+      "kicker": "Your Day",
+      "title": "Meal vs Your Day",
+      "description": "Pick a food or one of your recipes and see how much of your daily nutrient needs it really covers.",
+      "pickPrompt": "What are you eating?",
+      "headline": "This fills <highlight>{pct}%</highlight> of your day's {nutrient}",
+      "loadError": "Couldn't load nutrition data. Try again.",
+      "clear": "Clear",
+      "decrease": "Fewer servings",
+      "increase": "More servings",
+      "noData": "No data from USDA for this nutrient",
+      "basisPer100g": "per 100 g",
+      "basisPerServing": "per serving",
+      "basisPersonalized": "Personalized target from your profile",
+      "basisGeneric": "Generic FDA Daily Value",
+      "groups": {
+        "energyMacros": "Energy & Macros",
+        "watch": "Worth Watching",
+        "vitaminsMinerals": "Vitamins & Minerals"
+      },
+      "nudge": {
+        "message": "Using general FDA values — complete your profile for targets tailored to you.",
+        "cta": "Complete profile"
+      }
+    },
     "compare": {
       "kicker": "Compare",
       "title": "Food Face-Off",
@@ -1339,7 +1364,8 @@
   "chat": {
     "seeds": {
       "nutritionHub": {
-        "compare": "I compared {a} and {b} in the Nutrition Hub. Can you explain in simple terms what the biggest nutritional differences mean for me?"
+        "compare": "I compared {a} and {b} in the Nutrition Hub. Can you explain in simple terms what the biggest nutritional differences mean for me?",
+        "vsDay": "I checked {item} against my daily targets in the Nutrition Hub — it covers about {pct}% of my {nutrient}. What should the rest of my day look like to stay balanced?"
       }
     },
     "title": "DietAI Assistant",

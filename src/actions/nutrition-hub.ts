@@ -20,6 +20,7 @@ import {
   type IngredientContribution,
   type NutrientCoverage,
 } from "@/lib/nutrients/aggregate";
+import { computeRdaProfile, type RdaProfile } from "@/lib/nutrients/rda";
 
 export type ItemRef =
   | { type: "fdc"; id: number }
@@ -201,6 +202,36 @@ export interface RecipePickerItem {
   title: string;
   servings: number;
   imageUrl: string | null;
+}
+
+export interface MyRdaProfile {
+  rda: RdaProfile;
+  /** True when dateOfBirth + gender are on file (drives the profile nudge) */
+  profileComplete: boolean;
+}
+
+/** Personalized daily targets from the user's profile (FDA DV fallback). */
+export async function getMyRdaProfile() {
+  return serverAction({}, async (ctx): Promise<MyRdaProfile> => {
+    const profile = await prisma.userProfile.findUnique({
+      where: { userId: ctx.user.id },
+    });
+
+    const rda = computeRdaProfile({
+      dateOfBirth: profile?.dateOfBirth ?? null,
+      gender: profile?.gender ?? null,
+      weightKg: profile?.weightKg ?? null,
+      dailyCalories: profile?.dailyCalories ?? null,
+      proteinGrams: profile?.proteinGrams ?? null,
+      carbsGrams: profile?.carbsGrams ?? null,
+      fatGrams: profile?.fatGrams ?? null,
+    });
+
+    return {
+      rda,
+      profileComplete: Boolean(profile?.dateOfBirth && profile?.gender),
+    };
+  })(undefined);
 }
 
 const searchMyRecipesSchema = z.object({

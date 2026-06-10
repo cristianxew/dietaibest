@@ -1062,6 +1062,31 @@
       "moreBy": "{winner} ma o {diff} {unit} więcej: {nutrient}",
       "onlyOneHas": "Tylko {winner} zawiera: {nutrient}"
     },
+    "vsDay": {
+      "kicker": "Twój Dzień",
+      "title": "Posiłek vs Twój Dzień",
+      "description": "Wybierz produkt lub własny przepis i zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa.",
+      "pickPrompt": "Co jesz?",
+      "headline": "To pokrywa <highlight>{pct}%</highlight> dziennego zapotrzebowania: {nutrient}",
+      "loadError": "Nie udało się wczytać danych. Spróbuj ponownie.",
+      "clear": "Usuń",
+      "decrease": "Mniej porcji",
+      "increase": "Więcej porcji",
+      "noData": "Brak danych USDA dla tego składnika",
+      "basisPer100g": "na 100 g",
+      "basisPerServing": "na porcję",
+      "basisPersonalized": "Spersonalizowany cel z Twojego profilu",
+      "basisGeneric": "Ogólna Wartość Dzienna FDA",
+      "groups": {
+        "energyMacros": "Energia i Makro",
+        "watch": "Warto Obserwować",
+        "vitaminsMinerals": "Witaminy i Minerały"
+      },
+      "nudge": {
+        "message": "Używamy ogólnych wartości FDA — uzupełnij profil, aby otrzymać cele dopasowane do Ciebie.",
+        "cta": "Uzupełnij profil"
+      }
+    },
     "compare": {
       "kicker": "Porównaj",
       "title": "Pojedynek Produktów",
@@ -1333,7 +1358,8 @@
   "chat": {
     "seeds": {
       "nutritionHub": {
-        "compare": "Porównałem {a} i {b} w Centrum Żywienia. Czy możesz mi prosto wyjaśnić, co oznaczają dla mnie największe różnice odżywcze?"
+        "compare": "Porównałem {a} i {b} w Centrum Żywienia. Czy możesz mi prosto wyjaśnić, co oznaczają dla mnie największe różnice odżywcze?",
+        "vsDay": "Sprawdziłem {item} względem moich dziennych celów w Centrum Żywienia — pokrywa około {pct}% mojego zapotrzebowania ({nutrient}). Jak powinna wyglądać reszta mojego dnia, aby zachować równowagę?"
       }
     },
     "title": "Asystent DietAI",
