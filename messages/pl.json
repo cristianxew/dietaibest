@@ -1087,6 +1087,150 @@
         "cta": "Uzupełnij profil"
       }
     },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Ucz się",
+        "title": "Encyklopedia Składników",
+        "description": "Każdy składnik odżywczy ma swoje zadanie. Dowiedz się, co robi, dlaczego ma znaczenie i gdzie go znaleźć.",
+        "dailyTarget": "cel dzienny",
+        "dailyLimit": "dzienny limit",
+        "topSources": "Najlepsze źródła w żywności",
+        "whatItDoes": "Co robi",
+        "whyYouCare": "Dlaczego to ważne",
+        "deficiencySigns": "Gdy go brakuje",
+        "per100g": "Wartości na 100 g · USDA FoodData Central",
+        "compareCta": "Porównaj",
+        "backToIndex": "Wszystkie składniki",
+        "limitBadge": "Mniej znaczy lepiej",
+        "goalBadge": "Celuj w swój cel"
+      },
+      "protein": {
+        "tagline": "Materiał budulcowy organizmu.",
+        "whatItDoes": "Buduje i naprawia mięśnie, skórę i tkanki oraz dostarcza surowiec dla enzymów i hormonów.",
+        "whyYouCare": "Syci na dłużej i pomaga utrzymać mięśnie, zwłaszcza gdy jesteś aktywny lub jesz mniej kalorii.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z utratą mięśni, osłabieniem i wolną regeneracją.",
+        "funFact": "Soczewica z ryżem razem dostarczają wszystkich aminokwasów egzogennych — klasyczne połączenia kulinarne odkryły to wieki przed nauką."
+      },
+      "fiber": {
+        "tagline": "Najlepszy przyjaciel trawienia.",
+        "whatItDoes": "Karmi pożyteczne bakterie jelitowe i utrzymuje trawienie w zdrowym tempie.",
+        "whyYouCare": "Posiłki bogate w błonnik sycą bardziej i pomagają utrzymać stabilny poziom cukru i cholesterolu.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z nieregularnym trawieniem i szybkim powrotem głodu po posiłku.",
+        "funFact": "Błonnik produkują wyłącznie rośliny — nie znajdziesz go w mięsie, jajkach ani serze, choćby były najbardziej naturalne."
+      },
+      "sugar": {
+        "tagline": "Słodka, szybka energia — łatwo przesadzić.",
+        "whatItDoes": "Dostarcza komórkom szybkiej energii — i niewiele poza tym.",
+        "whyYouCare": "Słodkie produkty i napoje szybko dodają kalorii, nie sycąc — przez co łatwo zjeść za dużo.",
+        "deficiencySigns": "",
+        "funFact": "Banan i łyżka cukru mają podobną ilość cukru w gramach — ale banan opakowuje go w błonnik, potas i witaminy."
+      },
+      "saturated-fat": {
+        "tagline": "Tłuszcz, na który warto mieć oko.",
+        "whatItDoes": "Dostarcza energii i budulca dla komórek; organizm potrafi też wytworzyć go samodzielnie.",
+        "whyYouCare": "Zalecenia żywieniowe mówią o utrzymaniu go poniżej około 10% dziennych kalorii — zamiana części na tłuszcze nienasycone to łatwa wygrana.",
+        "deficiencySigns": "",
+        "funFact": "Nie każdy tłuszcz nasycony działa tak samo: ten z gorzkiej czekolady (kwas stearynowy) jest dużo bardziej neutralny niż te z przetworzonego mięsa."
+      },
+      "sodium": {
+        "tagline": "Niezbędny minerał o zbyt dużej obecności.",
+        "whatItDoes": "Pomaga utrzymać równowagę płynów i umożliwia pracę nerwów oraz mięśni.",
+        "whyYouCare": "Większość z nas je go znacznie więcej niż zalecany limit — głównie przez żywność przetworzoną, nie solniczkę.",
+        "deficiencySigns": "",
+        "funFact": "Około 70% sodu w diecie pochodzi z żywności przetworzonej i restauracji — gotowanie w domu to najprostszy sposób na jego ograniczenie."
+      },
+      "potassium": {
+        "tagline": "Przeciwwaga dla sodu.",
+        "whatItDoes": "Działa przeciwnie do sodu, równoważąc płyny, i wspiera miarowe bicie serca oraz skurcze mięśni.",
+        "whyYouCare": "Większość ludzi spożywa go znacznie mniej niż trzeba, a dieta bogata w potas sprzyja zdrowemu ciśnieniu krwi.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze skurczami mięśni, zmęczeniem i osłabieniem.",
+        "funFact": "Batat i szpinak wygrywają z bananem w jego własnej, potasowej konkurencji."
+      },
+      "calcium": {
+        "tagline": "Więcej niż mocne kości.",
+        "whatItDoes": "Buduje kości i zęby oraz umożliwia skurcze mięśni, sygnały nerwowe i krzepnięcie krwi.",
+        "whyYouCare": "Gdy spożycie jest niskie, organizm pożycza wapń z kości — a poczujesz to dopiero znacznie później.",
+        "deficiencySigns": "Przewlekle niskie spożycie wiąże się z czasem z niższą gęstością kości.",
+        "funFact": "Szpinak na papierze wygląda na bogaty w wapń, ale szczawiany blokują większość wchłaniania — nabiał i produkty wzbogacane dostarczają więcej przyswajalnego wapnia."
+      },
+      "iron": {
+        "tagline": "Kurier tlenu.",
+        "whatItDoes": "Tworzy rdzeń hemoglobiny, która niesie tlen z płuc do każdej komórki.",
+        "whyYouCare": "Niedobór żelaza to najczęstsza luka żywieniowa świata, zwłaszcza u kobiet — od niego zależy codzienna energia.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem, bladą skórą i szybką zadyszką.",
+        "funFact": "Witamina C potrafi zwielokrotnić żelazo wchłaniane z roślin — skrop soczewicę cytryną."
+      },
+      "magnesium": {
+        "tagline": "Minerał trzystu zadań.",
+        "whatItDoes": "Uczestniczy w ponad 300 reakcjach enzymatycznych — produkcji energii, rozluźnianiu mięśni i pracy nerwów.",
+        "whyYouCare": "Wpływa na jakość snu i regenerację mięśni, a większość diet nie osiąga celu.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z drganiem mięśni, skurczami i niespokojnym snem.",
+        "funFact": "Gorzka czekolada to pełnoprawne źródło magnezu — im ciemniejsza, tym lepiej."
+      },
+      "zinc": {
+        "tagline": "Kwatermistrz odporności.",
+        "whatItDoes": "Wspiera produkcję komórek odpornościowych, gojenie ran oraz zmysły smaku i węchu.",
+        "whyYouCare": "Nawet niewielkie niedobory mogą osłabić odpowiedź immunologiczną — spożycie liczy się najbardziej w stresie i przy ciężkich treningach.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z częstymi przeziębieniami, wolnym gojeniem i przytępionym smakiem.",
+        "funFact": "Ostrygi mają około dziesięć razy więcej cynku niż stek — marynarski instynkt był na tropie."
+      },
+      "vitamin-a": {
+        "tagline": "Widzenie nocne i odnowa skóry.",
+        "whatItDoes": "Utrzymuje wzrok (zwłaszcza przy słabym świetle), odnowę skóry i obronę immunologiczną.",
+        "whyYouCare": "Twoje oczy i skóra odnawiają się nieustannie i potrzebują do tego stałych dostaw.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze słabym widzeniem nocnym i suchą skórą.",
+        "funFact": "Beta-karoten z batatów zamienia się w witaminę A na żądanie — organizm bierze tylko tyle, ile potrzebuje."
+      },
+      "vitamin-c": {
+        "tagline": "Iskra zapłonowa kolagenu.",
+        "whatItDoes": "Napędza produkcję kolagenu dla skóry i stawów, poprawia wchłanianie żelaza i działa jako przeciwutleniacz.",
+        "whyYouCare": "Ludzie należą do nielicznych zwierząt, które nie potrafią jej wytwarzać — musi pochodzić z jedzenia, regularnie.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z szorstką skórą, łatwym siniaczeniem i wolnym gojeniem ran.",
+        "funFact": "Surowy brokuł ma więcej witaminy C na 100 g niż pomarańcza."
+      },
+      "vitamin-d": {
+        "tagline": "Witamina słońca.",
+        "whatItDoes": "Pomaga wchłaniać wapń i wspiera pracę mięśni oraz odporności — zachowuje się bardziej jak hormon niż witamina.",
+        "whyYouCare": "Źródła w żywności są skąpe, a ekspozycja na słońce bardzo różna — to jeden z najczęstszych niedoborów w północnym klimacie.",
+        "deficiencySigns": "Niskie poziomy często wiążą się z małą energią i słabszymi kośćmi.",
+        "funFact": "Twoja skóra produkuje witaminę D ze światła słonecznego — 15 minut na przedramionach może dać więcej niż większość posiłków."
+      },
+      "vitamin-e": {
+        "tagline": "Ochroniarz błon komórkowych.",
+        "whatItDoes": "Chroni błony komórkowe przed uszkodzeniem oksydacyjnym jako główny przeciwutleniacz rozpuszczalny w tłuszczach.",
+        "whyYouCare": "Strzeże tłuszczów w całym ciele — także tych, z których zbudowany jest mózg.",
+        "deficiencySigns": "Prawdziwy niedobór jest rzadki, ale niskie spożycie zostawia błony komórkowe z mniejszą ochroną antyoksydacyjną.",
+        "funFact": "Migdały to arystokracja witaminy E — garść pokrywa prawie połowę dnia."
+      },
+      "vitamin-k": {
+        "tagline": "Dyrygentka krzepnięcia.",
+        "whatItDoes": "Aktywuje białka umożliwiające krzepnięcie krwi i pomaga kierować wapń do kości.",
+        "whyYouCare": "Po cichu wpływa na to, czy wapń trafia do kości — dokładnie tam, gdzie chcesz.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z łatwym siniaczeniem.",
+        "funFact": "Litera 'K' pochodzi od niemieckiego słowa 'Koagulation' — duński naukowiec publikował w niemieckim czasopiśmie."
+      },
+      "vitamin-b6": {
+        "tagline": "Tłumaczka metabolizmu.",
+        "whatItDoes": "Pomaga zamieniać jedzenie w energię i budować przekaźniki takie jak serotonina i dopamina.",
+        "whyYouCare": "Diety bogate w białko zwiększają zapotrzebowanie na B6 — działają w parze.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z rozdrażnieniem i niską energią.",
+        "funFact": "Banany to jedne z niewielu owoców z istotną ilością B6 — kolejny powód ich statusu klasyka torby na siłownię."
+      },
+      "vitamin-b12": {
+        "tagline": "Okablowanie nerwów i czerwone krwinki.",
+        "whatItDoes": "Utrzymuje osłonki nerwów, syntezę DNA i produkcję czerwonych krwinek.",
+        "whyYouCare": "Pochodzi niemal wyłącznie z produktów zwierzęcych — osoby na diecie roślinnej potrzebują żywności wzbogacanej lub suplementów.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem, mrowieniem i mgłą mózgową.",
+        "funFact": "Wątroba potrafi zmagazynować zapas B12 na kilka lat — bufor, jakiego nie ma żadna inna witamina rozpuszczalna w wodzie."
+      },
+      "folate": {
+        "tagline": "Paliwo podziałów komórkowych.",
+        "whatItDoes": "Napędza syntezę DNA i podział komórek — wszędzie tam, gdzie organizm rośnie lub się naprawia, foliany są na służbie.",
+        "whyYouCare": "Najbardziej liczą się w ciąży i okresach wzrostu; soczewica i zielone liście to bogate, tanie źródła.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem i anemią.",
+        "funFact": "Nazwa pochodzi od łacińskiego 'folium' (liść) — pierwotnym źródłem były warzywa liściaste."
+      }
+    },
     "compare": {
       "kicker": "Porównaj",
       "title": "Pojedynek Produktów",
@@ -1359,7 +1503,8 @@
     "seeds": {
       "nutritionHub": {
         "compare": "Porównałem {a} i {b} w Centrum Żywienia. Czy możesz mi prosto wyjaśnić, co oznaczają dla mnie największe różnice odżywcze?",
-        "vsDay": "Sprawdziłem {item} względem moich dziennych celów w Centrum Żywienia — pokrywa około {pct}% mojego zapotrzebowania ({nutrient}). Jak powinna wyglądać reszta mojego dnia, aby zachować równowagę?"
+        "vsDay": "Sprawdziłem {item} względem moich dziennych celów w Centrum Żywienia — pokrywa około {pct}% mojego zapotrzebowania ({nutrient}). Jak powinna wyglądać reszta mojego dnia, aby zachować równowagę?",
+        "nutrient": "Opowiedz mi o: {nutrient} — dlaczego mój organizm tego potrzebuje i jak dostarczyć odpowiednią ilość z codziennego jedzenia?"
       }
     },
     "title": "Asystent DietAI",

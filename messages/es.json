@@ -1092,6 +1092,150 @@
         "cta": "Completar perfil"
       }
     },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Aprender",
+        "title": "Enciclopedia de Nutrientes",
+        "description": "Cada nutriente tiene un trabajo. Aprende qué hace, por qué importa y dónde encontrarlo.",
+        "dailyTarget": "objetivo diario",
+        "dailyLimit": "límite diario",
+        "topSources": "Mejores fuentes alimentarias",
+        "whatItDoes": "Qué hace",
+        "whyYouCare": "Por qué te importa",
+        "deficiencySigns": "Cuando te falta",
+        "per100g": "Valores por 100 g · USDA FoodData Central",
+        "compareCta": "Comparar",
+        "backToIndex": "Todos los nutrientes",
+        "limitBadge": "Menos es más",
+        "goalBadge": "Apunta a tu objetivo"
+      },
+      "protein": {
+        "tagline": "El material de construcción del cuerpo.",
+        "whatItDoes": "Construye y repara músculo, piel y tejidos, y aporta la materia prima de enzimas y hormonas.",
+        "whyYouCare": "Te mantiene saciado por más tiempo y ayuda a conservar músculo, sobre todo si estás activo o comiendo menos calorías.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con pérdida de músculo, debilidad y recuperación lenta.",
+        "funFact": "Las lentejas y el arroz juntos aportan todos los aminoácidos esenciales — las combinaciones clásicas lo descubrieron siglos antes que la ciencia."
+      },
+      "fiber": {
+        "tagline": "La mejor amiga de tu digestión.",
+        "whatItDoes": "Alimenta a las bacterias buenas del intestino y mantiene la digestión a un ritmo saludable.",
+        "whyYouCare": "Las comidas ricas en fibra llenan más y ayudan a mantener estables el azúcar y el colesterol en sangre.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con digestión irregular y volver a tener hambre poco después de comer.",
+        "funFact": "Solo las plantas producen fibra — no hay nada en la carne, los huevos o el queso, por muy naturales que sean."
+      },
+      "sugar": {
+        "tagline": "Energía dulce y rápida — fácil de exceder.",
+        "whatItDoes": "Entrega energía rápida a tus células, sin mucho más en el paquete.",
+        "whyYouCare": "Los alimentos y bebidas azucarados suman calorías rápido sin llenarte, lo que facilita comer de más.",
+        "deficiencySigns": "",
+        "funFact": "Un plátano y una cucharada de azúcar tienen gramos de azúcar similares — pero el plátano los envuelve en fibra, potasio y vitaminas."
+      },
+      "saturated-fat": {
+        "tagline": "La grasa que conviene vigilar.",
+        "whatItDoes": "Aporta energía y estructura a las células; tu cuerpo también puede fabricar la que necesita.",
+        "whyYouCare": "Las guías alimentarias recomiendan mantenerla por debajo del 10% de las calorías diarias — cambiar una parte por grasas insaturadas es una victoria fácil.",
+        "deficiencySigns": "",
+        "funFact": "No todas las grasas saturadas se comportan igual: la del chocolate negro (ácido esteárico) es mucho más neutra que las de las carnes procesadas."
+      },
+      "sodium": {
+        "tagline": "Mineral esencial, presencia desmedida.",
+        "whatItDoes": "Ayuda a equilibrar los líquidos y permite que nervios y músculos funcionen correctamente.",
+        "whyYouCare": "La mayoría comemos mucho más del límite recomendado — sobre todo por los alimentos envasados, no por el salero.",
+        "deficiencySigns": "",
+        "funFact": "Cerca del 70% del sodio dietario viene de alimentos procesados y restaurantes — cocinar en casa es el recorte de sodio más fácil que existe."
+      },
+      "potassium": {
+        "tagline": "El contrapeso del sodio.",
+        "whatItDoes": "Trabaja en sentido opuesto al sodio para equilibrar líquidos, y sostiene un latido estable y las contracciones musculares.",
+        "whyYouCare": "La mayoría obtiene mucho menos del objetivo, y una dieta rica en potasio favorece una presión arterial saludable.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con calambres, fatiga y debilidad.",
+        "funFact": "El camote y la espinaca le ganan al plátano en su propio juego del potasio."
+      },
+      "calcium": {
+        "tagline": "Mucho más que huesos fuertes.",
+        "whatItDoes": "Construye huesos y dientes, y hace posibles las contracciones musculares, las señales nerviosas y la coagulación.",
+        "whyYouCare": "Cuando la ingesta es baja, tu cuerpo toma calcio prestado de tus huesos — y no lo sentirás hasta mucho después.",
+        "deficiencySigns": "Una ingesta crónicamente baja se asocia con menor densidad ósea con el tiempo.",
+        "funFact": "La espinaca parece rica en calcio en el papel, pero los oxalatos bloquean gran parte de su absorción — los lácteos y los alimentos fortificados entregan más calcio aprovechable."
+      },
+      "iron": {
+        "tagline": "El mensajero del oxígeno.",
+        "whatItDoes": "Forma el núcleo de la hemoglobina, que lleva oxígeno de tus pulmones a cada célula.",
+        "whyYouCare": "El hierro es la carencia nutricional más común del mundo, sobre todo en mujeres — tu energía diaria depende de él.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga, piel pálida y agitarse con facilidad.",
+        "funFact": "La vitamina C puede multiplicar el hierro que absorbes de las plantas — exprime limón sobre tus lentejas."
+      },
+      "magnesium": {
+        "tagline": "El mineral de los 300 trabajos.",
+        "whatItDoes": "Participa en más de 300 reacciones enzimáticas — producción de energía, relajación muscular y función nerviosa.",
+        "whyYouCare": "Influye en la calidad del sueño y la recuperación muscular, y la mayoría de las dietas no llegan al objetivo.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con espasmos, calambres y sueño inquieto.",
+        "funFact": "El chocolate negro es una fuente legítima de magnesio — cuanto más oscuro, mejor."
+      },
+      "zinc": {
+        "tagline": "El intendente del sistema inmune.",
+        "whatItDoes": "Apoya la producción de células inmunes, la cicatrización y tus sentidos del gusto y el olfato.",
+        "whyYouCare": "Incluso un déficit leve puede debilitar tu respuesta inmune — importa más cuando estás estresado o entrenando duro.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con resfriados frecuentes, cicatrización lenta y gusto apagado.",
+        "funFact": "Las ostras llevan unas diez veces más zinc que un bistec — el instinto de los marineros iba bien encaminado."
+      },
+      "vitamin-a": {
+        "tagline": "Visión nocturna y piel renovada.",
+        "whatItDoes": "Mantiene la visión (sobre todo con poca luz), la renovación de la piel y las defensas inmunes.",
+        "whyYouCare": "Tus ojos y tu piel se renuevan constantemente y necesitan un suministro estable para lograrlo.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con mala visión nocturna y piel seca.",
+        "funFact": "El betacaroteno del camote se convierte en vitamina A bajo demanda — tu cuerpo toma solo lo que necesita."
+      },
+      "vitamin-c": {
+        "tagline": "La chispa del colágeno.",
+        "whatItDoes": "Impulsa la producción de colágeno para piel y articulaciones, mejora la absorción de hierro y actúa como antioxidante.",
+        "whyYouCare": "Los humanos somos de los pocos animales que no pueden fabricarla — tiene que venir de la comida, con regularidad.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con piel áspera, moretones fáciles y cicatrización lenta.",
+        "funFact": "El brócoli crudo tiene más vitamina C por 100 g que una naranja."
+      },
+      "vitamin-d": {
+        "tagline": "La vitamina del sol.",
+        "whatItDoes": "Ayuda a absorber calcio y apoya la función muscular e inmune — se comporta más como una hormona que como una vitamina.",
+        "whyYouCare": "Las fuentes alimentarias son escasas y la exposición al sol varía muchísimo — es una de las carencias más comunes en climas del norte.",
+        "deficiencySigns": "Niveles bajos se asocian comúnmente con poca energía y huesos más débiles.",
+        "funFact": "Tu piel fabrica vitamina D a partir del sol — 15 minutos en los antebrazos pueden rendir más que la mayoría de las comidas."
+      },
+      "vitamin-e": {
+        "tagline": "La guardaespaldas de tus células.",
+        "whatItDoes": "Protege las membranas celulares del daño oxidativo como tu principal antioxidante liposoluble.",
+        "whyYouCare": "Cuida las grasas de todo tu cuerpo — incluidas las que construyen tu cerebro.",
+        "deficiencySigns": "La deficiencia real es rara, pero una ingesta baja deja a las membranas con menos protección antioxidante.",
+        "funFact": "Las almendras son la realeza de la vitamina E — un puñado cubre casi la mitad de tu día."
+      },
+      "vitamin-k": {
+        "tagline": "La directora de la coagulación.",
+        "whatItDoes": "Activa las proteínas que permiten coagular la sangre y ayuda a dirigir el calcio hacia los huesos.",
+        "whyYouCare": "Influye silenciosamente en que el calcio termine en los huesos — justo donde lo quieres.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con moretones fáciles.",
+        "funFact": "La 'K' viene del alemán 'Koagulation' — un científico danés publicando en una revista alemana."
+      },
+      "vitamin-b6": {
+        "tagline": "La traductora del metabolismo.",
+        "whatItDoes": "Ayuda a convertir la comida en energía y a fabricar mensajeros como la serotonina y la dopamina.",
+        "whyYouCare": "Las dietas altas en proteína aumentan tus necesidades de B6 — trabajan en pareja.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con irritabilidad y poca energía.",
+        "funFact": "El plátano es de las pocas frutas con B6 relevante — una razón más de su estatus de clásico deportivo."
+      },
+      "vitamin-b12": {
+        "tagline": "Cableado nervioso y glóbulos rojos.",
+        "whatItDoes": "Mantiene el aislamiento de los nervios, la síntesis de ADN y la producción de glóbulos rojos.",
+        "whyYouCare": "Viene casi exclusivamente de alimentos animales — quienes comen a base de plantas necesitan alimentos fortificados o suplementos.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga, hormigueo y niebla mental.",
+        "funFact": "Tu hígado puede almacenar B12 para varios años — un colchón que ninguna otra vitamina hidrosoluble tiene."
+      },
+      "folate": {
+        "tagline": "El combustible de la división celular.",
+        "whatItDoes": "Impulsa la síntesis de ADN y la división celular — donde tu cuerpo crece o se repara, el folato está de turno.",
+        "whyYouCare": "Importa especialmente durante el embarazo y el crecimiento; las lentejas y las hojas verdes son fuentes ricas y económicas.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga y anemia.",
+        "funFact": "El nombre viene del latín 'folium' (hoja) — las fuentes originales eran las verduras de hoja."
+      }
+    },
     "compare": {
       "kicker": "Comparar",
       "title": "Duelo de Alimentos",
@@ -1364,7 +1508,8 @@
     "seeds": {
       "nutritionHub": {
         "compare": "Comparé {a} y {b} en el Centro de Nutrición. ¿Puedes explicarme en términos simples qué significan para mí las mayores diferencias nutricionales?",
-        "vsDay": "Revisé {item} frente a mis objetivos diarios en el Centro de Nutrición — cubre cerca del {pct}% de mi {nutrient}. ¿Cómo debería ser el resto de mi día para mantener el equilibrio?"
+        "vsDay": "Revisé {item} frente a mis objetivos diarios en el Centro de Nutrición — cubre cerca del {pct}% de mi {nutrient}. ¿Cómo debería ser el resto de mi día para mantener el equilibrio?",
+        "nutrient": "Enséñame sobre {nutrient}: ¿por qué mi cuerpo lo necesita y cómo obtengo suficiente con comida de todos los días?"
       }
     },
     "title": "Asistente DietAI",

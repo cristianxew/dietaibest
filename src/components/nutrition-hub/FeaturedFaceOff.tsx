@@ -4,6 +4,7 @@ import { ArrowRight, Swords } from "lucide-react";
 import { getFoodsCached } from "@/lib/fdcRepo";
 import { extractNutrientVector } from "@/lib/nutrients/extract";
 import { NUTRIENT_REGISTRY, type NutrientKey } from "@/lib/nutrients/registry";
+import { foodShortName } from "@/components/nutrition-hub/format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,11 +26,6 @@ const FEATURED_PAIRS: Array<{
 function dayOfYear(date: Date): number {
   const start = Date.UTC(date.getUTCFullYear(), 0, 0);
   return Math.floor((date.getTime() - start) / 86_400_000);
-}
-
-/** Trim USDA descriptions ("Bananas, raw" → "Bananas") for the teaser. */
-function shortName(description: string): string {
-  return description.split(",")[0].trim();
 }
 
 function formatAmount(value: number, unit: string): string {
@@ -89,11 +85,11 @@ export async function FeaturedFaceOff() {
 
         <div className="flex items-baseline justify-between gap-4 flex-wrap">
           <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {shortName(foodA.description)}
+            {foodShortName(foodA.description)}
             <span className="mx-3 text-base font-sans font-semibold text-muted-foreground uppercase">
               {t("hub.faceoff.vs")}
             </span>
-            {shortName(foodB.description)}
+            {foodShortName(foodB.description)}
           </h2>
         </div>
 

@@ -24,6 +24,7 @@ import {
   ItemSearchCombobox,
   type PickedItem,
 } from "@/components/nutrition-hub/ItemSearchCombobox";
+import { foodShortName } from "@/components/nutrition-hub/format";
 import { DayFillBar } from "./DayFillBar";
 import { ProfileNudge } from "./ProfileNudge";
 import { CoverageBadge } from "@/components/nutrition-hub/shared/CoverageBadge";
@@ -40,7 +41,7 @@ const WATCH_OVERRIDES = new Set(["sodium", "sugar", "satFat", "cholesterol"]);
 
 function itemLabel(profile: ItemNutrientProfile): string {
   return profile.kind === "food"
-    ? profile.description.split(",")[0].trim()
+    ? foodShortName(profile.description)
     : profile.title;
 }
 

@@ -1093,6 +1093,150 @@
         "cta": "Complete profile"
       }
     },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Learn",
+        "title": "Nutrient Encyclopedia",
+        "description": "Every nutrient has a job. Learn what it does, why it matters, and where to find it.",
+        "dailyTarget": "daily target",
+        "dailyLimit": "daily limit",
+        "topSources": "Top food sources",
+        "whatItDoes": "What it does",
+        "whyYouCare": "Why you care",
+        "deficiencySigns": "When you're running low",
+        "per100g": "Values per 100 g · USDA FoodData Central",
+        "compareCta": "Compare",
+        "backToIndex": "All nutrients",
+        "limitBadge": "Less is more",
+        "goalBadge": "Aim for your target"
+      },
+      "protein": {
+        "tagline": "The body's building material.",
+        "whatItDoes": "Builds and repairs muscle, skin, and tissues, and supplies the raw material for enzymes and hormones.",
+        "whyYouCare": "It keeps you full longer and helps maintain muscle, especially when you're active or eating fewer calories.",
+        "deficiencySigns": "Low intake is commonly associated with muscle loss, weakness, and slow recovery.",
+        "funFact": "Lentils and rice together provide all essential amino acids — classic food pairings figured this out centuries before science did."
+      },
+      "fiber": {
+        "tagline": "Your digestion's best friend.",
+        "whatItDoes": "Feeds beneficial gut bacteria and keeps digestion moving at a healthy pace.",
+        "whyYouCare": "Fiber-rich meals are more filling and help keep blood sugar and cholesterol levels steady.",
+        "deficiencySigns": "Low intake is commonly associated with irregular digestion and getting hungry again soon after meals.",
+        "funFact": "Only plants make fiber — there's none in meat, eggs, or cheese, no matter how natural they are."
+      },
+      "sugar": {
+        "tagline": "Sweet, fast energy — easy to overdo.",
+        "whatItDoes": "Delivers quick energy to your cells, with little else along for the ride.",
+        "whyYouCare": "Sugary foods and drinks add calories fast without filling you up, which makes overeating easy.",
+        "deficiencySigns": "",
+        "funFact": "A banana and a tablespoon of table sugar carry similar sugar grams — but the banana wraps it in fiber, potassium, and vitamins."
+      },
+      "saturated-fat": {
+        "tagline": "The fat worth keeping an eye on.",
+        "whatItDoes": "Provides energy and structure for cells; your body can also make what it needs on its own.",
+        "whyYouCare": "Dietary guidelines recommend keeping it under about 10% of daily calories — swapping some for unsaturated fats is an easy win.",
+        "deficiencySigns": "",
+        "funFact": "Not all saturated fats behave alike: the one in dark chocolate (stearic acid) is far more neutral than the ones in processed meats."
+      },
+      "sodium": {
+        "tagline": "Essential mineral, oversized presence.",
+        "whatItDoes": "Helps balance fluids and lets nerves and muscles fire properly.",
+        "whyYouCare": "Most people eat far more than the recommended ceiling — mostly from packaged foods, not the salt shaker.",
+        "deficiencySigns": "",
+        "funFact": "About 70% of dietary sodium comes from processed and restaurant food — cooking at home is the easiest sodium cut there is."
+      },
+      "potassium": {
+        "tagline": "Sodium's balancing act.",
+        "whatItDoes": "Works opposite sodium to balance fluids, and supports a steady heartbeat and muscle contractions.",
+        "whyYouCare": "Most people get far less than the target, and a potassium-rich diet supports healthy blood pressure.",
+        "deficiencySigns": "Low intake is commonly associated with muscle cramps, fatigue, and weakness.",
+        "funFact": "Sweet potatoes and spinach beat bananas at their own potassium game."
+      },
+      "calcium": {
+        "tagline": "More than strong bones.",
+        "whatItDoes": "Builds bone and teeth, and enables muscle contractions, nerve signals, and blood clotting.",
+        "whyYouCare": "When intake is low your body borrows calcium from your bones — and you won't feel it until much later.",
+        "deficiencySigns": "Chronically low intake is commonly associated with reduced bone density over time.",
+        "funFact": "Spinach looks calcium-rich on paper, but oxalates block most of its absorption — dairy and fortified foods deliver more usable calcium."
+      },
+      "iron": {
+        "tagline": "The oxygen courier.",
+        "whatItDoes": "Forms the core of hemoglobin, which carries oxygen from your lungs to every cell.",
+        "whyYouCare": "Iron is the world's most common nutrient gap, especially for women — daily energy depends on it.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue, pale skin, and getting winded easily.",
+        "funFact": "Vitamin C can multiply the iron you absorb from plants — squeeze lemon on your lentils."
+      },
+      "magnesium": {
+        "tagline": "The 300-job mineral.",
+        "whatItDoes": "Assists over 300 enzyme reactions — energy production, muscle relaxation, and nerve function.",
+        "whyYouCare": "It plays a role in sleep quality and muscle recovery, and most diets fall short of the target.",
+        "deficiencySigns": "Low intake is commonly associated with muscle twitches, cramps, and restless sleep.",
+        "funFact": "Dark chocolate is a legitimate magnesium source — the darker, the better."
+      },
+      "zinc": {
+        "tagline": "The immune system's quartermaster.",
+        "whatItDoes": "Supports immune cell production, wound healing, and your senses of taste and smell.",
+        "whyYouCare": "Even mild shortfalls can blunt your immune response — intake matters most when you're stressed or training hard.",
+        "deficiencySigns": "Low intake is commonly associated with frequent colds, slow healing, and dulled taste.",
+        "funFact": "Oysters carry roughly ten times more zinc than steak — sailors' instincts were onto something."
+      },
+      "vitamin-a": {
+        "tagline": "Night vision and skin renewal.",
+        "whatItDoes": "Maintains vision (especially in low light), skin renewal, and immune defenses.",
+        "whyYouCare": "Your eyes and skin renew themselves constantly and need a steady supply to do it.",
+        "deficiencySigns": "Low intake is commonly associated with poor night vision and dry skin.",
+        "funFact": "The beta-carotene in sweet potatoes converts to vitamin A on demand — your body takes only what it needs."
+      },
+      "vitamin-c": {
+        "tagline": "Collagen's spark plug.",
+        "whatItDoes": "Drives collagen production for skin and joints, improves iron absorption, and works as an antioxidant.",
+        "whyYouCare": "Humans are among the few animals that can't make their own — it has to come from food, regularly.",
+        "deficiencySigns": "Low intake is commonly associated with rough skin, easy bruising, and slow wound healing.",
+        "funFact": "Raw broccoli has more vitamin C per 100 g than an orange."
+      },
+      "vitamin-d": {
+        "tagline": "The sunshine vitamin.",
+        "whatItDoes": "Helps absorb calcium and supports muscle and immune function — it behaves more like a hormone than a vitamin.",
+        "whyYouCare": "Food sources are scarce and sun exposure varies wildly — it's one of the most common shortfalls in northern climates.",
+        "deficiencySigns": "Low levels are commonly associated with low energy and weaker bones.",
+        "funFact": "Your skin manufactures vitamin D from sunlight — 15 minutes on your forearms can out-deliver most meals."
+      },
+      "vitamin-e": {
+        "tagline": "The cell-membrane bodyguard.",
+        "whatItDoes": "Protects cell membranes from oxidative damage as your main fat-soluble antioxidant.",
+        "whyYouCare": "It guards the fats throughout your body — including the ones your brain is built from.",
+        "deficiencySigns": "True deficiency is rare, but low intake leaves cell membranes with less antioxidant protection.",
+        "funFact": "Almonds are vitamin E royalty — one handful covers nearly half your day."
+      },
+      "vitamin-k": {
+        "tagline": "The clotting conductor.",
+        "whatItDoes": "Activates the proteins that let blood clot and helps direct calcium toward bones.",
+        "whyYouCare": "It quietly influences whether calcium ends up in bones — exactly where you want it.",
+        "deficiencySigns": "Low intake is commonly associated with easy bruising.",
+        "funFact": "The 'K' comes from the German word 'Koagulation' — a Danish scientist published in a German journal."
+      },
+      "vitamin-b6": {
+        "tagline": "The metabolism translator.",
+        "whatItDoes": "Helps convert food into energy and build messengers like serotonin and dopamine.",
+        "whyYouCare": "Protein-heavy diets raise your B6 needs — the two work as a pair.",
+        "deficiencySigns": "Low intake is commonly associated with irritability and low energy.",
+        "funFact": "Bananas are one of the few fruits with meaningful B6 — one more reason they're the gym bag classic."
+      },
+      "vitamin-b12": {
+        "tagline": "Nerve wiring and red blood cells.",
+        "whatItDoes": "Maintains nerve insulation, DNA synthesis, and red blood cell production.",
+        "whyYouCare": "It comes almost exclusively from animal foods — plant-based eaters need fortified foods or supplements.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue, tingling, and brain fog.",
+        "funFact": "Your liver can stockpile several years' worth of B12 — a buffer no other water-soluble vitamin gets."
+      },
+      "folate": {
+        "tagline": "The cell-division fuel.",
+        "whatItDoes": "Powers DNA synthesis and cell division — anywhere your body grows or repairs, folate is on duty.",
+        "whyYouCare": "It matters most during pregnancy and growth, and lentils and leafy greens are rich, inexpensive sources.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue and anemia.",
+        "funFact": "The name comes from the Latin 'folium' (leaf) — the original sources were leafy greens."
+      }
+    },
     "compare": {
       "kicker": "Compare",
       "title": "Food Face-Off",
@@ -1365,7 +1509,8 @@
     "seeds": {
       "nutritionHub": {
         "compare": "I compared {a} and {b} in the Nutrition Hub. Can you explain in simple terms what the biggest nutritional differences mean for me?",
-        "vsDay": "I checked {item} against my daily targets in the Nutrition Hub — it covers about {pct}% of my {nutrient}. What should the rest of my day look like to stay balanced?"
+        "vsDay": "I checked {item} against my daily targets in the Nutrition Hub — it covers about {pct}% of my {nutrient}. What should the rest of my day look like to stay balanced?",
+        "nutrient": "Teach me about {nutrient} — why does my body need it, and how do I get enough from everyday food?"
       }
     },
     "title": "DietAI Assistant",

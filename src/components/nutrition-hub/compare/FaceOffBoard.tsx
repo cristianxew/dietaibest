@@ -26,6 +26,7 @@ import {
   ItemSearchCombobox,
   type PickedItem,
 } from "@/components/nutrition-hub/ItemSearchCombobox";
+import { foodShortName } from "@/components/nutrition-hub/format";
 import { NutrientDuelRow } from "./NutrientDuelRow";
 import { InsightChips } from "./InsightChips";
 import { BasisToggle } from "./BasisToggle";
@@ -57,7 +58,7 @@ function profileRef(profile: ItemNutrientProfile): ItemRef {
 
 function profileLabel(profile: ItemNutrientProfile): string {
   return profile.kind === "food"
-    ? profile.description.split(",")[0].trim()
+    ? foodShortName(profile.description)
     : profile.title;
 }
 
