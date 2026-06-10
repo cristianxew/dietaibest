@@ -1058,6 +1058,63 @@
       "vitaminB6": { "name": "Vitamin B6" },
       "vitaminB12": { "name": "Vitamin B12" },
       "folate": { "name": "Folate" }
+    },
+    "common": {
+      "askDietai": "Ask Dietai",
+      "disclaimer": "Educational information — not medical advice."
+    },
+    "insights": {
+      "timesMore": "{winner} has {times}× more {nutrient}",
+      "moreBy": "{winner} has {diff} {unit} more {nutrient}",
+      "onlyOneHas": "Only {winner} has {nutrient}"
+    },
+    "compare": {
+      "kicker": "Compare",
+      "title": "Food Face-Off",
+      "description": "Pick two contenders — any USDA food or one of your own recipes — and see the full nutritional story, side by side.",
+      "slotA": "Contender A",
+      "slotB": "Contender B",
+      "clear": "Clear",
+      "swapSides": "Swap sides",
+      "loadError": "Couldn't load nutrition data. Try again.",
+      "recipeBadge": "My recipe",
+      "noData": "No data from USDA for this nutrient",
+      "basis": {
+        "per100g": "per 100 g",
+        "perServing": "per serving"
+      },
+      "groups": {
+        "energy": "Energy",
+        "macro": "Macros",
+        "fatProfile": "Fats & Cholesterol",
+        "mineral": "Minerals",
+        "vitamin": "Vitamins"
+      },
+      "coverage": {
+        "macrosOnly": "Macros only",
+        "partial": "Partial data ({matched}/{total} ingredients)",
+        "tooltip": "Some ingredients aren't matched to USDA foods yet, so micronutrients may be incomplete. Re-analyze the recipe for full detail."
+      },
+      "search": {
+        "placeholder": "Search foods or your recipes…",
+        "foodsTab": "Foods",
+        "recipesTab": "My recipes",
+        "searching": "Searching…",
+        "minChars": "Type at least 2 characters to search",
+        "noResults": "Nothing found",
+        "foodsHeading": "USDA FoodData Central",
+        "recipesHeading": "Your recipes",
+        "servings": "{count} servings"
+      },
+      "empty": {
+        "title": "Pick your contenders",
+        "description": "Search any food or recipe above — or start with a classic matchup.",
+        "suggestions": {
+          "bananaApple": "Banana vs Apple",
+          "spinachBroccoli": "Spinach vs Broccoli",
+          "avocadoBanana": "Avocado vs Banana"
+        }
+      }
     }
   },
   "nutrition": {
@@ -1280,6 +1337,11 @@
     }
   },
   "chat": {
+    "seeds": {
+      "nutritionHub": {
+        "compare": "I compared {a} and {b} in the Nutrition Hub. Can you explain in simple terms what the biggest nutritional differences mean for me?"
+      }
+    },
     "title": "DietAI Assistant",
     "online": "Online",
     "clearConversation": "Clear conversation",

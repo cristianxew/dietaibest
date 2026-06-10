@@ -1052,6 +1052,63 @@
       "vitaminB6": { "name": "Witamina B6" },
       "vitaminB12": { "name": "Witamina B12" },
       "folate": { "name": "Foliany" }
+    },
+    "common": {
+      "askDietai": "Zapytaj Dietai",
+      "disclaimer": "Informacje edukacyjne — nie stanowią porady medycznej."
+    },
+    "insights": {
+      "timesMore": "{winner} ma {times}× więcej: {nutrient}",
+      "moreBy": "{winner} ma o {diff} {unit} więcej: {nutrient}",
+      "onlyOneHas": "Tylko {winner} zawiera: {nutrient}"
+    },
+    "compare": {
+      "kicker": "Porównaj",
+      "title": "Pojedynek Produktów",
+      "description": "Wybierz dwóch zawodników — dowolny produkt USDA lub własny przepis — i poznaj pełną historię odżywczą, obok siebie.",
+      "slotA": "Zawodnik A",
+      "slotB": "Zawodnik B",
+      "clear": "Usuń",
+      "swapSides": "Zamień strony",
+      "loadError": "Nie udało się wczytać danych. Spróbuj ponownie.",
+      "recipeBadge": "Mój przepis",
+      "noData": "Brak danych USDA dla tego składnika",
+      "basis": {
+        "per100g": "na 100 g",
+        "perServing": "na porcję"
+      },
+      "groups": {
+        "energy": "Energia",
+        "macro": "Makroskładniki",
+        "fatProfile": "Tłuszcze i Cholesterol",
+        "mineral": "Minerały",
+        "vitamin": "Witaminy"
+      },
+      "coverage": {
+        "macrosOnly": "Tylko makro",
+        "partial": "Dane częściowe ({matched}/{total} składników)",
+        "tooltip": "Niektóre składniki nie są jeszcze powiązane z produktami USDA, więc mikroskładniki mogą być niekompletne. Przeanalizuj przepis ponownie, aby uzyskać pełne dane."
+      },
+      "search": {
+        "placeholder": "Szukaj produktów lub swoich przepisów…",
+        "foodsTab": "Produkty",
+        "recipesTab": "Moje przepisy",
+        "searching": "Wyszukiwanie…",
+        "minChars": "Wpisz co najmniej 2 znaki, aby wyszukać",
+        "noResults": "Nic nie znaleziono",
+        "foodsHeading": "USDA FoodData Central",
+        "recipesHeading": "Twoje przepisy",
+        "servings": "{count} porcji"
+      },
+      "empty": {
+        "title": "Wybierz zawodników",
+        "description": "Wyszukaj dowolny produkt lub przepis powyżej — albo zacznij od klasycznego pojedynku.",
+        "suggestions": {
+          "bananaApple": "Banan vs Jabłko",
+          "spinachBroccoli": "Szpinak vs Brokuł",
+          "avocadoBanana": "Awokado vs Banan"
+        }
+      }
     }
   },
   "nutrition": {
@@ -1274,6 +1331,11 @@
     }
   },
   "chat": {
+    "seeds": {
+      "nutritionHub": {
+        "compare": "Porównałem {a} i {b} w Centrum Żywienia. Czy możesz mi prosto wyjaśnić, co oznaczają dla mnie największe różnice odżywcze?"
+      }
+    },
     "title": "Asystent DietAI",
     "online": "Online",
     "clearConversation": "Wyczyść rozmowę",
