@@ -1236,6 +1236,28 @@
         "funFact": "El nombre viene del latín 'folium' (hoja) — las fuentes originales eran las verduras de hoja."
       }
     },
+    "swaps": {
+      "kicker": "Mejorar",
+      "title": "Cambios Inteligentes",
+      "description": "Cambios simples con una ganancia nutricional real verificada con datos del USDA. Pequeños cambios, gran recompensa acumulada.",
+      "insteadOf": "En lugar de",
+      "try": "Prueba",
+      "faceoffCta": "Ver duelo completo",
+      "categories": {
+        "grains": "Granos y Guarniciones",
+        "greens": "Verduras de Hoja",
+        "protein": "Proteína",
+        "fruit": "Fruta",
+        "fats": "Grasas y Untables"
+      },
+      "chips": {
+        "timesMore": "{times}× más {nutrient}",
+        "timesLess": "{times}× menos {nutrient}",
+        "onlyHas": "el único con {nutrient}",
+        "moreBy": "+{diff} {unit} de {nutrient}",
+        "lessBy": "−{diff} {unit} de {nutrient}"
+      }
+    },
     "compare": {
       "kicker": "Comparar",
       "title": "Duelo de Alimentos",

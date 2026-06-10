@@ -1237,6 +1237,28 @@
         "funFact": "The name comes from the Latin 'folium' (leaf) — the original sources were leafy greens."
       }
     },
+    "swaps": {
+      "kicker": "Improve",
+      "title": "Smart Swaps",
+      "description": "Simple trades with a real, USDA-verified nutritional win. Small changes, big compounding payoff.",
+      "insteadOf": "Instead of",
+      "try": "Try",
+      "faceoffCta": "See full face-off",
+      "categories": {
+        "grains": "Grains & Sides",
+        "greens": "Greens",
+        "protein": "Protein",
+        "fruit": "Fruit",
+        "fats": "Fats & Spreads"
+      },
+      "chips": {
+        "timesMore": "{times}× more {nutrient}",
+        "timesLess": "{times}× less {nutrient}",
+        "onlyHas": "only one with {nutrient}",
+        "moreBy": "+{diff} {unit} {nutrient}",
+        "lessBy": "−{diff} {unit} {nutrient}"
+      }
+    },
     "compare": {
       "kicker": "Compare",
       "title": "Food Face-Off",

@@ -1231,6 +1231,28 @@
         "funFact": "Nazwa pochodzi od łacińskiego 'folium' (liść) — pierwotnym źródłem były warzywa liściaste."
       }
     },
+    "swaps": {
+      "kicker": "Ulepszaj",
+      "title": "Mądre Zamiany",
+      "description": "Proste zamiany z realną, zweryfikowaną w danych USDA korzyścią odżywczą. Małe zmiany, duży skumulowany efekt.",
+      "insteadOf": "Zamiast",
+      "try": "Wypróbuj",
+      "faceoffCta": "Zobacz pełny pojedynek",
+      "categories": {
+        "grains": "Zboża i Dodatki",
+        "greens": "Zielone Warzywa",
+        "protein": "Białko",
+        "fruit": "Owoce",
+        "fats": "Tłuszcze i Smarowidła"
+      },
+      "chips": {
+        "timesMore": "{times}× więcej: {nutrient}",
+        "timesLess": "{times}× mniej: {nutrient}",
+        "onlyHas": "jedyny z: {nutrient}",
+        "moreBy": "+{diff} {unit} {nutrient}",
+        "lessBy": "−{diff} {unit} {nutrient}"
+      }
+    },
     "compare": {
       "kicker": "Porównaj",
       "title": "Pojedynek Produktów",

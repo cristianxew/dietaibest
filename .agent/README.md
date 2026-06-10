@@ -198,6 +198,22 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Nutrition Learning Hub](./Tasks/nutrition_learning_hub.md)
+**Purpose:** Architecture and gotchas for the `/nutrition` Learning Hub (compare, vs-day, encyclopedia, swaps)
+
+**Contains:**
+- Route map and module breakdown
+- Pure-logic layer (`src/lib/nutrients/`) and data-flow (USDA-only, extended FdcCache profiles)
+- Insight engine and personalized RDA design
+- Gotchas: message-catalog caching, prisma migrate drift, fdcId verification
+
+**When to read:**
+- Adding nutrients, swaps, or encyclopedia entries
+- Touching the FDC cache or nutrition comparison logic
+- Working on hub UI modules
+
+---
+
 **Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD

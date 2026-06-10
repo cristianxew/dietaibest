@@ -4,24 +4,20 @@ import { ArrowRight, Swords } from "lucide-react";
 import { getFoodsCached } from "@/lib/fdcRepo";
 import { extractNutrientVector } from "@/lib/nutrients/extract";
 import { NUTRIENT_REGISTRY, type NutrientKey } from "@/lib/nutrients/registry";
+import { SMART_SWAPS } from "@/lib/nutrients/swaps-data";
 import { foodShortName } from "@/components/nutrition-hub/format";
 import { cn } from "@/lib/utils";
 
-/**
- * Curated daily pairs (SR Legacy fdcIds). Replaced by the Smart Swaps
- * dataset in Phase 5 — keep this list small and well-known.
- */
+/** Daily-rotating pair sourced from the Smart Swaps dataset. */
 const FEATURED_PAIRS: Array<{
   a: number;
   b: number;
   nutrients: NutrientKey[];
-}> = [
-  { a: 173944, b: 171688, nutrients: ["potassium", "vitaminC", "sugar"] }, // banana vs apple
-  { a: 168462, b: 170379, nutrients: ["iron", "vitaminC", "folate"] }, // spinach vs broccoli
-  { a: 171705, b: 173944, nutrients: ["fat", "potassium", "fiber"] }, // avocado vs banana
-  { a: 170567, b: 171287, nutrients: ["protein", "calcium", "satFat"] }, // almonds vs egg
-  { a: 172421, b: 175167, nutrients: ["protein", "iron", "fiber"] }, // lentils vs salmon
-];
+}> = SMART_SWAPS.map((swap) => ({
+  a: swap.fromFdcId,
+  b: swap.toFdcId,
+  nutrients: swap.headlineNutrients,
+}));
 
 function dayOfYear(date: Date): number {
   const start = Date.UTC(date.getUTCFullYear(), 0, 0);
