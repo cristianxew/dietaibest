@@ -9,7 +9,7 @@ import {
   Home,
   BookOpen,
   Calendar,
-  Calculator,
+  GraduationCap,
   ShoppingCart,
   UserPlus,
   User,
@@ -667,7 +667,7 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
     { id: "dashboard", label: t("dashboard"), href: "/dashboard", icon: LayoutDashboard, showWhen: "always" },
     { id: "recipes", label: t("recipes"), href: "/recipes", icon: BookOpen, showWhen: "always" },
     { id: "meal-plans", label: t("mealPlans"), href: "/meal-plans", icon: Calendar, showWhen: "always" },
-    { id: "nutrition", label: t("nutrition"), href: "/nutrition", icon: Calculator, showWhen: "always" },
+    { id: "nutrition", label: t("nutrition"), href: "/nutrition", icon: GraduationCap, showWhen: "always" },
     { id: "shopping", label: t("shopping"), href: "/shopping", icon: ShoppingCart, showWhen: "always" },
     { id: "onboarding", label: t("onboarding"), href: "/onboarding", icon: UserPlus, showWhen: "onboarding-incomplete" },
   ];

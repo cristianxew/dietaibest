@@ -113,7 +113,7 @@
     "dashboard": "Panel",
     "recipes": "Recetas",
     "mealPlans": "Planes de comidas",
-    "nutrition": "Nutrición",
+    "nutrition": "Centro de Nutrición",
     "shopping": "Compras",
     "onboarding": "Asistente",
     "settings": "Configuración",
@@ -996,6 +996,69 @@
     "title": "DietAI - Planificación de comidas con IA",
     "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
   },
+  "nutritionHub": {
+    "hub": {
+      "kicker": "Centro de Aprendizaje",
+      "title": "Conoce lo que hay en tu plato",
+      "description": "Compara alimentos, mide tus comidas frente a tu día y aprende qué hace cada nutriente — para que cada bocado sea una decisión consciente.",
+      "faceoff": {
+        "kicker": "Duelo del Día",
+        "vs": "vs",
+        "cta": "Ver la comparación completa"
+      },
+      "modules": {
+        "compare": {
+          "kicker": "Comparar",
+          "title": "Duelo de Alimentos",
+          "blurb": "Pon dos alimentos o recetas frente a frente y descubre su historia nutricional completa."
+        },
+        "vsDay": {
+          "kicker": "Tu Día",
+          "title": "Comida vs Tu Día",
+          "blurb": "Descubre cuánto de tus necesidades diarias cubre realmente una comida."
+        },
+        "nutrients": {
+          "kicker": "Aprender",
+          "title": "Enciclopedia de Nutrientes",
+          "blurb": "Qué hace cada nutriente, por qué importa y los mejores alimentos para obtenerlo."
+        },
+        "swaps": {
+          "kicker": "Mejorar",
+          "title": "Cambios Inteligentes",
+          "blurb": "Cambios simples con una ganancia nutricional real, respaldados por datos del USDA."
+        },
+        "calculator": {
+          "kicker": "Herramientas",
+          "title": "Calculadora Nutricional",
+          "blurb": "Analiza cualquier lista de ingredientes y obtén datos nutricionales precisos."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Calorías" },
+      "protein": { "name": "Proteína" },
+      "fat": { "name": "Grasa" },
+      "carbs": { "name": "Carbohidratos" },
+      "fiber": { "name": "Fibra" },
+      "sugar": { "name": "Azúcar" },
+      "satFat": { "name": "Grasa Saturada" },
+      "cholesterol": { "name": "Colesterol" },
+      "sodium": { "name": "Sodio" },
+      "potassium": { "name": "Potasio" },
+      "calcium": { "name": "Calcio" },
+      "iron": { "name": "Hierro" },
+      "magnesium": { "name": "Magnesio" },
+      "zinc": { "name": "Zinc" },
+      "vitaminA": { "name": "Vitamina A" },
+      "vitaminC": { "name": "Vitamina C" },
+      "vitaminD": { "name": "Vitamina D" },
+      "vitaminE": { "name": "Vitamina E" },
+      "vitaminK": { "name": "Vitamina K" },
+      "vitaminB6": { "name": "Vitamina B6" },
+      "vitaminB12": { "name": "Vitamina B12" },
+      "folate": { "name": "Folato" }
+    }
+  },
   "nutrition": {
     "title": "Información Nutricional",
     "confidence": "Confianza",
@@ -1013,6 +1076,36 @@
       "noResults": "No se encontraron ingredientes",
       "minCharacters": "Escribe al menos 2 caracteres para buscar",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Nutrición",
+        "title": "Calculadora Nutricional",
+        "description": "Analiza los ingredientes de una receta y calcula información nutricional precisa con USDA FoodData Central."
+      },
+      "cardTitle": "Ingredientes de la Receta",
+      "structuredTab": "Entrada Estructurada",
+      "textTab": "Entrada de Texto",
+      "structuredHint": "Agrega ingredientes con autocompletado de la base de datos USDA FoodData Central.",
+      "textHint": "Escribe un ingrediente por línea con cantidad y unidad (p. ej., \"1 taza de arroz\", \"150 g de pollo\", \"2 cdas de aceite de oliva\").",
+      "ingredientsLabel": "Ingredientes",
+      "loadExample": "Cargar Ejemplo",
+      "searchPlaceholder": "Buscar ingrediente...",
+      "addIngredient": "Agregar Ingrediente",
+      "servingsLabel": "Número de Porciones",
+      "analyzing": "Analizando...",
+      "calculate": "Calcular Nutrición",
+      "exampleLoaded": "Receta de ejemplo cargada",
+      "errors": {
+        "enterIngredient": "Ingresa al menos un ingrediente",
+        "addIngredient": "Agrega al menos un ingrediente",
+        "servingsPositive": "Las porciones deben ser un número positivo",
+        "analysisFailed": "El análisis falló",
+        "unexpected": "Ocurrió un error inesperado durante el análisis"
+      },
+      "success": {
+        "analysisComplete": "¡Análisis completo! Se procesaron {count} ingredientes."
+      }
     }
   },
   "placeholders": {

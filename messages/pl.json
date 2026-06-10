@@ -113,7 +113,7 @@
     "dashboard": "Panel",
     "recipes": "Przepisy",
     "mealPlans": "Plany posiłków",
-    "nutrition": "Odżywianie",
+    "nutrition": "Centrum Żywienia",
     "shopping": "Zakupy",
     "onboarding": "Kreator",
     "settings": "Ustawienia",
@@ -991,6 +991,69 @@
     "title": "DietAI - Planowanie posiłków z AI",
     "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
   },
+  "nutritionHub": {
+    "hub": {
+      "kicker": "Centrum Nauki",
+      "title": "Wiedz, co masz na talerzu",
+      "description": "Porównuj produkty, mierz posiłki względem swojego dnia i poznawaj rolę każdego składnika — aby każdy kęs był świadomym wyborem.",
+      "faceoff": {
+        "kicker": "Dzisiejszy Pojedynek",
+        "vs": "vs",
+        "cta": "Zobacz pełne porównanie"
+      },
+      "modules": {
+        "compare": {
+          "kicker": "Porównaj",
+          "title": "Pojedynek Produktów",
+          "blurb": "Zestaw dowolne dwa produkty lub przepisy obok siebie i poznaj ich pełną historię odżywczą."
+        },
+        "vsDay": {
+          "kicker": "Twój Dzień",
+          "title": "Posiłek vs Twój Dzień",
+          "blurb": "Zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa posiłek."
+        },
+        "nutrients": {
+          "kicker": "Ucz się",
+          "title": "Encyklopedia Składników",
+          "blurb": "Co robi każdy składnik odżywczy, dlaczego ma znaczenie i z jakich produktów najlepiej go czerpać."
+        },
+        "swaps": {
+          "kicker": "Ulepszaj",
+          "title": "Mądre Zamiany",
+          "blurb": "Proste zamiany z realną korzyścią odżywczą, oparte na danych USDA."
+        },
+        "calculator": {
+          "kicker": "Narzędzia",
+          "title": "Kalkulator Żywieniowy",
+          "blurb": "Przeanalizuj dowolną listę składników i uzyskaj dokładne wartości odżywcze."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Kalorie" },
+      "protein": { "name": "Białko" },
+      "fat": { "name": "Tłuszcz" },
+      "carbs": { "name": "Węglowodany" },
+      "fiber": { "name": "Błonnik" },
+      "sugar": { "name": "Cukier" },
+      "satFat": { "name": "Tłuszcze Nasycone" },
+      "cholesterol": { "name": "Cholesterol" },
+      "sodium": { "name": "Sód" },
+      "potassium": { "name": "Potas" },
+      "calcium": { "name": "Wapń" },
+      "iron": { "name": "Żelazo" },
+      "magnesium": { "name": "Magnez" },
+      "zinc": { "name": "Cynk" },
+      "vitaminA": { "name": "Witamina A" },
+      "vitaminC": { "name": "Witamina C" },
+      "vitaminD": { "name": "Witamina D" },
+      "vitaminE": { "name": "Witamina E" },
+      "vitaminK": { "name": "Witamina K" },
+      "vitaminB6": { "name": "Witamina B6" },
+      "vitaminB12": { "name": "Witamina B12" },
+      "folate": { "name": "Foliany" }
+    }
+  },
   "nutrition": {
     "title": "Wartości Odżywcze",
     "confidence": "Pewność",
@@ -1008,6 +1071,36 @@
       "noResults": "Nie znaleziono składników",
       "minCharacters": "Wpisz co najmniej 2 znaki, aby wyszukać",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Odżywianie",
+        "title": "Kalkulator Żywieniowy",
+        "description": "Analizuj składniki przepisu i obliczaj dokładne wartości odżywcze dzięki USDA FoodData Central."
+      },
+      "cardTitle": "Składniki Przepisu",
+      "structuredTab": "Wprowadzanie Strukturalne",
+      "textTab": "Wprowadzanie Tekstowe",
+      "structuredHint": "Dodawaj składniki z autouzupełnianiem z bazy USDA FoodData Central.",
+      "textHint": "Wpisz jeden składnik w wierszu z ilością i jednostką (np. \"1 szklanka ryżu\", \"150 g kurczaka\", \"2 łyżki oliwy\").",
+      "ingredientsLabel": "Składniki",
+      "loadExample": "Wczytaj Przykład",
+      "searchPlaceholder": "Szukaj składnika...",
+      "addIngredient": "Dodaj Składnik",
+      "servingsLabel": "Liczba Porcji",
+      "analyzing": "Analizowanie...",
+      "calculate": "Oblicz Wartości Odżywcze",
+      "exampleLoaded": "Wczytano przykładowy przepis",
+      "errors": {
+        "enterIngredient": "Wpisz co najmniej jeden składnik",
+        "addIngredient": "Dodaj co najmniej jeden składnik",
+        "servingsPositive": "Liczba porcji musi być dodatnia",
+        "analysisFailed": "Analiza nie powiodła się",
+        "unexpected": "Wystąpił nieoczekiwany błąd podczas analizy"
+      },
+      "success": {
+        "analysisComplete": "Analiza zakończona! Przetworzono {count} składników."
+      }
     }
   },
   "placeholders": {

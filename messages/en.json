@@ -113,7 +113,7 @@
     "dashboard": "Dashboard",
     "recipes": "Recipes",
     "mealPlans": "Meal Plans",
-    "nutrition": "Nutrition",
+    "nutrition": "Nutrition Hub",
     "shopping": "Shopping",
     "onboarding": "Setup Wizard",
     "settings": "Settings",
@@ -997,6 +997,69 @@
     "title": "DietAI - AI-Powered Meal Planning",
     "description": "Personalized meal planning and nutrition tracking with AI assistance"
   },
+  "nutritionHub": {
+    "hub": {
+      "kicker": "Learning Hub",
+      "title": "Know what's on your plate",
+      "description": "Compare foods, measure meals against your day, and learn what every nutrient does — so every bite is a conscious choice.",
+      "faceoff": {
+        "kicker": "Today's Face-Off",
+        "vs": "vs",
+        "cta": "See the full comparison"
+      },
+      "modules": {
+        "compare": {
+          "kicker": "Compare",
+          "title": "Food Face-Off",
+          "blurb": "Put any two foods or recipes side by side and see the full nutritional story."
+        },
+        "vsDay": {
+          "kicker": "Your Day",
+          "title": "Meal vs Your Day",
+          "blurb": "See how much of your daily nutrient needs a meal really covers."
+        },
+        "nutrients": {
+          "kicker": "Learn",
+          "title": "Nutrient Encyclopedia",
+          "blurb": "What each nutrient does, why you care, and the best foods to get it from."
+        },
+        "swaps": {
+          "kicker": "Improve",
+          "title": "Smart Swaps",
+          "blurb": "Simple trades with a real nutritional win, backed by USDA data."
+        },
+        "calculator": {
+          "kicker": "Tools",
+          "title": "Nutrition Calculator",
+          "blurb": "Analyze any ingredient list and get accurate nutrition facts."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Calories" },
+      "protein": { "name": "Protein" },
+      "fat": { "name": "Fat" },
+      "carbs": { "name": "Carbs" },
+      "fiber": { "name": "Fiber" },
+      "sugar": { "name": "Sugar" },
+      "satFat": { "name": "Saturated Fat" },
+      "cholesterol": { "name": "Cholesterol" },
+      "sodium": { "name": "Sodium" },
+      "potassium": { "name": "Potassium" },
+      "calcium": { "name": "Calcium" },
+      "iron": { "name": "Iron" },
+      "magnesium": { "name": "Magnesium" },
+      "zinc": { "name": "Zinc" },
+      "vitaminA": { "name": "Vitamin A" },
+      "vitaminC": { "name": "Vitamin C" },
+      "vitaminD": { "name": "Vitamin D" },
+      "vitaminE": { "name": "Vitamin E" },
+      "vitaminK": { "name": "Vitamin K" },
+      "vitaminB6": { "name": "Vitamin B6" },
+      "vitaminB12": { "name": "Vitamin B12" },
+      "folate": { "name": "Folate" }
+    }
+  },
   "nutrition": {
     "title": "Nutrition Facts",
     "confidence": "Confidence",
@@ -1014,6 +1077,36 @@
       "noResults": "No ingredients found",
       "minCharacters": "Type at least 2 characters to search",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Nutrition",
+        "title": "Nutrition Calculator",
+        "description": "Analyze recipe ingredients and calculate accurate nutrition information powered by USDA FoodData Central."
+      },
+      "cardTitle": "Recipe Ingredients",
+      "structuredTab": "Structured Input",
+      "textTab": "Text Input",
+      "structuredHint": "Add ingredients with autocomplete from USDA FoodData Central database.",
+      "textHint": "Enter one ingredient per line with quantity and unit (e.g., \"1 cup rice\", \"150 g chicken\", \"2 tbsp olive oil\").",
+      "ingredientsLabel": "Ingredients",
+      "loadExample": "Load Example",
+      "searchPlaceholder": "Search ingredient...",
+      "addIngredient": "Add Ingredient",
+      "servingsLabel": "Number of Servings",
+      "analyzing": "Analyzing...",
+      "calculate": "Calculate Nutrition",
+      "exampleLoaded": "Example recipe loaded",
+      "errors": {
+        "enterIngredient": "Please enter at least one ingredient",
+        "addIngredient": "Please add at least one ingredient",
+        "servingsPositive": "Servings must be a positive number",
+        "analysisFailed": "Analysis failed",
+        "unexpected": "An unexpected error occurred during analysis"
+      },
+      "success": {
+        "analysisComplete": "Analysis complete! Processed {count} ingredients."
+      }
     }
   },
   "placeholders": {
