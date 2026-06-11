@@ -108,7 +108,9 @@ export async function POST(req: NextRequest) {
   const { message, locale, pagePath, resolve, attachments } = parsed.data;
   const attachmentList = attachments ?? [];
 
-  if (!message && !resolve && attachmentList.length === 0) {
+  // Whitespace-only counts as empty: the runtime would skip appending it and
+  // re-run the LLM over the unchanged history — a full-priced no-op call.
+  if (!message?.trim() && !resolve && attachmentList.length === 0) {
     return new Response(JSON.stringify({ error: "Empty message" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
@@ -258,20 +260,37 @@ export async function POST(req: NextRequest) {
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      // After the client disconnects the controller is cancelled and every
+      // enqueue/close throws — which previously surfaced as an unhandled
+      // rejection on each mid-stream disconnect.
+      let closed = false;
+      const safeEnqueue = (event: unknown) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(sseEncode(event)));
+        } catch {
+          closed = true;
+        }
+      };
       try {
         for await (const event of runtime.run(
           { ctx, userMessage: userMessageForRuntime, pendingResolve },
           abort.signal
         )) {
-          controller.enqueue(encoder.encode(sseEncode(event)));
+          safeEnqueue(event);
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Stream failed";
-        controller.enqueue(
-          encoder.encode(sseEncode({ type: "error", message }))
-        );
+        // Keep provider/internal details (API key errors, overloaded_error…)
+        // in the server log; the client renders its own translated message.
+        console.error("[chat] stream failed:", err);
+        safeEnqueue({ type: "error", message: "stream-failed" });
       } finally {
-        controller.close();
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          /* already closed or cancelled */
+        }
       }
     },
     cancel() {

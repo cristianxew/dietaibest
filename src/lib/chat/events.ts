@@ -77,6 +77,9 @@ export type AgentEvent =
       toolName: string;
       message: string;
       payload: unknown;
+      /** The gated tool's status key — lets the UI swap the pending spinner
+       *  bubble for the confirmation prompt and restore it on accept. */
+      statusKey: ToolStatusKey;
     }
   | { type: "guardrail.redacted"; reason: "nutrition" }
   | { type: "cost.cap"; resetsOn: string }

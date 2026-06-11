@@ -33,19 +33,54 @@ export type GuardrailResult = {
 
 export function redactUngroundedNutrition(
   text: string,
-  groundedValues: ReadonlySet<number>
+  groundedValues: ReadonlySet<number>,
+  opts: {
+    /**
+     * Whether `text[0]` sits at the start of a line in the full output. True
+     * for whole-text calls; StreamingGuardrail passes its tracked state since
+     * its windows can start mid-sentence. Ignored when `precedingContext` is
+     * non-empty (derived from its last character instead).
+     */
+    startsAtLineStart?: boolean;
+    /**
+     * Tail of the already-emitted text (≤ NUTRITION_PROXIMITY chars). Without
+     * it, a keyword flushed in the previous window ("calorías de ") can no
+     * longer vouch for a number arriving in this one ("450"), and the number
+     * leaks. Used for the proximity check only — never re-emitted.
+     */
+    precedingContext?: string;
+  } = {}
 ): GuardrailResult {
   let redactedCount = 0;
+  const context = opts.precedingContext ?? "";
+  const startsAtLineStart =
+    context.length > 0
+      ? context.endsWith("\n")
+      : opts.startsAtLineStart ?? true;
 
   // Normalize grounded set to rounded integers — callers may pass raw FDC
   // values like 219.7 and the prose only carries integer macros.
   const rounded = new Set<number>();
   for (const v of groundedValues) rounded.add(Math.round(v));
 
+  const combined = context + text;
   const replaced = text.replace(NUMBER_PATTERN, (match, offset: number) => {
-    const windowStart = Math.max(0, offset - NUTRITION_PROXIMITY);
-    const windowEnd = Math.min(text.length, offset + match.length + NUTRITION_PROXIMITY);
-    const window = text.slice(windowStart, windowEnd);
+    // List ordinals ("6." / "6)" at the start of a line) are enumeration
+    // markers, not macro values — exempt them even inside keyword proximity.
+    // A leaked macro would have to be a bare line-leading integer immediately
+    // followed by "."/")" to slip through, which prose never produces.
+    const lineStart =
+      offset === 0 ? startsAtLineStart : text[offset - 1] === "\n";
+    const after = text[offset + match.length];
+    if (lineStart && (after === "." || after === ")")) return match;
+
+    const combinedOffset = offset + context.length;
+    const windowStart = Math.max(0, combinedOffset - NUTRITION_PROXIMITY);
+    const windowEnd = Math.min(
+      combined.length,
+      combinedOffset + match.length + NUTRITION_PROXIMITY
+    );
+    const window = combined.slice(windowStart, windowEnd);
 
     if (!NUTRITION_KEYWORD.test(window)) return match;
 
@@ -70,6 +105,10 @@ export class StreamingGuardrail {
   private buffer = "";
   private redactedTotal = 0;
   private readonly grounded: Set<number>;
+  // Tail (≤ NUTRITION_PROXIMITY chars) of everything processed so far. Feeds
+  // the redactor's backward proximity check across window boundaries and the
+  // line-start detection for the list-ordinal exemption. "" = stream start.
+  private tail = "";
 
   constructor(initialGrounded: Iterable<number> = []) {
     this.grounded = new Set();
@@ -78,6 +117,16 @@ export class StreamingGuardrail {
 
   addGroundedValues(values: Iterable<number>): void {
     for (const n of values) this.grounded.add(Math.round(n));
+  }
+
+  private redactWindow(window: string): GuardrailResult {
+    const result = redactUngroundedNutrition(window, this.grounded, {
+      startsAtLineStart: true, // stream start counts as a line start
+      precedingContext: this.tail,
+    });
+    this.tail = (this.tail + window).slice(-NUTRITION_PROXIMITY);
+    this.redactedTotal += result.redactedCount;
+    return result;
   }
 
   /**
@@ -101,18 +150,15 @@ export class StreamingGuardrail {
     const ready = this.buffer.slice(0, safeBoundary + 1);
     this.buffer = this.buffer.slice(safeBoundary + 1);
 
-    const result = redactUngroundedNutrition(ready, this.grounded);
-    this.redactedTotal += result.redactedCount;
-    return result;
+    return this.redactWindow(ready);
   }
 
   /** Flush any remaining buffer at end-of-stream. */
   flush(): GuardrailResult {
     if (!this.buffer) return { text: "", redactedCount: 0 };
-    const result = redactUngroundedNutrition(this.buffer, this.grounded);
+    const window = this.buffer;
     this.buffer = "";
-    this.redactedTotal += result.redactedCount;
-    return result;
+    return this.redactWindow(window);
   }
 
   get totalRedactions(): number {

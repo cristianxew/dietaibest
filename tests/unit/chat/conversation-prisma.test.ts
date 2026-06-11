@@ -129,16 +129,21 @@ class FakePrisma {
         conversationId: string;
         role: string;
         content: unknown;
+        createdAt?: Date;
         inputTokens?: number;
         outputTokens?: number;
       }>;
     }): Promise<{ count: number }> => {
+      // Mirrors Postgres: `now()` is transaction-stable, so every row in one
+      // createMany gets the IDENTICAL default timestamp unless the caller
+      // passes an explicit createdAt.
+      const txNow = new Date();
       for (const d of data) {
         const rows = this.messageRows.get(d.conversationId) ?? [];
         rows.push({
           id: `m-${rows.length + 1}`,
           content: JSON.parse(JSON.stringify(d.content)), // round-trip through JSON like JSONB
-          createdAt: new Date(Date.now() + rows.length),
+          createdAt: d.createdAt ?? txNow,
           role: d.role,
           inputTokens: d.inputTokens ?? null,
           outputTokens: d.outputTokens ?? null,
@@ -296,6 +301,87 @@ describe("PrismaConversationStore — round-trip preserves ConversationTurnItems
     expect(conv?.archivedAt).toBeInstanceOf(Date);
     // Messages stay in storage (archive, not delete).
     expect(fake.messageRows.get("c1")?.length).toBe(1);
+  });
+});
+
+describe("PrismaConversationStore — persistence shape (delta coalescing + row ordering)", () => {
+  let fake: FakePrisma;
+  let store: PrismaConversationStore;
+
+  beforeEach(() => {
+    fake = new FakePrisma();
+    store = new PrismaConversationStore(fake as unknown as AnyPrisma);
+    fake.conversations.set("c1", {
+      id: "c1",
+      userId: "u1",
+      archivedAt: null,
+      updatedAt: new Date(),
+    });
+  });
+
+  it("coalesces consecutive same-role text deltas into a single row", async () => {
+    // The runtime persists one text item per streamed delta; storing each as
+    // its own Message row bloats the table (~1 row per token chunk) and shows
+    // nonsense message counts in the sessions panel.
+    await store.append("c1", [
+      { kind: "text", role: "user", text: "hola" },
+      { kind: "text", role: "assistant", text: "Ho" },
+      { kind: "text", role: "assistant", text: "la" },
+      { kind: "text", role: "assistant", text: "!" },
+      { kind: "tool-call", callId: "c-1", toolName: "echo", input: { v: 1 } },
+      { kind: "text", role: "assistant", text: "Lis" },
+      { kind: "text", role: "assistant", text: "to." },
+    ]);
+
+    const rows = fake.messageRows.get("c1") ?? [];
+    // user, assistant("Hola!"), tool-call, assistant("Listo.")
+    expect(rows).toHaveLength(4);
+
+    const loaded = await store.load("c1");
+    expect(loaded[1]).toEqual({ kind: "text", role: "assistant", text: "Hola!" });
+    expect(loaded[2]).toEqual({
+      kind: "tool-call",
+      callId: "c-1",
+      toolName: "echo",
+      input: { v: 1 },
+    });
+    expect(loaded[3]).toEqual({ kind: "text", role: "assistant", text: "Listo." });
+  });
+
+  it("does not coalesce across a tool-call boundary or across roles", async () => {
+    await store.append("c1", [
+      { kind: "text", role: "user", text: "a" },
+      { kind: "text", role: "assistant", text: "b" },
+      { kind: "text", role: "user", text: "c" },
+    ]);
+    const loaded = await store.load("c1");
+    expect(loaded).toHaveLength(3);
+  });
+
+  it("assigns strictly increasing createdAt within one append batch", async () => {
+    // Postgres `now()` is transaction-stable: without explicit timestamps every
+    // row in one createMany ties on createdAt, and `load()`'s ORDER BY becomes
+    // non-deterministic — scrambled history garbles assistant text and can
+    // invert tool-call/tool-result pairs (Anthropic 400 on the next turn).
+    await store.append("c1", [
+      { kind: "text", role: "user", text: "hola" },
+      { kind: "tool-call", callId: "c-1", toolName: "echo", input: {} },
+      {
+        kind: "tool-result",
+        callId: "c-1",
+        toolName: "echo",
+        result: { ok: true, data: {} },
+      },
+      { kind: "text", role: "assistant", text: "listo" },
+    ]);
+
+    const rows = fake.messageRows.get("c1") ?? [];
+    expect(rows).toHaveLength(4);
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].createdAt.getTime()).toBeGreaterThan(
+        rows[i - 1].createdAt.getTime()
+      );
+    }
   });
 });
 

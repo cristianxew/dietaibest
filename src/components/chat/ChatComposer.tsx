@@ -152,6 +152,9 @@ export function ChatComposer({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // IME composition (Japanese/Chinese/Korean): Enter confirms the conversion,
+    // it must not send the half-composed message.
+    if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -256,6 +259,7 @@ export function ChatComposer({
           onKeyDown={handleKeyDown}
           disabled={disabled}
           placeholder={t("placeholder")}
+          maxLength={8000}
           rows={1}
           className="min-h-9 max-h-[120px] flex-1 resize-none rounded-md border-[1.5px] border-border bg-card px-3 py-2 text-sm leading-normal text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
         />

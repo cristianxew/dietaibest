@@ -62,18 +62,7 @@ export function summarizeForClient(items: ConversationTurnItem[]): ClientMessage
         item.result !== null &&
         "ok" in item.result &&
         (item.result as { ok: boolean }).ok === true;
-      const link =
-        ok &&
-        typeof item.result === "object" &&
-        item.result !== null &&
-        "data" in item.result &&
-        typeof (item.result as { data?: unknown }).data === "object"
-          ? // The link travels separately in AgentEvent; from persisted state
-            // we only know there was a successful tool, not its link. The
-            // current UI is fine with this since the link affordance is shown
-            // live during the streaming turn.
-            undefined
-          : undefined;
+      const link = ok ? extractLink(item.result) : undefined;
       out.push({
         kind: "tool",
         id: `t-${nextId++}`,
@@ -89,4 +78,30 @@ export function summarizeForClient(items: ConversationTurnItem[]): ClientMessage
   }
 
   return out;
+}
+
+/**
+ * Reads the `link` the runtime persists on successful tool-results
+ * (runtime.ts `runOneTool`). Shape-validated because the column is JSONB —
+ * older rows have no link and we never want a malformed one in the client.
+ */
+function extractLink(
+  result: unknown
+): Extract<ClientMessage, { kind: "tool" }>["link"] {
+  if (typeof result !== "object" || result === null) return undefined;
+  const candidate = (result as { link?: unknown }).link;
+  if (typeof candidate !== "object" || candidate === null) return undefined;
+  const { type, href, label } = candidate as {
+    type?: unknown;
+    href?: unknown;
+    label?: unknown;
+  };
+  if (
+    (type === "recipe" || type === "mealplan" || type === "shoppinglist") &&
+    typeof href === "string" &&
+    typeof label === "string"
+  ) {
+    return { type, href, label };
+  }
+  return undefined;
 }

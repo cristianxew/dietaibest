@@ -73,3 +73,17 @@ describe("buildSystemPrompt — medical refusal policy", () => {
     expect(prompt).toMatch(/\[redacted\]/);
   });
 });
+
+describe("buildSystemPrompt — output formatting", () => {
+  it.each(["en", "es", "pl"] as const)(
+    "%s forbids markdown — the chat UI renders plain text",
+    (locale) => {
+      // The drawer renders message text verbatim (no markdown parser), so any
+      // **bold** / ## headers / - bullets the model emits show up as literal
+      // symbols. The prompt must pin plain-text output.
+      const prompt = buildSystemPrompt(locale).toLowerCase();
+      expect(prompt).toMatch(/markdown/);
+      expect(prompt).toMatch(/plain text|plain-text/);
+    }
+  );
+});

@@ -36,18 +36,31 @@ export class PrismaConversationStore implements ConversationStore {
   ): Promise<void> {
     if (items.length === 0) return;
 
-    const firstUserItem = items.find(
+    // The runtime pushes one text item per streamed delta; merge consecutive
+    // same-role text items so a turn persists as a handful of rows instead of
+    // one row per token chunk (DB bloat + nonsense counts in the sessions UI).
+    const rows = coalesceTextItems(items);
+
+    const firstUserItem = rows.find(
       (item): item is ConversationTurnItem & { kind: "text"; text: string } =>
         item.kind === "text" && item.role === "user"
     );
     const firstUserText = firstUserItem ? firstUserItem.text : null;
 
+    // Explicit strictly-increasing timestamps. Relying on the column default
+    // would give every row in this batch the same transaction-stable now(),
+    // and load()'s ORDER BY createdAt has no tiebreaker — equal keys make the
+    // returned order undefined, which can garble text or invert a
+    // tool-call/tool-result pair (the provider 400s on the next turn).
+    const base = Date.now();
+
     await this.prisma.$transaction([
       this.prisma.message.createMany({
-        data: items.map((item) => ({
+        data: rows.map((item, i) => ({
           conversationId,
           role: roleFor(item),
           content: item as unknown as Prisma.InputJsonValue,
+          createdAt: new Date(base + i),
           // DIE-38: project usage tokens into queryable columns so the monthly
           // cost cap can be derived with a plain SQL aggregate (no JSON path).
           ...(item.kind === "usage" && {
@@ -84,6 +97,31 @@ function roleFor(item: ConversationTurnItem): string {
   if (item.kind === "metadata") return "metadata";
   if (item.kind === "usage") return "usage";
   return item.kind;
+}
+
+/**
+ * Merges runs of consecutive `kind: "text"` items with the same role into a
+ * single item. Mirrors the read-side coalescing in serialize.ts and
+ * llm-anthropic.ts `toModelMessages`, but at write time, so storage holds one
+ * row per logical message instead of one per streamed delta.
+ */
+function coalesceTextItems(
+  items: ConversationTurnItem[]
+): ConversationTurnItem[] {
+  const out: ConversationTurnItem[] = [];
+  for (const item of items) {
+    const prev = out[out.length - 1];
+    if (
+      item.kind === "text" &&
+      prev?.kind === "text" &&
+      prev.role === item.role
+    ) {
+      out[out.length - 1] = { ...prev, text: prev.text + item.text };
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
 }
 
 /**

@@ -208,4 +208,54 @@ describe("importRecipeFromUrl — execute (persist confirmed recipe)", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("unauthorized");
   });
+
+  // The model decides whether to offer generateRecipeImage based on the import
+  // result — without this signal it can only guess (and offered AI images for
+  // recipes whose source page already provided a perfectly good photo).
+  it("reports hasImage: true when the extracted recipe carried an image", async () => {
+    vi.mocked(persistRecipe).mockResolvedValueOnce({
+      data: { id: "r-img", title: "Pastel Keto" } as never,
+      error: null,
+    });
+
+    const result = await importRecipeFromUrl.execute(
+      {
+        url: "https://recipes.example.com/keto-cake",
+        confirmed: true,
+        recipe: {
+          title: "Pastel Keto",
+          ingredients: [{ name: "almonds", amount: 200, unit: "g" }],
+          instructions: ["Mix", "Bake"],
+          imageUrl: "https://recipes.example.com/keto-cake.jpg",
+        },
+      },
+      makeCtx()
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.hasImage).toBe(true);
+  });
+
+  it("reports hasImage: false when the extracted recipe had no image", async () => {
+    vi.mocked(persistRecipe).mockResolvedValueOnce({
+      data: { id: "r-noimg", title: "Risotto" } as never,
+      error: null,
+    });
+
+    const result = await importRecipeFromUrl.execute(
+      {
+        url: "https://recipes.example.com/risotto",
+        confirmed: true,
+        recipe: {
+          title: "Risotto",
+          ingredients: [{ name: "rice", amount: 200, unit: "g" }],
+          instructions: ["Cook"],
+        },
+      },
+      makeCtx()
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.data.hasImage).toBe(false);
+  });
 });
