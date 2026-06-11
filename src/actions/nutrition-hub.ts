@@ -15,12 +15,13 @@ import {
   extractNutrientVector,
   type NutrientVector,
 } from "@/lib/nutrients/extract";
-import {
-  aggregateRecipeNutrients,
-  type IngredientContribution,
-  type NutrientCoverage,
-} from "@/lib/nutrients/aggregate";
 import { computeRdaProfile, type RdaProfile } from "@/lib/nutrients/rda";
+import {
+  getRecipeNutrientProfiles,
+  type RecipeNutrientProfile,
+} from "@/lib/recipeNutrients";
+
+export type { RecipeNutrientProfile };
 
 export type ItemRef =
   | { type: "fdc"; id: number }
@@ -40,19 +41,6 @@ export interface FoodNutrientProfile {
   /** Nutrients per 100g (sparse — missing key means unknown, not zero) */
   per100g: NutrientVector;
   portions: FoodPortionOption[];
-}
-
-export interface RecipeNutrientProfile {
-  kind: "recipe";
-  recipeId: string;
-  title: string;
-  servings: number;
-  imageUrl: string | null;
-  /** Nutrients per serving (sparse — missing key means unknown, not zero) */
-  perServing: NutrientVector;
-  coverage: NutrientCoverage;
-  matchedIngredients: number;
-  totalIngredients: number;
 }
 
 export type ItemNutrientProfile = FoodNutrientProfile | RecipeNutrientProfile;
@@ -114,68 +102,10 @@ async function buildRecipeProfile(
   recipeId: string,
   userId: string
 ): Promise<RecipeNutrientProfile> {
-  const recipe = await prisma.recipe.findUnique({
-    where: { id: recipeId },
-    include: { recipeIngredients: true },
-  });
-  if (!recipe || recipe.userId !== userId) {
-    throw new Error("Recipe not found");
-  }
-
-  const matched = recipe.recipeIngredients.filter(
-    (ri) => ri.fdcId != null && ri.gramWeight != null && ri.gramWeight > 0
-  );
-  const unmatchedCount = recipe.recipeIngredients.length - matched.length;
-
-  const distinctFdcIds = [...new Set(matched.map((ri) => ri.fdcId as number))];
-  const foods = await getFoodsCached(distinctFdcIds, { profile: "extended" });
-  const foodById = new Map(foods.map((f) => [f.fdcId, f]));
-
-  const contributions: IngredientContribution[] = [];
-  let unresolvedMatches = 0;
-  for (const ri of matched) {
-    const food = foodById.get(ri.fdcId as number);
-    if (!food) {
-      unresolvedMatches++;
-      continue;
-    }
-    contributions.push({
-      gramWeight: ri.gramWeight as number,
-      vectorPer100g: extractNutrientVector(food),
-    });
-  }
-
-  const aggregation = aggregateRecipeNutrients(
-    contributions,
-    unmatchedCount + unresolvedMatches,
-    recipe.servings
-  );
-
-  // No usable FDC matches: fall back to the 5 per-serving macros stored on
-  // the Recipe row (covers manual and Edamam-sourced recipes without
-  // re-exposing any Edamam detail).
-  const perServing: NutrientVector =
-    aggregation.coverage === "macrosOnly"
-      ? {
-          ...(recipe.calories != null && { kcal: recipe.calories }),
-          ...(recipe.protein != null && { protein: recipe.protein }),
-          ...(recipe.carbs != null && { carbs: recipe.carbs }),
-          ...(recipe.fat != null && { fat: recipe.fat }),
-          ...(recipe.fiber != null && { fiber: recipe.fiber }),
-        }
-      : aggregation.perServing;
-
-  return {
-    kind: "recipe",
-    recipeId: recipe.id,
-    title: recipe.title,
-    servings: recipe.servings,
-    imageUrl: recipe.imageUrl ?? null,
-    perServing,
-    coverage: aggregation.coverage,
-    matchedIngredients: aggregation.matchedIngredients,
-    totalIngredients: aggregation.totalIngredients,
-  };
+  const profiles = await getRecipeNutrientProfiles([recipeId], userId);
+  const profile = profiles.get(recipeId);
+  if (!profile) throw new Error("Recipe not found");
+  return profile;
 }
 
 /**
