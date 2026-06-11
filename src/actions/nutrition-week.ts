@@ -24,6 +24,19 @@ import {
 import { computeRdaProfile, type RdaProfile } from "@/lib/nutrients/rda";
 import { getRecipeNutrientProfiles } from "@/lib/recipeNutrients";
 import type { NutrientCoverage } from "@/lib/nutrients/aggregate";
+import { ALL_NUTRIENT_KEYS, type NutrientKey } from "@/lib/nutrients/registry";
+import {
+  scoreSwaps,
+  type SwapCandidate,
+  type SwapSuggestion,
+} from "@/lib/nutrients/swap-scorer";
+import { generateText } from "ai";
+import { getSkeletonModel } from "@/mastra/workflows/_llm";
+import {
+  assertCanCreateRecipe,
+  assertCanUseAiMealPlan,
+} from "@/lib/entitlements";
+import type { RecipeNutrientProfile } from "@/lib/recipeNutrients";
 
 export interface IngredientMatchSummary {
   matched: number;
@@ -236,4 +249,264 @@ export async function getMyWeekAnalysis() {
       profileComplete: week.profileComplete,
     };
   })(undefined);
+}
+
+const CANDIDATE_POOL_SIZE = 60;
+const MAX_SUGGESTIONS = 5;
+
+const getSwapSuggestionsSchema = z.object({
+  mealId: z.string().uuid(),
+  nutrient: z.enum(ALL_NUTRIENT_KEYS as [NutrientKey, ...NutrientKey[]]),
+  kind: z.enum(["deficit", "excess"]),
+});
+
+/** Rank the user's own recipes as replacements for one planned meal. */
+export async function getSwapSuggestions(input: {
+  mealId: string;
+  nutrient: NutrientKey;
+  kind: "deficit" | "excess";
+}) {
+  return serverAction(
+    { input: getSwapSuggestionsSchema },
+    async (ctx, validated): Promise<SwapSuggestion[]> => {
+      const week = await loadWeek(ctx.user.id);
+      const meal = week.mealsById.get(validated.mealId);
+      if (!meal) throw new Error("Meal not found in your current week");
+
+      const analysis = analyzeWeek(week.days, week.rda);
+      const target = analysis.findings.find(
+        (f) => f.nutrient === validated.nutrient && f.kind === validated.kind
+      );
+      if (!target) return [];
+
+      const profile = await prisma.userProfile.findUnique({
+        where: { userId: ctx.user.id },
+        select: { allergies: true },
+      });
+
+      const pool = await prisma.recipe.findMany({
+        where: { userId: ctx.user.id },
+        select: { id: true, ingredients: true },
+        orderBy: { updatedAt: "desc" },
+        take: CANDIDATE_POOL_SIZE,
+      });
+      const profiles = await getRecipeNutrientProfiles(
+        pool.map((r) => r.id),
+        ctx.user.id
+      );
+      const linesById = new Map(
+        pool.map((r) => [r.id, formatIngredientsForNutrition(r.ingredients)])
+      );
+
+      const candidates: SwapCandidate[] = [...profiles.values()].map((p) => ({
+        recipeId: p.recipeId,
+        title: p.title,
+        perServing: p.perServing,
+        coverage: p.coverage,
+        ingredientNames: linesById.get(p.recipeId) ?? [],
+      }));
+
+      return scoreSwaps(
+        {
+          meal,
+          target,
+          findings: analysis.findings,
+          allergies: profile?.allergies ?? [],
+        },
+        candidates
+      ).slice(0, MAX_SUGGESTIONS);
+    }
+  )(input);
+}
+
+const applySwapSchema = z.object({
+  mealId: z.string().uuid(),
+  newRecipeId: z.string().uuid(),
+});
+
+export interface ApplySwapResult {
+  /** For one-tap undo: applySwap(mealId, previousRecipeId) */
+  previousRecipeId: string;
+}
+
+/**
+ * Replace the recipe of one planned meal, in place — slot, sortOrder and
+ * servings are preserved. Both the meal and the replacement recipe must
+ * belong to the caller.
+ */
+export async function applySwap(input: { mealId: string; newRecipeId: string }) {
+  return serverAction(
+    {
+      input: applySwapSchema,
+      revalidates: ["/meal-plans", "/nutrition/my-week"],
+    },
+    async (ctx, validated): Promise<ApplySwapResult> => {
+      const [meal, recipe] = await Promise.all([
+        prisma.mealPlanMeal.findUnique({
+          where: { id: validated.mealId },
+          include: {
+            mealPlanDay: { include: { template: { select: { userId: true } } } },
+          },
+        }),
+        prisma.recipe.findUnique({
+          where: { id: validated.newRecipeId },
+          select: { id: true, userId: true },
+        }),
+      ]);
+
+      if (!meal || meal.mealPlanDay.template.userId !== ctx.user.id) {
+        throw new Error("Meal not found");
+      }
+      if (!recipe || recipe.userId !== ctx.user.id) {
+        throw new Error("Recipe not found");
+      }
+      if (!meal.recipeId) {
+        throw new Error("Meal has no recipe to replace");
+      }
+
+      const previousRecipeId = meal.recipeId;
+      await prisma.mealPlanMeal.update({
+        where: { id: meal.id },
+        data: { recipeId: recipe.id, generationFailed: false, generationError: null },
+      });
+
+      return { previousRecipeId };
+    }
+  )(input);
+}
+
+const gapRecipeDraftSchema = z.object({
+  title: z.string().min(3).max(120),
+  description: z.string().max(500).optional(),
+  servings: z.coerce.number().int().min(1).max(12),
+  ingredients: z
+    .array(
+      z.object({
+        name: z.string(),
+        amount: z.coerce.number(),
+        unit: z.string(),
+      })
+    )
+    .min(2)
+    .max(25),
+  instructions: z.array(z.string().min(1)).min(1).max(30),
+});
+
+/** Models wrap JSON in fences or prose; cut from first { to last }. */
+function extractJsonObject(text: string): string {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end <= start) {
+    throw new Error("Model response contained no JSON object");
+  }
+  return text.slice(start, end + 1);
+}
+
+const generateGapRecipeSchema = z.object({
+  mealId: z.string().uuid(),
+  nutrient: z.enum(ALL_NUTRIENT_KEYS as [NutrientKey, ...NutrientKey[]]),
+  kind: z.enum(["deficit", "excess"]),
+});
+
+export interface GeneratedGapRecipe {
+  recipeId: string;
+  title: string;
+  /** USDA-verified — never the model's own claims */
+  profile: RecipeNutrientProfile;
+}
+
+/**
+ * AI cold-start fallback: draft a recipe targeted at a finding, persist it,
+ * verify its nutrition through USDA ingredient matching, and return the
+ * verified profile. The user applies it through the normal swap flow.
+ */
+export async function generateGapRecipe(input: {
+  mealId: string;
+  nutrient: NutrientKey;
+  kind: "deficit" | "excess";
+}) {
+  return serverAction(
+    {
+      input: generateGapRecipeSchema,
+      requires: async (_input, ctx) => {
+        await assertCanUseAiMealPlan(ctx.user);
+        await assertCanCreateRecipe(ctx.user);
+      },
+      revalidates: ["/recipes", "/nutrition/my-week"],
+    },
+    async (ctx, validated): Promise<GeneratedGapRecipe> => {
+      const week = await loadWeek(ctx.user.id);
+      const meal = week.mealsById.get(validated.mealId);
+      if (!meal) throw new Error("Meal not found in your current week");
+
+      const profile = await prisma.userProfile.findUnique({
+        where: { userId: ctx.user.id },
+        select: { allergies: true, dietaryType: true, cuisinePrefs: true },
+      });
+
+      const mealKcal = meal.perServing.kcal;
+      const goal =
+        validated.kind === "deficit"
+          ? `high in ${validated.nutrient}`
+          : `low in ${validated.nutrient}`;
+
+      const { text } = await generateText({
+        model: getSkeletonModel(),
+        prompt: [
+          `Create one ${meal.mealType} recipe that is ${goal}.`,
+          mealKcal !== undefined
+            ? `Target roughly ${Math.round(mealKcal * 0.85)}-${Math.round(mealKcal * 1.15)} kcal per serving.`
+            : "",
+          profile?.dietaryType?.length
+            ? `Dietary style: ${profile.dietaryType.join(", ")}.`
+            : "",
+          profile?.allergies?.length
+            ? `STRICTLY avoid these allergens: ${profile.allergies.join(", ")}.`
+            : "",
+          profile?.cuisinePrefs?.length
+            ? `Preferred cuisines: ${profile.cuisinePrefs.join(", ")}.`
+            : "",
+          "Use 12 or fewer common whole ingredients with standard units (g, kg, ml, cup, tbsp, tsp, piece).",
+          'Respond with ONLY a JSON object, no markdown fences, matching: {"title": string, "description": string, "servings": number, "ingredients": [{"name": string, "amount": number, "unit": string}], "instructions": [string]}',
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+
+      let draft: z.infer<typeof gapRecipeDraftSchema>;
+      try {
+        draft = gapRecipeDraftSchema.parse(JSON.parse(extractJsonObject(text)));
+      } catch (parseError) {
+        console.error(
+          "[generateGapRecipe] unparseable model output:",
+          text.slice(0, 400),
+          parseError
+        );
+        throw new Error("Generated recipe was malformed");
+      }
+
+      const recipe = await prisma.recipe.create({
+        data: {
+          userId: ctx.user.id,
+          title: draft.title,
+          description: draft.description ?? null,
+          servings: draft.servings,
+          ingredients: draft.ingredients,
+          instructions: draft.instructions,
+          source: "generated",
+          tags: ["generated", "nutrition-fix"],
+        },
+        select: { id: true, ingredients: true, servings: true },
+      });
+
+      // Honesty rule: verify with USDA before showing any numbers.
+      await persistIngredientMatches(recipe);
+
+      const profiles = await getRecipeNutrientProfiles([recipe.id], ctx.user.id);
+      const verified = profiles.get(recipe.id);
+      if (!verified) throw new Error("Failed to verify generated recipe");
+
+      return { recipeId: recipe.id, title: verified.title, profile: verified };
+    }
+  )(input);
 }
