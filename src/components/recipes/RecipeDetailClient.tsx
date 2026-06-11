@@ -15,6 +15,8 @@ import { RecipeDeleteButton } from "./RecipeDeleteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
+import { AskDietAIButton } from "@/components/chat/AskDietAIButton";
+import { selectCapabilitiesForPath } from "@/lib/chat/capabilities";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { recipeToFormData } from "@/lib/recipe-utils";
 import { toast } from "sonner";
@@ -97,6 +99,8 @@ export function RecipeDetailClient({
   locale,
 }: RecipeDetailClientProps) {
   const t = useTranslations("recipes");
+  const tChat = useTranslations("chat");
+  const tCaps = useTranslations("chat.capabilities");
   const [selectedPortions, setSelectedPortions] = useState(recipe.servings);
   const [imageError, setImageError] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(recipe.imageUrl);
@@ -106,6 +110,11 @@ export function RecipeDetailClient({
 
   const multiplier = selectedPortions / recipe.servings;
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+  const askCapabilities = selectCapabilitiesForPath(
+    `/${locale}/recipes/${recipe.id}`,
+    locale,
+    3
+  );
   const showImage = Boolean(currentImageUrl && !imageError);
   const primaryCategory = recipe.categories[0]?.name || 'DINNER';
   const styles = getCategoryStyles(primaryCategory);
@@ -345,6 +354,23 @@ export function RecipeDetailClient({
               <span className="font-bold text-xl text-foreground">{selectedPortions}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("servings")}</span>
             </div>
+          </div>
+
+          {/* Ask DietAI */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {tChat("entry.recipeDetail.ask")}
+            </span>
+            {askCapabilities.map((cap) => (
+              <AskDietAIButton
+                key={cap.id}
+                prompt={tCaps(
+                  cap.entityAware ? `${cap.id}.entityPrompt` : `${cap.id}.prompt`
+                )}
+              >
+                {tCaps(`${cap.id}.label`)}
+              </AskDietAIButton>
+            ))}
           </div>
 
           {/* Adjust Servings */}

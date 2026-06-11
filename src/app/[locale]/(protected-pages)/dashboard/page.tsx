@@ -11,6 +11,7 @@ import { WeeklyMacroChart } from "@/components/dashboard/WeeklyMacroChart";
 import { RecentRecipesCarousel } from "@/components/dashboard/RecentRecipesCarousel";
 import { DashboardSkeleton } from "@/components/dashboard/skeletons/DashboardSkeleton";
 import { CompactNutrition } from "@/components/dashboard/CompactNutrition";
+import { AssistantCapabilityCard } from "@/components/dashboard/AssistantCapabilityCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardState, shouldShowHeroCTA } from "@/lib/dashboard-state";
 
@@ -136,6 +137,9 @@ async function DashboardContent() {
             targetFat={profile?.fatGrams || null}
             className="flex-1"
           />
+
+          {/* Assistant Discovery */}
+          <AssistantCapabilityCard />
         </div>
 
         {/* Right Column - Active Plan & Recent Recipes */}

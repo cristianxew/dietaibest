@@ -46,6 +46,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 import { AddRecipeButton } from "@/components/recipes/AddRecipeButton";
+import { AskDietAIButton } from "@/components/chat/AskDietAIButton";
 
 const RECENT_SEARCHES_KEY = "DietAI-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
@@ -57,6 +58,8 @@ type SearchSuggestion = {
 
 export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "grid" | "list" } = {}) {
   const t = useTranslations("recipes");
+  const tChat = useTranslations("chat");
+  const tCaps = useTranslations("chat.capabilities");
   const [viewMode, setViewMode] = useState<"grid" | "list">(initialViewMode);
   const [recipes, setRecipes] = useState<
     (Recipe & {
@@ -687,6 +690,23 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
               ? t("adjustFilters")
               : t("startByAdding")}
           </p>
+          {!hasActiveFilters && (
+            <div className="mt-6">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                {tChat("entry.recipesEmpty.title")}
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <AskDietAIButton
+                  prompt={tCaps("createRecipeFromDescription.prompt")}
+                >
+                  {tCaps("createRecipeFromDescription.label")}
+                </AskDietAIButton>
+                <AskDietAIButton prompt={tCaps("importRecipeFromLink.prompt")}>
+                  {tCaps("importRecipeFromLink.label")}
+                </AskDietAIButton>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <>

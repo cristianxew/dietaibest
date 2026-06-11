@@ -8,6 +8,8 @@ import { ChatComposer } from "./ChatComposer";
 import { ChatMessage } from "./ChatMessage";
 import { EmptyChat } from "./EmptyChat";
 import { HistoryPanel } from "./HistoryPanel";
+import { CapabilityMenu } from "./CapabilityMenu";
+import { SuggestionChips } from "./SuggestionChips";
 import { useChatStream, type PendingAttachment } from "./useChatStream";
 
 interface ChatDrawerProps {
@@ -24,6 +26,7 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
   const scrollRef = useRef<HTMLDivElement>(null);
   const [composerInitial, setComposerInitial] = useState("");
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [capabilitiesOpen, setCapabilitiesOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,6 +93,7 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
     deleteLastTurn,
     switchSession,
     createSession,
+    followUps,
   } = useChatStream({ locale, translate });
 
   // When parent passes a seed prompt (e.g. from the meal-planner AI button),
@@ -157,6 +161,7 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
       <ChatHeader
         onClose={onClose}
         onToggleSessions={() => setSessionsOpen((p) => !p)}
+        onToggleCapabilities={() => setCapabilitiesOpen((p) => !p)}
         onNewChat={handleNewChat}
         busy={isStreaming}
       />
@@ -169,24 +174,32 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
         {messages.length === 0 ? (
           <EmptyChat onSuggestionClick={handleSuggestionClick} />
         ) : (
-          messages.map((msg, i) => (
-            <ChatMessage
-              key={msg.id}
-              {...msg}
-              streaming={
-                isStreaming &&
-                i === lastIndex &&
-                msg.role === "agent" &&
-                !!msg.content.text
-              }
-              isLastUserMessage={i === lastUserMsgIndex}
-              canModify={i === lastUserMsgIndex && canRetry && !msg.failed}
-              onRetry={canRetry ? retry : undefined}
-              onCopied={() => flashToast(t("copied"))}
-              onEdit={handleEditLastTurn}
-              onDelete={handleDeleteLastTurn}
-            />
-          ))
+          <>
+            {messages.map((msg, i) => (
+              <ChatMessage
+                key={msg.id}
+                {...msg}
+                streaming={
+                  isStreaming &&
+                  i === lastIndex &&
+                  msg.role === "agent" &&
+                  !!msg.content.text
+                }
+                isLastUserMessage={i === lastUserMsgIndex}
+                canModify={i === lastUserMsgIndex && canRetry && !msg.failed}
+                onRetry={canRetry ? retry : undefined}
+                onCopied={() => flashToast(t("copied"))}
+                onEdit={handleEditLastTurn}
+                onDelete={handleDeleteLastTurn}
+              />
+            ))}
+            {!isStreaming && followUps.length > 0 && (
+              <SuggestionChips
+                capabilities={followUps}
+                onPick={handleSuggestionClick}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -205,6 +218,15 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
         }}
         onNewChat={handleNewChat}
         locale={locale}
+      />
+
+      <CapabilityMenu
+        visible={capabilitiesOpen}
+        onClose={() => setCapabilitiesOpen(false)}
+        onSelect={(prompt) => {
+          setComposerInitial(prompt);
+          setCapabilitiesOpen(false);
+        }}
       />
 
       {toast && (
