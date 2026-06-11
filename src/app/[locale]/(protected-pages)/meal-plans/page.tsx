@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { MealPlanner } from "@/components/meal-plans/MealPlanner";
+import { PlannerNutritionBanner } from "@/components/nutrition-hub/my-week/PlannerNutritionBanner";
 
 export async function generateMetadata({
   params,
@@ -24,6 +25,7 @@ export default async function MealPlansPage({
   await params;
   return (
     <Suspense>
+      <PlannerNutritionBanner />
       <MealPlanner />
     </Suspense>
   );

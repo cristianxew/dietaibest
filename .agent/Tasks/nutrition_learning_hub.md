@@ -1,7 +1,7 @@
 # Nutrition Learning Hub
 
-**Status:** v1 shipped (branch `feat/nutrition-learning-hub`)
-**Last Updated:** 2026-06-10
+**Status:** v2 shipped (branch `feat/nutrition-learning-hub`)
+**Last Updated:** 2026-06-11
 
 ## Overview
 
@@ -36,9 +36,29 @@ The `/nutrition` route is a learning destination ("Nutrition Hub") instead of a 
 - fdcIds in `swaps-data.ts`/`encyclopedia.ts` are live-verified; when adding pairs, verify via `/api/fdc/search` — memory-guessed ids WILL betray you (168421 turned out to be kale, not iceberg).
 - Insight absolute floors are tuned for raw per-100g duels; `SwapCard` relaxes them (ratio story matters for swaps).
 
-## Phase 2 (not built)
+## v2 — Fix My Week (shipped)
 
-Quiz/"guess the food" game, meal-plan-day vs day comparison, gamification/streaks, per-swap prose.
+Spec: `docs/superpowers/specs/2026-06-11-nutrition-hub-v2-my-week-design.md`. Plan: `docs/superpowers/plans/2026-06-11-nutrition-hub-v2-my-week.md`.
+
+- **`/nutrition/my-week`** — analyzes the next 7 scheduled days (active `MealPlanSchedule`s) against the personal `RdaProfile`: week strip, top-3 ranked Findings with culprit attribution, collapsible nutrient×day heatmap.
+- **Engines** (pure, TDD'd): `src/lib/nutrients/schedule-window.ts` (date→dayNumber, mirrors `getActiveMealPlanSchedule` semantics — plans do NOT cycle), `week-analysis.ts` (Findings: goal deficit = <70% target on majority of known days; limit excess = over ceiling on ≥2 days; kcal both directions; carbs/fat never), `swap-scorer.ts` (multi-objective: gap closure − 0.5×penalty for worsening other findings; hard filters: ±25% kcal band, allergen tokens, candidate must know target nutrient; honest `tradeoffs[]`).
+- **`src/lib/recipeNutrients.ts`** — batched recipe→profile resolver (1 prisma query + 1 `getFoodsCached` for the whole week); `nutrition-hub.ts` delegates to it.
+- **Actions** (`src/actions/nutrition-week.ts`): `getMyWeekAnalysis`, `getSwapSuggestions`, `applySwap` (in-place `MealPlanMeal.recipeId` UPDATE, returns `previousRecipeId` for undo), `matchRecipeIngredients`, `generateGapRecipe`.
+- **KEY DISCOVERY:** nothing else in the repo writes `RecipeIngredient` rows — `analyzeRecipeAction` computed FDC matches but they were never persisted, so all recipes were `macrosOnly`. `matchRecipeIngredients` is the one-tap fix surfaced by the "Improve your data" card; micro-analysis only activates as users run it.
+- **AI honesty rule:** `generateGapRecipe` drafts via `getSkeletonModel()`, persists the recipe, then runs FDC matching BEFORE showing numbers — LLM-claimed nutrition is never displayed; nothing is auto-applied. Gated by `assertCanUseAiMealPlan` + `assertCanCreateRecipe`. Generated recipes get tags `["generated", "nutrition-fix"]`.
+- **Coverage gating:** >50% macrosOnly meals → findings restricted to kcal/protein/fiber and the Improve-data card goes prominent.
+- Hub landing leads with `MyWeekHero` (live verdict); `/meal-plans` shows `PlannerNutritionBanner` when findings exist.
+- Servings semantics match the planner's own `calculateMealMacros`: per-serving × `MealPlanMeal.servings`.
+
+### v2 gotchas
+
+- Swap suggestions depend on ingredient-match coverage: a target nutrient absent from a candidate's vector excludes it (sparse = honest). With a macrosOnly library, only kcal/protein/fiber findings get suggestions — and fiber only for recipes whose stored `fiber` is non-null (the Edamam auto-analysis writes only calories/protein/carbs/fat).
+- LLM JSON output needs defensive parsing: `extractJsonObject` (first `{` to last `}`) + `z.coerce.number()`; raw output is logged on parse failure.
+- When the scorer rejects a freshly generated recipe for the slot, the UI still shows "Created {title}" — the recipe exists in the library either way.
+
+## Phase 3 (not built)
+
+Quiz/"guess the food" game, meal-plan-day vs day comparison, gamification/streaks, per-swap prose, consumption logging (plans are the intake proxy), week-over-week trends (persist `WeekAnalysis` snapshots when needed — it's plain JSON).
 
 ## Testing
 

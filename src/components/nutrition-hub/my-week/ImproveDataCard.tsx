@@ -66,7 +66,7 @@ export function ImproveDataCard({ items, prominent, onMatched }: ImproveDataCard
               key={item.recipeId}
               className="flex items-center justify-between gap-3 text-sm"
             >
-              <span className="truncate">{item.title}</span>
+              <span className="truncate min-w-0">{item.title}</span>
               {state.status === "done" ? (
                 <span className="inline-flex items-center gap-1 text-sage-600 dark:text-sage-400 text-xs shrink-0">
                   <Check className="w-3.5 h-3.5" />

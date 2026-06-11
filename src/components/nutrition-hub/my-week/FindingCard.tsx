@@ -181,7 +181,7 @@ export function FindingCard({ finding, onChanged }: FindingCardProps) {
         {finding.topContributors.map((c) => (
           <div key={c.mealId} className="space-y-2">
             <div className="flex items-center justify-between gap-2 text-sm">
-              <span className="truncate">{c.recipeTitle}</span>
+              <span className="truncate min-w-0">{c.recipeTitle}</span>
               <div className="flex items-center gap-2 shrink-0">
                 {isExcess && c.share > 0 && (
                   <span className="font-mono text-xs text-muted-foreground">

@@ -11,6 +11,7 @@ import {
 import { PageContainer } from "@/components/ui/page-container";
 import { ModuleCard } from "@/components/nutrition-hub/ModuleCard";
 import { FeaturedFaceOff } from "@/components/nutrition-hub/FeaturedFaceOff";
+import { MyWeekHero } from "@/components/nutrition-hub/my-week/MyWeekHero";
 
 export default async function NutritionHubPage() {
   const t = await getTranslations("nutritionHub.hub");
@@ -92,6 +93,11 @@ export default async function NutritionHubPage() {
           <p className="text-muted-foreground max-w-lg leading-relaxed">
             {t("description")}
           </p>
+        </div>
+
+        {/* Live week verdict */}
+        <div className="animate-fade-up" style={{ animationDelay: "50ms" }}>
+          <MyWeekHero />
         </div>
 
         {/* Today's Face-Off teaser */}

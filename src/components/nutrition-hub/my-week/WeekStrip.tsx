@@ -30,7 +30,7 @@ export function WeekStrip({ days }: { days: DayAnalysis[] }) {
   const dayName = new Intl.DateTimeFormat(locale, { weekday: "short" });
 
   return (
-    <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+    <div className="flex gap-1.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-7 sm:gap-2 sm:overflow-visible sm:pb-0">
       {days.map((day) => {
         const status = dayStatus(day);
         // parse as local date (avoid UTC shift of new Date("YYYY-MM-DD"))
@@ -39,7 +39,7 @@ export function WeekStrip({ days }: { days: DayAnalysis[] }) {
           <div
             key={day.date}
             className={cn(
-              "rounded-xl border px-1 py-2 text-center",
+              "rounded-xl border px-1 py-2 text-center min-w-[76px] shrink-0 sm:min-w-0 sm:shrink",
               STATUS_RING[status]
             )}
           >
