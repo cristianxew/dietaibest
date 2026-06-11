@@ -6,6 +6,7 @@ import {
   BookOpenText,
   Repeat,
   Calculator,
+  CalendarRange,
 } from "lucide-react";
 import { PageContainer } from "@/components/ui/page-container";
 import { ModuleCard } from "@/components/nutrition-hub/ModuleCard";
@@ -15,6 +16,14 @@ export default async function NutritionHubPage() {
   const t = await getTranslations("nutritionHub.hub");
 
   const modules = [
+    {
+      href: "/nutrition/my-week",
+      icon: CalendarRange,
+      accent: "sage" as const,
+      kicker: t("modules.myWeek.kicker"),
+      title: t("modules.myWeek.title"),
+      blurb: t("modules.myWeek.blurb"),
+    },
     {
       href: "/nutrition/compare",
       icon: Swords,

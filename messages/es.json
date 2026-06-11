@@ -1015,8 +1015,8 @@
       "strip": { "unplanned": "Sin plan", "kcalShort": "{kcal} kcal" },
       "findings": {
         "heading": "Qué arreglar primero",
-        "deficitTitle": "Poco {nutrient}",
-        "excessTitle": "Demasiado {nutrient}",
+        "deficitTitle": "Bajo en {nutrient}",
+        "excessTitle": "Exceso de {nutrient}",
         "deficitMeta": "Por debajo en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
         "excessMeta": "Sobre tu límite en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
         "weekGapDeficit": "Faltan {amount} en la semana",
