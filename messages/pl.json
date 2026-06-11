@@ -992,6 +992,64 @@
     "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
   },
   "nutritionHub": {
+    "myWeek": {
+      "kicker": "Twój Tydzień",
+      "title": "Napraw Mój Tydzień",
+      "description": "Twój zaplanowany tydzień zmierzony względem Twoich osobistych celów — i to, co warto zmienić najpierw.",
+      "hero": {
+        "eyebrow": "W tym tygodniu",
+        "ok": "Twój zaplanowany tydzień wygląda na zbilansowany",
+        "findings": "{count, plural, one {# rzecz} few {# rzeczy} many {# rzeczy} other {# rzeczy}} do poprawy w tym tygodniu",
+        "cta": "Otwórz Mój Tydzień"
+      },
+      "empty": {
+        "title": "Brak aktywnego planu posiłków",
+        "body": "Zaplanuj posiłki, a przeanalizujemy Twój tydzień względem Twoich osobistych celów żywieniowych.",
+        "cta": "Przejdź do planów posiłków"
+      },
+      "strip": { "unplanned": "Brak planu", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "Co naprawić najpierw",
+        "deficitTitle": "Za mało: {nutrient}",
+        "excessTitle": "Za dużo: {nutrient}",
+        "deficitMeta": "Poniżej celu przez {days} z {plannedDays, plural, one {# zaplanowanego dnia} few {# zaplanowanych dni} many {# zaplanowanych dni} other {# zaplanowanych dni}}",
+        "excessMeta": "Powyżej limitu przez {days} z {plannedDays, plural, one {# zaplanowanego dnia} few {# zaplanowanych dni} many {# zaplanowanych dni} other {# zaplanowanych dni}}",
+        "weekGapDeficit": "Brakuje {amount} w skali tygodnia",
+        "weekGapExcess": "{amount} za dużo w skali tygodnia",
+        "sourcesExcess": "Największe źródła",
+        "sourcesDeficit": "Najlepsze okazje do poprawy",
+        "contributorShare": "{share}% tygodnia",
+        "none": "Twój zaplanowany tydzień wygląda na zbilansowany. Dobra robota!"
+      },
+      "swaps": {
+        "show": "Pokaż rozwiązania",
+        "loading": "Szukanie rozwiązań…",
+        "closes": "zamyka {pct}% luki",
+        "tradeoffs": "Uwaga: {nutrients}",
+        "apply": "Zastosuj",
+        "applying": "Stosowanie…",
+        "applied": "Zmieniono na {to}",
+        "undo": "Cofnij",
+        "none": "Brak dobrego kandydata w Twoich przepisach.",
+        "generate": "Wygeneruj przepis, który to naprawi",
+        "generating": "Gotowanie przepisu…",
+        "generated": "Utworzono \"{title}\" — wartości odżywcze zweryfikowane danymi USDA",
+        "generateFailed": "Nie udało się wygenerować przepisu. Spróbuj ponownie."
+      },
+      "improveData": {
+        "title": "Popraw swoje dane",
+        "body": "{count, plural, one {# przepis w Twoim tygodniu ma} few {# przepisy w Twoim tygodniu mają} many {# przepisów w Twoim tygodniu ma} other {# przepisów w Twoim tygodniu ma}} niekompletne dane składników, więc analiza mikroelementów jest ograniczona.",
+        "analyze": "Analizuj składniki",
+        "analyzing": "Analizowanie…",
+        "done": "Dopasowano {matched} z {total} składników"
+      },
+      "detail": {
+        "show": "Pokaż pełne szczegóły tygodnia",
+        "hide": "Ukryj pełne szczegóły",
+        "nutrient": "Składnik"
+      },
+      "basis": { "personalized": "Cele spersonalizowane", "generic": "Ogólne wartości dzienne" }
+    },
     "hub": {
       "kicker": "Centrum Nauki",
       "title": "Wiedz, co masz na talerzu",
@@ -1002,6 +1060,11 @@
         "cta": "Zobacz pełne porównanie"
       },
       "modules": {
+        "myWeek": {
+          "kicker": "Działaj",
+          "title": "Napraw Mój Tydzień",
+          "blurb": "Zobacz, jak naprawdę wygląda Twój zaplanowany tydzień, i napraw go jednym dotknięciem."
+        },
         "compare": {
           "kicker": "Porównaj",
           "title": "Pojedynek Produktów",

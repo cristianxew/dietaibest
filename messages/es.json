@@ -997,6 +997,64 @@
     "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
   },
   "nutritionHub": {
+    "myWeek": {
+      "kicker": "Tu Semana",
+      "title": "Arregla Mi Semana",
+      "description": "Tu semana planificada, medida contra tus objetivos personales — y lo primero que conviene cambiar.",
+      "hero": {
+        "eyebrow": "Esta semana",
+        "ok": "Tu semana planificada se ve equilibrada",
+        "findings": "{count, plural, one {# cosa} other {# cosas}} por mejorar esta semana",
+        "cta": "Abrir Mi Semana"
+      },
+      "empty": {
+        "title": "Sin plan de comidas activo",
+        "body": "Programa un plan de comidas y analizaremos tu semana contra tus objetivos nutricionales personales.",
+        "cta": "Ir a planes de comida"
+      },
+      "strip": { "unplanned": "Sin plan", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "Qué arreglar primero",
+        "deficitTitle": "Poco {nutrient}",
+        "excessTitle": "Demasiado {nutrient}",
+        "deficitMeta": "Por debajo en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
+        "excessMeta": "Sobre tu límite en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
+        "weekGapDeficit": "Faltan {amount} en la semana",
+        "weekGapExcess": "{amount} de más en la semana",
+        "sourcesExcess": "Mayores fuentes",
+        "sourcesDeficit": "Mejores oportunidades de mejora",
+        "contributorShare": "{share}% de la semana",
+        "none": "Tu semana planificada se ve equilibrada. ¡Bien hecho!"
+      },
+      "swaps": {
+        "show": "Ver soluciones",
+        "loading": "Buscando soluciones…",
+        "closes": "cierra el {pct}% de la brecha",
+        "tradeoffs": "Ojo: {nutrients}",
+        "apply": "Aplicar",
+        "applying": "Aplicando…",
+        "applied": "Cambiado a {to}",
+        "undo": "Deshacer",
+        "none": "No hay buen candidato en tus recetas para esto.",
+        "generate": "Generar una receta que lo arregle",
+        "generating": "Cocinando una receta…",
+        "generated": "Creada \"{title}\" — nutrición verificada con datos USDA",
+        "generateFailed": "No se pudo generar una receta esta vez. Intenta de nuevo."
+      },
+      "improveData": {
+        "title": "Mejora tus datos",
+        "body": "{count, plural, one {# receta de tu semana tiene} other {# recetas de tu semana tienen}} datos de ingredientes incompletos, así que el análisis de micronutrientes es limitado.",
+        "analyze": "Analizar ingredientes",
+        "analyzing": "Analizando…",
+        "done": "Coincidieron {matched} de {total} ingredientes"
+      },
+      "detail": {
+        "show": "Ver detalle completo de la semana",
+        "hide": "Ocultar detalle completo",
+        "nutrient": "Nutriente"
+      },
+      "basis": { "personalized": "Objetivos personalizados", "generic": "Valores diarios genéricos" }
+    },
     "hub": {
       "kicker": "Centro de Aprendizaje",
       "title": "Conoce lo que hay en tu plato",
@@ -1007,6 +1065,11 @@
         "cta": "Ver la comparación completa"
       },
       "modules": {
+        "myWeek": {
+          "kicker": "Actúa",
+          "title": "Arregla Mi Semana",
+          "blurb": "Mira cómo va de verdad tu semana planificada y arréglala con un toque."
+        },
         "compare": {
           "kicker": "Comparar",
           "title": "Duelo de Alimentos",

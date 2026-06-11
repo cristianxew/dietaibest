@@ -998,6 +998,64 @@
     "description": "Personalized meal planning and nutrition tracking with AI assistance"
   },
   "nutritionHub": {
+    "myWeek": {
+      "kicker": "Your Week",
+      "title": "Fix My Week",
+      "description": "Your planned week, measured against your personal targets — and the one thing to change first.",
+      "hero": {
+        "eyebrow": "This week",
+        "ok": "Your planned week looks balanced",
+        "findings": "{count, plural, one {# thing} other {# things}} worth fixing this week",
+        "cta": "Open My Week"
+      },
+      "empty": {
+        "title": "No active meal plan",
+        "body": "Schedule a meal plan and we'll analyze your week against your personal nutrient targets.",
+        "cta": "Go to meal plans"
+      },
+      "strip": { "unplanned": "No plan", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "What to fix first",
+        "deficitTitle": "Low {nutrient}",
+        "excessTitle": "Too much {nutrient}",
+        "deficitMeta": "Short on {days} of {plannedDays, plural, one {# planned day} other {# planned days}}",
+        "excessMeta": "Over your limit on {days} of {plannedDays, plural, one {# planned day} other {# planned days}}",
+        "weekGapDeficit": "{amount} short across the week",
+        "weekGapExcess": "{amount} over across the week",
+        "sourcesExcess": "Biggest sources",
+        "sourcesDeficit": "Best places to improve",
+        "contributorShare": "{share}% of the week",
+        "none": "Your planned week looks balanced. Nicely done."
+      },
+      "swaps": {
+        "show": "Show fixes",
+        "loading": "Finding fixes…",
+        "closes": "closes {pct}% of the gap",
+        "tradeoffs": "Watch: {nutrients}",
+        "apply": "Apply",
+        "applying": "Applying…",
+        "applied": "Swapped to {to}",
+        "undo": "Undo",
+        "none": "No good fit in your recipe library for this one.",
+        "generate": "Generate a recipe that fixes this",
+        "generating": "Cooking up a recipe…",
+        "generated": "Created \"{title}\" — nutrition verified with USDA data",
+        "generateFailed": "Couldn't generate a recipe this time. Try again."
+      },
+      "improveData": {
+        "title": "Improve your data",
+        "body": "{count, plural, one {# recipe in your week has} other {# recipes in your week have}} incomplete ingredient data, so micronutrient analysis is limited.",
+        "analyze": "Analyze ingredients",
+        "analyzing": "Analyzing…",
+        "done": "Matched {matched} of {total} ingredients"
+      },
+      "detail": {
+        "show": "Show full week detail",
+        "hide": "Hide full week detail",
+        "nutrient": "Nutrient"
+      },
+      "basis": { "personalized": "Personalized targets", "generic": "Generic daily values" }
+    },
     "hub": {
       "kicker": "Learning Hub",
       "title": "Know what's on your plate",
@@ -1008,6 +1066,11 @@
         "cta": "See the full comparison"
       },
       "modules": {
+        "myWeek": {
+          "kicker": "Act",
+          "title": "Fix My Week",
+          "blurb": "See how your planned week really measures up, and fix it in one tap."
+        },
         "compare": {
           "kicker": "Compare",
           "title": "Food Face-Off",
