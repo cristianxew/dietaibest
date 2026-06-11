@@ -240,6 +240,14 @@ describe("generateRecipeImage tool", () => {
     });
 
     it("fails execution immediately if askFirst is true but confirmed is not set", async () => {
+      prismaFake.recipe.findUnique.mockResolvedValue({
+        id: "recipe-123",
+        userId: "user-123",
+        title: "Imageless Recipe",
+        description: null,
+        imageUrl: null,
+      } as never);
+
       const result = await generateRecipeImage.execute(
         { recipeId: "recipe-123", askFirst: true },
         makeCtx()
@@ -250,6 +258,66 @@ describe("generateRecipeImage tool", () => {
         expect(result.reason).toBe("generic");
         expect(result.message).toBe("Image generation requires confirmation");
       }
+    });
+  });
+
+  describe("auto-offer on a recipe that already has an image (imported with photo)", () => {
+    it("skips the confirmation prompt entirely", async () => {
+      prismaFake.recipe.findUnique.mockResolvedValue({
+        title: "Pastel Keto De Almendras",
+        imageUrl: "https://keto-mojo.com/cake.jpg",
+      } as never);
+
+      const confirmReq = await generateRecipeImage.requiresConfirmation?.(
+        { recipeId: "recipe-123", askFirst: true },
+        makeCtx()
+      );
+
+      expect(confirmReq).toBeNull();
+    });
+
+    it("execute no-ops gracefully without calling the image model", async () => {
+      prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
+      const generateImages = vi.fn();
+      setGoogleGenAIClientForTest({ models: { generateImages } } as never);
+
+      const result = await generateRecipeImage.execute(
+        { recipeId: "recipe-123", askFirst: true },
+        makeCtx()
+      );
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data.skippedExistingImage).toBe(true);
+        expect(result.data.imageUrl).toBe(ownedRecipe.imageUrl);
+      }
+      expect(generateImages).not.toHaveBeenCalled();
+      expect(prismaFake.recipe.update).not.toHaveBeenCalled();
+    });
+
+    it("still generates when the user explicitly confirmed (regeneration)", async () => {
+      // askFirst+confirmed means the user clicked "Yes" — an existing image
+      // must not block an explicit confirmation.
+      prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
+      prismaFake.recipe.update.mockResolvedValue({ id: "recipe-123" } as never);
+      const clientMock = {
+        models: {
+          generateImages: vi.fn().mockResolvedValue({
+            generatedImages: [
+              { image: { imageBytes: Buffer.from("fake-image").toString("base64") } },
+            ],
+          }),
+        },
+      };
+      setGoogleGenAIClientForTest(clientMock as never);
+
+      const result = await generateRecipeImage.execute(
+        { recipeId: "recipe-123", askFirst: true, confirmed: true },
+        makeCtx()
+      );
+
+      expect(result.ok).toBe(true);
+      expect(clientMock.models.generateImages).toHaveBeenCalledTimes(1);
     });
   });
 });

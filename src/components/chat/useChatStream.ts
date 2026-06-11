@@ -43,6 +43,9 @@ type AgentEvent =
       toolName: string;
       message: string;
       payload: unknown;
+      /** Gated tool's status key — used to restore the pending status on the
+       *  reused bubble after the user accepts. Optional for older streams. */
+      statusKey?: string;
     }
   | { type: "guardrail.redacted"; reason: "nutrition" }
   | { type: "cost.cap"; resetsOn: string }
@@ -188,9 +191,12 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   const [isStreaming, setIsStreaming] = useState(false);
   const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
   const streamingTextIdRef = useRef<string | null>(null);
-  // handleEvent is a stable callback with no deps — read locale through a ref.
+  // handleEvent is a stable callback with no deps — read locale and translate
+  // through refs so a locale switch mid-session doesn't pin stale strings.
   const localeRef = useRef(locale);
   localeRef.current = locale;
+  const translateRef = useRef(translate);
+  translateRef.current = translate;
 
   // Auto-navigation after recipe create/import. handleEvent captures the
   // recipe href on tool.completed and consumes it on `finish` — both read
@@ -221,10 +227,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     },
     []
   );
-
-  const removeMessage = useCallback((id: string) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id));
-  }, []);
 
   const consumeStream = useCallback(
     async (response: Response) => {
@@ -288,7 +290,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           content: {
             status: {
               state: "pending",
-              message: translate.status(statusKeyToI18n(event.statusKey)),
+              message: translateRef.current.status(statusKeyToI18n(event.statusKey)),
             },
           },
         });
@@ -304,7 +306,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
             ...prev.content,
             status: {
               state: "success",
-              message: translate.success(),
+              message: translateRef.current.success(),
             },
             link: link ? { type: link.type, href: link.href, label: link.label } : prev.content.link,
           },
@@ -334,7 +336,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
             ...prev.content,
             status: {
               state: "pending",
-              message: translate.status(
+              message: translateRef.current.status(
                 statusKeyToI18n(event.statusKey),
                 Object.keys(params).length > 0 ? params : undefined
               ),
@@ -345,7 +347,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       }
       case "tool.failed": {
         const id = callIdToMessageIdRef.current.get(event.callId);
-        const errorText = translate.error(event.reason);
+        const errorText = translateRef.current.error(event.reason);
         if (id) {
           updateMessage(id, (prev) => ({
             ...prev,
@@ -390,7 +392,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
                     content: {
                       status: {
                         state: "pending" as StatusState,
-                        message: translate.status(statusKeyToI18n("import.saving")),
+                        message: translateRef.current.status(statusKeyToI18n("import.saving")),
                       },
                     },
                   }));
@@ -402,7 +404,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
                     content: {
                       status: {
                         state: "success" as StatusState,
-                        message: translate.cancelled(),
+                        message: translateRef.current.cancelled(),
                       },
                     },
                   }));
@@ -420,42 +422,62 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           }
         }
 
-        const id = nextId();
+        // Reuse the tool.invoked bubble for this callId. Without this, the
+        // pending spinner ("Generando imagen culinaria…") keeps spinning next
+        // to the confirmation prompt the whole time the user is deciding —
+        // and forever if they decline.
+        const existingId = callIdToMessageIdRef.current.get(event.callId);
+        const id = existingId ?? nextId();
         const isGenerateImage = event.toolName === "generateRecipeImage";
-        appendMessage({
-          id,
-          role: "agent",
-          content: {
-            text: isGenerateImage
-              ? translate.confirmGenerateImage(event.message)
-              : translate.confirmDelete(event.message),
-            confirm: {
-              confirmText: isGenerateImage ? translate.generateImageYes() : undefined,
-              cancelText: isGenerateImage ? translate.generateImageNo() : undefined,
-              variant: isGenerateImage ? "primary" : "destructive",
-              onConfirm: async () => {
-                removeMessage(id);
-                await resolveConfirm(event.callId, event.toolName, true, event.payload);
-              },
-              onCancel: async () => {
-                updateMessage(id, (prev) => ({
-                  ...prev,
-                  content: {
-                    ...prev.content,
-                    confirm: undefined,
-                    status: {
-                      state: "success",
-                      message: isGenerateImage
-                        ? translate.generateImageSkipped()
-                        : translate.cancelled(),
-                    },
+        const confirmContent: MessageContent = {
+          text: isGenerateImage
+            ? translateRef.current.confirmGenerateImage(event.message)
+            : translateRef.current.confirmDelete(event.message),
+          confirm: {
+            confirmText: isGenerateImage ? translateRef.current.generateImageYes() : undefined,
+            cancelText: isGenerateImage ? translateRef.current.generateImageNo() : undefined,
+            variant: isGenerateImage ? "primary" : "destructive",
+            onConfirm: async () => {
+              // Now the work actually starts — show the in-progress status on
+              // the same bubble; the resume turn's tool.progress / completed /
+              // failed events update it through the callId mapping.
+              updateMessage(id, (prev) => ({
+                ...prev,
+                content: {
+                  status: {
+                    state: "pending",
+                    message: translateRef.current.status(
+                      statusKeyToI18n(event.statusKey ?? "tool.invoked")
+                    ),
                   },
-                }));
-                await resolveConfirm(event.callId, event.toolName, false, event.payload);
-              },
+                },
+              }));
+              await resolveConfirm(event.callId, event.toolName, true, event.payload);
+            },
+            onCancel: async () => {
+              // Declined: no further events will arrive for this callId.
+              callIdToMessageIdRef.current.delete(event.callId);
+              updateMessage(id, (prev) => ({
+                ...prev,
+                content: {
+                  status: {
+                    state: "success",
+                    message: isGenerateImage
+                      ? translateRef.current.generateImageSkipped()
+                      : translateRef.current.cancelled(),
+                  },
+                },
+              }));
+              await resolveConfirm(event.callId, event.toolName, false, event.payload);
             },
           },
-        });
+        };
+        if (existingId) {
+          updateMessage(id, (prev) => ({ ...prev, content: confirmContent }));
+        } else {
+          callIdToMessageIdRef.current.set(event.callId, id);
+          appendMessage({ id, role: "agent", content: confirmContent });
+        }
         break;
       }
       case "guardrail.redacted": {
@@ -463,7 +485,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
           id: nextId(),
           role: "agent",
           content: {
-            status: { state: "error", message: translate.guardrailRedacted() },
+            status: { state: "error", message: translateRef.current.guardrailRedacted() },
           },
         });
         break;
@@ -473,7 +495,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         appendMessage({
           id: nextId(),
           role: "agent",
-          content: { text: translate.costCapReached(event.resetsOn) },
+          content: { text: translateRef.current.costCapReached(event.resetsOn) },
         });
         break;
       }
@@ -486,12 +508,15 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       }
       case "error": {
         streamingTextIdRef.current = null;
+        // event.message carries raw provider/internal detail ("overloaded_error",
+        // "Cancelled") — keep it out of the UI, surface a translated error.
+        console.warn("[chat] stream error:", event.message);
         appendMessage({
           id: nextId(),
           role: "agent",
           error: true,
           timestamp: timeLabel(localeRef.current),
-          content: { text: event.message },
+          content: { text: translateRef.current.error("generic") },
         });
         break;
       }
@@ -553,15 +578,16 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         });
         if (!res.ok) {
           const payload = await res.json().catch(() => ({}));
+          // Server validation strings are developer-facing English (Zod,
+          // "Unauthorized", …) — log them, but show the user a translated error.
+          if (payload?.error) console.warn("[chat] send rejected:", payload.error);
           updateMessage(userMsgId, (prev) => ({ ...prev, failed: true }));
           appendMessage({
             id: nextId(),
             role: "agent",
             error: true,
             timestamp: timeLabel(locale),
-            content: {
-              text: typeof payload.error === "string" ? payload.error : translate.error("generic"),
-            },
+            content: { text: translate.error("generic") },
           });
           return;
         }
@@ -580,7 +606,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         streamingTextIdRef.current = null;
       }
     },
-    [appendMessage, consumeStream, locale, messages, translate]
+    [appendMessage, consumeStream, locale, messages, translate, updateMessage]
   );
 
   const resolveConfirm = useCallback(
@@ -596,7 +622,21 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
             resolve: { callId, toolName, accepted, payload },
           }),
         });
-        if (res.ok) await consumeStream(res);
+        if (res.ok) {
+          await consumeStream(res);
+        } else {
+          // Without feedback the confirm click silently vanishes and the
+          // pending tool-call is left dangling in the conversation.
+          const payload = await res.json().catch(() => ({}));
+          if (payload?.error) console.warn("[chat] resolve rejected:", payload.error);
+          appendMessage({
+            id: nextId(),
+            role: "agent",
+            error: true,
+            timestamp: timeLabel(locale),
+            content: { text: translate.error("generic") },
+          });
+        }
       } catch {
         appendMessage({
           id: nextId(),
@@ -611,13 +651,16 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   );
 
   const clear = useCallback(async () => {
+    // Mid-stream this would archive the conversation the runtime is still
+    // writing to, while the live stream keeps painting into the emptied view.
+    if (isStreaming) return;
     setMessages([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
     setHasLastInput(false);
     await fetch("/api/chat/conversation", { method: "DELETE" });
-  }, []);
+  }, [isStreaming]);
 
   const hydrate = useCallback(async () => {
     try {
@@ -666,6 +709,10 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   }, [isStreaming]);
 
   const switchSession = useCallback(async (sessionId: string) => {
+    // Mid-stream this re-activates another conversation server-side while the
+    // runtime is still persisting into the current one, and the live stream
+    // would keep painting into the newly loaded thread.
+    if (isStreaming) return;
     // Clear local state
     setMessages([]);
     callIdToMessageIdRef.current.clear();
@@ -678,16 +725,19 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     if (!res.ok) return;
     const payload = await res.json() as { ok: boolean; messages: RawMessage[] };
     setMessages(hydrateMessages(payload.messages, translate));
-  }, [translate]);
+  }, [isStreaming, translate]);
 
   const createSession = useCallback(async () => {
+    // Same hazard as switchSession: archiving the active conversation while a
+    // turn is streaming into it strands the turn in the archived session.
+    if (isStreaming) return;
     setMessages([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
     setHasLastInput(false);
     await fetch("/api/chat/sessions", { method: "POST" });
-  }, []);
+  }, [isStreaming]);
 
   // Hydrate on first mount.
   useEffect(() => {

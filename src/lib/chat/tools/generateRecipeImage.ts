@@ -33,15 +33,15 @@ export function setGoogleGenAIClientForTest(client: Pick<GoogleGenAI, "models"> 
 
 export const generateRecipeImage: Tool<
   typeof inputSchema,
-  { id: string; imageUrl: string }
+  { id: string; imageUrl: string; skippedExistingImage?: boolean }
 > = {
   name: "generateRecipeImage",
   description:
     "Generate a professional, beautiful recipe image using AI. Pass recipeId, and optionally promptDescription. Call this when a recipe is created/imported without an image, or when explicitly asked.",
   guidance: `IMAGE GENERATION — generateRecipeImage.
-- When a recipe has just been created or imported (from a URL or an image) without an image, or when the user explicitly asks to generate an image for a recipe, you MUST call generateRecipeImage to create a beautiful 4:3 food photography image for that recipe.
+- When a recipe has just been created or imported WITHOUT an image, or when the user explicitly asks to generate an image for a recipe, you MUST call generateRecipeImage to create a beautiful 4:3 food photography image for that recipe.
 - If a recipe was just created FROM SCRATCH, immediately trigger generateRecipeImage with askFirst: false as a subsequent tool call in the same turn, using the recipe's returned ID. Do NOT wait for the user to ask.
-- If a recipe was just IMPORTED (from a URL or image attachment) and has no image, immediately trigger generateRecipeImage with askFirst: true as a subsequent tool call in the same turn. This gates the generation behind a user confirmation prompt.
+- If a recipe was just IMPORTED (from a URL or image attachment): check the import result's hasImage field. ONLY when hasImage is false, immediately trigger generateRecipeImage with askFirst: true as a subsequent tool call in the same turn (this gates the generation behind a user confirmation prompt). When hasImage is true the recipe already has a photo from the source — do NOT call generateRecipeImage and do NOT offer it unless the user explicitly asks for a new image.
 - Only call generateRecipeImage for existing recipes (it requires a recipeId). If the user asks to generate an image but no recipe is loaded/active in context, search for it using searchRecipes or ask for clarification first.`,
   inputSchema,
   statusKey: "recipe.generatingImage",
@@ -50,8 +50,12 @@ export const generateRecipeImage: Tool<
     if (input.askFirst && !input.confirmed) {
       const recipe = await prisma.recipe.findUnique({
         where: { id: input.recipeId },
-        select: { title: true },
+        select: { title: true, imageUrl: true },
       });
+      // Auto-offer guard (deterministic backstop for the guidance): the source
+      // already provided a photo — nothing to ask. execute() no-ops for the
+      // same condition, so the model just gets a "skipped" result to ack.
+      if (recipe?.imageUrl) return null;
       const name = recipe?.title ?? "this recipe";
       return {
         message: name,
@@ -64,13 +68,6 @@ export const generateRecipeImage: Tool<
     return null;
   },
   async execute(input: Input, ctx, emit) {
-    if (input.askFirst && !input.confirmed) {
-      return {
-        ok: false,
-        reason: "generic",
-        message: "Image generation requires confirmation",
-      };
-    }
     const { recipeId, promptDescription } = input;
 
     // 1. Verify recipe exists and ownership
@@ -92,6 +89,32 @@ export const generateRecipeImage: Tool<
         ok: false,
         reason: "unauthorized",
         message: "You are not authorized to update this recipe image",
+      };
+    }
+
+    if (input.askFirst && !input.confirmed) {
+      // Mirror of the requiresConfirmation auto-offer guard: an unconfirmed
+      // gated call on a recipe that already has an image is a graceful no-op,
+      // not a generation. Explicit confirmation (confirmed: true) regenerates.
+      if (recipe.imageUrl) {
+        return {
+          ok: true,
+          data: {
+            id: recipe.id,
+            imageUrl: recipe.imageUrl,
+            skippedExistingImage: true,
+          },
+          link: {
+            type: "recipe",
+            href: `/recipes/${recipe.id}`,
+            label: recipe.title,
+          },
+        };
+      }
+      return {
+        ok: false,
+        reason: "generic",
+        message: "Image generation requires confirmation",
       };
     }
 
@@ -207,7 +230,7 @@ export const generateRecipeImage: Tool<
         where: { id: recipeId },
         data: { imageUrl: publicUrl },
       });
-    } catch (dbErr) {
+    } catch (_dbErr) {
       // Cleanup to prevent orphaned storage assets
       try {
         await deleteRecipeImage(storagePath);

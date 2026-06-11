@@ -141,224 +141,244 @@ export class AgentRuntime {
 
     const pendingPersist: ConversationTurnItem[] = [];
 
-    // Step 1: append user message OR resolve pending confirmation.
-    if (req.pendingResolve) {
-      // The runtime previously paused on confirm.request and emitted a virtual
-      // tool-call (callId, toolName). Now we run the real execute() with the
-      // resolved payload (if accepted), and synthesise the matching turn item.
-      if (req.pendingResolve.accepted) {
-        const tool = this.findTool(req.pendingResolve.toolName);
-        if (!tool) {
-          yield {
-            type: "tool.failed",
-            toolName: req.pendingResolve.toolName,
-            callId: req.pendingResolve.callId,
-            reason: "generic",
-          };
-        } else {
-          const callItem: ConversationTurnItem = {
-            kind: "tool-call",
-            callId: req.pendingResolve.callId,
-            toolName: tool.name,
-            input: req.pendingResolve.payload,
-          };
-          // The tool-call was already persisted on the turn that paused at
-          // confirm.request, so it is already in `history`. Re-adding it sends a
-          // duplicate `tool_use` id to the provider on the follow-up ack and
-          // 400s ("tool_use ids must be unique"). Only add it if missing.
-          const alreadyPersisted = history.some(
-            (i) => i.kind === "tool-call" && i.callId === callItem.callId
-          );
-          if (!alreadyPersisted) {
-            pendingPersist.push(callItem);
-            history.push(callItem);
+    // Persist-exactly-once. The happy path calls this explicitly (so a store
+    // failure surfaces as a stream error); the finally below is the safety net
+    // for abnormal exits — provider throw (e.g. Anthropic 529) or the consumer
+    // abandoning the generator (client disconnect aborts the SSE stream).
+    // Without it, the user's message itself is silently lost on those paths.
+    let persisted = false;
+    const persistTurn = async () => {
+      if (persisted) return;
+      persisted = true;
+      await this.store.append(ctx.conversationId, pendingPersist);
+    };
+
+    try {
+      // Step 1: append user message OR resolve pending confirmation.
+      if (req.pendingResolve) {
+        // The runtime previously paused on confirm.request and emitted a virtual
+        // tool-call (callId, toolName). Now we run the real execute() with the
+        // resolved payload (if accepted), and synthesise the matching turn item.
+        if (req.pendingResolve.accepted) {
+          const tool = this.findTool(req.pendingResolve.toolName);
+          if (!tool) {
+            yield {
+              type: "tool.failed",
+              toolName: req.pendingResolve.toolName,
+              callId: req.pendingResolve.callId,
+              reason: "generic",
+            };
+          } else {
+            const callItem: ConversationTurnItem = {
+              kind: "tool-call",
+              callId: req.pendingResolve.callId,
+              toolName: tool.name,
+              input: req.pendingResolve.payload,
+            };
+            // The tool-call was already persisted on the turn that paused at
+            // confirm.request, so it is already in `history`. Re-adding it sends a
+            // duplicate `tool_use` id to the provider on the follow-up ack and
+            // 400s ("tool_use ids must be unique"). Only add it if missing.
+            const alreadyPersisted = history.some(
+              (i) => i.kind === "tool-call" && i.callId === callItem.callId
+            );
+            if (!alreadyPersisted) {
+              pendingPersist.push(callItem);
+              history.push(callItem);
+            }
+            yield* this.runOneTool(tool, callItem, ctx, history, pendingPersist);
           }
-          yield* this.runOneTool(tool, callItem, ctx, history, pendingPersist);
+        } else {
+          // User cancelled! Supply a tool-result so the AI SDK doesn't crash
+          // with AI_MissingToolResultsError for the pending tool call.
+          const resultItem: ConversationTurnItem = {
+            kind: "tool-result",
+            callId: req.pendingResolve.callId,
+            toolName: req.pendingResolve.toolName,
+            result: { ok: false, reason: "cancelled", message: "User skipped or cancelled the tool execution." },
+          };
+          pendingPersist.push(resultItem);
+          history.push(resultItem);
         }
-      } else {
-        // User cancelled! Supply a tool-result so the AI SDK doesn't crash
-        // with AI_MissingToolResultsError for the pending tool call.
-        const resultItem: ConversationTurnItem = {
-          kind: "tool-result",
-          callId: req.pendingResolve.callId,
-          toolName: req.pendingResolve.toolName,
-          result: { ok: false, reason: "cancelled", message: "User skipped or cancelled the tool execution." },
+        // After resolving (accepted or not), loop back into the LLM for an ack.
+      }
+
+      if (req.userMessage && req.userMessage.trim().length > 0) {
+        const userItem: ConversationTurnItem = {
+          kind: "text",
+          role: "user",
+          text: req.userMessage.trim(),
         };
-        pendingPersist.push(resultItem);
-        history.push(resultItem);
-      }
-      // After resolving (accepted or not), loop back into the LLM for an ack.
-    }
-
-    if (req.userMessage && req.userMessage.trim().length > 0) {
-      const userItem: ConversationTurnItem = {
-        kind: "text",
-        role: "user",
-        text: req.userMessage.trim(),
-      };
-      pendingPersist.push(userItem);
-      history.push(userItem);
-    }
-
-    // Compose the prompt from the entitlement-filtered tool set (`tools`), so
-    // each active tool's `guidance` is folded in and a filtered-out tool can
-    // never leak into the prompt.
-    const systemPrompt = buildSystemPrompt(ctx.locale, ctx.page, tools);
-    const guardrail = new StreamingGuardrail();
-
-    // Refusal-telemetry accumulators (decision #117). A turn is flagged as a
-    // medical refusal if NO tool was called this turn AND the assistant text
-    // matches a multilingual refusal heuristic.
-    let turnAssistantText = "";
-    let turnHadToolCall = false;
-    // Token-usage accumulators (DIE-38 cost cap). Summed across LLM steps,
-    // emitted on finish AND persisted per step as `kind: "usage"` items so the
-    // conversation-prisma adapter can fill the Message columns.
-    let turnInputTokens = 0;
-    let turnOutputTokens = 0;
-
-    // Step 2: tool loop. Cap at maxToolLoops to avoid runaway tool ping-pong.
-    let loops = 0;
-    while (loops++ < this.maxToolLoops) {
-      if (signal?.aborted) {
-        yield { type: "error", message: "Cancelled" };
-        await this.store.append(ctx.conversationId, pendingPersist);
-        return;
+        pendingPersist.push(userItem);
+        history.push(userItem);
       }
 
-      let sawToolCall = false;
-      const toolCallBatch: ConversationTurnItem[] = [];
+      // Compose the prompt from the entitlement-filtered tool set (`tools`), so
+      // each active tool's `guidance` is folded in and a filtered-out tool can
+      // never leak into the prompt.
+      const systemPrompt = buildSystemPrompt(ctx.locale, ctx.page, tools);
+      const guardrail = new StreamingGuardrail();
 
-      for await (const ev of this.llm.stream({
-        systemPrompt,
-        messages: history,
-        tools,
-        signal,
-      })) {
+      // Refusal-telemetry accumulators (decision #117). A turn is flagged as a
+      // medical refusal if NO tool was called this turn AND the assistant text
+      // matches a multilingual refusal heuristic.
+      let turnAssistantText = "";
+      let turnHadToolCall = false;
+      // Token-usage accumulators (DIE-38 cost cap). Summed across LLM steps,
+      // emitted on finish AND persisted per step as `kind: "usage"` items so the
+      // conversation-prisma adapter can fill the Message columns.
+      let turnInputTokens = 0;
+      let turnOutputTokens = 0;
+
+      // Step 2: tool loop. Cap at maxToolLoops to avoid runaway tool ping-pong.
+      let loops = 0;
+      while (loops++ < this.maxToolLoops) {
         if (signal?.aborted) {
           yield { type: "error", message: "Cancelled" };
-          await this.store.append(ctx.conversationId, pendingPersist);
           return;
         }
 
-        const wrapped = await this.handleProviderEvent(ev, guardrail);
-        for (const out of wrapped) yield out;
+        let sawToolCall = false;
+        const toolCallBatch: ConversationTurnItem[] = [];
 
-        if (ev.kind === "text-delta") {
-          turnAssistantText += ev.text;
-          pendingPersist.push({
-            kind: "text",
-            role: "assistant",
-            text: ev.text,
-          });
-          history.push({ kind: "text", role: "assistant", text: ev.text });
-        }
-        if (ev.kind === "tool-call") {
-          sawToolCall = true;
-          turnHadToolCall = true;
-          const item: ConversationTurnItem = {
-            kind: "tool-call",
-            callId: ev.callId,
-            toolName: ev.toolName,
-            input: ev.input,
-          };
-          toolCallBatch.push(item);
-          pendingPersist.push(item);
-          history.push(item);
-        }
-        if (ev.kind === "finish" && ev.usage) {
-          turnInputTokens += ev.usage.inputTokens;
-          turnOutputTokens += ev.usage.outputTokens;
-          pendingPersist.push({
-            kind: "usage",
-            inputTokens: ev.usage.inputTokens,
-            outputTokens: ev.usage.outputTokens,
-          });
-        }
-      }
-
-      // Flush any guardrail buffer at end of model output.
-      const tail = guardrail.flush();
-      if (tail.text) yield { type: "text.delta", text: tail.text };
-      if (guardrail.totalRedactions > 0) {
-        yield { type: "guardrail.redacted", reason: "nutrition" };
-      }
-
-      if (!sawToolCall) break;
-
-      // Execute the tools requested in this LLM turn.
-      for (const call of toolCallBatch) {
-        if (call.kind !== "tool-call") continue;
-        const tool = this.findTool(call.toolName);
-        if (!tool) {
-          yield {
-            type: "tool.failed",
-            toolName: call.toolName,
-            callId: call.callId,
-            reason: "generic",
-          };
-          continue;
-        }
-
-        // Confirmation gate. If the tool requires confirmation, emit a
-        // confirm.request and STOP. The client re-calls run() with
-        // pendingResolve once the user has answered. A ToolFailure thrown
-        // during this phase (e.g. no recipe extracted) fails cleanly.
-        if (tool.requiresConfirmation) {
-          let descriptor;
-          try {
-            descriptor = await tool.requiresConfirmation(call.input, ctx);
-          } catch (err) {
-            if (err instanceof ToolFailure) {
-              yield {
-                type: "tool.failed",
-                toolName: tool.name,
-                callId: call.callId,
-                reason: err.reason,
-              };
-              const failItem: ConversationTurnItem = {
-                kind: "tool-result",
-                callId: call.callId,
-                toolName: tool.name,
-                result: { ok: false, reason: err.reason, message: err.message },
-              };
-              pendingPersist.push(failItem);
-              history.push(failItem);
-              continue;
-            }
-            throw err;
-          }
-          if (descriptor) {
-            yield {
-              type: "confirm.request",
-              callId: call.callId,
-              toolName: tool.name,
-              message: descriptor.message,
-              payload: descriptor.payload,
-            };
-            await this.store.append(ctx.conversationId, pendingPersist);
+        for await (const ev of this.llm.stream({
+          systemPrompt,
+          messages: history,
+          tools,
+          signal,
+        })) {
+          if (signal?.aborted) {
+            yield { type: "error", message: "Cancelled" };
             return;
           }
+
+          const wrapped = await this.handleProviderEvent(ev, guardrail);
+          for (const out of wrapped) yield out;
+
+          if (ev.kind === "text-delta") {
+            turnAssistantText += ev.text;
+            pendingPersist.push({
+              kind: "text",
+              role: "assistant",
+              text: ev.text,
+            });
+            history.push({ kind: "text", role: "assistant", text: ev.text });
+          }
+          if (ev.kind === "tool-call") {
+            sawToolCall = true;
+            turnHadToolCall = true;
+            const item: ConversationTurnItem = {
+              kind: "tool-call",
+              callId: ev.callId,
+              toolName: ev.toolName,
+              input: ev.input,
+            };
+            toolCallBatch.push(item);
+            pendingPersist.push(item);
+            history.push(item);
+          }
+          if (ev.kind === "finish" && ev.usage) {
+            turnInputTokens += ev.usage.inputTokens;
+            turnOutputTokens += ev.usage.outputTokens;
+            pendingPersist.push({
+              kind: "usage",
+              inputTokens: ev.usage.inputTokens,
+              outputTokens: ev.usage.outputTokens,
+            });
+          }
         }
 
-        yield* this.runOneTool(tool, call, ctx, history, pendingPersist, guardrail);
+        // Flush any guardrail buffer at end of model output.
+        const tail = guardrail.flush();
+        if (tail.text) yield { type: "text.delta", text: tail.text };
+        if (guardrail.totalRedactions > 0) {
+          yield { type: "guardrail.redacted", reason: "nutrition" };
+        }
+
+        if (!sawToolCall) break;
+
+        // Execute the tools requested in this LLM turn.
+        for (const call of toolCallBatch) {
+          if (call.kind !== "tool-call") continue;
+          const tool = this.findTool(call.toolName);
+          if (!tool) {
+            yield {
+              type: "tool.failed",
+              toolName: call.toolName,
+              callId: call.callId,
+              reason: "generic",
+            };
+            continue;
+          }
+
+          // Confirmation gate. If the tool requires confirmation, emit a
+          // confirm.request and STOP. The client re-calls run() with
+          // pendingResolve once the user has answered. A ToolFailure thrown
+          // during this phase (e.g. no recipe extracted) fails cleanly.
+          if (tool.requiresConfirmation) {
+            let descriptor;
+            try {
+              descriptor = await tool.requiresConfirmation(call.input, ctx);
+            } catch (err) {
+              if (err instanceof ToolFailure) {
+                yield {
+                  type: "tool.failed",
+                  toolName: tool.name,
+                  callId: call.callId,
+                  reason: err.reason,
+                };
+                const failItem: ConversationTurnItem = {
+                  kind: "tool-result",
+                  callId: call.callId,
+                  toolName: tool.name,
+                  result: { ok: false, reason: err.reason, message: err.message },
+                };
+                pendingPersist.push(failItem);
+                history.push(failItem);
+                continue;
+              }
+              throw err;
+            }
+            if (descriptor) {
+              yield {
+                type: "confirm.request",
+                callId: call.callId,
+                toolName: tool.name,
+                message: descriptor.message,
+                payload: descriptor.payload,
+                statusKey: tool.statusKey,
+              };
+              return;
+            }
+          }
+
+          yield* this.runOneTool(tool, call, ctx, history, pendingPersist, guardrail);
+        }
+      }
+
+      if (!turnHadToolCall && looksLikeRefusal(turnAssistantText)) {
+        pendingPersist.push({
+          kind: "metadata",
+          role: "assistant",
+          refusalDetected: true,
+        });
+      }
+
+      const usage =
+        turnInputTokens > 0 || turnOutputTokens > 0
+          ? { inputTokens: turnInputTokens, outputTokens: turnOutputTokens }
+          : undefined;
+      yield usage ? { type: "finish", usage } : { type: "finish" };
+      await persistTurn();
+    } finally {
+      if (!persisted) {
+        try {
+          await persistTurn();
+        } catch (err) {
+          console.error("[chat] failed to persist turn after abnormal exit:", err);
+        }
       }
     }
-
-    if (!turnHadToolCall && looksLikeRefusal(turnAssistantText)) {
-      pendingPersist.push({
-        kind: "metadata",
-        role: "assistant",
-        refusalDetected: true,
-      });
-    }
-
-    const usage =
-      turnInputTokens > 0 || turnOutputTokens > 0
-        ? { inputTokens: turnInputTokens, outputTokens: turnOutputTokens }
-        : undefined;
-    yield usage ? { type: "finish", usage } : { type: "finish" };
-    await this.store.append(ctx.conversationId, pendingPersist);
   }
 
   /**
@@ -516,7 +536,9 @@ export class AgentRuntime {
       kind: "tool-result",
       callId: call.callId,
       toolName: tool.name,
-      result: { ok: true, data: result.data },
+      // `link` rides along so a reloaded conversation can re-render the
+      // tool's link affordance (serialize.ts reads it back on GET).
+      result: { ok: true, data: result.data, ...(result.link && { link: result.link }) },
     };
     pendingPersist.push(resultItem);
     history.push(resultItem);

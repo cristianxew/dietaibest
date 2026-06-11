@@ -9,9 +9,12 @@ interface ChatHeaderProps {
   onClose: () => void;
   onToggleSessions: () => void;
   onNewChat: () => void;
+  /** Disables session actions while a turn is streaming — switching or
+   *  archiving the active conversation mid-run strands the in-flight turn. */
+  busy?: boolean;
 }
 
-export function ChatHeader({ onClose, onToggleSessions, onNewChat }: ChatHeaderProps) {
+export function ChatHeader({ onClose, onToggleSessions, onNewChat, busy = false }: ChatHeaderProps) {
   const t = useTranslations("chat");
 
   return (
@@ -28,7 +31,8 @@ export function ChatHeader({ onClose, onToggleSessions, onNewChat }: ChatHeaderP
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleSessions}
-          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
+          disabled={busy}
+          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-muted-foreground"
           aria-label={t("sessions.title")}
           title={t("sessions.title")}
         >
@@ -36,7 +40,8 @@ export function ChatHeader({ onClose, onToggleSessions, onNewChat }: ChatHeaderP
         </button>
         <button
           onClick={onNewChat}
-          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
+          disabled={busy}
+          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-muted-foreground"
           aria-label={t("newChat")}
           title={t("newChat")}
         >

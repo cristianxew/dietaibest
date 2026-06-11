@@ -38,6 +38,17 @@ run the streaming nutrition guardrail → handle confirmation gating → persist
 turn. Domain events (`AgentEvent` in `events.ts`), not raw provider events, are
 yielded.
 
+**Turn durability:** `run()` persists exactly once via a `persistTurn` closure —
+explicitly on the happy path (store failures surface as stream errors) and from
+a `finally` safety net on abnormal exits. Provider throws (Anthropic 529/401)
+and client disconnects (the SSE consumer abandons the generator, which aborts
+`llm.stream` mid-iteration) both land in the `finally`, so the user message and
+any partial assistant text survive a mid-stream refresh.
+
+Successful tool-results are persisted as `{ ok, data, link }` — the `link`
+rides along so `serialize.ts` can re-render the tool's link affordance when the
+conversation is rehydrated on reload.
+
 ### LlmProvider (`src/lib/chat/llm-provider.ts`) — real seam
 
 One method: `stream(request) → AsyncIterable<ProviderStreamEvent>`. Adapters:
@@ -55,6 +66,16 @@ re-check, confirmation gating, guardrail). See `llm-anthropic.ts:toAiSdkTools`.
 
 `load` / `append` / `clear`. Production adapter `PrismaConversationStore`;
 in-memory adapters used in tests/evals.
+
+`PrismaConversationStore.append` does two persistence-shape transforms:
+1. **Delta coalescing** — the runtime pushes one text item per streamed delta;
+   consecutive same-role text items are merged so a turn stores a handful of
+   rows, not one per token chunk (mirrors the read-side coalescing in
+   `serialize.ts` and `toModelMessages`).
+2. **Explicit monotonic `createdAt`** — Postgres `now()` is transaction-stable,
+   so default timestamps tie within one `createMany` and `load()`'s
+   `ORDER BY createdAt` would be non-deterministic (scrambled deltas, inverted
+   tool-call/result pairs → provider 400s). Each row gets `base + index` ms.
 
 ---
 
@@ -75,6 +96,19 @@ A `Tool` (`tools/types.ts`) carries **two distinct channels to the model**:
 Plus: `inputSchema` (Zod), `statusKey` (`ToolStatusKey`), `requiresFeature`
 (entitlement gate), `requiresConfirmation` (destructive-action preview),
 `execute`.
+
+**Confirmation UX contract:** `confirm.request` carries the gated tool's
+`statusKey` so the client can swap the `tool.invoked` pending-spinner bubble
+for the confirmation prompt (and restore the in-progress status on the same
+bubble when the user accepts). Without the swap, the spinner runs alongside
+the question — and forever if the user declines.
+
+**Post-import image offers:** `importRecipeFromUrl` returns `hasImage` in its
+result data; `generateRecipeImage.guidance` instructs the model to offer
+generation (askFirst) only when `hasImage` is false. Deterministic backstop:
+an unconfirmed `askFirst` call on a recipe that already has an `imageUrl`
+skips the prompt (`requiresConfirmation` → null) and `execute` no-ops with
+`skippedExistingImage: true` instead of generating.
 
 **Entitlement filtering (hybrid C+B):** Layer A filters `allTools` by
 `ctx.entitlements.features[requiresFeature]` at turn entry; Layer B re-checks
@@ -109,6 +143,18 @@ invariant), `tests/unit/chat/tool-guidance.test.ts` (moved rules pinned to their
 tools), `tests/unit/chat/system-prompt.test.ts` (Category-1 word-presence guard).
 
 ---
+
+## Nutrition guardrail (Layer 2 redactor) — streaming context
+
+`StreamingGuardrail` (`nutrition-guardrail.ts`) carries a ≤30-char `tail` of
+already-emitted text into each window's keyword-proximity check, so a keyword
+flushed in a previous window ("calorías de ") still vouches for a number
+arriving in the next ("450"). Line-leading list ordinals ("6." / "6)") are
+exempt from redaction — the system prompt steers the model toward plain-text
+enumerations and ordinals are list markers, not macro values. Known limitation
+(pre-existing): a number emitted in a window *before* its keyword arrives
+(">450" flushed, "kcal" next chunk) can still slip through; fixing it would
+delay all streaming output by the proximity window.
 
 ## Safety: medical-refusal classifier — see ADR-0001
 

@@ -167,7 +167,7 @@ async function extractRecipe(
 
 export const importRecipeFromUrl: Tool<
   typeof inputSchema,
-  { id: string; title: string }
+  { id: string; title: string; hasImage: boolean }
 > = {
   name: "importRecipeFromUrl",
   description:
@@ -330,7 +330,13 @@ export const importRecipeFromUrl: Tool<
 
     return {
       ok: true,
-      data: { id: persisted.data.id, title: persisted.data.title },
+      data: {
+        id: persisted.data.id,
+        title: persisted.data.title,
+        // Signal for the model's post-import decision: only offer
+        // generateRecipeImage when the source did NOT provide a photo.
+        hasImage: Boolean(imported.imageUrl),
+      },
       link: {
         type: "recipe",
         href: `/recipes/${persisted.data.id}`,

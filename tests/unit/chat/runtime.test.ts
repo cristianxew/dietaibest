@@ -351,6 +351,24 @@ describe("AgentRuntime — confirmation gate failure", () => {
   });
 });
 
+describe("AgentRuntime — confirm.request carries the gated tool's statusKey", () => {
+  it("exposes statusKey so the UI can swap the pending spinner for the confirm prompt", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [{ kind: "tool-call", callId: "del-1", toolName: "deleteThing", input: { id: "x1" } }],
+    ]);
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [confirmTool] });
+
+    const events = await collect(runtime.run({ ctx: makeCtx(), userMessage: "delete x1" }));
+
+    const confirm = events.find((e) => e.type === "confirm.request");
+    expect(confirm).toBeDefined();
+    expect(
+      (confirm as { statusKey?: string } | undefined)?.statusKey
+    ).toBe("recipe.deleting");
+  });
+});
+
 describe("AgentRuntime — confirm resume does not duplicate the tool-call", () => {
   it("persists the tool-call exactly once across the confirm pause and resume", async () => {
     const store = new FakeStore();
@@ -384,5 +402,107 @@ describe("AgentRuntime — confirm resume does not duplicate the tool-call", () 
       (i) => i.kind === "tool-call" && i.callId === "del-1"
     );
     expect(toolCalls).toHaveLength(1);
+  });
+});
+
+describe("AgentRuntime — turn durability on abnormal exit", () => {
+  it("persists the user message and partial assistant text when the provider throws mid-turn", async () => {
+    const store = new FakeStore();
+    const provider: LlmProvider = {
+      async *stream() {
+        yield { kind: "text-delta", text: "partial " };
+        throw new Error("overloaded_error");
+      },
+    };
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+
+    await expect(
+      collect(runtime.run({ ctx: makeCtx(), userMessage: "Hi" }))
+    ).rejects.toThrow("overloaded_error");
+
+    const userItems = store.history.filter(
+      (i) => i.kind === "text" && i.role === "user"
+    );
+    const asstItems = store.history.filter(
+      (i) => i.kind === "text" && i.role === "assistant"
+    );
+    expect(userItems).toHaveLength(1);
+    expect(asstItems.length).toBeGreaterThan(0);
+  });
+
+  it("persists the turn when the consumer abandons the stream early (client disconnect)", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        { kind: "text-delta", text: "Hello. " },
+        { kind: "text-delta", text: "More text." },
+        { kind: "finish" },
+      ],
+    ]);
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+
+    const iter = runtime
+      .run({ ctx: makeCtx(), userMessage: "Hi" })
+      [Symbol.asyncIterator]();
+    await iter.next(); // consume one event…
+    await iter.return?.(undefined); // …then the client goes away
+
+    const userItems = store.history.filter(
+      (i) => i.kind === "text" && i.role === "user"
+    );
+    expect(userItems).toHaveLength(1);
+  });
+
+  it("does not double-persist when the run completes normally", async () => {
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [
+        { kind: "text-delta", text: "Hello." },
+        { kind: "finish" },
+      ],
+    ]);
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [echoTool] });
+
+    await collect(runtime.run({ ctx: makeCtx(), userMessage: "Hi" }));
+
+    const userItems = store.history.filter(
+      (i) => i.kind === "text" && i.role === "user"
+    );
+    expect(userItems).toHaveLength(1);
+  });
+});
+
+describe("AgentRuntime — tool-result link survives persistence (rehydration)", () => {
+  it("includes result.link in the persisted tool-result item", async () => {
+    const linkTool: AnyTool = {
+      name: "makeThing",
+      description: "creates a thing and links to it",
+      inputSchema: z.object({}),
+      statusKey: "tool.invoked",
+      async execute() {
+        return {
+          ok: true,
+          data: { recipeId: "r-1" },
+          link: { type: "recipe", href: "/recipes/r-1", label: "Tarta" },
+        };
+      },
+    };
+    const store = new FakeStore();
+    const provider = new ScriptedProvider([
+      [{ kind: "tool-call", callId: "c1", toolName: "makeThing", input: {} }],
+      [{ kind: "finish" }],
+    ]);
+    const runtime = new AgentRuntime({ llm: provider, store, tools: [linkTool] });
+
+    await collect(runtime.run({ ctx: makeCtx(), userMessage: "make it" }));
+
+    const resultItem = store.history.find((i) => i.kind === "tool-result");
+    expect(resultItem).toBeDefined();
+    const result = (resultItem as { result: { link?: unknown } }).result;
+    expect(result.link).toEqual({
+      type: "recipe",
+      href: "/recipes/r-1",
+      label: "Tarta",
+    });
   });
 });

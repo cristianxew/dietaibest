@@ -89,6 +89,27 @@ describe("redactUngroundedNutrition — golden inputs", () => {
     );
     expect(r.redactedCount).toBe(3);
   });
+
+  it("does not redact line-leading list ordinals near nutrition keywords", () => {
+    // The system prompt steers the model toward plain-text enumerations
+    // ("6. Analizar los macros (calorías…)") — the ordinal is a list marker,
+    // not a macro value, even though it sits within keyword proximity.
+    const r = redactUngroundedNutrition(
+      "5. Extraer una receta de una foto.\n6. Analizar los macros (calorías, proteína) de una receta.",
+      new Set()
+    );
+    expect(r.redactedCount).toBe(0);
+    expect(r.text).toContain("6. Analizar");
+  });
+
+  it("still redacts a mid-sentence number even when followed by a period", () => {
+    const r = redactUngroundedNutrition(
+      "Esa receta tiene unas calorias totales de 450. Bastante alto.",
+      new Set()
+    );
+    expect(r.redactedCount).toBe(1);
+    expect(r.text).toContain("[…]");
+  });
 });
 
 describe("StreamingGuardrail", () => {
@@ -117,5 +138,27 @@ describe("StreamingGuardrail", () => {
     const out2 = g.push("Add the tomatoes.");
     const combined = out1.text + out2.text + g.flush().text;
     expect(combined).toBe("Cook the onion until soft. Add the tomatoes.");
+  });
+
+  it("keeps list ordinals intact across chunk boundaries", () => {
+    const g = new StreamingGuardrail();
+    const out1 = g.push("5. Extraer una receta de una foto.\n");
+    const out2 = g.push("6. Analizar los macros (calorí");
+    const out3 = g.push("as, proteína) de una receta.");
+    const combined = out1.text + out2.text + out3.text + g.flush().text;
+    expect(combined).toContain("6. Analizar");
+    expect(g.totalRedactions).toBe(0);
+  });
+
+  it("still redacts a mid-sentence number when a chunk boundary lands right before it", () => {
+    const g = new StreamingGuardrail();
+    // The internal safe-boundary slicing makes "450." start its own window —
+    // it must NOT be mistaken for a line-leading list ordinal.
+    const out1 = g.push("Esa receta tiene unas calorias de ");
+    const out2 = g.push("450. Bastante");
+    const out3 = g.push(" alto.");
+    const combined = out1.text + out2.text + out3.text + g.flush().text;
+    expect(combined).not.toContain("450");
+    expect(g.totalRedactions).toBe(1);
   });
 });

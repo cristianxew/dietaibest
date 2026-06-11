@@ -158,6 +158,7 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
         onClose={onClose}
         onToggleSessions={() => setSessionsOpen((p) => !p)}
         onNewChat={handleNewChat}
+        busy={isStreaming}
       />
 
       <div
