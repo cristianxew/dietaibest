@@ -34,7 +34,7 @@ export default async function RecipeDetailPage({
     notFound();
   }
 
-  const isOwner = recipe.userId === recipe.user.id;
+  const isOwner = recipe.viewerIsOwner;
   const isFavorited = recipe.favoritedBy.length > 0;
 
   return (
@@ -43,6 +43,7 @@ export default async function RecipeDetailPage({
       isOwner={isOwner}
       isFavorited={isFavorited}
       locale={locale}
+      authorName={recipe.authorName}
     />
   );
 }

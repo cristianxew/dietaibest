@@ -408,9 +408,9 @@ export function MealPlanForm({
           <div className="space-y-3 pt-2 border-t">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="isPublic">Make Public</Label>
+                <Label htmlFor="isPublic">{t("mealPlans.form.makePublic")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Generate a shareable link for this meal plan
+                  {t("mealPlans.form.generateShareLink")}
                 </p>
               </div>
               <Switch

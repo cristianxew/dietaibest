@@ -1,5 +1,5 @@
 import { getRecipe } from "@/actions/recipe";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EditRedirectShell } from "./EditRedirectShell";
 import { recipeToFormData } from "@/lib/recipe-utils";
 import { getTranslations } from "next-intl/server";
@@ -34,6 +34,11 @@ export default async function EditRecipePage({
 
   if (error || !recipe) {
     notFound();
+  }
+
+  // Public recipes are viewable by anyone, but only the owner may edit
+  if (!recipe.viewerIsOwner) {
+    redirect(`/${locale}/recipes/${id}`);
   }
 
   const formData = recipeToFormData(recipe);

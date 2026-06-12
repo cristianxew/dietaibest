@@ -62,7 +62,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
     (Recipe & {
       categories: RecipeCategory[];
       favoritedBy: UserFavorite[];
-      user?: { id: string; email: string };
+      user?: { id: string; name: string };
     })[]
   >([]);
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
