@@ -21,6 +21,7 @@ import {
 } from "@/lib/entitlements";
 import { serverAction } from "@/lib/server-action";
 import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import { getAuthorName } from "@/lib/author-name";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -266,9 +267,16 @@ export async function getRecipes(filter?: RecipeFilter) {
       limit = 12,
     } = validatedFilter;
 
-    // Build where clause
+    // Build where clause. The favorites tab includes recipes from other
+    // users, guarded by (own OR public) so privated recipes drop out.
+    // The visibility OR is wrapped in AND because search claims top-level OR.
     const where: Prisma.RecipeWhereInput = {
-      userId: user.id,
+      ...(favorites
+        ? {
+            favoritedBy: { some: { userId: user.id } },
+            AND: [{ OR: [{ userId: user.id }, { isPublic: true }] }],
+          }
+        : { userId: user.id }),
       ...(search && {
         OR: [
           { title: { contains: search, mode: "insensitive" } },
@@ -286,9 +294,6 @@ export async function getRecipes(filter?: RecipeFilter) {
         }),
       ...(minCalories && { calories: { gte: minCalories } }),
       ...(maxCalories && { calories: { lte: maxCalories } }),
-      ...(favorites && {
-        favoritedBy: { some: { userId: user.id } },
-      }),
     };
 
     // Get total count
@@ -396,7 +401,11 @@ export async function getPublicRecipes(filter?: RecipeFilter) {
 
     return {
       data: {
-        recipes,
+        // Scrub raw emails: other users only get a derived display name
+        recipes: recipes.map(({ user: author, ...recipe }) => ({
+          ...recipe,
+          user: { id: author.id, name: getAuthorName(author) },
+        })),
         pagination: {
           page,
           limit,
@@ -431,7 +440,6 @@ export async function getRecipe(id: string) {
         user: {
           select: {
             id: true,
-            email: true,
           },
         },
       },
@@ -446,7 +454,10 @@ export async function getRecipe(id: string) {
       return { data: null, error: "Unauthorized" };
     }
 
-    return { data: recipe, error: null };
+    return {
+      data: { ...recipe, viewerIsOwner: recipe.userId === user.id },
+      error: null,
+    };
   } catch (error) {
     console.error("Get recipe error:", error);
     return {
@@ -472,21 +483,34 @@ export async function toggleFavorite(recipeId: string) {
     });
 
     if (existing) {
-      // Remove favorite
+      // Remove favorite — always allowed, even if the recipe went private
       await prisma.userFavorite.delete({
         where: { id: existing.id },
       });
       return { data: { favorited: false }, error: null };
-    } else {
-      // Add favorite
-      await prisma.userFavorite.create({
-        data: {
-          userId: user.id,
-          recipeId,
-        },
-      });
-      return { data: { favorited: true }, error: null };
     }
+
+    // Favoriting requires visibility: own recipe or a public one
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { userId: true, isPublic: true },
+    });
+
+    if (!recipe) {
+      return { data: null, error: "Recipe not found" };
+    }
+
+    if (recipe.userId !== user.id && !recipe.isPublic) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    await prisma.userFavorite.create({
+      data: {
+        userId: user.id,
+        recipeId,
+      },
+    });
+    return { data: { favorited: true }, error: null };
   } catch (error) {
     console.error("Toggle favorite error:", error);
     return {

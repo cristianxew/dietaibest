@@ -19,6 +19,7 @@ import { addDays, format } from "date-fns";
 import { Prisma } from "@/generated/prisma";
 import { assertCanCreateMealPlanTemplate } from "@/lib/entitlements";
 import { serverAction } from "@/lib/server-action";
+import { getAuthorName } from "@/lib/author-name";
 
 // ============================================================================
 // Helper Functions
@@ -713,7 +714,12 @@ export async function getMealPlanByShareToken(shareToken: string) {
       };
     }
 
-    return { data: template, error: null };
+    // Unauthenticated endpoint: never expose the owner's raw email
+    const { user: owner, ...rest } = template;
+    return {
+      data: { ...rest, author: getAuthorName(owner) },
+      error: null,
+    };
   } catch (error) {
     console.error("Get meal plan template by share token error:", error);
     return {
