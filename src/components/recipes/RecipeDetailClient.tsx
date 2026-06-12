@@ -47,6 +47,7 @@ interface RecipeDetailClientProps {
   isOwner: boolean;
   isFavorited: boolean;
   locale: string;
+  authorName?: string;
 }
 
 const difficultyBadgeClass: Record<string, string> = {
@@ -95,6 +96,7 @@ export function RecipeDetailClient({
   isOwner,
   isFavorited,
   locale,
+  authorName,
 }: RecipeDetailClientProps) {
   const t = useTranslations("recipes");
   const [selectedPortions, setSelectedPortions] = useState(recipe.servings);
@@ -313,6 +315,13 @@ export function RecipeDetailClient({
           <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground leading-[1.1]">
             {recipe.title}
           </h1>
+
+          {/* Author attribution for public recipes viewed by non-owners */}
+          {!isOwner && authorName && (
+            <p className="text-sm text-muted-foreground">
+              {t("byAuthor", { author: authorName })}
+            </p>
+          )}
 
           {/* Description */}
           {recipe.description && (

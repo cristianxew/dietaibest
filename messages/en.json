@@ -335,6 +335,7 @@
     "allRecipes": "My Recipes",
     "publicRecipes": "Public Recipes",
     "byAuthor": "by {author}",
+    "makePublicLabel": "Make this recipe public",
     "favorites": "Favorites",
     "noRecipes": "No recipes found. Create your first recipe!",
     "noRecipesFoundTitle": "No recipes found",

@@ -123,7 +123,7 @@ describe("getRecipe — viewer ownership", () => {
       ...baseRecipe,
       userId: viewer.id,
       isPublic: false,
-      user: { id: viewer.id },
+      user: { id: viewer.id, email: viewer.email, displayName: null },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
@@ -132,18 +132,21 @@ describe("getRecipe — viewer ownership", () => {
     expect(result.data!.viewerIsOwner).toBe(true);
   });
 
-  it("sets viewerIsOwner false for another user's public recipe", async () => {
+  it("sets viewerIsOwner false and exposes only the author name for another user's public recipe", async () => {
     vi.mocked(prisma.recipe.findUnique).mockResolvedValue({
       ...baseRecipe,
       userId: "user-2",
       isPublic: true,
-      user: { id: "user-2" },
+      user: { id: "user-2", email: "alice@example.com", displayName: null },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 
     const result = await getRecipe("r1");
     expect(result.error).toBeNull();
     expect(result.data!.viewerIsOwner).toBe(false);
+    expect(result.data!.authorName).toBe("alice");
+    expect(result.data!.user).toEqual({ id: "user-2" });
+    expect(JSON.stringify(result)).not.toContain("alice@example.com");
   });
 
   it("rejects another user's private recipe", async () => {
@@ -151,7 +154,7 @@ describe("getRecipe — viewer ownership", () => {
       ...baseRecipe,
       userId: "user-2",
       isPublic: false,
-      user: { id: "user-2" },
+      user: { id: "user-2", email: "alice@example.com", displayName: null },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
 

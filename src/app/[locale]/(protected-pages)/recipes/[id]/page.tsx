@@ -43,6 +43,7 @@ export default async function RecipeDetailPage({
       isOwner={isOwner}
       isFavorited={isFavorited}
       locale={locale}
+      authorName={recipe.authorName}
     />
   );
 }

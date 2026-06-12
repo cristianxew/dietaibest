@@ -441,6 +441,8 @@ export async function getRecipe(id: string) {
         user: {
           select: {
             id: true,
+            email: true,
+            displayName: true,
           },
         },
       },
@@ -455,8 +457,15 @@ export async function getRecipe(id: string) {
       return { data: null, error: "Unauthorized" };
     }
 
+    // Scrub the owner's email: viewers only get a derived author name
+    const { user: owner, ...recipeData } = recipe;
     return {
-      data: { ...recipe, viewerIsOwner: recipe.userId === user.id },
+      data: {
+        ...recipeData,
+        user: { id: owner.id },
+        authorName: getAuthorName(owner),
+        viewerIsOwner: recipe.userId === user.id,
+      },
       error: null,
     };
   } catch (error) {

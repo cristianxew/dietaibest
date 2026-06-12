@@ -330,6 +330,7 @@
     "allRecipes": "Moje Przepisy",
     "publicRecipes": "Publiczne Przepisy",
     "byAuthor": "autor: {author}",
+    "makePublicLabel": "Udostępnij ten przepis publicznie",
     "favorites": "Ulubione",
     "noRecipes": "Nie znaleziono przepisów. Stwórz swój pierwszy przepis!",
     "noRecipesFoundTitle": "Nie znaleziono przepisów",
