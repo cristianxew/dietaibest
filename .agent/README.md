@@ -198,6 +198,22 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Public Sharing Feature](./Tasks/public-sharing-feature.md)
+**Purpose:** Public recipes & meal plans — discovery tabs, author identity, share links
+
+**Contains:**
+- isPublic flow for recipes (Public Recipes tab) and meal plans (Discover tab)
+- Author identity rules (displayName, getAuthorName, email-privacy invariant)
+- Unauthenticated share-link route and middleware public-prefix config
+- Ownership/visibility access-control patterns (viewerIsOwner)
+- Related indexes and unit tests
+
+**When to read:**
+- Touching public visibility, sharing, or author attribution
+- Adding new publicly-readable content types
+
+---
+
 **Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD
