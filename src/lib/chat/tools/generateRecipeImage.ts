@@ -33,13 +33,14 @@ export function setGoogleGenAIClientForTest(client: Pick<GoogleGenAI, "models"> 
 
 export const generateRecipeImage: Tool<
   typeof inputSchema,
-  { id: string; imageUrl: string; skippedExistingImage?: boolean }
+  { id: string; imageUrl: string; skippedExistingImage?: boolean; note?: string }
 > = {
   name: "generateRecipeImage",
   description:
     "Generate a professional, beautiful recipe image using AI. Pass recipeId, and optionally promptDescription. Call this when a recipe is created/imported without an image, or when explicitly asked.",
   guidance: `IMAGE GENERATION — generateRecipeImage.
 - When a recipe has just been created or imported WITHOUT an image, or when the user explicitly asks to generate an image for a recipe, you MUST call generateRecipeImage to create a beautiful 4:3 food photography image for that recipe.
+- When the user EXPLICITLY asks to generate or regenerate an image, call generateRecipeImage with askFirst: false — even if the recipe already has one; an explicit request replaces the existing image. askFirst: true is ONLY for the post-import auto-offer.
 - If a recipe was just created FROM SCRATCH, immediately trigger generateRecipeImage with askFirst: false as a subsequent tool call in the same turn, using the recipe's returned ID. Do NOT wait for the user to ask.
 - If a recipe was just IMPORTED (from a URL or image attachment): check the import result's hasImage field. ONLY when hasImage is false, immediately trigger generateRecipeImage with askFirst: true as a subsequent tool call in the same turn (this gates the generation behind a user confirmation prompt). When hasImage is true the recipe already has a photo from the source — do NOT call generateRecipeImage and do NOT offer it unless the user explicitly asks for a new image.
 - Only call generateRecipeImage for existing recipes (it requires a recipeId). If the user asks to generate an image but no recipe is loaded/active in context, search for it using searchRecipes or ask for clarification first.`,
@@ -103,6 +104,10 @@ export const generateRecipeImage: Tool<
             id: recipe.id,
             imageUrl: recipe.imageUrl,
             skippedExistingImage: true,
+            // Spells out for the model that NOTHING was generated, so it never
+            // narrates this as a success — and how to honour an explicit
+            // regeneration request.
+            note: "The recipe already has an image, so generation was SKIPPED — do not tell the user an image was generated. If the user explicitly asked for a new image, call generateRecipeImage again with askFirst: false to replace it.",
           },
           link: {
             type: "recipe",
@@ -128,6 +133,10 @@ export const generateRecipeImage: Tool<
       // server, which doesn't exist off-GCP (our VPS) → "All promises were rejected".
       const options = buildGenAIVertexOptions(process.env);
       if (!options) {
+        console.error(
+          "[generateRecipeImage] misconfigured:",
+          "GOOGLE_CLOUD_PROJECT_ID is not set"
+        );
         return {
           ok: false,
           reason: "generic",
@@ -160,6 +169,10 @@ export const generateRecipeImage: Tool<
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      // Failure messages only travel to the model as tool results — log them
+      // so production failures (auth, quota, retired model) hit the container
+      // logs too.
+      console.error("[generateRecipeImage] Imagen call failed:", msg);
       return {
         ok: false,
         reason: "generic",
@@ -169,6 +182,10 @@ export const generateRecipeImage: Tool<
 
     const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
     if (!imageBytes) {
+      console.error(
+        "[generateRecipeImage] Imagen returned no image data:",
+        JSON.stringify(response.generatedImages ?? null)?.slice(0, 300)
+      );
       return {
         ok: false,
         reason: "generic",
@@ -186,6 +203,7 @@ export const generateRecipeImage: Tool<
         .toBuffer();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error("[generateRecipeImage] sharp optimization failed:", msg);
       return {
         ok: false,
         reason: "generic",
@@ -215,6 +233,7 @@ export const generateRecipeImage: Tool<
       await uploadRecipeImage(storagePath, optimizedBytes, "image/jpeg");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      console.error("[generateRecipeImage] storage upload failed:", msg);
       return {
         ok: false,
         reason: "generic",
@@ -230,7 +249,8 @@ export const generateRecipeImage: Tool<
         where: { id: recipeId },
         data: { imageUrl: publicUrl },
       });
-    } catch (_dbErr) {
+    } catch (dbErr) {
+      console.error("[generateRecipeImage] DB persist of imageUrl failed:", dbErr);
       // Cleanup to prevent orphaned storage assets
       try {
         await deleteRecipeImage(storagePath);

@@ -5,10 +5,14 @@ import {
   importedRecipeSchema,
   type ImportedRecipeData,
 } from "@/lib/ingest/imported-recipe-schema";
+import { buildGenAIVertexOptions } from "./tools/genai-options";
 
 // DIE-41 — Recipe extraction provider using @google/genai (official Google Gen AI SDK).
-// Uses Vertex AI backend (vertexai: true) with Application Default Credentials —
-// the same ADC already configured for @google-cloud/documentai. No separate API key needed.
+// Uses Vertex AI backend (vertexai: true), authenticated like generateRecipeImage
+// (PR #25): with the Document AI service-account key file when
+// GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH is set. Bare ADC only works where gcloud
+// credentials exist (local dev) — on the self-hosted VPS it falls back to the
+// GCP metadata server and every call fails ("All promises were rejected").
 //
 // Default model: gemini-2.5-flash (see DEFAULT_MODEL) — vision + native structured
 // output. Extraction runs through models.generateContent() with a responseSchema
@@ -116,18 +120,11 @@ export class GemmaProvider {
     if (opts.clientOverride) {
       this.client = opts.clientOverride;
     } else {
-      const project = process.env.GOOGLE_CLOUD_PROJECT_ID;
-      const location = process.env.GOOGLE_VERTEX_LOCATION ?? "us-central1";
-      
-      if (!project) {
+      const options = buildGenAIVertexOptions(process.env);
+      if (!options) {
         throw new Error("GemmaProvider: GOOGLE_CLOUD_PROJECT_ID is not set in environment.");
       }
-
-      this.client = new GoogleGenAI({
-        vertexai: true,
-        project,
-        location,
-      });
+      this.client = new GoogleGenAI(options);
     }
   }
 
@@ -196,6 +193,10 @@ export class GemmaProvider {
     } catch (err) {
       if (err instanceof GemmaExtractionError) throw err;
       const message = err instanceof Error ? err.message : String(err);
+      // ImportFailure logs only carry the mapped reason ("transient") — without
+      // this line the real upstream error (auth, quota, network) never reaches
+      // the container logs and production failures are undiagnosable.
+      console.error("[llm-gemma] extraction transport failed:", message);
       throw new GemmaExtractionError(
         "transient",
         `Gemma extraction failed: ${message}`,
