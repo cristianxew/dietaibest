@@ -13,6 +13,13 @@ const PUBLIC_ROUTES = [
   "/auth/error",
 ];
 
+// Prefix-matched public routes (dynamic segments, e.g. share links)
+const PUBLIC_ROUTE_PREFIXES = ["/share/"];
+
+const isPublicPath = (basePath: string) =>
+  PUBLIC_ROUTES.includes(basePath) ||
+  PUBLIC_ROUTE_PREFIXES.some((prefix) => basePath.startsWith(prefix));
+
 const PROTECTED_ROUTES = [
   "/dashboard",
   "/profile",
@@ -184,7 +191,7 @@ export default withAuth(
     const basePath = getBasePathname(pathname);
 
     // Allow access to public routes (with or without locale)
-    if (PUBLIC_ROUTES.includes(basePath)) {
+    if (isPublicPath(basePath)) {
       // Apply i18n middleware for public routes
       const intlResponse = intlMiddleware(req);
       if (intlResponse) {
@@ -286,7 +293,7 @@ export default withAuth(
 
         // Always allow public routes and auth routes
         if (
-          PUBLIC_ROUTES.includes(basePath) ||
+          isPublicPath(basePath) ||
           basePath.startsWith("/auth/") ||
           PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route))
         ) {
