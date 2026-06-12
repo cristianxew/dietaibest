@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
-import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search } from "lucide-react";
+import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategories } from "@/actions/recipe";
 import {
@@ -36,6 +36,7 @@ import {
   type TemplateWithMealsAndSchedules,
 } from "@/lib/meal-plan-adapter";
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
+import { PublicPlans } from "./PublicPlans";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
 import { RecipePicker } from "./RecipePicker";
@@ -125,7 +126,7 @@ export function MealPlanner() {
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<"planner" | "calendar">("planner");
+  const [activeTab, setActiveTab] = useState<"planner" | "calendar" | "discover">("planner");
   const [activeDrag, setActiveDrag] = useState<{
     type: "recipe" | "meal";
     name: string;
@@ -522,7 +523,7 @@ export function MealPlanner() {
     <PageContainer viewport>
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "planner" | "calendar")}
+        onValueChange={(v) => setActiveTab(v as "planner" | "calendar" | "discover")}
         className="flex flex-col flex-1 min-h-0 overflow-y-auto relative scrollbar-thin"
       >
         {/* Hero Header */}
@@ -557,6 +558,10 @@ export function MealPlanner() {
             <TabsTrigger value="calendar" className="flex-1 sm:flex-none">
               <CalendarDays className="w-4 h-4 mr-2" />
               {t("calendarView")}
+            </TabsTrigger>
+            <TabsTrigger value="discover" className="flex-1 sm:flex-none">
+              <Globe className="w-4 h-4 mr-2" />
+              {t("discoverTab")}
             </TabsTrigger>
           </TabsList>
 
@@ -849,6 +854,17 @@ export function MealPlanner() {
           {/* Calendar tab */}
           <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-6">
             <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
+          </TabsContent>
+
+          {/* Discover tab: browse other users' public plans */}
+          <TabsContent value="discover" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8">
+            <PublicPlans
+              onDuplicated={(id) => {
+                loadTemplates({ showLoading: false });
+                setActiveTab("planner");
+                handleSelectPlan(id);
+              }}
+            />
           </TabsContent>
         </div>
       </Tabs>

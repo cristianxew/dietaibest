@@ -57,7 +57,7 @@ describe("getRecipes — visibility", () => {
   });
 
   it("favorites filter includes other users' recipes guarded by (own OR public)", async () => {
-    await getRecipes({ favorites: true });
+    await getRecipes({ favorites: true, page: 1, limit: 12 });
     const where = lastFindManyWhere();
     expect(where.userId).toBeUndefined();
     expect(where.favoritedBy).toEqual({ some: { userId: viewer.id } });
@@ -67,7 +67,7 @@ describe("getRecipes — visibility", () => {
   });
 
   it("favorites visibility guard coexists with the search OR", async () => {
-    await getRecipes({ favorites: true, search: "pasta" });
+    await getRecipes({ favorites: true, search: "pasta", page: 1, limit: 12 });
     const where = lastFindManyWhere();
     expect(where.AND).toEqual([
       { OR: [{ userId: viewer.id }, { isPublic: true }] },
