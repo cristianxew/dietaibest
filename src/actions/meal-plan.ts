@@ -654,7 +654,7 @@ export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
             targetCarbs: true,
             targetFat: true,
             createdAt: true,
-            user: { select: { id: true, email: true } },
+            user: { select: { id: true, email: true, displayName: true } },
             _count: { select: { days: true } },
           },
           orderBy: { [sortBy]: sortOrder },
@@ -773,6 +773,7 @@ export async function getMealPlanByShareToken(shareToken: string) {
         user: {
           select: {
             email: true,
+            displayName: true,
           },
         },
       },

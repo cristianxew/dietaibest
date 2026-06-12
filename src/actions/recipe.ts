@@ -391,6 +391,7 @@ export async function getPublicRecipes(filter?: RecipeFilter) {
           select: {
             id: true,
             email: true,
+            displayName: true,
           },
         },
         favoritedBy: {
