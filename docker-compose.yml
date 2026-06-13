@@ -119,9 +119,17 @@ services:
       - GOOGLE_CLOUD_PROJECT_ID=${GOOGLE_CLOUD_PROJECT_ID:-}
       - DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION:-}
       - DOCUMENT_AI_CUSTOM_PROCESSOR_ID=${DOCUMENT_AI_CUSTOM_PROCESSOR_ID:-}
-      # Path to the service-account JSON, used as keyFilename by the Document AI
-      # client (src/app/api/recipes/import/document/route.ts:51). The file itself
-      # is NOT committed — provide it via a Dokploy File Mount at this exact path.
+      # Google service-account credentials for Vertex AI (Gemma recipe
+      # extraction + Imagen image generation) AND Document AI (recipe OCR).
+      # PREFERRED: paste the FULL service-account JSON (single line) into this
+      # env var via the Dokploy Environment UI. It rides the compose
+      # environment: block like every other secret and reliably reaches the
+      # container — unlike a File Mount, which does NOT land in a Compose-type
+      # deployment (the process gets ENOENT on the path below).
+      - GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON=${GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON:-}
+      # FALLBACK: path to the service-account JSON file on disk, used only when
+      # GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON is unset. Requires the file to exist
+      # inside the container at this path (e.g. a bind mount you add yourself).
       - GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=${GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH:-/app/secrets/gcp-service-account.json}
     ports:
       - "3000"
