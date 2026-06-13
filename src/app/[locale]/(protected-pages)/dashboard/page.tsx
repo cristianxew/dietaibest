@@ -3,14 +3,9 @@ import { getDashboardData, getTodaysMacros } from "@/actions/dashboard";
 import { PageContainer } from "@/components/ui/page-container";
 import { HeroCTA } from "@/components/dashboard/HeroCTA";
 import { WelcomeHeader } from "@/components/dashboard/WelcomeHeader";
-import {
-  ActivePlanPreview,
-  ActivePlanEmpty,
-} from "@/components/dashboard/ActivePlanPreview";
-import { WeeklyMacroChart } from "@/components/dashboard/WeeklyMacroChart";
-import { RecentRecipesCarousel } from "@/components/dashboard/RecentRecipesCarousel";
+import { InteractiveDashboardGrid } from "@/components/dashboard/InteractiveDashboardGrid";
 import { DashboardSkeleton } from "@/components/dashboard/skeletons/DashboardSkeleton";
-import { CompactNutrition } from "@/components/dashboard/CompactNutrition";
+import { AssistantCapabilityCard } from "@/components/dashboard/AssistantCapabilityCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardState, shouldShowHeroCTA } from "@/lib/dashboard-state";
 
@@ -96,72 +91,18 @@ async function DashboardContent() {
         </div>
       </div>
 
+      {/* Full Width AI Assistant Panel */}
+      <AssistantCapabilityCard />
+
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* Left Column - Nutrition & Quick Actions */}
-        <div className="lg:col-span-6 xl:col-span-5 flex flex-col gap-6 h-full">
-          {/* Compact Nutrition Card */}
-          <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm overflow-hidden">
-
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-display font-semibold tracking-tight">
-                Today&apos;s Nutrition
-              </CardTitle>
-            </CardHeader>
-
-            <CardContent className="pt-0">
-
-              {/* Compact Nutrition Display */}
-              <CompactNutrition
-                calories={todaysMacros?.calories || 0}
-                protein={todaysMacros?.protein || 0}
-                carbs={todaysMacros?.carbs || 0}
-                fat={todaysMacros?.fat || 0}
-                targetCalories={todaysMacros?.targetCalories || null}
-                targetProtein={todaysMacros?.targetProtein || null}
-                targetCarbs={todaysMacros?.targetCarbs || null}
-                targetFat={todaysMacros?.targetFat || null}
-                hasActivePlan={hasActivePlan}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Weekly Progress */}
-          <WeeklyMacroChart
-            data={weeklyMacros}
-            targetCalories={profile?.dailyCalories || null}
-            targetProtein={profile?.proteinGrams || null}
-            targetCarbs={profile?.carbsGrams || null}
-            targetFat={profile?.fatGrams || null}
-            className="flex-1"
-          />
-        </div>
-
-        {/* Right Column - Active Plan & Recent Recipes */}
-        <div className="lg:col-span-6 xl:col-span-7 space-y-6">
-          {/* Active Plan Card */}
-          {hasActivePlan && activePlan ? (
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-sage-300/30 to-brand-300/30 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-              <ActivePlanPreview
-                templateId={activePlan.templateId}
-                templateName={activePlan.templateName}
-                startDate={activePlan.startDate}
-                duration={activePlan.duration}
-                currentDayNumber={activePlan.currentDayNumber}
-                daysRemaining={activePlan.daysRemaining}
-                todaysMeals={activePlan.todaysMeals}
-              />
-            </div>
-          ) : (
-            <ActivePlanEmpty />
-          )}
-
-          {/* Recent Recipes */}
-          <RecentRecipesCarousel recipes={recentRecipes || []} />
-        </div>
-      </div>
+      <InteractiveDashboardGrid
+        todaysMacros={todaysMacros}
+        weeklyMacros={weeklyMacros}
+        activePlan={activePlan}
+        profile={profile}
+        recentRecipes={recentRecipes}
+        hasActivePlan={hasActivePlan}
+      />
     </div>
   );
 }

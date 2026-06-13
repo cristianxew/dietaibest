@@ -117,6 +117,21 @@
   --duration-normal: 250ms;
   --duration-slow: 400ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* AI Accent Colors */
+  --color-ai: var(--ai);
+  --color-ai-foreground: var(--ai-foreground);
+  --color-ai-muted: var(--ai-muted);
+  --color-ai-border: var(--ai-border);
+
+  --color-ai-50: var(--ai-50);
+  --color-ai-100: var(--ai-100);
+  --color-ai-200: var(--ai-200);
+  --color-ai-300: var(--ai-300);
+  --color-ai-400: var(--ai-400);
+  --color-ai-500: var(--ai-500);
+  --color-ai-600: var(--color-ai-600);
+  --color-ai-700: var(--color-ai-700);
 }
 
 :root {
@@ -200,6 +215,21 @@
   --gold-500: #D4A017;
   --gold-600: #B8860B;
   --gold-700: #92400E;
+
+  /* AI - Elegant Wild Plum/Lavender */
+  --ai: #8A6FAD;
+  --ai-foreground: #FFFFFF;
+  --ai-muted: #F7F5FC;
+  --ai-border: #E2DDF0;
+
+  --ai-50: #F7F5FC;
+  --ai-100: #ECE7F7;
+  --ai-200: #DDD5EE;
+  --ai-300: #C8BAE1;
+  --ai-400: #AC97CE;
+  --ai-500: #8A6FAD;
+  --ai-600: #735A94;
+  --ai-700: #5C477A;
 
   /* Surface Layers */
   --surface: #FFFFFF;
@@ -295,6 +325,21 @@
   --gold-500: #FDE68A;
   --gold-600: #FEF3C7;
   --gold-700: #FFFBEB;
+
+  /* AI - Elegant Wild Plum/Lavender (Adjusted for Dark Mode) */
+  --ai: #A58BCA;
+  --ai-foreground: #0F0E0D;
+  --ai-muted: #241D2D;
+  --ai-border: #3E324D;
+
+  --ai-50: #1B1522;
+  --ai-100: #241D2D;
+  --ai-200: #3E324D;
+  --ai-300: #57466D;
+  --ai-400: #7B639B;
+  --ai-500: #A58BCA;
+  --ai-600: #C2B0DF;
+  --ai-700: #DECFF2;
 
   /* Surface Layers */
   --surface: #1A1918;
@@ -460,6 +505,10 @@
     background-image: linear-gradient(135deg, #F47B5C 0%, #FBBF24 50%, #E07A5F 100%);
   }
 
+  .text-gradient-ai {
+    background-image: linear-gradient(135deg, var(--ai) 0%, var(--brand-400) 100%);
+  }
+
   /* Glow Effects - Warm coral */
   .glow-brand {
     box-shadow: 0 0 20px -5px var(--brand-500);
@@ -475,6 +524,14 @@
 
   .glow-success {
     box-shadow: 0 0 20px -5px var(--sage-500);
+  }
+
+  .glow-ai {
+    box-shadow: 0 0 20px -5px var(--ai);
+  }
+
+  .glow-ai-lg {
+    box-shadow: 0 0 40px -10px var(--ai);
   }
 
   /* Scrollbar */
@@ -706,6 +763,17 @@
   background-color: rgba(224, 122, 95, 0.15);
   color: var(--brand-600);
   border-color: rgba(224, 122, 95, 0.3);
+}
+
+/* Badge Styles - AI Accent */
+.badge-ai {
+  @apply bg-ai-50 text-ai border border-ai-200;
+}
+
+.dark .badge-ai {
+  background-color: rgba(165, 139, 202, 0.15);
+  color: var(--ai);
+  border-color: rgba(165, 139, 202, 0.3);
 }
 
 /* Badge Styles - Success/Health */

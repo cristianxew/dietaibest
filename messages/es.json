@@ -1227,15 +1227,73 @@
     "confirmClear": "¿Seguro? Esto cierra la conversación actual.",
     "empty": {
       "title": "¿Cómo puedo ayudarte?",
-      "subtitle": "Te puedo armar planes de comida, extraer recetas o crear nuevas.",
-      "suggestion1": "Crear una receta describiéndola",
-      "suggestion2": "Importar desde un link",
-      "suggestion3": "Subir una foto de una receta",
-      "suggestion4": "Pedí un plan de 7 días",
-      "suggestion1Prompt": "Quiero cocinar un risotto vegetariano alto en proteínas",
-      "suggestion2Prompt": "Importá esta receta: ",
-      "suggestion3Prompt": "Extraé la receta de esta foto",
-      "suggestion4Prompt": "Armame un plan de 7 días alrededor de 1800 kcal"
+      "subtitle": "Puedo ayudarte a crear planes de comida, extraer recetas o crear nuevas."
+    },
+    "capabilities": {
+      "createRecipeFromDescription": {
+        "label": "Crear una receta describiéndola",
+        "prompt": "Quiero cocinar un risotto vegetariano alto en proteínas"
+      },
+      "importRecipeFromLink": {
+        "label": "Importar una receta desde un enlace",
+        "prompt": "Importa esta receta: "
+      },
+      "importRecipeFromPhoto": {
+        "label": "Subir una foto de una receta",
+        "prompt": "Extrae la receta de esta foto"
+      },
+      "generateMealPlan": {
+        "label": "Pedir un plan de 7 días",
+        "prompt": "Hazme un plan de comidas de 7 días de unas 1800 kcal"
+      },
+      "analyzeNutrition": {
+        "label": "Analizar la nutrición",
+        "prompt": "¿Cuántas calorías y macros tiene: ",
+        "entityPrompt": "Analiza la nutrición de esta receta"
+      },
+      "generateRecipeImage": {
+        "label": "Generar una foto de la receta",
+        "prompt": "Genera una imagen para una de mis recetas",
+        "entityPrompt": "Genera una imagen para esta receta"
+      },
+      "addRecipeToPlan": {
+        "label": "Añadir una receta a mi plan",
+        "prompt": "Añade una de mis recetas a mi plan de comidas",
+        "entityPrompt": "Añade esta receta a mi plan de comidas"
+      },
+      "adjustMealPlan": {
+        "label": "Reorganizar mi plan de comidas",
+        "prompt": "Ayúdame a reorganizar las comidas de mi plan"
+      },
+      "findRecipes": {
+        "label": "Buscar recetas en mi colección",
+        "prompt": "Busca mis recetas con pollo"
+      }
+    },
+    "capabilityGroups": {
+      "recipes": "Recetas",
+      "mealPlans": "Planes de comida",
+      "nutrition": "Nutrición",
+      "import": "Importar"
+    },
+    "capabilityMenu": {
+      "title": "Qué puedo hacer",
+      "open": "Ver qué puede hacer el asistente"
+    },
+    "followUps": {
+      "title": "Prueba ahora"
+    },
+    "entry": {
+      "recipeDetail": {
+        "ask": "Pregunta a DietAI"
+      },
+      "recipesEmpty": {
+        "title": "O deja que DietAI lo haga"
+      },
+      "dashboard": {
+        "title": "Tu asistente puede ayudarte",
+        "subtitle": "Toca una sugerencia para probarla en el chat."
+      }
     },
     "proGate": {
       "title": "Función Pro",
@@ -1325,7 +1383,7 @@
       "deleted": "Eliminado",
       "cancelled": "Cancelado",
       "generateImage": {
-        "recipe": "¿Querés generar automáticamente una imagen culinaria premium para \"{name}\"?",
+        "recipe": "¿Quieres generar automáticamente una imagen culinaria premium para \"{name}\"?",
         "yes": "Sí, generar",
         "no": "No, omitir",
         "skipped": "Generación de imagen omitida"

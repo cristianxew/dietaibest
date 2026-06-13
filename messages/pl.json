@@ -1222,15 +1222,73 @@
     "confirmClear": "Na pewno? To zamknie obecną rozmowę.",
     "empty": {
       "title": "Jak mogę pomóc?",
-      "subtitle": "Pomogę Ci zbudować plany posiłków, wyekstrahować przepisy lub stworzyć nowe.",
-      "suggestion1": "Stwórz przepis, opisując go",
-      "suggestion2": "Importuj z linku",
-      "suggestion3": "Prześlij zdjęcie przepisu",
-      "suggestion4": "Poproś o plan 7-dniowy",
-      "suggestion1Prompt": "Chcę ugotować risotto wegetariańskie wysokobiałkowe",
-      "suggestion2Prompt": "Importuj ten przepis: ",
-      "suggestion3Prompt": "Wyekstrahuj przepis z tego zdjęcia",
-      "suggestion4Prompt": "Zbuduj plan 7-dniowy na około 1800 kcal"
+      "subtitle": "Pomogę Ci zbudować plany posiłków, wyekstrahować przepisy lub stworzyć nowe."
+    },
+    "capabilities": {
+      "createRecipeFromDescription": {
+        "label": "Stwórz przepis, opisując go",
+        "prompt": "Chcę ugotować risotto wegetariańskie wysokobiałkowe"
+      },
+      "importRecipeFromLink": {
+        "label": "Importuj przepis z linku",
+        "prompt": "Importuj ten przepis: "
+      },
+      "importRecipeFromPhoto": {
+        "label": "Prześlij zdjęcie przepisu",
+        "prompt": "Wyekstrahuj przepis z tego zdjęcia"
+      },
+      "generateMealPlan": {
+        "label": "Poproś o plan 7-dniowy",
+        "prompt": "Zbuduj plan 7-dniowy na około 1800 kcal"
+      },
+      "analyzeNutrition": {
+        "label": "Przeanalizuj wartości odżywcze",
+        "prompt": "Ile kalorii i makroskładników ma: ",
+        "entityPrompt": "Przeanalizuj wartości odżywcze tego przepisu"
+      },
+      "generateRecipeImage": {
+        "label": "Wygeneruj zdjęcie przepisu",
+        "prompt": "Wygeneruj obraz dla jednego z moich przepisów",
+        "entityPrompt": "Wygeneruj obraz dla tego przepisu"
+      },
+      "addRecipeToPlan": {
+        "label": "Dodaj przepis do mojego planu",
+        "prompt": "Dodaj jeden z moich przepisów do planu posiłków",
+        "entityPrompt": "Dodaj ten przepis do mojego planu posiłków"
+      },
+      "adjustMealPlan": {
+        "label": "Przeorganizuj mój plan posiłków",
+        "prompt": "Pomóż mi przeorganizować posiłki w moim planie"
+      },
+      "findRecipes": {
+        "label": "Znajdź przepisy w mojej kolekcji",
+        "prompt": "Znajdź moje przepisy z kurczakiem"
+      }
+    },
+    "capabilityGroups": {
+      "recipes": "Przepisy",
+      "mealPlans": "Plany posiłków",
+      "nutrition": "Wartości odżywcze",
+      "import": "Import"
+    },
+    "capabilityMenu": {
+      "title": "Co potrafię",
+      "open": "Zobacz, co potrafi asystent"
+    },
+    "followUps": {
+      "title": "Wypróbuj teraz"
+    },
+    "entry": {
+      "recipeDetail": {
+        "ask": "Zapytaj DietAI"
+      },
+      "recipesEmpty": {
+        "title": "Albo niech DietAI zrobi to za Ciebie"
+      },
+      "dashboard": {
+        "title": "Twój asystent może pomóc",
+        "subtitle": "Dotknij sugestii, aby wypróbować ją na czacie."
+      }
     },
     "proGate": {
       "title": "Funkcja Pro",

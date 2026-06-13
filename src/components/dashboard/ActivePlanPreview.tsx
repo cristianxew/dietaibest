@@ -36,7 +36,9 @@ interface ActivePlanPreviewProps {
   duration: number;
   currentDayNumber: number;
   daysRemaining: number;
-  todaysMeals: Meal[];
+  selectedDayNumber?: number;
+  onSelectDay?: (day: number) => void;
+  selectedMeals?: Meal[];
 }
 
 const getMealIcon = (mealType: string) => {
@@ -64,7 +66,9 @@ export function ActivePlanPreview({
   duration,
   currentDayNumber,
   daysRemaining: _daysRemaining,
-  todaysMeals,
+  selectedDayNumber,
+  onSelectDay,
+  selectedMeals = [],
 }: ActivePlanPreviewProps) {
   const t = useTranslations("dashboard.activePlan");
 
@@ -78,7 +82,8 @@ export function ActivePlanPreview({
     calendarDays.push({
       date,
       dayNumber: dayInPlan,
-      isToday: i === 0,
+      isToday: dayInPlan === currentDayNumber,
+      isSelected: dayInPlan === (selectedDayNumber || currentDayNumber),
       isWithinPlan,
       dayName: format(date, "EEE").slice(0, 2),
       dayOfMonth: format(date, "d"),
@@ -86,7 +91,7 @@ export function ActivePlanPreview({
   }
 
   // Group meals by type
-  const mealsByType = todaysMeals.reduce((acc, meal) => {
+  const mealsByType = selectedMeals.reduce((acc, meal) => {
     if (!acc[meal.mealType]) {
       acc[meal.mealType] = [];
     }
@@ -135,7 +140,7 @@ export function ActivePlanPreview({
               <span
                 className={cn(
                   "text-[10px] uppercase tracking-wide",
-                  day.isToday
+                  day.isSelected
                     ? "text-brand-600 dark:text-brand-400 font-semibold"
                     : "text-muted-foreground"
                 )}
@@ -143,10 +148,15 @@ export function ActivePlanPreview({
                 {day.dayName}
               </span>
               <div
+                onClick={() => {
+                  if (day.isWithinPlan) {
+                    onSelectDay?.(day.dayNumber);
+                  }
+                }}
                 className={cn(
                   "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
-                  day.isToday
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30"
+                  day.isSelected
+                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30 cursor-pointer"
                     : day.isWithinPlan
                       ? "bg-stone-100 dark:bg-stone-800 text-foreground hover:opacity-80 cursor-pointer"
                       : "text-muted-foreground/50"
@@ -164,10 +174,10 @@ export function ActivePlanPreview({
         {/* Today's Meals */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">
-            {t("todaysMeals")}
+            {selectedDayNumber === currentDayNumber ? t("todaysMeals") : `Day ${selectedDayNumber} Meals`}
           </h4>
 
-          {todaysMeals.length === 0 ? (
+          {selectedMeals.length === 0 ? (
             <p className="text-sm text-muted-foreground/70 italic">
               {t("noMealsToday")}
             </p>
@@ -209,7 +219,7 @@ export function ActivePlanPreview({
 
         {/* View Plan Button */}
         <Button asChild variant="outline" size="sm">
-          <Link href={`/meal-plans/${templateId}`} className="gap-2">
+          <Link href="/meal-plans" className="gap-2">
             {t("viewPlan")}
             <ArrowRight className="h-4 w-4" />
           </Link>

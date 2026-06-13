@@ -2,19 +2,20 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { X, SquarePen, History } from "lucide-react";
+import { X, SquarePen, History, Sparkles } from "lucide-react";
 import { LogoSymbol } from "./LogoSymbol";
 
 interface ChatHeaderProps {
   onClose: () => void;
   onToggleSessions: () => void;
+  onToggleCapabilities: () => void;
   onNewChat: () => void;
   /** Disables session actions while a turn is streaming — switching or
    *  archiving the active conversation mid-run strands the in-flight turn. */
   busy?: boolean;
 }
 
-export function ChatHeader({ onClose, onToggleSessions, onNewChat, busy = false }: ChatHeaderProps) {
+export function ChatHeader({ onClose, onToggleSessions, onToggleCapabilities, onNewChat, busy = false }: ChatHeaderProps) {
   const t = useTranslations("chat");
 
   return (
@@ -29,6 +30,14 @@ export function ChatHeader({ onClose, onToggleSessions, onNewChat, busy = false 
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleCapabilities}
+          className="group flex items-center p-1.5 rounded-lg text-muted-foreground transition-all duration-300 hover:bg-ai-50/50 dark:hover:bg-ai-950/30 hover:text-ai focus-visible:ring-2 focus-visible:ring-ai outline-none cursor-pointer"
+          aria-label={t("capabilityMenu.open")}
+          title={t("capabilityMenu.open")}
+        >
+          <Sparkles size={18} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+        </button>
         <button
           onClick={onToggleSessions}
           disabled={busy}

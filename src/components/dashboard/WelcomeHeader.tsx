@@ -57,10 +57,10 @@ export function WelcomeHeader({
         {hasActivePlan && (
           <Badge
             variant="outline"
-            className="bg-sage-50 dark:bg-sage-900/40 text-sage-700 dark:text-sage-300 border-sage-200 dark:border-sage-700 gap-1.5 py-1 px-3 ml-2"
+            className="bg-gradient-to-r from-amber-200 to-amber-400 dark:from-amber-500/20 dark:to-amber-600/30 text-amber-900 dark:text-amber-200 border-amber-300/50 dark:border-amber-500/30 gap-1.5 py-1 px-3 ml-2"
           >
-            <Calendar className="h-3.5 w-3.5" />
-            <span className="text-xs font-medium">{t("planActive")}</span>
+            <Trophy className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium uppercase tracking-wider font-bold">PRO</span>
           </Badge>
         )}
 

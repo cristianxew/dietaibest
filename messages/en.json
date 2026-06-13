@@ -1228,15 +1228,73 @@
     "confirmClear": "Sure? This closes the current conversation.",
     "empty": {
       "title": "How can I help?",
-      "subtitle": "I can help you build meal plans, extract recipes, or create new ones.",
-      "suggestion1": "Create a recipe by describing it",
-      "suggestion2": "Import from a link",
-      "suggestion3": "Upload a photo of a recipe",
-      "suggestion4": "Ask for a 7-day plan",
-      "suggestion1Prompt": "I want to cook a high-protein vegetarian risotto",
-      "suggestion2Prompt": "Import this recipe: ",
-      "suggestion3Prompt": "Extract the recipe from this photo",
-      "suggestion4Prompt": "Build me a 7-day meal plan around 1800 kcal"
+      "subtitle": "I can help you build meal plans, extract recipes, or create new ones."
+    },
+    "capabilities": {
+      "createRecipeFromDescription": {
+        "label": "Create a recipe by describing it",
+        "prompt": "I want to cook a high-protein vegetarian risotto"
+      },
+      "importRecipeFromLink": {
+        "label": "Import a recipe from a link",
+        "prompt": "Import this recipe: "
+      },
+      "importRecipeFromPhoto": {
+        "label": "Upload a photo of a recipe",
+        "prompt": "Extract the recipe from this photo"
+      },
+      "generateMealPlan": {
+        "label": "Ask for a 7-day plan",
+        "prompt": "Build me a 7-day meal plan around 1800 kcal"
+      },
+      "analyzeNutrition": {
+        "label": "Analyze nutrition",
+        "prompt": "How many calories and macros are in: ",
+        "entityPrompt": "Analyze the nutrition of this recipe"
+      },
+      "generateRecipeImage": {
+        "label": "Generate a recipe photo",
+        "prompt": "Generate an image for one of my recipes",
+        "entityPrompt": "Generate an image for this recipe"
+      },
+      "addRecipeToPlan": {
+        "label": "Add a recipe to my plan",
+        "prompt": "Add one of my recipes to my meal plan",
+        "entityPrompt": "Add this recipe to my meal plan"
+      },
+      "adjustMealPlan": {
+        "label": "Rearrange my meal plan",
+        "prompt": "Help me rearrange the meals in my plan"
+      },
+      "findRecipes": {
+        "label": "Find recipes in my collection",
+        "prompt": "Find my recipes with chicken"
+      }
+    },
+    "capabilityGroups": {
+      "recipes": "Recipes",
+      "mealPlans": "Meal plans",
+      "nutrition": "Nutrition",
+      "import": "Import"
+    },
+    "capabilityMenu": {
+      "title": "What I can do",
+      "open": "Show what the assistant can do"
+    },
+    "followUps": {
+      "title": "Try next"
+    },
+    "entry": {
+      "recipeDetail": {
+        "ask": "Ask DietAI"
+      },
+      "recipesEmpty": {
+        "title": "Or let DietAI do it"
+      },
+      "dashboard": {
+        "title": "Your assistant can help",
+        "subtitle": "Tap a suggestion to try it in the chat."
+      }
     },
     "proGate": {
       "title": "Pro feature",

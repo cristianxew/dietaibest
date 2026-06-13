@@ -56,6 +56,7 @@ import {
 } from "./MealPlannerSkeletons";
 import { sumMacros } from "@/lib/meal-plan-macros";
 import type { DayDisplay, MacroSummary } from "@/types/meal-plan";
+import { openChatWithPrompt } from "@/components/chat/openChat";
 
 function updateTemplateServingsOptimistically(
   template: MealPlanTemplateDisplay,
@@ -170,11 +171,7 @@ export function MealPlanner() {
 
   // ── Handlers ─ AI deep-link ───────────────────────────────────────────────────
   const handleGenerateWithAI = () => {
-    window.dispatchEvent(
-      new CustomEvent("dietai:open-chat", {
-        detail: { prompt: t("aiGeneratePrompt") },
-      })
-    );
+    openChatWithPrompt(t("aiGeneratePrompt"));
   };
 
   // ── Async state ───────────────────────────────────────────────────────────────
