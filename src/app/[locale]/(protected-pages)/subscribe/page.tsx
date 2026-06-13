@@ -59,6 +59,9 @@ export default async function SubscribePage({ searchParams }: SubscribePageProps
     redirect("/dashboard?alreadyPro=1");
   }
 
+  const trialEligible = data?.trialEligible ?? false;
+  const trialDays = data?.trialDays ?? 14;
+
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const canceled = resolvedSearchParams?.canceled === "1";
 
@@ -92,7 +95,11 @@ export default async function SubscribePage({ searchParams }: SubscribePageProps
           <AlertDescription>{loadError}</AlertDescription>
         </Alert>
       ) : plans ? (
-        <PlanSelector plans={plans} />
+        <PlanSelector
+          plans={plans}
+          trialEligible={trialEligible}
+          trialDays={trialDays}
+        />
       ) : null}
     </div>
   );

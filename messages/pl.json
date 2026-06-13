@@ -1154,6 +1154,13 @@
       "upgradeDescription": "Nieograniczone przepisy, plany posiłków, automatyzacja zakupów i AI.",
       "upgradeButton": "Ulepsz"
     },
+    "trial": {
+      "startCta": "Rozpocznij {days}-dniowy darmowy okres próbny",
+      "subtext": "{days} dni za darmo, potem automatyczne obciążenie. Anuluj w dowolnym momencie.",
+      "paywallCta": "Wypróbuj {days} dni za darmo",
+      "shortCta": "Wypróbuj za darmo",
+      "endsOn": "Okres próbny kończy się {date}"
+    },
     "featureNames": {
       "aiMealPlan": "Plany posiłków AI",
       "shoppingAutomation": "Automatyzacja zakupów",
@@ -1163,7 +1170,6 @@
     "quotaNames": {
       "savedRecipes": "zapisanych przepisów",
       "recipesCreatedPerMonth": "przepisów miesięcznie",
-      "importsPerMonth": "importów miesięcznie",
       "mealPlanTemplates": "szablonów planu posiłków",
       "mealPlanDurationDays": "czas trwania planu posiłków",
       "edamamAnalysesPerMonth": "analiz odżywczych miesięcznie"

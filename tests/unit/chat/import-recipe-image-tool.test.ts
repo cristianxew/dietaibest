@@ -37,7 +37,6 @@ const PRO: Entitlements = {
   limits: {
     savedRecipes: Number.POSITIVE_INFINITY,
     recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
-    importsPerMonth: Number.POSITIVE_INFINITY,
     mealPlanTemplates: Number.POSITIVE_INFINITY,
     mealPlanDurationDays: Number.POSITIVE_INFINITY,
     edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,

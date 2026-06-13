@@ -1159,6 +1159,13 @@
       "upgradeDescription": "Recetas ilimitadas, planes de comida, automatización de compras e IA.",
       "upgradeButton": "Mejorar"
     },
+    "trial": {
+      "startCta": "Empezá tu prueba gratis de {days} días",
+      "subtext": "{days} días gratis, después se cobra automáticamente. Cancelá cuando quieras.",
+      "paywallCta": "Probar {days} días gratis",
+      "shortCta": "Probar gratis",
+      "endsOn": "La prueba termina el {date}"
+    },
     "featureNames": {
       "aiMealPlan": "Planes de comida con IA",
       "shoppingAutomation": "Automatización de compras",
@@ -1168,7 +1175,6 @@
     "quotaNames": {
       "savedRecipes": "recetas guardadas",
       "recipesCreatedPerMonth": "recetas por mes",
-      "importsPerMonth": "importaciones por mes",
       "mealPlanTemplates": "plantillas de plan de comida",
       "mealPlanDurationDays": "duración del plan de comida",
       "edamamAnalysesPerMonth": "análisis nutricionales por mes"

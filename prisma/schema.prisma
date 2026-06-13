@@ -24,6 +24,7 @@ model User {
   subscriptionStatus   String? // trialing | active | past_due | canceled | incomplete | incomplete_expired | unpaid
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
+  hasUsedTrial         Boolean   @default(false) // true once the user has started a Stripe trial — gates one trial per account
 
   profile             UserProfile?
   recipes             Recipe[]

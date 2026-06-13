@@ -32,7 +32,6 @@ export type FeatureKey =
 export type QuotaKey =
   | "savedRecipes"
   | "recipesCreatedPerMonth"
-  | "importsPerMonth"
   | "mealPlanTemplates"
   | "mealPlanDurationDays"
   | "edamamAnalysesPerMonth";
@@ -57,7 +56,6 @@ interface UserLike {
 export const FREE_LIMITS: Record<QuotaKey, number> = {
   savedRecipes: 15,
   recipesCreatedPerMonth: 3,
-  importsPerMonth: 0,
   mealPlanTemplates: 1,
   mealPlanDurationDays: 3,
   edamamAnalysesPerMonth: 5,
@@ -66,7 +64,6 @@ export const FREE_LIMITS: Record<QuotaKey, number> = {
 const PRO_LIMITS: Record<QuotaKey, number> = {
   savedRecipes: Number.POSITIVE_INFINITY,
   recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
-  importsPerMonth: Number.POSITIVE_INFINITY,
   mealPlanTemplates: Number.POSITIVE_INFINITY,
   mealPlanDurationDays: Number.POSITIVE_INFINITY,
   edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,
@@ -219,9 +216,22 @@ export function checkCanUseEdamamAnalysis(
 // enforce — the single throw-or-log gate (shadow-mode kill switch)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Global kill switch. Gating (server throws AND client-side UI locks) is only
+ * active when `ENTITLEMENTS_ENFORCED` is exactly "true". Flip it to anything
+ * else to instantly unlock every feature for every user — both `enforce()`
+ * stops throwing and `serializeEntitlements()` reports everything unlocked, so
+ * the client paywalls disappear too. Keeping both layers behind one flag is
+ * what makes it a real switch (the previous version only gated the server,
+ * which left client paywalls firing in shadow mode).
+ */
+export function entitlementsEnforced(): boolean {
+  return process.env.ENTITLEMENTS_ENFORCED === "true";
+}
+
 export function enforce(violation: EntitlementViolation | null): void {
   if (!violation) return;
-  if (process.env.ENTITLEMENTS_ENFORCED === "true") {
+  if (entitlementsEnforced()) {
     throw violation;
   }
   // Shadow mode: don't block the user, but leave a breadcrumb in logs so we
@@ -243,20 +253,12 @@ export async function getUsage(userId: string): Promise<Usage> {
   const [
     savedRecipes,
     recipesCreatedPerMonth,
-    importsPerMonth,
     mealPlanTemplates,
     edamamAnalysesPerMonth,
   ] = await Promise.all([
     prisma.recipe.count({ where: { userId } }),
     prisma.recipe.count({
       where: { userId, createdAt: { gte: monthStart } },
-    }),
-    prisma.recipe.count({
-      where: {
-        userId,
-        source: { in: ["url", "imported"] },
-        createdAt: { gte: monthStart },
-      },
     }),
     prisma.mealPlanTemplate.count({ where: { userId } }),
     prisma.edamamUserMacroCache.count({
@@ -267,7 +269,6 @@ export async function getUsage(userId: string): Promise<Usage> {
   return {
     savedRecipes,
     recipesCreatedPerMonth,
-    importsPerMonth,
     mealPlanTemplates,
     // mealPlanDurationDays is per-template and validated at template-create time,
     // not a running counter. Report 0 here; the assert takes duration as an arg.
@@ -344,17 +345,50 @@ export interface SerializedEntitlements {
   limits: Record<QuotaKey, number | null>;
   features: Record<FeatureKey, boolean>;
   usage: Usage;
+  /** Whether the user can still start their one free trial (UI CTA hint). */
+  trialEligible: boolean;
+  /** Configured trial length in days — resolved server-side; drives copy. */
+  trialDays: number;
 }
 
+export interface SerializeOptions {
+  trialEligible: boolean;
+  trialDays: number;
+}
+
+/**
+ * Serializes entitlements for the wire (`/api/me/entitlements`).
+ *
+ * - `Infinity` limits become `null` (not valid JSON).
+ * - Respects the {@link entitlementsEnforced} kill switch: when NOT enforced,
+ *   the client is told everything is unlocked (features all true, limits all
+ *   unlimited) so no paywall fires — matching the server's non-throwing
+ *   behaviour. `isPro` stays truthful so billing UI doesn't lie about the plan.
+ * - Carries `trialEligible` + `trialDays` for trial CTAs.
+ */
 export function serializeEntitlements(
   ent: Entitlements,
-  usage: Usage
+  usage: Usage,
+  opts: SerializeOptions
 ): SerializedEntitlements {
+  const unlocked = !entitlementsEnforced();
+
+  const features = unlocked ? { ...PRO_FEATURES } : ent.features;
+
   const limits = {} as Record<QuotaKey, number | null>;
-  for (const [key, value] of Object.entries(ent.limits) as Array<
+  const source = unlocked ? PRO_LIMITS : ent.limits;
+  for (const [key, value] of Object.entries(source) as Array<
     [QuotaKey, number]
   >) {
     limits[key] = Number.isFinite(value) ? value : null;
   }
-  return { isPro: ent.isPro, limits, features: ent.features, usage };
+
+  return {
+    isPro: ent.isPro,
+    limits,
+    features,
+    usage,
+    trialEligible: opts.trialEligible,
+    trialDays: opts.trialDays,
+  };
 }

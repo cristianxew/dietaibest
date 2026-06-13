@@ -1160,6 +1160,13 @@
       "upgradeDescription": "Unlimited recipes, meal plans, shopping automation, and AI features.",
       "upgradeButton": "Upgrade"
     },
+    "trial": {
+      "startCta": "Start your {days}-day free trial",
+      "subtext": "{days} days free, then auto-billed. Cancel anytime.",
+      "paywallCta": "Try {days} days free",
+      "shortCta": "Try free",
+      "endsOn": "Trial ends {date}"
+    },
     "featureNames": {
       "aiMealPlan": "AI meal plans",
       "shoppingAutomation": "Shopping automation",
@@ -1169,7 +1176,6 @@
     "quotaNames": {
       "savedRecipes": "saved recipes",
       "recipesCreatedPerMonth": "recipes per month",
-      "importsPerMonth": "imports per month",
       "mealPlanTemplates": "meal plan templates",
       "mealPlanDurationDays": "meal plan duration",
       "edamamAnalysesPerMonth": "nutrition analyses per month"
