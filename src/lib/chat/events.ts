@@ -68,7 +68,7 @@ export type AgentEvent =
       type: "tool.failed";
       toolName: string;
       callId: string;
-      reason: "generic" | "quota" | "notFound" | "unauthorized";
+      reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited";
       entitlement?: EntitlementErrorPayload;
     }
   | {

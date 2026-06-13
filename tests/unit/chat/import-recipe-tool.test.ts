@@ -9,6 +9,7 @@ import {
   setGemmaProviderForTest,
 } from "@/lib/chat/llm-gemma";
 import { persistRecipe } from "@/actions/recipe";
+import { SupadataClient, setSupadataClientForTest } from "@/lib/supadata";
 import { importRecipeFromUrl } from "@/lib/chat/tools/importRecipeFromUrl";
 
 vi.mock("@/actions/recipe", () => ({
@@ -143,6 +144,68 @@ describe("importRecipeFromUrl — requiresConfirmation (preview)", () => {
         makeCtx()
       )
     ).rejects.toMatchObject({ reason: "generic" });
+  });
+});
+
+describe("importRecipeFromUrl — rate-limit (429) handling", () => {
+  let fetchSpy: ReturnType<typeof vi.fn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    process.env.SUPADATA_API_KEY = "test-key";
+    fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Retries disabled so a 429 surfaces immediately (no real backoff).
+    setSupadataClientForTest(
+      new SupadataClient({ apiKey: "test-key", maxRetries: 0 })
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    warnSpy.mockRestore();
+    setSupadataClientForTest(null);
+    vi.clearAllMocks();
+  });
+
+  function rateLimited(): Response {
+    return new Response(JSON.stringify({ message: "Rate limit exceeded" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  it("surfaces a Supadata 429 as ToolFailure(rateLimited)", async () => {
+    fetchSpy.mockResolvedValueOnce(rateLimited());
+
+    await expect(
+      importRecipeFromUrl.requiresConfirmation!(
+        { url: "https://www.youtube.com/watch?v=abc" },
+        makeCtx()
+      )
+    ).rejects.toMatchObject({ reason: "rateLimited" });
+  });
+
+  it("logs the upstream Supadata message alongside the 429 status", async () => {
+    fetchSpy.mockResolvedValueOnce(rateLimited());
+
+    await expect(
+      importRecipeFromUrl.requiresConfirmation!(
+        { url: "https://www.youtube.com/watch?v=abc" },
+        makeCtx()
+      )
+    ).rejects.toBeInstanceOf(ToolFailure);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[importRecipeFromUrl] ImportFailure",
+      expect.objectContaining({
+        errorReason: "ingest-failed",
+        errorCode: "REQUEST_ERROR",
+        status: 429,
+        errorMessage: "Rate limit exceeded",
+      })
+    );
   });
 });
 

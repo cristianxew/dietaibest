@@ -49,7 +49,9 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
       generateImageYes: () => t("confirm.generateImage.yes" as Parameters<typeof t>[0]) as string,
       generateImageNo: () => t("confirm.generateImage.no" as Parameters<typeof t>[0]) as string,
       generateImageSkipped: () => t("confirm.generateImage.skipped" as Parameters<typeof t>[0]) as string,
-      error: (reason: "generic" | "quota" | "notFound" | "unauthorized") => {
+      error: (
+        reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited"
+      ) => {
         switch (reason) {
           case "quota":
             return t("toolError.quotaExceeded" as Parameters<typeof t>[0]) as string;
@@ -57,6 +59,8 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
             return t("toolError.notFound" as Parameters<typeof t>[0]) as string;
           case "unauthorized":
             return t("toolError.unauthorized" as Parameters<typeof t>[0]) as string;
+          case "rateLimited":
+            return t("toolError.rateLimited" as Parameters<typeof t>[0]) as string;
           default:
             return t("toolError.generic" as Parameters<typeof t>[0]) as string;
         }

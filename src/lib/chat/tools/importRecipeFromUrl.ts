@@ -78,6 +78,11 @@ interface ImportFailureLog {
   errorReason: ImportFailureReason;
   errorCode?: string;
   status?: number;
+  /**
+   * Upstream provider message (e.g. Supadata's "Rate limit exceeded" vs
+   * "Monthly quota exceeded"). Without it a 429 is ambiguous in the logs.
+   */
+  errorMessage?: string;
   createdAt: string;
 }
 
@@ -215,18 +220,23 @@ export const importRecipeFromUrl: Tool<
       }
       const errorCode = error instanceof SupadataError ? error.code : "UNKNOWN";
       const status = error instanceof SupadataError ? error.status : undefined;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logImportFailure({
         host,
         strategy,
         errorReason: "ingest-failed",
         errorCode,
         status,
+        errorMessage,
         createdAt: new Date().toISOString(),
       });
-      throw new ToolFailure(
-        status === 404 ? "notFound" : "generic",
-        `ingest-failed: ${errorCode}`
-      );
+      // 429 = the provider is rate-limiting us (not the user's plan quota).
+      // Surface a distinct reason so the UI can say "try again shortly" rather
+      // than a generic error or a misleading plan-quota message.
+      const reason: ToolFailure["reason"] =
+        status === 429 ? "rateLimited" : status === 404 ? "notFound" : "generic";
+      throw new ToolFailure(reason, `ingest-failed: ${errorCode}`);
     }
 
     if (

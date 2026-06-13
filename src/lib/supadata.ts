@@ -23,6 +23,16 @@ export interface SupadataConfig {
   pollIntervalMs?: number;
   /** Max polling attempts before timing out a job. */
   pollMaxAttempts?: number;
+  /**
+   * Retries on HTTP 429 (rate limit) before surfacing the error.
+   * Default 2 → 3 total attempts. Other statuses are never retried.
+   */
+  maxRetries?: number;
+  /**
+   * Base backoff (ms) for 429 retries when the response carries no
+   * `Retry-After` header. Grows exponentially per attempt. Default 500ms.
+   */
+  retryBaseDelayMs?: number;
 }
 
 export class SupadataError extends Error {
@@ -85,6 +95,8 @@ export class SupadataClient {
       timeout: config.timeout ?? 60_000,
       pollIntervalMs: config.pollIntervalMs ?? 1_000,
       pollMaxAttempts: config.pollMaxAttempts ?? 60,
+      maxRetries: config.maxRetries ?? 2,
+      retryBaseDelayMs: config.retryBaseDelayMs ?? 500,
     };
   }
 
@@ -215,52 +227,72 @@ export class SupadataClient {
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {
     const url = `${this.config.baseUrl}${path}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
-    // Compose caller's signal with our timeout controller.
-    if (init.signal) {
-      init.signal.addEventListener("abort", () => controller.abort(), {
-        once: true,
-      });
-    }
+    const { maxRetries, retryBaseDelayMs } = this.config;
 
-    try {
-      const response = await fetch(url, {
-        ...init,
-        headers: {
-          "x-api-key": this.config.apiKey,
-          "Content-Type": "application/json",
-          ...(init.headers ?? {}),
-        },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const errorBody = await safeJson(response);
-        const upstreamMessage =
-          errorBody && typeof errorBody === "object" && "message" in errorBody
-            ? String((errorBody as { message: unknown }).message)
-            : `HTTP ${response.status}`;
-        throw new SupadataError(
-          response.status >= 500 ? "UPSTREAM_ERROR" : "REQUEST_ERROR",
-          upstreamMessage,
-          response.status,
-          errorBody
-        );
-      }
-      return (await response.json()) as T;
-    } catch (error) {
-      if (error instanceof SupadataError) throw error;
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new SupadataError("TIMEOUT", "Supadata request timed out", 408);
-      }
-      throw new SupadataError(
-        "NETWORK_ERROR",
-        error instanceof Error ? error.message : String(error),
-        500
+    // Attempt loop: only HTTP 429 triggers a retry; the final attempt (and any
+    // other status) falls through to the normal success/error handling.
+    for (let attempt = 0; ; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.config.timeout
       );
-    } finally {
-      clearTimeout(timeoutId);
+      // Compose caller's signal with our timeout controller.
+      if (init.signal) {
+        init.signal.addEventListener("abort", () => controller.abort(), {
+          once: true,
+        });
+      }
+
+      try {
+        const response = await fetch(url, {
+          ...init,
+          headers: {
+            "x-api-key": this.config.apiKey,
+            "Content-Type": "application/json",
+            ...(init.headers ?? {}),
+          },
+          signal: controller.signal,
+        });
+
+        // Rate limited (429): back off and retry while attempts remain. Honour
+        // the server's Retry-After when present; otherwise exponential backoff.
+        if (response.status === 429 && attempt < maxRetries) {
+          await safeJson(response); // drain body to release the connection
+          const delayMs =
+            parseRetryAfterMs(response.headers.get("retry-after")) ??
+            retryBaseDelayMs * 2 ** attempt;
+          await sleep(delayMs);
+          continue;
+        }
+
+        if (!response.ok) {
+          const errorBody = await safeJson(response);
+          const upstreamMessage =
+            errorBody && typeof errorBody === "object" && "message" in errorBody
+              ? String((errorBody as { message: unknown }).message)
+              : `HTTP ${response.status}`;
+          throw new SupadataError(
+            response.status >= 500 ? "UPSTREAM_ERROR" : "REQUEST_ERROR",
+            upstreamMessage,
+            response.status,
+            errorBody
+          );
+        }
+        return (await response.json()) as T;
+      } catch (error) {
+        if (error instanceof SupadataError) throw error;
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new SupadataError("TIMEOUT", "Supadata request timed out", 408);
+        }
+        throw new SupadataError(
+          "NETWORK_ERROR",
+          error instanceof Error ? error.message : String(error),
+          500
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }
@@ -281,6 +313,19 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Parse an HTTP `Retry-After` header into milliseconds. Supadata returns the
+ * delta-seconds form (an integer). Returns null when the header is absent or
+ * is not a non-negative integer number of seconds — the HTTP-date form is not
+ * honoured, callers fall back to exponential backoff.
+ */
+export function parseRetryAfterMs(headerValue: string | null): number | null {
+  if (headerValue == null) return null;
+  const trimmed = headerValue.trim();
+  if (!/^\d+$/.test(trimmed)) return null;
+  return Number(trimmed) * 1_000;
+}
+
 // ============================================================================
 // Factory
 // ============================================================================
@@ -298,4 +343,13 @@ export function getSupadataClient(): SupadataClient {
     defaultClient = new SupadataClient({ apiKey });
   }
   return defaultClient;
+}
+
+/**
+ * Test seam — override (or reset, with null) the cached singleton client.
+ * Mirrors `setGemmaProviderForTest`; lets tests inject a client with retries
+ * disabled so a surfaced 429 does not incur real backoff delays.
+ */
+export function setSupadataClientForTest(client: SupadataClient | null): void {
+  defaultClient = client;
 }

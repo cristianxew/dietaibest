@@ -46,7 +46,8 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(curl -sS -o /dev/null -w \"HTTP %{http_code} — server: %header{x-powered-by}%header{server}\\\\n\" --max-time 4 http://localhost:3000)",
       "Bash(fd schema.prisma -x rg -n \"model User \\\\{\" -A 25 {})",
-      "Bash(lsof -i :3000 -sTCP:LISTEN -n -P)"
+      "Bash(lsof -i :3000 -sTCP:LISTEN -n -P)",
+      "Bash(git push *)"
     ]
   },
   "enableAllProjectMcpServers": true,
