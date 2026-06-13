@@ -335,6 +335,7 @@
     "allRecipes": "Mis Recetas",
     "publicRecipes": "Recetas Públicas",
     "byAuthor": "por {author}",
+    "makePublicLabel": "Hacer esta receta pública",
     "favorites": "Favoritas",
     "noRecipes": "No se encontraron recetas. ¡Crea tu primera receta!",
     "noRecipesFoundTitle": "No se encontraron recetas",
@@ -358,6 +359,13 @@
     "ingredients": "Ingredientes",
     "nutrition": "Datos Nutricionales",
     "nutritionPerServing": "Nutrición por porción",
+    "fullNutritionTitle": "Nutrición completa",
+    "noMicroData": "Esta receta todavía no tiene información nutricional adicional.",
+    "microGroup": {
+      "vitamins": "Vitaminas",
+      "minerals": "Minerales",
+      "other": "Otros"
+    },
     "instructions": "Instrucciones",
     "step": "Paso",
     "done": "hecho",
@@ -569,6 +577,13 @@
     "active": "Activo",
     "public": "Público",
     "copyShareLink": "Copiar Enlace",
+    "discoverTab": "De la comunidad",
+    "byAuthor": "por {author}",
+    "shareDayLabel": "Día {number}",
+    "shareCta": "¿Te gusta este plan? Crea tus propios planes de comida con DietAI.",
+    "shareCtaButton": "Comenzar",
+    "noPublicPlans": "Aún no hay planes públicos. ¡Haz público uno de tus planes para compartirlo con la comunidad!",
+    "loadMore": "Cargar más",
     "duplicate": "Duplicar",
     "delete": "Eliminar",
     "deleteConfirm": "¿Estás seguro?",
@@ -1037,7 +1052,16 @@
     },
     "entry": {
       "title": "Agregar una receta",
-      "subtitle": "Importá desde una URL, subí una foto o agregá manualmente.",
+      "subtitle": "¿Cómo querés agregar tu receta?",
+      "optionManualTitle": "Crear manualmente",
+      "optionManualDesc": "Completá los detalles de la receta vos mismo, paso a paso.",
+      "optionAiTitle": "Pedile al asistente Dietai",
+      "optionAiDesc": "Dejá que la IA te ayude a crear o encontrar una receta en el chat.",
+      "optionImportTitle": "Importar desde URL o foto",
+      "optionImportDesc": "Pegá un enlace o subí una foto o PDF para importar automáticamente.",
+      "importTitle": "Importar una receta",
+      "importSubtitle": "Pegá la URL de una receta, o subí una foto o PDF.",
+      "aiPrompt": "Ayudame a crear una nueva receta.",
       "urlPlaceholder": "Pegá la URL de la receta…",
       "extractButton": "Extraer receta",
       "orDivider": "O",
@@ -1110,6 +1134,8 @@
       "micronutrientsTitle": "Opcional: Micronutrientes",
       "sugar": "Azúcar",
       "sodium": "Sodio",
+      "makePublic": "Hacer esta receta pública",
+      "makePublicHint": "Las recetas públicas pueden ser descubiertas y usadas por otros miembros.",
       "save": "Guardar receta",
       "saving": "Guardando…"
     },
@@ -1151,6 +1177,13 @@
       "upgradeDescription": "Recetas ilimitadas, planes de comida, automatización de compras e IA.",
       "upgradeButton": "Mejorar"
     },
+    "trial": {
+      "startCta": "Empezá tu prueba gratis de {days} días",
+      "subtext": "{days} días gratis, después se cobra automáticamente. Cancelá cuando quieras.",
+      "paywallCta": "Probar {days} días gratis",
+      "shortCta": "Probar gratis",
+      "endsOn": "La prueba termina el {date}"
+    },
     "featureNames": {
       "aiMealPlan": "Planes de comida con IA",
       "shoppingAutomation": "Automatización de compras",
@@ -1160,7 +1193,6 @@
     "quotaNames": {
       "savedRecipes": "recetas guardadas",
       "recipesCreatedPerMonth": "recetas por mes",
-      "importsPerMonth": "importaciones por mes",
       "mealPlanTemplates": "plantillas de plan de comida",
       "mealPlanDurationDays": "duración del plan de comida",
       "edamamAnalysesPerMonth": "análisis nutricionales por mes"

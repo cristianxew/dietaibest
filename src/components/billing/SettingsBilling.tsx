@@ -35,9 +35,12 @@ function StatusBadge({ status }: { status: string | null }) {
 
 export async function SettingsBilling() {
   const t = await getTranslations("billing");
+  const tTrial = await getTranslations("billing.trial");
   const { data: sub } = await getCurrentSubscription();
 
   const isPro = sub?.isPro ?? false;
+  const isTrialing = sub?.subscriptionStatus === "trialing";
+  const trialEligible = sub?.trialEligible ?? false;
   const cancelAtPeriodEnd = sub?.cancelAtPeriodEnd ?? false;
   const periodEnd = sub?.currentPeriodEnd
     ? format(sub.currentPeriodEnd, "MMMM d, yyyy")
@@ -69,7 +72,12 @@ export async function SettingsBilling() {
                 <StatusBadge status={sub.subscriptionStatus} />
               )}
             </div>
-            {isPro && periodEnd && !cancelAtPeriodEnd && (
+            {isPro && periodEnd && !cancelAtPeriodEnd && isTrialing && (
+              <p className="text-xs text-muted-foreground">
+                {tTrial("endsOn", { date: periodEnd })}
+              </p>
+            )}
+            {isPro && periodEnd && !cancelAtPeriodEnd && !isTrialing && (
               <p className="text-xs text-muted-foreground">
                 Renews {periodEnd}
               </p>
@@ -92,7 +100,9 @@ export async function SettingsBilling() {
           <div className="flex items-center gap-2">
             {!isPro && (
               <Button asChild size="sm">
-                <Link href="/subscribe">{t("upgradeButton")}</Link>
+                <Link href="/subscribe">
+                  {trialEligible ? tTrial("shortCta") : t("upgradeButton")}
+                </Link>
               </Button>
             )}
             {isPro && cancelAtPeriodEnd && <ResumeButton />}

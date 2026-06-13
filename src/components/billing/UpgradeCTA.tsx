@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useEntitlements } from "@/hooks/useEntitlements";
 
 interface UpgradeCTAProps {
   /** Show a compact single-line version for the sidebar */
@@ -18,13 +19,18 @@ interface UpgradeCTAProps {
  */
 export function UpgradeCTA({ compact = false }: UpgradeCTAProps) {
   const t = useTranslations("billing.sidebar");
+  const tTrial = useTranslations("billing.trial");
+  const entitlements = useEntitlements();
+  const trialEligible =
+    entitlements.status === "ready" && entitlements.data.trialEligible;
+  const buttonLabel = trialEligible ? tTrial("shortCta") : t("upgradeButton");
 
   if (compact) {
     return (
       <Button asChild variant="outline" size="sm" className="w-full gap-2">
         <Link href="/subscribe">
           <Sparkles className="size-3.5" aria-hidden />
-          {t("upgradeButton")}
+          {buttonLabel}
         </Link>
       </Button>
     );
@@ -43,7 +49,7 @@ export function UpgradeCTA({ compact = false }: UpgradeCTAProps) {
           </div>
         </div>
         <Button asChild size="sm" className="w-full">
-          <Link href="/subscribe">{t("upgradeButton")}</Link>
+          <Link href="/subscribe">{buttonLabel}</Link>
         </Button>
       </CardContent>
     </Card>

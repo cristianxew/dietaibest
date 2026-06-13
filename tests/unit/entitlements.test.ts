@@ -12,8 +12,10 @@ import {
   checkCanUseShoppingAutomation,
   enforce,
   getEntitlements,
+  serializeEntitlements,
   type Usage,
 } from "@/lib/entitlements";
+import { getTrialDays } from "@/lib/stripe-helpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // getEntitlements — pure, no I/O
@@ -25,7 +27,6 @@ describe("getEntitlements", () => {
     expect(ent.isPro).toBe(false);
     expect(ent.limits.savedRecipes).toBe(FREE_LIMITS.savedRecipes);
     expect(ent.limits.recipesCreatedPerMonth).toBe(FREE_LIMITS.recipesCreatedPerMonth);
-    expect(ent.limits.importsPerMonth).toBe(0);
     expect(ent.features.aiMealPlan).toBe(false);
     expect(ent.features.shoppingAutomation).toBe(false);
   });
@@ -34,7 +35,6 @@ describe("getEntitlements", () => {
     const ent = getEntitlements({ plan: "pro", subscriptionStatus: "active" });
     expect(ent.isPro).toBe(true);
     expect(ent.limits.savedRecipes).toBe(Number.POSITIVE_INFINITY);
-    expect(ent.limits.importsPerMonth).toBe(Number.POSITIVE_INFINITY);
     expect(ent.features.aiMealPlan).toBe(true);
     expect(ent.features.shoppingAutomation).toBe(true);
     expect(ent.features.recipeImport).toBe(true);
@@ -77,7 +77,6 @@ const FREE = { plan: "starter" as const, subscriptionStatus: null };
 const zeroUsage: Usage = {
   savedRecipes: 0,
   recipesCreatedPerMonth: 0,
-  importsPerMonth: 0,
   mealPlanTemplates: 0,
   mealPlanDurationDays: 0,
   edamamAnalysesPerMonth: 0,
@@ -289,5 +288,108 @@ describe("typed errors", () => {
     expect(err.used).toBe(15);
     expect(err.name).toBe("QuotaExceededError");
     expect(err).toBeInstanceOf(Error);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// importsPerMonth removed — recipeImport is a hard Pro-only feature, the
+// per-month counter never gated anything. Guard against it sneaking back.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("importsPerMonth removal", () => {
+  it("is absent from the free limits map", () => {
+    expect("importsPerMonth" in FREE_LIMITS).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// serializeEntitlements — wire-format + trial fields + shadow-mode UI unlock
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("serializeEntitlements", () => {
+  const originalFlag = process.env.ENTITLEMENTS_ENFORCED;
+
+  afterEach(() => {
+    if (originalFlag === undefined) delete process.env.ENTITLEMENTS_ENFORCED;
+    else process.env.ENTITLEMENTS_ENFORCED = originalFlag;
+  });
+
+  it("maps Infinity pro limits to null over the wire", () => {
+    process.env.ENTITLEMENTS_ENFORCED = "true";
+    const ent = getEntitlements(PRO);
+    const s = serializeEntitlements(ent, zeroUsage, {
+      trialEligible: false,
+      trialDays: 14,
+    });
+    expect(s.limits.savedRecipes).toBeNull();
+    expect(s.isPro).toBe(true);
+  });
+
+  it("carries trialEligible + trialDays through", () => {
+    process.env.ENTITLEMENTS_ENFORCED = "true";
+    const ent = getEntitlements(FREE);
+    const s = serializeEntitlements(ent, zeroUsage, {
+      trialEligible: true,
+      trialDays: 7,
+    });
+    expect(s.trialEligible).toBe(true);
+    expect(s.trialDays).toBe(7);
+  });
+
+  it("when enforced, a free user sees locked features (real entitlements)", () => {
+    process.env.ENTITLEMENTS_ENFORCED = "true";
+    const ent = getEntitlements(FREE);
+    const s = serializeEntitlements(ent, zeroUsage, {
+      trialEligible: true,
+      trialDays: 14,
+    });
+    expect(s.features.aiChat).toBe(false);
+    expect(s.limits.savedRecipes).toBe(FREE_LIMITS.savedRecipes);
+  });
+
+  it("when NOT enforced, a free user sees everything unlocked in the UI (kill switch)", () => {
+    process.env.ENTITLEMENTS_ENFORCED = "false";
+    const ent = getEntitlements(FREE);
+    const s = serializeEntitlements(ent, zeroUsage, {
+      trialEligible: true,
+      trialDays: 14,
+    });
+    // Features all on, limits all unlimited (null), but isPro stays truthful.
+    expect(s.features.aiChat).toBe(true);
+    expect(s.features.aiMealPlan).toBe(true);
+    expect(s.limits.savedRecipes).toBeNull();
+    expect(s.isPro).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getTrialDays — reads STRIPE_TRIAL_DAYS, defaults to 14, rejects junk
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("getTrialDays", () => {
+  const original = process.env.STRIPE_TRIAL_DAYS;
+
+  afterEach(() => {
+    if (original === undefined) delete process.env.STRIPE_TRIAL_DAYS;
+    else process.env.STRIPE_TRIAL_DAYS = original;
+  });
+
+  it("defaults to 14 when unset", () => {
+    delete process.env.STRIPE_TRIAL_DAYS;
+    expect(getTrialDays()).toBe(14);
+  });
+
+  it("reads a valid positive integer from the env", () => {
+    process.env.STRIPE_TRIAL_DAYS = "7";
+    expect(getTrialDays()).toBe(7);
+  });
+
+  it("falls back to 14 on non-numeric or non-positive values", () => {
+    process.env.STRIPE_TRIAL_DAYS = "abc";
+    expect(getTrialDays()).toBe(14);
+    process.env.STRIPE_TRIAL_DAYS = "0";
+    expect(getTrialDays()).toBe(14);
+    process.env.STRIPE_TRIAL_DAYS = "-5";
+    expect(getTrialDays()).toBe(14);
   });
 });

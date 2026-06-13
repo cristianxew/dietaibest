@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface RecipeFormBasicsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,7 @@ export function RecipeFormBasics({
   onAddTag,
   onRemoveTag,
 }: RecipeFormBasicsProps) {
+  const t = useTranslations("recipes");
   return (
     <Card>
       <CardHeader>
@@ -282,7 +284,7 @@ export function RecipeFormBasics({
                 />
               </FormControl>
               <FormLabel className="text-sm font-normal">
-                Make this recipe public
+                {t("makePublicLabel")}
               </FormLabel>
             </FormItem>
           )}

@@ -21,10 +21,19 @@ export interface PlanOption {
 
 interface PlanSelectorProps {
   plans: PlanOption[];
+  /** When true, present the primary CTA as a free trial. */
+  trialEligible?: boolean;
+  /** Trial length in days (resolved server-side from STRIPE_TRIAL_DAYS). */
+  trialDays?: number;
 }
 
-export function PlanSelector({ plans }: PlanSelectorProps) {
+export function PlanSelector({
+  plans,
+  trialEligible = false,
+  trialDays = 14,
+}: PlanSelectorProps) {
   const t = useTranslations("billing.pricing");
+  const tTrial = useTranslations("billing.trial");
   const [selected, setSelected] = useState<"monthly" | "yearly">("yearly");
   const [isPending, startTransition] = useTransition();
 
@@ -51,6 +60,7 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
       const result = await createCheckoutSession({
         interval: plan.interval,
         currency: plan.currency,
+        withTrial: trialEligible,
       });
       if (result.error || !result.data) {
         toast.error(result.error ?? t("somethingWentWrong"));
@@ -112,8 +122,18 @@ export function PlanSelector({ plans }: PlanSelectorProps) {
           className="w-full"
           size="lg"
         >
-          {isPending ? t("redirectingToStripe") : t("continueToCheckout")}
+          {isPending
+            ? t("redirectingToStripe")
+            : trialEligible
+              ? tTrial("startCta", { days: trialDays })
+              : t("continueToCheckout")}
         </Button>
+
+        {trialEligible && (
+          <p className="text-xs text-muted-foreground text-center">
+            {tTrial("subtext", { days: trialDays })}
+          </p>
+        )}
 
         <p className="text-xs text-muted-foreground text-center">
           {t("stripeFooter")}

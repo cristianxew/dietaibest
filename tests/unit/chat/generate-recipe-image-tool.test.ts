@@ -48,7 +48,6 @@ const PRO: Entitlements = {
   limits: {
     savedRecipes: Number.POSITIVE_INFINITY,
     recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
-    importsPerMonth: Number.POSITIVE_INFINITY,
     mealPlanTemplates: Number.POSITIVE_INFINITY,
     mealPlanDurationDays: Number.POSITIVE_INFINITY,
     edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,
@@ -178,6 +177,29 @@ describe("generateRecipeImage tool", () => {
     });
   });
 
+  it("logs Imagen failures server-side so production errors are diagnosable", async () => {
+    // Failure messages only travel to the MODEL as tool results — without a
+    // server-side log line, prod failures (auth, quota, retired model) are
+    // invisible in the container logs.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
+    const clientMock = {
+      models: {
+        generateImages: vi.fn().mockRejectedValue(new Error("PERMISSION_DENIED: billing disabled")),
+      },
+    };
+    setGoogleGenAIClientForTest(clientMock as never);
+
+    const result = await generateRecipeImage.execute({ recipeId: "recipe-123" }, makeCtx());
+
+    expect(result.ok).toBe(false);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[generateRecipeImage]"),
+      expect.anything()
+    );
+    errorSpy.mockRestore();
+  });
+
   it("handles Imagen API errors gracefully", async () => {
     prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as any);
 
@@ -290,6 +312,11 @@ describe("generateRecipeImage tool", () => {
       if (result.ok) {
         expect(result.data.skippedExistingImage).toBe(true);
         expect(result.data.imageUrl).toBe(ownedRecipe.imageUrl);
+        // The model must never narrate this as a successful generation — the
+        // result tells it nothing was generated and how to honour an explicit
+        // request (re-call with askFirst: false).
+        expect(result.data.note).toMatch(/already has an image/i);
+        expect(result.data.note).toMatch(/askFirst: false/);
       }
       expect(generateImages).not.toHaveBeenCalled();
       expect(prismaFake.recipe.update).not.toHaveBeenCalled();

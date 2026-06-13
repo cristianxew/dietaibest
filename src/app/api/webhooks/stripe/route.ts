@@ -155,6 +155,10 @@ async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
   // reads from `items.data[0]` with a legacy fallback. See stripe-helpers.ts.
   const currentPeriodEnd = resolveCurrentPeriodEnd(sub);
 
+  // Once a trial has been started, mark the account so it can't get a second
+  // one. `trial_start` is set by Stripe whenever the sub began with a trial.
+  const startedTrial = sub.trial_start != null;
+
   await prisma.user.update({
     where: { id: user.id },
     data: {
@@ -163,6 +167,7 @@ async function syncSubscription(sub: Stripe.Subscription): Promise<void> {
       plan: planFromStripeStatus(sub.status),
       cancelAtPeriodEnd: sub.cancel_at_period_end ?? false,
       currentPeriodEnd: isDeleted ? null : currentPeriodEnd,
+      ...(startedTrial ? { hasUsedTrial: true } : {}),
     },
   });
 }

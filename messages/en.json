@@ -335,6 +335,7 @@
     "allRecipes": "My Recipes",
     "publicRecipes": "Public Recipes",
     "byAuthor": "by {author}",
+    "makePublicLabel": "Make this recipe public",
     "favorites": "Favorites",
     "noRecipes": "No recipes found. Create your first recipe!",
     "noRecipesFoundTitle": "No recipes found",
@@ -358,6 +359,13 @@
     "ingredients": "Ingredients",
     "nutrition": "Nutrition Facts",
     "nutritionPerServing": "Nutrition per serving",
+    "fullNutritionTitle": "Full nutrition",
+    "noMicroData": "No additional nutrition details for this recipe yet.",
+    "microGroup": {
+      "vitamins": "Vitamins",
+      "minerals": "Minerals",
+      "other": "Other"
+    },
     "instructions": "Instructions",
     "step": "Step",
     "done": "done",
@@ -569,6 +577,13 @@
     "active": "Active",
     "public": "Public",
     "copyShareLink": "Copy Share Link",
+    "discoverTab": "From Community",
+    "byAuthor": "by {author}",
+    "shareDayLabel": "Day {number}",
+    "shareCta": "Like this plan? Create your own meal plans with DietAI.",
+    "shareCtaButton": "Get started",
+    "noPublicPlans": "No public meal plans yet. Make one of your plans public to share it with the community!",
+    "loadMore": "Load more",
     "duplicate": "Duplicate",
     "delete": "Delete",
     "deleteConfirm": "Are you sure?",
@@ -1038,7 +1053,16 @@
     },
     "entry": {
       "title": "Add a Recipe",
-      "subtitle": "Import from URL, upload a photo, or add manually.",
+      "subtitle": "How would you like to add your recipe?",
+      "optionManualTitle": "Create manually",
+      "optionManualDesc": "Fill in the recipe details yourself, step by step.",
+      "optionAiTitle": "Ask the Dietai assistant",
+      "optionAiDesc": "Let the AI help you create or find a recipe in chat.",
+      "optionImportTitle": "Import from URL or photo",
+      "optionImportDesc": "Paste a link or upload a photo or PDF to auto-import.",
+      "importTitle": "Import a recipe",
+      "importSubtitle": "Paste a recipe URL, or upload a photo or PDF.",
+      "aiPrompt": "Help me create a new recipe.",
       "urlPlaceholder": "Paste recipe URL…",
       "extractButton": "Extract Recipe",
       "orDivider": "OR",
@@ -1111,6 +1135,8 @@
       "micronutrientsTitle": "Optional: Micronutrients",
       "sugar": "Sugar",
       "sodium": "Sodium",
+      "makePublic": "Make this recipe public",
+      "makePublicHint": "Public recipes can be discovered and used by other members.",
       "save": "Save Recipe",
       "saving": "Saving…"
     },
@@ -1152,6 +1178,13 @@
       "upgradeDescription": "Unlimited recipes, meal plans, shopping automation, and AI features.",
       "upgradeButton": "Upgrade"
     },
+    "trial": {
+      "startCta": "Start your {days}-day free trial",
+      "subtext": "{days} days free, then auto-billed. Cancel anytime.",
+      "paywallCta": "Try {days} days free",
+      "shortCta": "Try free",
+      "endsOn": "Trial ends {date}"
+    },
     "featureNames": {
       "aiMealPlan": "AI meal plans",
       "shoppingAutomation": "Shopping automation",
@@ -1161,7 +1194,6 @@
     "quotaNames": {
       "savedRecipes": "saved recipes",
       "recipesCreatedPerMonth": "recipes per month",
-      "importsPerMonth": "imports per month",
       "mealPlanTemplates": "meal plan templates",
       "mealPlanDurationDays": "meal plan duration",
       "edamamAnalysesPerMonth": "nutrition analyses per month"

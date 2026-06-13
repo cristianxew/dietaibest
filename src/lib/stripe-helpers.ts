@@ -21,6 +21,21 @@ export function proPriceLookupKey(
   return `pro_${interval}_${currency}`;
 }
 
+/** Default trial length when STRIPE_TRIAL_DAYS is unset or invalid. */
+export const DEFAULT_TRIAL_DAYS = 14;
+
+/**
+ * Resolves the Stripe free-trial length (in days) from the `STRIPE_TRIAL_DAYS`
+ * env var, falling back to {@link DEFAULT_TRIAL_DAYS}. Lets ops tune the trial
+ * window in prod (e.g. Dokploy) without a code redeploy. Server-only — never
+ * read process.env on the client; the value reaches the UI via the serialized
+ * entitlements (`trialDays`).
+ */
+export function getTrialDays(): number {
+  const n = parseInt(process.env.STRIPE_TRIAL_DAYS ?? "", 10);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_TRIAL_DAYS;
+}
+
 export function stripeLocaleForNextLocale(locale: string): StripeCheckoutLocale {
   switch (locale) {
     case "en":

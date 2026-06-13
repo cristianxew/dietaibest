@@ -39,6 +39,23 @@ interface RecipeDetailClientProps {
     carbs: number | null;
     fat: number | null;
     fiber: number | null;
+    sugar?: number | null;
+    sodium?: number | null;
+    cholesterol?: number | null;
+    saturatedFat?: number | null;
+    transFat?: number | null;
+    vitaminA?: number | null;
+    vitaminC?: number | null;
+    vitaminD?: number | null;
+    vitaminE?: number | null;
+    vitaminK?: number | null;
+    vitaminB12?: number | null;
+    folate?: number | null;
+    iron?: number | null;
+    calcium?: number | null;
+    magnesium?: number | null;
+    potassium?: number | null;
+    zinc?: number | null;
     sourceUrl: string | null;
     source: string | null;
     userId: string;
@@ -49,6 +66,7 @@ interface RecipeDetailClientProps {
   isOwner: boolean;
   isFavorited: boolean;
   locale: string;
+  authorName?: string;
 }
 
 const difficultyBadgeClass: Record<string, string> = {
@@ -97,6 +115,7 @@ export function RecipeDetailClient({
   isOwner,
   isFavorited,
   locale,
+  authorName,
 }: RecipeDetailClientProps) {
   const t = useTranslations("recipes");
   const tChat = useTranslations("chat");
@@ -323,6 +342,13 @@ export function RecipeDetailClient({
             {recipe.title}
           </h1>
 
+          {/* Author attribution for public recipes viewed by non-owners */}
+          {!isOwner && authorName && (
+            <p className="text-sm text-muted-foreground">
+              {t("byAuthor", { author: authorName })}
+            </p>
+          )}
+
           {/* Description */}
           {recipe.description && (
             <p className="text-base text-muted-foreground leading-relaxed">
@@ -484,16 +510,18 @@ export function RecipeDetailClient({
       >
         <InstructionsList instructions={recipe.instructions} />
 
-        <MacroDisplay
-          calories={recipe.calories}
-          protein={recipe.protein}
-          carbs={recipe.carbs}
-          fat={recipe.fat}
-          fiber={recipe.fiber}
-          servings={selectedPortions}
-        />
+        <div className="space-y-4">
+          <MacroDisplay
+            calories={recipe.calories}
+            protein={recipe.protein}
+            carbs={recipe.carbs}
+            fat={recipe.fat}
+            fiber={recipe.fiber}
+            servings={selectedPortions}
+          />
 
-
+          <RecipeMicronutrients nutrition={recipe} />
+        </div>
       </RecipeScalableContent>
     </PageContainer>
   );

@@ -17,7 +17,7 @@ interface RecipeCardProps {
   recipe: Recipe & {
     categories: RecipeCategory[];
     favoritedBy: UserFavorite[];
-    user?: { id: string; email: string };
+    user?: { id: string; name: string };
   };
   showAuthor?: boolean;
   viewMode?: "grid" | "list";
@@ -240,8 +240,8 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
               )}
 
               {showAuthor && recipe.user && (
-                <p className="text-xs text-muted-foreground mb-4 truncate" title={recipe.user.email}>
-                  {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
+                <p className="text-xs text-muted-foreground mb-4 truncate">
+                  {t("byAuthor", { author: recipe.user.name })}
                 </p>
               )}
 
@@ -276,8 +276,8 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                   </p>
                 )}
                 {showAuthor && recipe.user && (
-                  <p className="text-xs text-muted-foreground mt-1 truncate" title={recipe.user.email}>
-                    {t("byAuthor", { author: recipe.user.email.split("@")[0] })}
+                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                    {t("byAuthor", { author: recipe.user.name })}
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium mt-3">

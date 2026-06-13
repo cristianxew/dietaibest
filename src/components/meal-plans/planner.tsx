@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
@@ -25,6 +26,16 @@ interface PlanSwitcherProps {
 
 export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwitcherProps) {
   const t = useTranslations('mealPlans');
+  const params = useParams();
+  const locale = params.locale as string;
+
+  const copyShareLink = (token: string) => {
+    navigator.clipboard.writeText(
+      `${window.location.origin}/${locale}/share/meal-plan/${token}`
+    );
+    toast.success(t('shareLinkCopied'));
+  };
+
   return (
     <div className="flex flex-wrap gap-2.5 items-stretch">
       {templates.map(template => {
@@ -66,7 +77,32 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
                 <Icon name="Flame" size={11} />{template.targetCalories ?? 0} kcal
               </span>
             </div>
-            {template.isPublic && <Chip color="gold" size="xs">{t('public')}</Chip>}
+            {template.isPublic && (
+              <span className="flex items-center gap-1.5">
+                <Chip color="gold" size="xs">{t('public')}</Chip>
+                {template.shareToken && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title={t('copyShareLink')}
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyShareLink(template.shareToken!);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        copyShareLink(template.shareToken!);
+                      }
+                    }}
+                  >
+                    <Icon name="Link2" size={12} />
+                  </span>
+                )}
+              </span>
+            )}
           </button>
         );
       })}

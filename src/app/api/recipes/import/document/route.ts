@@ -6,6 +6,7 @@ import { randomUUID } from "crypto";
 // Google Cloud Document AI imports
 import { DocumentProcessorServiceClient } from "@google-cloud/documentai";
 import { PDFDocument } from "pdf-lib";
+import { resolveGoogleServiceAccountAuth } from "@/lib/chat/tools/genai-options";
 
 // Configuration
 const SUPPORTED_FORMATS = [
@@ -28,32 +29,30 @@ const DOCUMENT_AI_CONFIG = {
   serviceAccountPath: process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH,
 };
 
-// Check if Document AI is properly configured
+// Check if Document AI is properly configured. Auth can come from either the
+// inline JSON env var or the key-file path (see resolveGoogleServiceAccountAuth).
 function isDocumentAIConfigured(): boolean {
   return !!(
     DOCUMENT_AI_CONFIG.projectId &&
     DOCUMENT_AI_CONFIG.customProcessorId &&
-    DOCUMENT_AI_CONFIG.serviceAccountPath
+    (process.env.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON ||
+      DOCUMENT_AI_CONFIG.serviceAccountPath)
   );
 }
 
-// Initialize Document AI client with proper authentication
+// Initialize Document AI client with proper authentication. Shares the resolver
+// with the Vertex (Gemma / Imagen) clients: inline JSON preferred, then key
+// file. Inline JSON is what reliably reaches the container on the VPS.
 function getDocumentAIClient() {
-  const options: {
-    apiEndpoint: string;
-    credentials?: object;
-    keyFilename?: string;
-  } = {
-    apiEndpoint: `${DOCUMENT_AI_CONFIG.location}-documentai.googleapis.com`,
-  };
-
-  if (DOCUMENT_AI_CONFIG.serviceAccountPath) {
-    options.keyFilename = DOCUMENT_AI_CONFIG.serviceAccountPath;
-  } else {
+  const auth = resolveGoogleServiceAccountAuth(process.env);
+  if (!auth) {
     throw new Error("No Google Cloud authentication configured");
   }
 
-  return new DocumentProcessorServiceClient(options);
+  return new DocumentProcessorServiceClient({
+    apiEndpoint: `${DOCUMENT_AI_CONFIG.location}-documentai.googleapis.com`,
+    ...auth,
+  });
 }
 
 import type { ImportedRecipe } from "@/types/recipe";

@@ -48,8 +48,24 @@ export const recipeFormSchema = z.object({
   carbs: z.number().min(0).optional(),
   fat: z.number().min(0).optional(),
   fiber: z.number().min(0).optional(),
+  // Extended nutrition / micronutrients (optional)
   sugar: z.number().min(0).optional(),
   sodium: z.number().min(0).optional(),
+  cholesterol: z.number().min(0).optional(),
+  saturatedFat: z.number().min(0).optional(),
+  transFat: z.number().min(0).optional(),
+  vitaminA: z.number().min(0).optional(),
+  vitaminC: z.number().min(0).optional(),
+  vitaminD: z.number().min(0).optional(),
+  vitaminE: z.number().min(0).optional(),
+  vitaminK: z.number().min(0).optional(),
+  vitaminB12: z.number().min(0).optional(),
+  folate: z.number().min(0).optional(),
+  iron: z.number().min(0).optional(),
+  calcium: z.number().min(0).optional(),
+  magnesium: z.number().min(0).optional(),
+  potassium: z.number().min(0).optional(),
+  zinc: z.number().min(0).optional(),
 });
 
 export type RecipeFormData = z.infer<typeof recipeFormSchema>;

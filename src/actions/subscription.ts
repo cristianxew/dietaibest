@@ -11,6 +11,7 @@ import {
   resolvePrice,
   proPriceLookupKey,
   stripeLocaleForNextLocale,
+  getTrialDays,
   type BillingInterval,
   type SupportedCurrency,
 } from "@/lib/stripe";
@@ -77,6 +78,9 @@ function resolveBaseUrl(): string {
 const createCheckoutSessionSchema = z.object({
   interval: z.enum(["monthly", "yearly"]),
   currency: z.enum(["usd", "eur", "pln"]),
+  // When true (and the user hasn't trialed before), start a free trial instead
+  // of charging immediately. Ignored if the user already used their trial.
+  withTrial: z.boolean().optional(),
 });
 
 export type CreateCheckoutSessionInput = z.infer<
@@ -104,7 +108,7 @@ export async function createCheckoutSession(
     if (!parsed.success) {
       return { data: null, error: "Invalid input" };
     }
-    const { interval, currency } = parsed.data;
+    const { interval, currency, withTrial } = parsed.data;
 
     const { user, error } = await getAuthenticatedUser();
     if (error || !user) {
@@ -138,6 +142,21 @@ export async function createCheckoutSession(
     const baseUrl = resolveBaseUrl();
     const localePrefix = locale === "en" ? "" : `/${locale}`;
 
+    // Only grant a trial if requested AND the user hasn't already used one.
+    // Otherwise fall through to a normal (immediate-charge) checkout.
+    const grantTrial = withTrial === true && !user.hasUsedTrial;
+
+    const trialData = grantTrial
+      ? {
+          trial_period_days: getTrialDays(),
+          // Card is collected up front (payment_method_collection: "always"),
+          // so this is just a safe default if a card ever goes missing.
+          trial_settings: {
+            end_behavior: { missing_payment_method: "cancel" as const },
+          },
+        }
+      : {};
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: price.id, quantity: 1 }],
@@ -157,6 +176,7 @@ export async function createCheckoutSession(
           userId: user.id,
           lookupKey,
         },
+        ...trialData,
       },
       allow_promotion_codes: true,
       billing_address_collection: "auto",
@@ -286,11 +306,19 @@ export async function getCurrentSubscription(): Promise<{
     currentPeriodEnd: Date | null;
     cancelAtPeriodEnd: boolean;
     isPro: boolean;
+    hasUsedTrial: boolean;
+    trialEligible: boolean;
+    trialDays: number;
   } | null;
   error: string | null;
 }> {
   const { user, error } = await getAuthenticatedUser();
   if (error || !user) return { data: null, error: error ?? "Unauthorized" };
+
+  const pro = isPro({
+    plan: user.plan,
+    subscriptionStatus: user.subscriptionStatus,
+  });
 
   return {
     data: {
@@ -298,10 +326,10 @@ export async function getCurrentSubscription(): Promise<{
       subscriptionStatus: user.subscriptionStatus,
       currentPeriodEnd: user.currentPeriodEnd,
       cancelAtPeriodEnd: user.cancelAtPeriodEnd,
-      isPro: isPro({
-        plan: user.plan,
-        subscriptionStatus: user.subscriptionStatus,
-      }),
+      isPro: pro,
+      hasUsedTrial: user.hasUsedTrial,
+      trialEligible: !user.hasUsedTrial && !pro,
+      trialDays: getTrialDays(),
     },
     error: null,
   };

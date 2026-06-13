@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import {
   mealPlanTemplateFormSchema,
+  mealPlanTemplateFilterSchema,
   addMealSchema,
   moveMealSchema,
   updateMealServingsSchema,
@@ -19,6 +20,7 @@ import { addDays, format } from "date-fns";
 import { Prisma } from "@/generated/prisma";
 import { assertCanCreateMealPlanTemplate } from "@/lib/entitlements";
 import { serverAction } from "@/lib/server-action";
+import { getAuthorName } from "@/lib/author-name";
 
 // ============================================================================
 // Helper Functions
@@ -610,6 +612,102 @@ export async function getMealPlans(filter?: MealPlanTemplateFilter) {
 }
 
 // ============================================================================
+// Get Public Meal Plan Templates (other users' plans, for the Discover tab)
+// ============================================================================
+
+export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
+  return serverAction(
+    { input: mealPlanTemplateFilterSchema },
+    async (ctx, validatedFilter) => {
+      const {
+        search,
+        duration,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+        page = 1,
+        limit = 12,
+      } = validatedFilter;
+
+      const where: Prisma.MealPlanTemplateWhereInput = {
+        isPublic: true,
+        userId: { not: ctx.user.id },
+        ...(search && {
+          name: {
+            contains: search,
+            mode: "insensitive" as Prisma.QueryMode,
+          },
+        }),
+        ...(duration !== undefined && { duration }),
+      };
+
+      const [templates, total] = await Promise.all([
+        prisma.mealPlanTemplate.findMany({
+          where,
+          // Card payload: scalars + author + day count + a light recipe preview
+          // (id/title/image only) so the Discover cards can show what's inside.
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+            mealSlots: true,
+            targetCalories: true,
+            targetProtein: true,
+            targetCarbs: true,
+            targetFat: true,
+            createdAt: true,
+            user: { select: { id: true, email: true, displayName: true } },
+            _count: { select: { days: true } },
+            days: {
+              select: {
+                meals: {
+                  select: {
+                    recipe: { select: { id: true, title: true, imageUrl: true } },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.mealPlanTemplate.count({ where }),
+      ]);
+
+      return {
+        // Scrub raw emails: other users only get a derived display name.
+        // Flatten the nested days→meals into a deduped recipe preview list.
+        templates: templates.map(({ user: owner, days, ...template }) => {
+          const seen = new Set<string>();
+          const recipes: { id: string; title: string; imageUrl: string | null }[] = [];
+          for (const day of days ?? []) {
+            for (const meal of day.meals) {
+              const r = meal.recipe;
+              if (r && !seen.has(r.id)) {
+                seen.add(r.id);
+                recipes.push({ id: r.id, title: r.title, imageUrl: r.imageUrl });
+              }
+            }
+          }
+          return {
+            ...template,
+            user: { id: owner.id, name: getAuthorName(owner) },
+            recipeCount: recipes.length,
+            recipes: recipes.slice(0, 6),
+          };
+        }),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    }
+  )({ page: 1, limit: 12, ...filter });
+}
+
+// ============================================================================
 // Get Single Meal Plan Template
 // ============================================================================
 
@@ -701,6 +799,7 @@ export async function getMealPlanByShareToken(shareToken: string) {
         user: {
           select: {
             email: true,
+            displayName: true,
           },
         },
       },
@@ -713,7 +812,12 @@ export async function getMealPlanByShareToken(shareToken: string) {
       };
     }
 
-    return { data: template, error: null };
+    // Unauthenticated endpoint: never expose the owner's raw email
+    const { user: owner, ...rest } = template;
+    return {
+      data: { ...rest, author: getAuthorName(owner) },
+      error: null,
+    };
   } catch (error) {
     console.error("Get meal plan template by share token error:", error);
     return {

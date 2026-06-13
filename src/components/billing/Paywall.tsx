@@ -13,20 +13,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useEntitlements } from "@/hooks/useEntitlements";
 import { usePaywall } from "./PaywallProvider";
 
 export function Paywall() {
   const t = useTranslations("billing.paywall");
+  const tTrial = useTranslations("billing.trial");
   const tFeatures = useTranslations("billing.featureNames");
   const tQuotas = useTranslations("billing.quotaNames");
   const { isOpen, payload, close } = usePaywall();
+  const entitlements = useEntitlements();
 
   if (!payload) return null;
 
   const isProOnly = payload.code === "PRO_ONLY";
 
+  // If the user can still start their free trial, lead with that instead of "Upgrade".
+  const trialEligible =
+    entitlements.status === "ready" && entitlements.data.trialEligible;
+  const trialDays =
+    entitlements.status === "ready" ? entitlements.data.trialDays : 14;
+
   const title = isProOnly ? t("proOnly.title") : t("quotaExceeded.title");
-  const cta = isProOnly ? t("proOnly.cta") : t("quotaExceeded.cta");
+  const cta = trialEligible
+    ? tTrial("paywallCta", { days: trialDays })
+    : isProOnly
+      ? t("proOnly.cta")
+      : t("quotaExceeded.cta");
 
   let description: string;
   if (payload.code === "PRO_ONLY") {

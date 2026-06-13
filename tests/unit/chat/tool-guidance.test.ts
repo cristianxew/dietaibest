@@ -20,6 +20,15 @@ describe("tool guidance — Category-2 rules co-located with their tool", () => 
     expect(generateRecipeImage.guidance).toContain("askFirst");
   });
 
+  it("generateRecipeImage tells the model explicit requests use askFirst: false", () => {
+    // Without this rule the model passes askFirst: true on explicit
+    // regeneration requests, the existing-image backstop skips silently, and
+    // the user is told an image was generated when nothing happened.
+    expect(generateRecipeImage.guidance).toMatch(
+      /explicit[^\n]*askFirst: false/i
+    );
+  });
+
   it("importRecipeFromImage keeps the attachment marker protocol", () => {
     expect(importRecipeFromImage.guidance).toBeTruthy();
     expect(importRecipeFromImage.guidance).toContain("[attachment kind=image eventId=");

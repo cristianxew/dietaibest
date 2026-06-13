@@ -10,11 +10,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  displayName String? // Public author name; falls back to email prefix at render
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Stripe subscription
   stripeCustomerId     String?   @unique
@@ -23,6 +24,7 @@ model User {
   subscriptionStatus   String? // trialing | active | past_due | canceled | incomplete | incomplete_expired | unpaid
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean   @default(false)
+  hasUsedTrial         Boolean   @default(false) // true once the user has started a Stripe trial — gates one trial per account
 
   profile             UserProfile?
   recipes             Recipe[]
@@ -94,6 +96,25 @@ model Recipe {
   fat      Float?
   fiber    Float?
 
+  // Extended nutrition per serving (optional micronutrients)
+  sugar        Float?
+  sodium       Float?
+  cholesterol  Float?
+  saturatedFat Float?
+  transFat     Float?
+  vitaminA     Float?
+  vitaminC     Float?
+  vitaminD     Float?
+  vitaminE     Float?
+  vitaminK     Float?
+  vitaminB12   Float?
+  folate       Float?
+  iron         Float?
+  calcium      Float?
+  magnesium    Float?
+  potassium    Float?
+  zinc         Float?
+
   // Metadata
   source    String? // url, manual, imported
   sourceUrl String?
@@ -111,6 +132,9 @@ model Recipe {
   edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
   mealPlanMeals     MealPlanMeal[] // Usage in meal plans
   multimodalImports MultimodalImportEvent[] // DIE-41 image-based imports that produced this recipe
+
+  @@index([userId])
+  @@index([isPublic, createdAt])
 }
 
 model RecipeCategory {
@@ -248,6 +272,7 @@ model MealPlanTemplate {
 
   @@index([userId])
   @@index([shareToken])
+  @@index([isPublic, createdAt])
 }
 
 // MealPlanSchedule: Tracks when/where templates are used on the calendar
