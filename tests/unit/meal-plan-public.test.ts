@@ -39,6 +39,21 @@ const publicTemplate = {
   createdAt: new Date(),
   user: { id: "user-2", email: "alice@example.com" },
   _count: { days: 7 },
+  days: [
+    {
+      meals: [
+        { recipe: { id: "r1", title: "Oats", imageUrl: null } },
+        { recipe: { id: "r2", title: "Salad", imageUrl: "http://img/2.jpg" } },
+        { recipe: null }, // failed slot — must be skipped
+      ],
+    },
+    {
+      meals: [
+        { recipe: { id: "r1", title: "Oats", imageUrl: null } }, // duplicate — deduped
+        { recipe: { id: "r3", title: "Steak", imageUrl: null } },
+      ],
+    },
+  ],
 };
 
 beforeEach(() => {
@@ -81,6 +96,21 @@ describe("getPublicMealPlans", () => {
       name: "alice",
     });
     expect(JSON.stringify(result)).not.toContain("alice@example.com");
+  });
+
+  it("returns a deduped recipe preview with a total count", async () => {
+    vi.mocked(prisma.mealPlanTemplate.findMany).mockResolvedValue([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      publicTemplate as any,
+    ]);
+    vi.mocked(prisma.mealPlanTemplate.count).mockResolvedValue(1);
+
+    const result = await getPublicMealPlans();
+
+    const template = result.data!.templates[0];
+    // r1 appears twice and one slot has no recipe → 3 distinct recipes
+    expect(template.recipeCount).toBe(3);
+    expect(template.recipes.map((r) => r.id)).toEqual(["r1", "r2", "r3"]);
   });
 
   it("rejects invalid filters via zod (limit above max)", async () => {

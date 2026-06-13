@@ -680,7 +680,7 @@ export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
         templates: templates.map(({ user: owner, days, ...template }) => {
           const seen = new Set<string>();
           const recipes: { id: string; title: string; imageUrl: string | null }[] = [];
-          for (const day of days) {
+          for (const day of days ?? []) {
             for (const meal of day.meals) {
               const r = meal.recipe;
               if (r && !seen.has(r.id)) {
