@@ -6,16 +6,27 @@ import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { useRecipeForm } from "@/hooks/use-recipe-form";
 import { useRecipeExtraction } from "@/hooks/use-recipe-extraction";
 import { importedToFormData } from "@/lib/recipe-utils";
-import { Link2, Camera, Sparkles } from "lucide-react";
+import {
+  Link2,
+  Camera,
+  Sparkles,
+  PenLine,
+  ChevronRight,
+  ArrowLeft,
+  type LucideIcon,
+} from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ImportedRecipe } from "@/types/recipe";
 
+type EntryView = "chooser" | "import";
+
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
-  const { goToScreen, setImportedPreview } = useRecipeModal();
+  const { goToScreen, setImportedPreview, close } = useRecipeModal();
   const { form } = useRecipeForm();
+  const [view, setView] = useState<EntryView>("chooser");
   const [url, setUrl] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,6 +130,17 @@ export function EntryScreen() {
     goToScreen("step0");
   };
 
+  // Hand off to the AI chat assistant: open the drawer with a seed prompt, then
+  // close this modal so the conversation is front and center.
+  const handleAskAssistant = () => {
+    window.dispatchEvent(
+      new CustomEvent("dietai:open-chat", {
+        detail: { prompt: t("entry.aiPrompt") },
+      })
+    );
+    close();
+  };
+
   const isLoading = ["starting", "polling", "processing", "validating"].includes(state.status);
 
   return (
@@ -159,7 +181,7 @@ export function EntryScreen() {
               Cancel
             </button>
           </div>
-        ) : (
+        ) : view === "chooser" ? (
           <>
             {/* Title */}
             <div className="text-center mb-7">
@@ -168,6 +190,48 @@ export function EntryScreen() {
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {t("entry.subtitle")}
+              </p>
+            </div>
+
+            {/* Three options */}
+            <div className="space-y-3">
+              <OptionCard
+                icon={PenLine}
+                title={t("entry.optionManualTitle")}
+                description={t("entry.optionManualDesc")}
+                onClick={handleManual}
+              />
+              <OptionCard
+                icon={Sparkles}
+                title={t("entry.optionAiTitle")}
+                description={t("entry.optionAiDesc")}
+                onClick={handleAskAssistant}
+                accent
+              />
+              <OptionCard
+                icon={Link2}
+                title={t("entry.optionImportTitle")}
+                description={t("entry.optionImportDesc")}
+                onClick={() => setView("import")}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Import header with back to chooser */}
+            <div className="mb-6">
+              <button
+                onClick={() => setView("chooser")}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t("header.back")}
+              </button>
+              <h2 className="font-display text-2xl font-bold text-foreground mb-2">
+                {t("entry.importTitle")}
+              </h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {t("entry.importSubtitle")}
               </p>
             </div>
 
@@ -225,7 +289,7 @@ export function EntryScreen() {
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                "border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all duration-200 mb-5",
+                "border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all duration-200",
                 dragging
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-muted-foreground hover:bg-muted/50"
@@ -254,19 +318,54 @@ export function EntryScreen() {
               className="hidden"
               onChange={handleFileChange}
             />
-
-            {/* Manual link */}
-            <div className="text-center">
-              <button
-                onClick={handleManual}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t("entry.addManually")}
-              </button>
-            </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+function OptionCard({
+  icon: Icon,
+  title,
+  description,
+  onClick,
+  accent = false,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  onClick: () => void;
+  accent?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "group w-full flex items-center gap-4 text-left rounded-2xl border p-4 transition-all duration-200",
+        "hover:-translate-y-px hover:shadow-md",
+        accent
+          ? "border-primary/40 bg-primary/5 hover:border-primary"
+          : "border-border bg-card hover:border-muted-foreground/40"
+      )}
+    >
+      <span
+        className={cn(
+          "shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
+          accent
+            ? "bg-primary/15 text-primary"
+            : "bg-muted text-muted-foreground group-hover:text-foreground"
+        )}
+      >
+        <Icon className="w-5 h-5" />
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-semibold text-foreground">{title}</div>
+        <div className="text-[13px] text-muted-foreground leading-snug">
+          {description}
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground transition-colors shrink-0" />
+    </button>
   );
 }
