@@ -49,6 +49,21 @@ type RecipeDbRecord = {
   fiber: number | null;
   sugar?: number | null;
   sodium?: number | null;
+  cholesterol?: number | null;
+  saturatedFat?: number | null;
+  transFat?: number | null;
+  vitaminA?: number | null;
+  vitaminC?: number | null;
+  vitaminD?: number | null;
+  vitaminE?: number | null;
+  vitaminK?: number | null;
+  vitaminB12?: number | null;
+  folate?: number | null;
+  iron?: number | null;
+  calcium?: number | null;
+  magnesium?: number | null;
+  potassium?: number | null;
+  zinc?: number | null;
 };
 
 export function recipeToFormData(recipe: RecipeDbRecord): RecipeFormData {
@@ -74,6 +89,21 @@ export function recipeToFormData(recipe: RecipeDbRecord): RecipeFormData {
     fiber: recipe.fiber ?? undefined,
     sugar: recipe.sugar ?? undefined,
     sodium: recipe.sodium ?? undefined,
+    cholesterol: recipe.cholesterol ?? undefined,
+    saturatedFat: recipe.saturatedFat ?? undefined,
+    transFat: recipe.transFat ?? undefined,
+    vitaminA: recipe.vitaminA ?? undefined,
+    vitaminC: recipe.vitaminC ?? undefined,
+    vitaminD: recipe.vitaminD ?? undefined,
+    vitaminE: recipe.vitaminE ?? undefined,
+    vitaminK: recipe.vitaminK ?? undefined,
+    vitaminB12: recipe.vitaminB12 ?? undefined,
+    folate: recipe.folate ?? undefined,
+    iron: recipe.iron ?? undefined,
+    calcium: recipe.calcium ?? undefined,
+    magnesium: recipe.magnesium ?? undefined,
+    potassium: recipe.potassium ?? undefined,
+    zinc: recipe.zinc ?? undefined,
   };
 }
 

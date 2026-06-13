@@ -353,8 +353,10 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
   return (
     <div className="space-y-8">
-      {/* Unified control panel wrapper */}
-      <div className="sticky top-16 md:top-0 z-30 pt-4 pb-2  backdrop-blur-sm transition-all">
+      {/* Unified control panel wrapper — full-bleed sticky bar pinned to the top.
+          Negative margins cancel PageContainer's padding so the bar (and its
+          solid backdrop) spans the full content width; px re-aligns the inner card. */}
+      <div className="sticky top-16 md:top-0 z-30 -mx-6 lg:-mx-10 px-6 lg:px-10 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 transition-all">
         {/* Unified control panel: Search + Categories + Difficulties + Tabs + Layout + Add Recipe */}
         <div className="flex flex-col gap-4 p-4 bg-card border border-border/60 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
           {/* Top Row: Search Input + Select Dropdowns */}

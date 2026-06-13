@@ -16,11 +16,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, RefreshCw, ChevronUp, Calculator, LockKeyhole } from "lucide-react";
+import { Check, RefreshCw, Calculator, LockKeyhole, Globe } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { usePaywall } from "@/components/billing/PaywallProvider";
 import { ProBadge } from "@/components/billing/ProBadge";
+import { MICRONUTRIENT_GROUPS } from "@/lib/nutrition-fields";
 
 const MACRO_TILES = [
   { key: "calories" as const, unit: "kcal", accent: "brand" },
@@ -36,41 +38,6 @@ const ACCENT_TEXT_CLASSES: Record<string, string> = {
   gold: "text-amber-600 dark:text-amber-400",
   neutral: "text-foreground",
 };
-
-const MICRO_GROUPS = [
-  {
-    title: "Vitamins",
-    fields: [
-      { key: "vitaminA", label: "Vitamin A", unit: "µg" },
-      { key: "vitaminC", label: "Vitamin C", unit: "mg" },
-      { key: "vitaminD", label: "Vitamin D", unit: "µg" },
-      { key: "vitaminE", label: "Vitamin E", unit: "mg" },
-      { key: "vitaminK", label: "Vitamin K", unit: "µg" },
-      { key: "vitaminB12", label: "Vitamin B12", unit: "µg" },
-      { key: "folate", label: "Folate", unit: "µg" },
-    ],
-  },
-  {
-    title: "Minerals",
-    fields: [
-      { key: "iron", label: "Iron", unit: "mg" },
-      { key: "calcium", label: "Calcium", unit: "mg" },
-      { key: "magnesium", label: "Magnesium", unit: "mg" },
-      { key: "potassium", label: "Potassium", unit: "mg" },
-      { key: "zinc", label: "Zinc", unit: "mg" },
-      { key: "sodium", label: "Sodium", unit: "mg" },
-    ],
-  },
-  {
-    title: "Other",
-    fields: [
-      { key: "sugar", label: "Sugar", unit: "g" },
-      { key: "cholesterol", label: "Cholesterol", unit: "mg" },
-      { key: "saturatedFat", label: "Saturated Fat", unit: "g" },
-      { key: "transFat", label: "Trans Fat", unit: "g" },
-    ],
-  },
-];
 
 export function Step2Nutrition() {
   const t = useTranslations("recipeModal");
@@ -254,7 +221,7 @@ export function Step2Nutrition() {
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-6">
               <div className="space-y-8">
-                {MICRO_GROUPS.map((group) => (
+                {MICRONUTRIENT_GROUPS.map((group) => (
                   <div key={group.title}>
                     <h5 className="text-[11px] font-bold tracking-[0.1em] text-muted-foreground uppercase mb-4">
                       {group.title}
@@ -302,6 +269,32 @@ export function Step2Nutrition() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+
+        {/* Make public toggle */}
+        <FormField
+          control={control}
+          name="isPublic"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-sm space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  className="mt-0.5"
+                />
+              </FormControl>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+                  <Globe className="w-4 h-4 text-primary" />
+                  {t("step2.makePublic")}
+                </div>
+                <p className="text-[13px] text-muted-foreground">
+                  {t("step2.makePublicHint")}
+                </p>
+              </div>
+            </FormItem>
+          )}
+        />
       </div>
 
       {/* Sticky footer */}

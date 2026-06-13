@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { duplicateMealPlan, getPublicMealPlans } from "@/actions/meal-plan";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RecipeThumb } from "./shared";
 
 type PublicPlansData = NonNullable<
   Awaited<ReturnType<typeof getPublicMealPlans>>["data"]
@@ -109,12 +110,20 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className="px-4 py-3.5 bg-card border border-border rounded-xl flex flex-col gap-2"
+            className="p-4 bg-card border border-border rounded-xl flex flex-col gap-3"
           >
-            <div className="font-display text-base font-semibold tracking-tight text-foreground truncate">
-              {plan.name}
+            {/* Title + author */}
+            <div>
+              <div className="font-display text-base font-semibold tracking-tight text-foreground truncate">
+                {plan.name}
+              </div>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                {t("byAuthor", { author: plan.user.name })}
+              </p>
             </div>
-            <div className="flex gap-3.5 text-[11px] text-muted-foreground">
+
+            {/* Overview stats */}
+            <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="w-[11px] h-[11px]" />
                 {plan.duration}d
@@ -129,9 +138,54 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
                 {plan.targetCalories ?? 0} kcal
               </span>
             </div>
-            <p className="text-xs text-muted-foreground truncate">
-              {t("byAuthor", { author: plan.user.name })}
-            </p>
+
+            {/* Macro targets */}
+            {(plan.targetProtein != null ||
+              plan.targetCarbs != null ||
+              plan.targetFat != null) && (
+              <div className="flex flex-wrap gap-2 text-[10px] font-medium">
+                {plan.targetProtein != null && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-sage-500/10 text-sage-600 dark:text-sage-400">
+                    {Math.round(plan.targetProtein)}g P
+                  </span>
+                )}
+                {plan.targetCarbs != null && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-gold-500/10 text-gold-600 dark:text-gold-400">
+                    {Math.round(plan.targetCarbs)}g C
+                  </span>
+                )}
+                {plan.targetFat != null && (
+                  <span className="px-1.5 py-0.5 rounded-md bg-stone-500/10 text-stone-600 dark:text-stone-400">
+                    {Math.round(plan.targetFat)}g F
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Recipe preview */}
+            {plan.recipes.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {t("recipes")}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {plan.recipes.slice(0, 5).map((recipe) => (
+                    <RecipeThumb
+                      key={recipe.id}
+                      recipe={{ title: recipe.title, imageUrl: recipe.imageUrl }}
+                      size={32}
+                      radius={8}
+                    />
+                  ))}
+                  {plan.recipeCount > 5 && (
+                    <span className="text-[11px] font-medium text-muted-foreground ml-0.5">
+                      +{plan.recipeCount - 5}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Button
               size="sm"
               variant="outline"

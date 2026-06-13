@@ -96,6 +96,25 @@ model Recipe {
   fat      Float?
   fiber    Float?
 
+  // Extended nutrition per serving (optional micronutrients)
+  sugar        Float?
+  sodium       Float?
+  cholesterol  Float?
+  saturatedFat Float?
+  transFat     Float?
+  vitaminA     Float?
+  vitaminC     Float?
+  vitaminD     Float?
+  vitaminE     Float?
+  vitaminK     Float?
+  vitaminB12   Float?
+  folate       Float?
+  iron         Float?
+  calcium      Float?
+  magnesium    Float?
+  potassium    Float?
+  zinc         Float?
+
   // Metadata
   source    String? // url, manual, imported
   sourceUrl String?
