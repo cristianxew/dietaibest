@@ -100,29 +100,47 @@ CHAT_LLM_MODEL=<override chat model>
 GEMMA_MODEL=<vertex gemma model>
 GOOGLE_VERTEX_LOCATION=<vertex region>
 FEATURE_MULTIMODAL_IMPORT=true
-# Document AI (recipe OCR import) — see "Document AI Service Account" below
-GOOGLE_CLOUD_PROJECT_ID=<for-document-ai>
+# Google Cloud (Vertex AI — Gemma extraction + Imagen images — AND Document AI OCR)
+GOOGLE_CLOUD_PROJECT_ID=<gcp-project-id>
+GOOGLE_VERTEX_LOCATION=us-central1
 DOCUMENT_AI_LOCATION=eu
 DOCUMENT_AI_CUSTOM_PROCESSOR_ID=<processor-id>
-GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=/app/secrets/gcp-service-account.json
+# PREFERRED: full service-account JSON as a single-line value — see below
+GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"...",...}
 ```
 
 > All of these must be declared in the `app` service `environment:` block of
 > `docker-compose.yml` to reach the container — the Dokploy Environment UI alone
 > is not enough (see the env troubleshooting section).
 
-#### Document AI Service Account (file mount, not an env var)
+#### Google service-account credentials (inline JSON env var — preferred)
 
-The Document AI client reads credentials from a **JSON file on disk** via
-`keyFilename` (`src/app/api/recipes/import/document/route.ts:51`), pointed at by
-`GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH`. The JSON is a **secret** — never commit it or
-bind-mount it from the repo. Provide it with a **Dokploy File Mount**:
+The same service account authenticates **Vertex AI** (Gemma recipe extraction +
+Imagen image generation) and **Document AI** (recipe OCR). All three resolve
+credentials through `resolveGoogleServiceAccountAuth`
+(`src/lib/chat/tools/genai-options.ts`): inline JSON first, key-file path second.
 
-1. Dokploy → service → **Advanced → Volumes → Add File Mount**
-2. **Mount Path**: `/app/secrets/gcp-service-account.json`
-3. **Content**: paste the full service-account JSON
-4. Set `GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH=/app/secrets/gcp-service-account.json` in Environment
-5. Redeploy
+**Provide the credential as a single env var — do NOT use a Dokploy File Mount.**
+A File Mount does **not** reach the container in a Compose-type deployment: the
+running process gets `ENOENT` on the configured path, so Vertex/Document AI fail
+with `"transient"` / `"All promises were rejected"`. The env var rides the
+compose `environment:` block like every other secret and is delivered reliably.
+
+1. Minify the service-account JSON to a single line (it already is if downloaded
+   from GCP; otherwise `jq -c . key.json`). The `private_key` newlines are
+   `\n`-escaped inside the JSON string and survive as-is.
+2. Dokploy → service → **Environment**, add:
+   `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON={"type":"service_account",...}`
+3. Confirm it is also declared in the `app` `environment:` block of
+   `docker-compose.yml` (it is, by default — `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON`).
+4. Redeploy.
+
+The JSON is a **secret** — never commit it or bake it into the image.
+
+> Legacy file-path fallback: if `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON` is unset, the
+> code falls back to `GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH` (`keyFilename`). That
+> only works if the file genuinely exists **inside the container** at that path —
+> verify with `docker exec <app> ls -la "$GOOGLE_CLOUD_SERVICE_ACCOUNT_PATH"`.
 
 ### 4. Configure Domain & SSL
 1. Go to **Domains** section
