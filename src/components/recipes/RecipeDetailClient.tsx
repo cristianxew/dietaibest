@@ -15,6 +15,7 @@ import { RecipeDeleteButton } from "./RecipeDeleteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
+import { RecipeMicronutrients } from "./RecipeMicronutrients";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { recipeToFormData } from "@/lib/recipe-utils";
 import { toast } from "sonner";
@@ -37,6 +38,23 @@ interface RecipeDetailClientProps {
     carbs: number | null;
     fat: number | null;
     fiber: number | null;
+    sugar?: number | null;
+    sodium?: number | null;
+    cholesterol?: number | null;
+    saturatedFat?: number | null;
+    transFat?: number | null;
+    vitaminA?: number | null;
+    vitaminC?: number | null;
+    vitaminD?: number | null;
+    vitaminE?: number | null;
+    vitaminK?: number | null;
+    vitaminB12?: number | null;
+    folate?: number | null;
+    iron?: number | null;
+    calcium?: number | null;
+    magnesium?: number | null;
+    potassium?: number | null;
+    zinc?: number | null;
     sourceUrl: string | null;
     source: string | null;
     userId: string;
@@ -467,16 +485,18 @@ export function RecipeDetailClient({
       >
         <InstructionsList instructions={recipe.instructions} />
 
-        <MacroDisplay
-          calories={recipe.calories}
-          protein={recipe.protein}
-          carbs={recipe.carbs}
-          fat={recipe.fat}
-          fiber={recipe.fiber}
-          servings={selectedPortions}
-        />
+        <div className="space-y-4">
+          <MacroDisplay
+            calories={recipe.calories}
+            protein={recipe.protein}
+            carbs={recipe.carbs}
+            fat={recipe.fat}
+            fiber={recipe.fiber}
+            servings={selectedPortions}
+          />
 
-
+          <RecipeMicronutrients nutrition={recipe} />
+        </div>
       </RecipeScalableContent>
     </PageContainer>
   );
