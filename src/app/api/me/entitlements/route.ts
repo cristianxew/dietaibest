@@ -7,6 +7,7 @@ import {
   getUsage,
   serializeEntitlements,
 } from "@/lib/entitlements";
+import { getTrialDays } from "@/lib/stripe-helpers";
 
 /**
  * GET /api/me/entitlements
@@ -26,7 +27,12 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { id: true, plan: true, subscriptionStatus: true },
+    select: {
+      id: true,
+      plan: true,
+      subscriptionStatus: true,
+      hasUsedTrial: true,
+    },
   });
 
   if (!user) {
@@ -35,6 +41,12 @@ export async function GET() {
 
   const ent = getEntitlements(user);
   const usage = await getUsage(user.id);
+  const trialEligible = !user.hasUsedTrial && !ent.isPro;
 
-  return NextResponse.json(serializeEntitlements(ent, usage));
+  return NextResponse.json(
+    serializeEntitlements(ent, usage, {
+      trialEligible,
+      trialDays: getTrialDays(),
+    })
+  );
 }

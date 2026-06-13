@@ -10,6 +10,8 @@ export {
   proPriceLookupKey,
   stripeLocaleForNextLocale,
   resolveCurrentPeriodEnd,
+  getTrialDays,
+  DEFAULT_TRIAL_DAYS,
 } from "./stripe-helpers";
 
 /**
