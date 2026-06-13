@@ -15,6 +15,7 @@ import { RecipeDeleteButton } from "./RecipeDeleteButton";
 import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
+import { RecipeMicronutrients } from "./RecipeMicronutrients";
 import { AskDietAIButton } from "@/components/chat/AskDietAIButton";
 import { selectCapabilitiesForPath } from "@/lib/chat/capabilities";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
