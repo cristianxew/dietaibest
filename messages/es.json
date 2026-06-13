@@ -1348,6 +1348,7 @@
       "quotaExceeded": "Llegaste al límite de uso para esta acción.",
       "notFound": "No pude encontrar eso.",
       "unauthorized": "No tenés acceso a eso.",
+      "rateLimited": "Demasiadas importaciones en este momento. Esperá un minuto y volvé a intentar.",
       "mealPlan": {
         "skeletonFailed": "No pude armar la estructura del plan. Probá de nuevo con menos restricciones.",
         "persistFailed": "No pude guardar el plan. Probá de nuevo en un momento.",

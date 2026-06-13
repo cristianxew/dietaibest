@@ -36,7 +36,7 @@ type AgentEvent =
       type: "tool.failed";
       toolName: string;
       callId: string;
-      reason: "generic" | "quota" | "notFound" | "unauthorized";
+      reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited";
     }
   | {
       type: "confirm.request";
@@ -62,7 +62,9 @@ interface UseChatStreamProps {
     generateImageYes: () => string;
     generateImageNo: () => string;
     generateImageSkipped: () => string;
-    error: (reason: "generic" | "quota" | "notFound" | "unauthorized") => string;
+    error: (
+      reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited"
+    ) => string;
     guardrailRedacted: () => string;
     success: () => string;
     deleted: () => string;

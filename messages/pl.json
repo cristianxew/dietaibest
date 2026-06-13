@@ -1343,6 +1343,7 @@
       "quotaExceeded": "Osiągnięto limit dla tej akcji.",
       "notFound": "Nie udało się tego znaleźć.",
       "unauthorized": "Nie masz dostępu do tej akcji.",
+      "rateLimited": "Zbyt wiele żądań importu w tej chwili. Odczekaj minutę i spróbuj ponownie.",
       "mealPlan": {
         "skeletonFailed": "Nie udało się zaplanować struktury planu. Spróbuj z mniejszą liczbą ograniczeń.",
         "persistFailed": "Nie udało się zapisać planu. Spróbuj ponownie za chwilę.",

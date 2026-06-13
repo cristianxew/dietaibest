@@ -12,7 +12,7 @@ export type ToolResult<TData = unknown> =
   | { ok: true; data: TData; link?: ToolResultLinkPayload }
   | {
       ok: false;
-      reason: "generic" | "quota" | "notFound" | "unauthorized";
+      reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited";
       message: string;
     };
 
@@ -67,7 +67,7 @@ export type AnyTool = Tool<any, any>;
  * this reason — without this, a throw there would error the whole turn.
  */
 export class ToolFailure extends Error {
-  readonly reason: "generic" | "quota" | "notFound" | "unauthorized";
+  readonly reason: "generic" | "quota" | "notFound" | "unauthorized" | "rateLimited";
   constructor(
     reason: ToolFailure["reason"],
     message: string

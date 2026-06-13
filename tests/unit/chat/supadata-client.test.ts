@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { SupadataClient, SupadataError } from "@/lib/supadata";
+import { SupadataClient, SupadataError, parseRetryAfterMs } from "@/lib/supadata";
 
 function makeResponse(
   body: unknown,
@@ -24,6 +24,8 @@ describe("SupadataClient — transport + auth shape", () => {
       baseUrl: "https://api.example.test/v1",
       pollIntervalMs: 1,
       pollMaxAttempts: 5,
+      // Keep retry backoff effectively instant so the 429 tests stay fast.
+      retryBaseDelayMs: 1,
     });
   });
 
@@ -176,6 +178,72 @@ describe("SupadataClient — transport + auth shape", () => {
         );
       const result = await client.getTranscript("https://www.tiktok.com/@x/video/4");
       expect(result.content).toBe("async transcript");
+    });
+  });
+
+  describe("HTTP 429 retry/backoff", () => {
+    function rateLimited(retryAfter?: string): Response {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (retryAfter !== undefined) headers["Retry-After"] = retryAfter;
+      return new Response(JSON.stringify({ message: "Rate limit exceeded" }), {
+        status: 429,
+        headers,
+      });
+    }
+
+    it("retries on a 429 and resolves once a later attempt succeeds", async () => {
+      // Fresh Response per call — bodies can only be read once.
+      fetchSpy
+        .mockImplementationOnce(async () => rateLimited())
+        .mockImplementationOnce(async () =>
+          makeResponse({ url: "u", content: "ok", name: "Recipe" })
+        );
+
+      const result = await client.scrapeWeb("https://recipes.example.com/x");
+
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(result.name).toBe("Recipe");
+    });
+
+    it("retries up to maxRetries then surfaces the 429 as REQUEST_ERROR", async () => {
+      fetchSpy.mockImplementation(async () => rateLimited());
+
+      await expect(
+        client.scrapeWeb("https://recipes.example.com/x")
+      ).rejects.toMatchObject({
+        name: "SupadataError",
+        code: "REQUEST_ERROR",
+        status: 429,
+      });
+      // 1 initial attempt + 2 retries (default maxRetries).
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it("does NOT retry a non-429 4xx", async () => {
+      fetchSpy.mockImplementationOnce(async () =>
+        makeResponse({ message: "Bad URL" }, { status: 400 })
+      );
+
+      await expect(
+        client.scrapeWeb("https://no-good")
+      ).rejects.toMatchObject({ code: "REQUEST_ERROR", status: 400 });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("parseRetryAfterMs", () => {
+    it("parses an integer Retry-After (seconds) into milliseconds", () => {
+      expect(parseRetryAfterMs("2")).toBe(2000);
+    });
+
+    it("returns null when the header is absent", () => {
+      expect(parseRetryAfterMs(null)).toBeNull();
+    });
+
+    it("returns null for a non-numeric Retry-After", () => {
+      expect(parseRetryAfterMs("soon")).toBeNull();
     });
   });
 
