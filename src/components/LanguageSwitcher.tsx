@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Check, ChevronDown, Languages } from "lucide-react";
 
@@ -47,7 +47,6 @@ export function LanguageSwitcher({
   showText = true,
   className,
 }: LanguageSwitcherProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
   const [isPending, startTransition] = useTransition();
@@ -80,10 +79,14 @@ export function LanguageSwitcher({
         newPathname = "/" + newPathname;
       }
 
-      // Set locale preference in cookie and navigate
+      // Set locale preference in cookie and navigate.
       document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
 
-      router.push(newPathname);
+      // Hard navigation (not router.push): with `localePrefix: "as-needed"` the
+      // default locale (en) is unprefixed, so switching TO it removes the path
+      // segment. A client-side soft nav fails to re-resolve the default locale
+      // on the first attempt — a full navigation always resolves it correctly.
+      window.location.href = newPathname;
       setIsOpen(false);
     });
   };

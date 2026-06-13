@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import {
@@ -270,7 +270,6 @@ function DockThemeSwitcher({ collapsed }: { collapsed: boolean }) {
  * DockLanguageSwitcher - Text-based language switcher
  */
 function DockLanguageSwitcher({ collapsed }: { collapsed: boolean }) {
-  const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
   const [isPending, setIsPending] = useState(false);
@@ -296,8 +295,9 @@ function DockLanguageSwitcher({ collapsed }: { collapsed: boolean }) {
     }
 
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-    router.push(newPathname);
-    setIsPending(false);
+    // Hard navigation so switching to the unprefixed default locale (en)
+    // resolves on the first attempt — see LanguageSwitcher for details.
+    window.location.href = newPathname;
   };
 
   const trigger = (
@@ -473,35 +473,6 @@ function UserMenuDock({ collapsed }: { collapsed: boolean }) {
           </div>
         </div>
 
-        <DropdownMenuItem asChild>
-          <Link
-            href="/profile"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer",
-              "text-stone-700 dark:text-stone-300",
-              "hover:bg-stone-100 dark:hover:bg-stone-800",
-              "transition-colors duration-150"
-            )}
-          >
-            <User className="w-4 h-4" />
-            <span className="font-medium">Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link
-            href="/settings"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer",
-              "text-stone-700 dark:text-stone-300",
-              "hover:bg-stone-100 dark:hover:bg-stone-800",
-              "transition-colors duration-150"
-            )}
-          >
-            <Settings className="w-4 h-4" />
-            <span className="font-medium">Settings</span>
-          </Link>
-        </DropdownMenuItem>
-
         <DropdownMenuSeparator className="my-1.5 bg-stone-200/70 dark:bg-stone-700/50" />
 
         <DropdownMenuItem
@@ -577,14 +548,6 @@ function MobileUserSection({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <div className="space-y-1">
-        <Link href="/profile" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
-          <User className="w-5 h-5" />
-          <span className="font-medium">Profile</span>
-        </Link>
-        <Link href="/settings" onClick={onClose} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
-          <Settings className="w-5 h-5" />
-          <span className="font-medium">Settings</span>
-        </Link>
         <button onClick={() => { signOut(); onClose(); }} className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Sign out</span>
@@ -598,7 +561,6 @@ function MobileUserSection({ onClose }: { onClose: () => void }) {
  * MobileLanguageSwitcher - Language switcher for mobile
  */
 function MobileLanguageSwitcher() {
-  const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
 
@@ -610,7 +572,8 @@ function MobileLanguageSwitcher() {
     if (newLocale !== "en") newPathname = `/${newLocale}${newPathname}`;
     if (!newPathname.startsWith("/")) newPathname = "/" + newPathname;
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-    router.push(newPathname);
+    // Hard navigation so the unprefixed default locale (en) resolves correctly.
+    window.location.href = newPathname;
   };
 
   return (
@@ -678,6 +641,13 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
     return false;
   });
 
+  // Account links — surfaced in the sidebar (desktop + mobile) instead of the
+  // avatar dropdown so Profile and Settings are always one click away.
+  const accountNavItems: NavItem[] = [
+    { id: "profile", label: t("profile"), href: "/profile", icon: User, showWhen: "always" },
+    { id: "settings", label: t("settings"), href: "/settings", icon: Settings, showWhen: "always" },
+  ];
+
   const isActiveItem = (href: string): boolean => {
     const pathSegments = pathname.split("/").filter(Boolean);
     const hasLocale = pathSegments[0] && pathSegments[0].length === 2;
@@ -722,6 +692,10 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
                 </SheetHeader>
                 <nav className="px-4 py-4 space-y-1">
                   {navItems.map((item) => (
+                    <MobileNavButton key={item.id} item={item} isActive={isActiveItem(item.href)} onClose={closeMobile} />
+                  ))}
+                  <div className="h-px bg-stone-200 dark:bg-stone-800 my-2 mx-1" />
+                  {accountNavItems.map((item) => (
                     <MobileNavButton key={item.id} item={item} isActive={isActiveItem(item.href)} onClose={closeMobile} />
                   ))}
                 </nav>
@@ -840,8 +814,18 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
           {/* Divider */}
           <div className="h-px bg-stone-200 dark:bg-stone-800 my-3 mx-2" />
 
-          {/* Settings */}
+          {/* Account + settings */}
           <div className="space-y-1">
+            {accountNavItems.map((item) => (
+              <SidebarItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                collapsed={collapsed}
+                isActive={isActiveItem(item.href)}
+              />
+            ))}
             <DockThemeSwitcher collapsed={collapsed} />
             <DockLanguageSwitcher collapsed={collapsed} />
           </div>

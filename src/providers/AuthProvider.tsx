@@ -109,9 +109,10 @@ function AuthContextProvider({ children }: AuthProviderProps) {
         console.warn("Storage cleanup warning:", storageError);
       }
 
-      // Sign out from NextAuth (clears httpOnly cookies)
+      // Sign out from NextAuth (clears httpOnly cookies).
+      // Default destination is the login page, not the marketing home.
       await nextAuthSignOut({
-        callbackUrl: redirectTo || "/",
+        callbackUrl: redirectTo || "/sign-in",
         redirect: true,
       });
 
@@ -124,7 +125,7 @@ function AuthContextProvider({ children }: AuthProviderProps) {
 
       // Even if sign out fails, try to redirect to clear state
       try {
-        window.location.href = redirectTo || "/";
+        window.location.href = redirectTo || "/sign-in";
       } catch {
         toast.error("Please refresh the page to complete sign out");
       }
