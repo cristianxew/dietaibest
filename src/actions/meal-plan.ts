@@ -643,7 +643,8 @@ export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
       const [templates, total] = await Promise.all([
         prisma.mealPlanTemplate.findMany({
           where,
-          // Card-light payload: scalars + author + day count, no nested meals
+          // Card payload: scalars + author + day count + a light recipe preview
+          // (id/title/image only) so the Discover cards can show what's inside.
           select: {
             id: true,
             name: true,
@@ -656,6 +657,15 @@ export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
             createdAt: true,
             user: { select: { id: true, email: true, displayName: true } },
             _count: { select: { days: true } },
+            days: {
+              select: {
+                meals: {
+                  select: {
+                    recipe: { select: { id: true, title: true, imageUrl: true } },
+                  },
+                },
+              },
+            },
           },
           orderBy: { [sortBy]: sortOrder },
           skip: (page - 1) * limit,
@@ -665,11 +675,27 @@ export async function getPublicMealPlans(filter?: MealPlanTemplateFilter) {
       ]);
 
       return {
-        // Scrub raw emails: other users only get a derived display name
-        templates: templates.map(({ user: owner, ...template }) => ({
-          ...template,
-          user: { id: owner.id, name: getAuthorName(owner) },
-        })),
+        // Scrub raw emails: other users only get a derived display name.
+        // Flatten the nested days→meals into a deduped recipe preview list.
+        templates: templates.map(({ user: owner, days, ...template }) => {
+          const seen = new Set<string>();
+          const recipes: { id: string; title: string; imageUrl: string | null }[] = [];
+          for (const day of days) {
+            for (const meal of day.meals) {
+              const r = meal.recipe;
+              if (r && !seen.has(r.id)) {
+                seen.add(r.id);
+                recipes.push({ id: r.id, title: r.title, imageUrl: r.imageUrl });
+              }
+            }
+          }
+          return {
+            ...template,
+            user: { id: owner.id, name: getAuthorName(owner) },
+            recipeCount: recipes.length,
+            recipes: recipes.slice(0, 6),
+          };
+        }),
         pagination: {
           page,
           limit,
