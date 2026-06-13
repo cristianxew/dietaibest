@@ -45,7 +45,7 @@ export function EmptyChat({ onSuggestionClick }: EmptyChatProps) {
             <button
               key={cap.id}
               onClick={() => onSuggestionClick(prompt)}
-              className="flex items-center gap-3 rounded-md border-[1.5px] border-border bg-card px-4 py-3 text-left text-sm font-medium text-foreground transition-all duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] hover:translate-x-1 hover:border-primary hover:bg-muted"
+              className="flex items-center gap-3 rounded-md border-[1.5px] border-border bg-card px-4 py-3 text-left text-sm font-medium text-foreground hover:border-primary hover:bg-muted"
             >
               <Icon size={18} className="shrink-0 text-primary" />
               {tc(`${cap.id}.label`)}

@@ -32,11 +32,11 @@ export function ChatHeader({ onClose, onToggleSessions, onToggleCapabilities, on
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleCapabilities}
-          className="flex items-center p-1 text-muted-foreground transition-colors hover:text-foreground"
+          className="group flex items-center p-1.5 rounded-lg text-muted-foreground transition-all duration-300 hover:bg-ai-50/50 dark:hover:bg-ai-950/30 hover:text-ai focus-visible:ring-2 focus-visible:ring-ai outline-none cursor-pointer"
           aria-label={t("capabilityMenu.open")}
           title={t("capabilityMenu.open")}
         >
-          <Sparkles size={18} />
+          <Sparkles size={18} className="transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
         </button>
         <button
           onClick={onToggleSessions}

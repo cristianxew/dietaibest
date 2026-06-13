@@ -109,14 +109,14 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
           <>
             <button
               onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all -ml-2"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all"
               aria-label="Scroll left"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all -mr-2"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all"
               aria-label="Scroll right"
             >
               <ChevronRight className="h-4 w-4" />

@@ -29,7 +29,7 @@ describe("AssistantCapabilityCard", () => {
     expect(
       screen.getByText("Tap a suggestion to try it in the chat.")
     ).toBeTruthy();
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(screen.getAllByRole("button")).toHaveLength(4); // 1 Faux Input + 3 Capability Links
   });
 
   it("is deterministic for a fixed date", () => {
@@ -51,7 +51,8 @@ describe("AssistantCapabilityCard", () => {
     const spy = vi.fn();
     window.addEventListener("dietai:open-chat", spy);
     renderCard();
-    fireEvent.click(screen.getAllByRole("button")[0]);
+    // 0 is the faux input (empty prompt), 1 is the first capability link
+    fireEvent.click(screen.getAllByRole("button")[1]);
     expect(spy).toHaveBeenCalledOnce();
     const detail = (spy.mock.calls[0][0] as CustomEvent).detail as {
       prompt: string;
