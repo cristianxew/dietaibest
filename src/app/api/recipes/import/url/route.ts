@@ -1,111 +1,110 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
-import { z } from "zod";
-import { getBrowserUseClient } from "@/lib/browser-use";
 
-// URL validation schema with security checks
-const urlImportSchema = z.object({
-  url: z
-    .string()
-    .url("Please enter a valid URL")
-    .refine((url) => {
-      try {
-        const urlObj = new URL(url);
-        return urlObj.protocol === "http:" || urlObj.protocol === "https:";
-      } catch {
-        return false;
-      }
-    }, "URL must start with http:// or https://")
-    .refine((url) => {
-      try {
-        const urlObj = new URL(url);
-        // Security: Block localhost and private IPs to prevent SSRF attacks
-        const hostname = urlObj.hostname.toLowerCase();
+import { prisma } from "@/lib/prisma";
+import { assertCanImportRecipe } from "@/lib/entitlements";
+import { toEntitlementError } from "@/lib/entitlement-error";
+import { extractRecipe, selectIngestStrategy } from "@/lib/ingest/extract-recipe";
+import { SupadataError } from "@/lib/supadata";
+import { GemmaExtractionError } from "@/lib/chat/llm-gemma";
+import type { Locale } from "@/lib/chat/context";
 
-        // Block localhost variations
-        if (
-          hostname === "localhost" ||
-          hostname === "127.0.0.1" ||
-          hostname === "0.0.0.0"
-        ) {
-          return false;
-        }
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-        // Block private IP ranges
-        const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-        if (ipPattern.test(hostname)) {
-          const parts = hostname.split(".").map(Number);
-          // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-          if (
-            parts[0] === 10 ||
-            (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-            (parts[0] === 192 && parts[1] === 168)
-          ) {
-            return false;
-          }
-        }
+// Recipe import from a URL — modal entry point. Mirrors the chat tool
+// `importRecipeFromUrl`: extraction runs through Supadata (+ Gemma for web
+// pages) via the shared `extractRecipe` core. Synchronous JSON response (no
+// SSE / taskId) — the modal prefills the recipe form with the result and the
+// user saves through the normal create flow, which re-checks entitlement and
+// tags the recipe as imported.
 
-        return true;
-      } catch {
-        return false;
-      }
-    }, "URL is not allowed for security reasons"),
-});
+const VALID_LOCALES: ReadonlySet<string> = new Set(["en", "es", "pl"]);
 
-// Start a new recipe extraction task and return task ID immediately
-export async function POST(request: NextRequest) {
+function jsonError(status: number, code: string, message: string) {
+  return new Response(JSON.stringify({ error: { code, message } }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession();
+  if (!session?.user?.email) {
+    return jsonError(401, "unauthorized", "Sign-in required");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, plan: true, subscriptionStatus: true },
+  });
+  if (!user) {
+    return jsonError(404, "user-not-found", "User not found");
+  }
+
   try {
-    // Check authentication
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Parse and validate request body
-    const body = await request.json();
-    const validation = urlImportSchema.safeParse(body);
-
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.errors[0].message },
-        { status: 400 }
-      );
-    }
-
-    const { url } = validation.data;
-
-    try {
-      // Start extraction task and return task ID immediately
-      const browserUseClient = getBrowserUseClient();
-      const { taskId } = await browserUseClient.startRecipeExtraction({ url });
-
-      return NextResponse.json({
-        taskId,
-        message: "Recipe extraction started"
+    await assertCanImportRecipe(user);
+  } catch (err) {
+    const payload = toEntitlementError(err);
+    if (payload) {
+      return new Response(JSON.stringify({ error: payload }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
       });
-    } catch (error) {
-      console.error("[Recipe Import] Browser Use error:", error);
-      return NextResponse.json(
-        {
-          error: "Failed to start recipe extraction",
-          details: error instanceof Error ? error.message : "Unknown error",
-        },
-        { status: 500 }
-      );
     }
-  } catch (error) {
-    console.error("[Recipe Import] Route error:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details:
-          process.env.NODE_ENV === "development"
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : undefined,
-      },
-      { status: 500 }
-    );
+    throw err;
+  }
+
+  let body: { url?: unknown; locale?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return jsonError(400, "invalid-body", "Expected JSON body");
+  }
+
+  const url = typeof body.url === "string" ? body.url.trim() : "";
+  if (!url) {
+    return jsonError(400, "invalid-url", "A recipe URL is required");
+  }
+  const locale: Locale = VALID_LOCALES.has(String(body.locale))
+    ? (body.locale as Locale)
+    : "en";
+
+  let strategy: ReturnType<typeof selectIngestStrategy>;
+  try {
+    strategy = selectIngestStrategy(url);
+  } catch {
+    return jsonError(400, "invalid-url", "That does not look like a valid URL");
+  }
+
+  try {
+    const recipe = await extractRecipe(strategy, url, locale);
+
+    if (!recipe.title || recipe.title.length < 3 || recipe.ingredients.length === 0) {
+      return jsonError(422, "no-recipe", "No recipe could be extracted from that link");
+    }
+
+    return new Response(JSON.stringify({ recipe }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    if (err instanceof GemmaExtractionError) {
+      console.warn("[recipes/import/url] extraction failed", err.reason, err.message);
+      return jsonError(422, "no-recipe", "No recipe could be extracted from that link");
+    }
+    if (err instanceof SupadataError) {
+      console.warn("[recipes/import/url] supadata error", err.code, err.status, err.message);
+      if (err.status === 429) {
+        return jsonError(429, "rate-limited", "The importer is busy. Try again shortly");
+      }
+      if (err.status === 404) {
+        return jsonError(404, "not-found", "We couldn't reach that page");
+      }
+      return jsonError(502, "ingest-failed", "Could not read that page");
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[recipes/import/url] unexpected error", message);
+    return jsonError(500, "generic", "Something went wrong importing that recipe");
   }
 }

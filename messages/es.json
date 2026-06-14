@@ -510,44 +510,6 @@
         "validationFailed": "Error en validación de archivo",
         "processingFailed": "Error al procesar imagen"
       }
-    },
-    "urlUpload": {
-      "recipeUrl": "URL de la Receta",
-      "enterRecipeUrl": "Ingresa la URL completa de la receta que deseas importar",
-      "importButton": "Importar Receta",
-      "importAnother": "Importar Otra Receta",
-      "tryAgain": "Intentar de Nuevo",
-      "cancel": "Cancelar",
-      "complete": "completo",
-      "extractionSuccess": "¡Receta extraída exitosamente desde URL!",
-      "extractionCancelled": "Extracción de receta cancelada",
-      "status": {
-        "ready": "Listo para importar",
-        "validating": "Validando URL...",
-        "starting": "Iniciando extracción de receta...",
-        "fetching": "Obteniendo datos de receta...",
-        "extractingRecipe": "Extrayendo información de receta...",
-        "analyzingContent": "Analizando contenido de receta...",
-        "complete": "¡Receta extraída exitosamente!"
-      },
-      "errors": {
-        "urlRequired": "Por favor ingresa una URL",
-        "invalidUrl": "Por favor ingresa una URL válida",
-        "invalidProtocol": "La URL debe comenzar con http:// o https://",
-        "validationFailed": "Error en validación de URL",
-        "processingFailed": "Error al procesar la URL. Por favor intenta con una receta diferente.",
-        "consecutiveFailures": "La extracción de receta falló después de múltiples intentos. Esto puede suceder si:\n• El sitio web tiene protección anti-bot\n• La página requiere interacciones JavaScript que no podemos automatizar\n• El formato de la receta es inusual\n\nIntenta con una URL de receta diferente o un sitio web más simple.",
-        "taskNotFound": "No se pudo encontrar la tarea de extracción. Por favor intenta de nuevo.",
-        "timeout": "La extracción de receta está tomando más tiempo del esperado. El sitio web puede ser lento o complejo. Por favor intenta con una página de receta más simple.",
-        "cancelled": "La extracción de receta fue cancelada.",
-        "network": "Error de red. Por favor verifica tu conexión e intenta de nuevo.",
-        "unauthorized": "Necesitas iniciar sesión para importar recetas.",
-        "validation": "La URL parece ser inválida. Por favor verifica e intenta de nuevo.",
-        "noRecipe": "No se pudo encontrar ninguna receta en esta página. Por favor asegúrate de que la URL apunta a una página de receta con ingredientes e instrucciones visibles.",
-        "blocked": "El sitio web tiene ventanas emergentes u overlays que impidieron la extracción. Intenta con un sitio de recetas diferente.",
-        "antiBot": "El sitio web está bloqueando el acceso automatizado. Por favor intenta con una fuente de recetas diferente.",
-        "cancelFailed": "Error al cancelar la extracción"
-      }
     }
   },
   "recipeImport": {
@@ -1057,38 +1019,53 @@
       "optionManualDesc": "Completá los detalles de la receta vos mismo, paso a paso.",
       "optionAiTitle": "Pedile al asistente Dietai",
       "optionAiDesc": "Dejá que la IA te ayude a crear o encontrar una receta en el chat.",
-      "optionImportTitle": "Importar desde URL o foto",
-      "optionImportDesc": "Pegá un enlace o subí una foto o PDF para importar automáticamente.",
-      "importTitle": "Importar una receta",
-      "importSubtitle": "Pegá la URL de una receta, o subí una foto o PDF.",
       "aiPrompt": "Ayudame a crear una nueva receta.",
-      "urlPlaceholder": "Pegá la URL de la receta…",
-      "extractButton": "Extraer receta",
+      "addManually": "Agregar manualmente",
+      "optionImportTitle": "Importar desde un enlace o foto",
+      "optionImportDesc": "Desde YouTube, TikTok, un sitio de recetas, o una foto/PDF — se completa solo.",
+      "importTitle": "Importar una receta",
+      "importSubtitle": "Traé una receta desde un enlace, una foto o un PDF — extraemos los ingredientes y los pasos.",
+      "urlPlaceholder": "Pegá un enlace de video o de receta…",
+      "urlHint": "Funciona con YouTube, TikTok, Instagram, Facebook, X, o cualquier sitio de recetas.",
+      "extractButton": "Importar receta",
       "orDivider": "O",
-      "dropZoneTitle": "Soltá una foto o PDF aquí",
-      "dropZoneSubtitle": "JPG · PNG · PDF",
-      "addManually": "Agregar manualmente"
+      "dropZoneTitle": "Soltá una foto o PDF acá",
+      "dropZoneSubtitle": "Una foto de receta, página de libro o PDF"
     },
     "loading": {
-      "title": "Analizando con IA",
-      "subtitle": "Esto tardará unos segundos…",
-      "step1": "Accediendo a la página…",
-      "step2": "Extrayendo ingredientes…",
-      "step3": "Calculando nutrición…"
+      "title": "Leyendo tu receta…",
+      "subtitle": "Esto tarda solo unos segundos…",
+      "step1": "Buscando la fuente…",
+      "step2": "Sacando ingredientes y pasos…",
+      "step3": "Preparándola para revisar…"
     },
     "preview": {
       "extracted": "Receta extraída",
       "save": "Guardar receta",
       "editFirst": "Editar antes de guardar",
       "looksGood": "¿Se ve bien?",
-      "saveDescription": "Guardá la receta tal como está, o editala primero.",
+      "saveDescription": "Esto lo sacamos de la fuente — revisá bien los ingredientes y guardá (o editá primero).",
       "totalTime": "Tiempo total",
       "servings": "Porciones"
+    },
+    "import": {
+      "errors": {
+        "noRecipe": "No se pudo extraer ninguna receta. Probá con otro enlace o una foto más clara.",
+        "rateLimited": "El importador está ocupado en este momento. Probá de nuevo en un momento.",
+        "dailyCap": "Llegaste al límite de importaciones de hoy. Probá de nuevo mañana.",
+        "unsupportedFormat": "Ese tipo de archivo no está soportado. Usá JPG, PNG, WebP o PDF.",
+        "fileTooLarge": "Ese archivo es muy grande. El límite es 10 MB.",
+        "proOnly": "Importar recetas es una función Pro.",
+        "generic": "Algo salió mal al importar esa receta. Probá de nuevo."
+      }
     },
     "step0": {
       "title": "Información básica",
       "subtitle": "Contanos sobre tu receta",
       "photo": "Foto",
+      "uploadPhoto": "Subir",
+      "imageUrlLabel": "O pegá una URL de imagen",
+      "removePhoto": "Quitar foto",
       "nameLabel": "Nombre de la receta",
       "namePlaceholder": "ej. Pasta al pesto",
       "descriptionLabel": "Descripción",

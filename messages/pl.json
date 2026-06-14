@@ -505,44 +505,6 @@
         "validationFailed": "Walidacja pliku nie powiodła się",
         "processingFailed": "Nie udało się przetworzyć obrazu"
       }
-    },
-    "urlUpload": {
-      "recipeUrl": "URL Przepisu",
-      "enterRecipeUrl": "Wprowadź pełny adres URL przepisu, który chcesz zaimportować",
-      "importButton": "Importuj Przepis",
-      "importAnother": "Importuj Kolejny Przepis",
-      "tryAgain": "Spróbuj Ponownie",
-      "cancel": "Anuluj",
-      "complete": "ukończone",
-      "extractionSuccess": "Przepis został pomyślnie wyodrębniony z URL!",
-      "extractionCancelled": "Wyodrębnianie przepisu zostało anulowane",
-      "status": {
-        "ready": "Gotowy do importu",
-        "validating": "Walidacja URL...",
-        "starting": "Rozpoczynanie wyodrębniania przepisu...",
-        "fetching": "Pobieranie danych przepisu...",
-        "extractingRecipe": "Wyodrębnianie informacji o przepisie...",
-        "analyzingContent": "Analizowanie treści przepisu...",
-        "complete": "Przepis został pomyślnie wyodrębniony!"
-      },
-      "errors": {
-        "urlRequired": "Proszę wprowadzić URL",
-        "invalidUrl": "Proszę wprowadzić prawidłowy URL",
-        "invalidProtocol": "URL musi zaczynać się od http:// lub https://",
-        "validationFailed": "Walidacja URL nie powiodła się",
-        "processingFailed": "Nie udało się przetworzyć URL. Spróbuj z innym przepisem.",
-        "consecutiveFailures": "Wyodrębnianie przepisu nie powiodło się po wielu próbach. Może to nastąpić, jeśli:\n• Witryna ma ochronę anti-bot\n• Strona wymaga interakcji JavaScript, których nie możemy zautomatyzować\n• Format przepisu jest nietypowy\n\nSpróbuj z innym URL przepisu lub prostszą witryną z przepisami.",
-        "taskNotFound": "Nie można znaleźć zadania wyodrębniania. Spróbuj ponownie.",
-        "timeout": "Wyodrębnianie przepisu trwa dłużej niż oczekiwano. Witryna może być wolna lub złożona. Spróbuj z prostszą stroną przepisu.",
-        "cancelled": "Wyodrębnianie przepisu zostało anulowane.",
-        "network": "Wystąpił błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
-        "unauthorized": "Musisz się zalogować, aby importować przepisy.",
-        "validation": "URL wydaje się być nieprawidłowy. Sprawdź i spróbuj ponownie.",
-        "noRecipe": "Nie można znaleźć przepisu na tej stronie. Upewnij się, że URL prowadzi do strony przepisu z widocznymi składnikami i instrukcjami.",
-        "blocked": "Witryna ma wyskakujące okienka lub nakładki, które uniemożliwiły wyodrębnienie. Spróbuj z inną witryną z przepisami.",
-        "antiBot": "Witryna blokuje zautomatyzowany dostęp. Spróbuj z innym źródłem przepisów.",
-        "cancelFailed": "Nie udało się anulować wyodrębniania"
-      }
     }
   },
   "recipeImport": {
@@ -1052,38 +1014,53 @@
       "optionManualDesc": "Wprowadź szczegóły przepisu samodzielnie, krok po kroku.",
       "optionAiTitle": "Zapytaj asystenta Dietai",
       "optionAiDesc": "Pozwól AI pomóc Ci utworzyć lub znaleźć przepis na czacie.",
-      "optionImportTitle": "Importuj z URL lub zdjęcia",
-      "optionImportDesc": "Wklej link lub prześlij zdjęcie albo PDF, aby zaimportować automatycznie.",
-      "importTitle": "Importuj przepis",
-      "importSubtitle": "Wklej adres URL przepisu lub prześlij zdjęcie albo PDF.",
       "aiPrompt": "Pomóż mi utworzyć nowy przepis.",
-      "urlPlaceholder": "Wklej adres URL przepisu…",
-      "extractButton": "Wyodrębnij przepis",
+      "addManually": "Dodaj ręcznie",
+      "optionImportTitle": "Importuj z linku lub zdjęcia",
+      "optionImportDesc": "Z YouTube, TikTok, strony z przepisami lub zdjęcia/PDF — wypełni się samo.",
+      "importTitle": "Importuj przepis",
+      "importSubtitle": "Dodaj przepis z linku, zdjęcia lub PDF — wyodrębnimy składniki i kroki.",
+      "urlPlaceholder": "Wklej link do filmu lub przepisu…",
+      "urlHint": "Działa z YouTube, TikTok, Instagram, Facebook, X lub dowolną stroną z przepisami.",
+      "extractButton": "Importuj przepis",
       "orDivider": "LUB",
       "dropZoneTitle": "Upuść zdjęcie lub PDF tutaj",
-      "dropZoneSubtitle": "JPG · PNG · PDF",
-      "addManually": "Dodaj ręcznie"
+      "dropZoneSubtitle": "Zdjęcie przepisu, strona książki lub PDF"
     },
     "loading": {
-      "title": "Analiza AI",
-      "subtitle": "To zajmie kilka sekund…",
-      "step1": "Pobieranie strony…",
-      "step2": "Wyodrębnianie składników…",
-      "step3": "Obliczanie wartości odżywczych…"
+      "title": "Odczytywanie przepisu…",
+      "subtitle": "To zajmie tylko kilka sekund…",
+      "step1": "Pobieranie źródła…",
+      "step2": "Wyodrębnianie składników i kroków…",
+      "step3": "Przygotowywanie do sprawdzenia…"
     },
     "preview": {
       "extracted": "Przepis wyodrębniony",
       "save": "Zapisz przepis",
       "editFirst": "Edytuj przed zapisaniem",
       "looksGood": "Wygląda dobrze?",
-      "saveDescription": "Zapisz przepis tak jak jest lub najpierw go edytuj.",
+      "saveDescription": "Pobraliśmy to ze źródła — sprawdź składniki i zapisz (lub najpierw edytuj).",
       "totalTime": "Całkowity czas",
       "servings": "Porcje"
+    },
+    "import": {
+      "errors": {
+        "noRecipe": "Nie udało się wyodrębnić przepisu. Spróbuj innego linku lub wyraźniejszego zdjęcia.",
+        "rateLimited": "Importer jest teraz zajęty. Spróbuj ponownie za chwilę.",
+        "dailyCap": "Osiągnięto dzienny limit importów. Spróbuj ponownie jutro.",
+        "unsupportedFormat": "Ten typ pliku nie jest obsługiwany. Użyj JPG, PNG, WebP lub PDF.",
+        "fileTooLarge": "Ten plik jest za duży. Limit to 10 MB.",
+        "proOnly": "Importowanie przepisów to funkcja Pro.",
+        "generic": "Coś poszło nie tak podczas importowania przepisu. Spróbuj ponownie."
+      }
     },
     "step0": {
       "title": "Podstawowe informacje",
       "subtitle": "Opowiedz nam o swoim przepisie",
       "photo": "Zdjęcie",
+      "uploadPhoto": "Prześlij",
+      "imageUrlLabel": "Lub wklej adres URL obrazu",
+      "removePhoto": "Usuń zdjęcie",
       "nameLabel": "Nazwa przepisu",
       "namePlaceholder": "np. Pesto Pasta",
       "descriptionLabel": "Opis",

@@ -510,44 +510,6 @@
         "validationFailed": "File validation failed",
         "processingFailed": "Failed to process image"
       }
-    },
-    "urlUpload": {
-      "recipeUrl": "Recipe URL",
-      "enterRecipeUrl": "Enter the full URL of the recipe you want to import",
-      "importButton": "Import Recipe",
-      "importAnother": "Import Another Recipe",
-      "tryAgain": "Try Again",
-      "cancel": "Cancel",
-      "complete": "complete",
-      "extractionSuccess": "Recipe extracted successfully from URL!",
-      "extractionCancelled": "Recipe extraction cancelled",
-      "status": {
-        "ready": "Ready to import",
-        "validating": "Validating URL...",
-        "starting": "Starting recipe extraction...",
-        "fetching": "Fetching recipe data...",
-        "extractingRecipe": "Extracting recipe information...",
-        "analyzingContent": "Analyzing recipe content...",
-        "complete": "Recipe extracted successfully"
-      },
-      "errors": {
-        "urlRequired": "Please enter a URL",
-        "invalidUrl": "Please enter a valid URL",
-        "invalidProtocol": "URL must start with http:// or https://",
-        "validationFailed": "URL validation failed",
-        "processingFailed": "Failed to process the URL. Please try again with a different recipe.",
-        "consecutiveFailures": "Recipe extraction failed after multiple attempts. This can happen if:\n• The website has anti-bot protection\n• The page requires JavaScript interactions we can't automate\n• The recipe format is unusual\n\nTry a different recipe URL or a simpler recipe website.",
-        "taskNotFound": "The extraction task could not be found. Please try again.",
-        "timeout": "The recipe extraction is taking longer than expected. The website might be slow or complex. Please try again with a simpler recipe page.",
-        "cancelled": "The recipe extraction was cancelled.",
-        "network": "Network error occurred. Please check your connection and try again.",
-        "unauthorized": "You need to be logged in to import recipes.",
-        "validation": "The URL appears to be invalid. Please check and try again.",
-        "noRecipe": "No recipe could be found on this page. Please ensure the URL points to a recipe page with visible ingredients and instructions.",
-        "blocked": "The website has popups or overlays that prevented extraction. Try a different recipe site.",
-        "antiBot": "The website is blocking automated access. Please try a different recipe source.",
-        "cancelFailed": "Failed to cancel extraction"
-      }
     }
   },
   "recipeImport": {
@@ -1058,38 +1020,53 @@
       "optionManualDesc": "Fill in the recipe details yourself, step by step.",
       "optionAiTitle": "Ask the Dietai assistant",
       "optionAiDesc": "Let the AI help you create or find a recipe in chat.",
-      "optionImportTitle": "Import from URL or photo",
-      "optionImportDesc": "Paste a link or upload a photo or PDF to auto-import.",
-      "importTitle": "Import a recipe",
-      "importSubtitle": "Paste a recipe URL, or upload a photo or PDF.",
       "aiPrompt": "Help me create a new recipe.",
-      "urlPlaceholder": "Paste recipe URL…",
-      "extractButton": "Extract Recipe",
+      "addManually": "Add recipe manually",
+      "optionImportTitle": "Import from a link or photo",
+      "optionImportDesc": "From YouTube, TikTok, a recipe site, or a photo/PDF — auto-filled for you.",
+      "importTitle": "Import a recipe",
+      "importSubtitle": "Bring in a recipe from a link, a photo, or a PDF — we'll pull out the ingredients and steps.",
+      "urlPlaceholder": "Paste a video or recipe link…",
+      "urlHint": "Works with YouTube, TikTok, Instagram, Facebook, X, or any recipe website.",
+      "extractButton": "Import recipe",
       "orDivider": "OR",
-      "dropZoneTitle": "Drop a recipe page or photo here",
-      "dropZoneSubtitle": "JPG · PNG · PDF",
-      "addManually": "Add recipe manually"
+      "dropZoneTitle": "Drop a photo or PDF here",
+      "dropZoneSubtitle": "A recipe photo, cookbook page, or PDF"
     },
     "loading": {
-      "title": "Analyzing with AI",
-      "subtitle": "This will take a few seconds…",
-      "step1": "Accessing recipe page…",
-      "step2": "Extracting ingredients…",
-      "step3": "Calculating nutrition…"
+      "title": "Reading your recipe…",
+      "subtitle": "This only takes a few seconds…",
+      "step1": "Fetching the source…",
+      "step2": "Pulling out ingredients & steps…",
+      "step3": "Getting it ready to review…"
     },
     "preview": {
       "extracted": "Recipe extracted",
       "save": "Save Recipe",
       "editFirst": "Edit before saving",
       "looksGood": "Looks good?",
-      "saveDescription": "Save the recipe as-is, or edit it first.",
+      "saveDescription": "We pulled this from the source — give the ingredients a quick check, then save (or edit first).",
       "totalTime": "Total time",
       "servings": "Servings"
+    },
+    "import": {
+      "errors": {
+        "noRecipe": "No recipe could be extracted. Try a different link or a clearer photo.",
+        "rateLimited": "The importer is busy right now. Please try again in a moment.",
+        "dailyCap": "You've reached today's import limit. Try again tomorrow.",
+        "unsupportedFormat": "That file type isn't supported. Use a JPG, PNG, WebP, or PDF.",
+        "fileTooLarge": "That file is too large. The limit is 10 MB.",
+        "proOnly": "Importing recipes is a Pro feature.",
+        "generic": "Something went wrong importing that recipe. Please try again."
+      }
     },
     "step0": {
       "title": "Basic Information",
       "subtitle": "Tell us about your recipe",
       "photo": "Photo",
+      "uploadPhoto": "Upload",
+      "imageUrlLabel": "Or paste image URL",
+      "removePhoto": "Remove photo",
       "nameLabel": "Recipe name",
       "namePlaceholder": "e.g. Pesto Pasta",
       "descriptionLabel": "Description",

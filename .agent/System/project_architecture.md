@@ -86,8 +86,9 @@
 ### External API Clients
 - **Edamam API** - Recipe analysis and nutrition data
 - **USDA FoodData Central** - Ingredient matching
-- **Browser-Use Cloud** - AI-powered web automation
-- **Google Cloud Document AI** - OCR for recipe PDFs/images
+- **Browser-Use Cloud** - AI web automation for grocery shopping
+- **Supadata** - URL recipe extraction (video `/extract`, article `/web/scrape`)
+- **Google Gemini / Gemma** - photo/PDF recipe extraction (vision + native PDF)
 
 ### Testing
 - **Vitest** - Unit and integration testing
@@ -140,7 +141,7 @@ dietaibest/
 │   │   │
 │   │   ├── api/                # API routes (external integrations only)
 │   │   │   ├── auth/           # NextAuth handlers
-│   │   │   ├── recipes/import/ # Recipe import endpoints
+│   │   │   ├── recipes/[id]/image/ # Recipe image upload endpoint
 │   │   │   ├── nutrition/      # Nutrition analysis
 │   │   │   └── fdc/            # FoodData Central proxy
 │   │   │
@@ -176,7 +177,7 @@ dietaibest/
 │   │   ├── supabase.ts        # Supabase client
 │   │   ├── edamam.ts          # Edamam API client
 │   │   ├── edamam-service.ts  # Edamam business logic
-│   │   ├── browser-use.ts     # Browser-Use AI client
+│   │   ├── browser-use.ts     # Browser-Use client (shopping automation)
 │   │   ├── fdc.ts             # FoodData Central client
 │   │   └── utils.ts           # General utilities
 │   │
@@ -215,8 +216,7 @@ dietaibest/
 
 **Capabilities:**
 - Create recipes manually with form validation
-- Import recipes from URLs using Browser-Use AI
-- Import recipes from PDFs/images using Google Document AI OCR
+- Import recipes from a URL or a photo/PDF — from the AI chat or the "Add Recipe" modal (URL → Supadata, image/PDF → Gemma)
 - Automatic nutritional analysis via Edamam API
 - Categorization and tagging
 - Favorites system
@@ -226,7 +226,7 @@ dietaibest/
 **Key Components:**
 - `RecipeForm.tsx` - Multi-step recipe creation
 - `RecipeCard.tsx` - Recipe display card
-- `RecipeImport.tsx` - URL/document import wizard
+- `modal/screens/EntryScreen.tsx` - "Add Recipe" chooser (Manual / Ask the assistant / Import URL · photo/PDF)
 - `IngredientsList.tsx` - Dynamic ingredient management
 
 **Server Actions:**
@@ -236,11 +236,10 @@ dietaibest/
 - `getRecipes()` - List with filters
 - `toggleFavorite()` - Favorite/unfavorite
 
-**URL Import System:**
-- Task-based extraction via Browser-Use Cloud API v2
-- Real-time progress via SSE (Server-Sent Events)
-- Handles anti-bot protection, popups, structured data
-- Data validation (ignores unreliable `isSuccess` flag)
+**Import System:**
+- One shared engine (Supadata + Gemma), two entry points: the AI chat and the modal's "Import" option (Browser-Use URL import + Document AI photo/PDF were discontinued 2026-06-14)
+- Chat: `importRecipeFromUrl` (Supadata) / `importRecipeFromImage` (Gemma)
+- Modal: `POST /api/recipes/import/url` and `POST /api/recipes/import/image` → prefill form → preview → save
 - See [Recipe Import System](./recipe_import_system.md) for details
 
 ### 2. Meal Planning System
@@ -338,26 +337,24 @@ dietaibest/
 - `FamilyMemberForm.tsx` - Add family members
 
 ### 5. Recipe Import System
-**Location:** `src/app/api/recipes/import/`, `src/lib/browser-use.ts`
+**Location:** shared engine `src/lib/ingest/extract-recipe.ts` + `src/lib/chat/llm-gemma.ts`; entry points `src/lib/chat/tools/importRecipeFrom{Url,Image}.ts` (chat) and `src/app/api/recipes/import/{url,image}/route.ts` (modal)
 
-**Import Methods:**
-1. **URL Import:** Browser-Use AI extracts recipe from any website
-2. **Document Import:** Google Document AI OCR for PDFs/images
-3. **Manual Entry:** Form-based recipe creation
+**Import Methods (chat + "Add Recipe" modal share one engine):**
+1. **URL Import:** `extractRecipe` — Supadata extracts the recipe (video `/extract` or article scrape → Gemma)
+2. **Image / PDF Import:** `GemmaProvider.extractRecipe` — Gemini reads an uploaded photo or PDF
+3. **Manual Entry:** Form-based recipe creation in the "Add Recipe" modal
 
-**URL Import Flow:**
-1. User provides recipe URL
-2. Browser-Use AI navigates to URL
-3. AI extracts structured recipe data (title, ingredients, instructions, etc.)
-4. User reviews and edits imported data
-5. Recipe saved with automatic nutrition analysis
+**Modal flow:** route extracts → prefill form (`importedToFormData`) → PreviewScreen → normal save (provenance + import entitlement enforced on save).
 
-**Document Import Flow:**
-1. User uploads PDF or image
-2. Google Document AI performs OCR
-3. Text parsed into structured recipe format
-4. User reviews and edits
-5. Recipe saved with nutrition analysis
+**Discontinued (2026-06-14):** the Browser-Use Cloud URL extraction and the
+Google Document AI photo/PDF OCR. Browser-Use is now shopping-only.
+See [Recipe Import System](./recipe_import_system.md).
+
+**Chat import flow:**
+1. User pastes a URL or uploads a photo in the chat
+2. The model calls `importRecipeFromUrl` / `importRecipeFromImage`
+3. The tool extracts structured recipe data, runs Edamam nutrition analysis, and `persistRecipe`s it
+4. The chat returns a link to the saved recipe
 
 ### 6. Shopping List Generation (Planned)
 **Status:** Planned feature, not yet implemented
@@ -410,45 +407,42 @@ dietaibest/
 **Implementation:** `src/lib/fdc.ts`, `src/lib/fdcRepo.ts`
 
 ### 3. Browser-Use Cloud API
-**Purpose:** AI-powered web automation for recipe extraction
+**Purpose:** AI-powered web automation for **grocery shopping** (cart filling at
+supported Polish stores). Recipe URL extraction via Browser-Use was
+discontinued 2026-06-14.
 
 **API Version:** v2
 
 **API Endpoints Used:**
 - `POST /api/v2/tasks` - Start new automation task
 - `GET /api/v2/tasks/{taskId}` - Poll task status
+- `POST /api/v2/sessions` - Persistent browser session (liveUrl for the user)
 
 **Authentication:** API Key via `X-Browser-Use-API-Key` header
 
 **Features:**
-- Navigate to recipe URLs
-- Handle cookie banners, pop-ups, paywalls
-- Extract structured recipe data
-- Vision-enabled for image recognition
-- Structured JSON output
+- Log in (optional) and fill the cart at Auchan / Frisco / Carrefour
+- Handle cookie banners, pop-ups
+- Structured JSON output (found / not-found / substituted items)
+- Persistent session so the user can continue to checkout via `liveUrl`
 
-**Task Configuration:**
-- LLM: `gpt-4o` (default)
-- Max Steps: 30
-- Vision: Enabled
-- Thinking: Enabled (shows reasoning)
-- Structured Output: JSON schema for recipe format
+**Implementation:** `src/lib/browser-use.ts`, `src/actions/shopping-automation.ts`,
+`src/app/api/shopping/automate/*`
 
-**Implementation:** `src/lib/browser-use.ts`
+### 4. Google Gemini (Gemma) — multimodal recipe import
+**Purpose:** Extract structured recipe data from an uploaded photo (the chat's
+`importRecipeFromImage` tool). Replaced the previous Google Document AI OCR path.
 
-### 4. Google Cloud Document AI
-**Purpose:** OCR for recipe PDFs and images
+**API:** Gemini API (`@google/genai`, Vertex AI)
 
-**API:** Document AI OCR Processor
-
-**Authentication:** Service account key (Google Cloud)
+**Authentication:** Service account (inline JSON env var or key file) resolved by
+`src/lib/chat/tools/genai-options.ts`
 
 **Features:**
-- Extract text from PDFs
-- Extract text from images (JPG, PNG)
-- Multi-language support
+- Vision-based recipe extraction (ingredients + instructions) from images
+- Daily per-user cap (`src/lib/chat/multimodal-cap.ts`)
 
-**Implementation:** `src/app/api/recipes/import/document/route.ts`
+**Implementation:** `src/lib/chat/llm-gemma.ts`, `src/lib/chat/tools/importRecipeFromImage.ts`
 
 ### 5. Supabase
 **Purpose:** PostgreSQL database and authentication backend
@@ -541,29 +535,19 @@ Calculate weekly totals and averages
 Return MealPlanDisplay with calculated macros
 ```
 
-### Recipe Import from URL Flow
+### Recipe Import via Chat Flow
 ```
-User provides URL
+User pastes URL (or uploads a photo) in the AI chat
   ↓
-POST /api/recipes/import/url
+Model calls importRecipeFromUrl (Supadata) or importRecipeFromImage (Gemma)
   ↓
-Browser-Use: startTask()
+Tool extracts structured recipe data
   ↓
-AI navigates to URL and extracts data
+Edamam nutrition analysis
   ↓
-Poll task status until completion
+persistRecipe() saves the recipe
   ↓
-Parse extracted JSON
-  ↓
-Validate recipe data
-  ↓
-Return to client for review
-  ↓
-User edits and confirms
-  ↓
-createImportedRecipe() server action
-  ↓
-Save recipe + trigger nutrition analysis
+Chat returns a link to the saved recipe
 ```
 
 ---

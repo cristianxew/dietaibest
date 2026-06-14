@@ -37,12 +37,13 @@ Best practices, workflows, and step-by-step guides for common development tasks.
   - Meal planning system (drag-and-drop, macro tracking)
   - Nutritional analysis (Edamam API integration)
   - User onboarding flow
-  - Recipe import system (URL + document OCR)
+  - Recipe import system (URL + photo/PDF via Supadata + Gemma)
 - External integrations:
   - Edamam API (nutrition analysis)
   - USDA FoodData Central (ingredient matching)
-  - Browser-Use Cloud (AI web automation)
-  - Google Document AI (OCR)
+  - Supadata (URL recipe extraction)
+  - Google Gemini / Gemma (photo/PDF recipe extraction)
+  - Browser-Use Cloud (AI web automation — shopping only)
   - Supabase (database + auth)
 - Authentication & authorization patterns
 - Data flow diagrams
@@ -58,21 +59,17 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 ---
 
 #### [Recipe Import System](./System/recipe_import_system.md)
-**Purpose:** Complete technical documentation for URL recipe import feature
+**Purpose:** The shared recipe-import engine (Supadata + Gemma), used from both the AI chat and the "Add Recipe" modal
 
 **Contains:**
-- End-to-end data flow (Browser-Use API integration)
-- API endpoints (SSE, polling, cancellation)
-- Frontend state management patterns
-- Critical bug fixes (isMountedRef, isSuccess flag, EventSource cleanup)
-- Error handling and security (SSRF protection)
-- Best practices and debugging guide
+- The shared extraction engine: `extractRecipe` (URL → Supadata + Gemma) and `GemmaProvider.extractRecipe` (photo/PDF → Gemini)
+- The two entry points: chat tools (`importRecipeFromUrl` / `importRecipeFromImage`) and the modal routes (`/api/recipes/import/url` · `/api/recipes/import/image`)
+- Why Browser-Use (URL) + Document AI (photo/PDF) were discontinued (2026-06-14); Browser-Use is now shopping-only
 
 **When to read:**
 - Working on recipe import features
-- Debugging extraction issues
-- Understanding Browser-Use API integration
-- Learning React hooks patterns
+- Debugging extraction issues in the chat
+- Understanding the Supadata / Gemma import pipeline
 
 ---
 
