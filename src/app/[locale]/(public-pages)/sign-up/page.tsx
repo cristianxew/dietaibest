@@ -86,7 +86,7 @@ export default function SignUpPage() {
 
   const currentLang = languages.find((l) => l.code === locale) || languages[0];
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-stone-100 dark:bg-slate-950 relative overflow-hidden noise">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-background relative overflow-hidden noise">
       {/* Background decoration & Noise Overlay for the entire viewport */}
       <div className="absolute inset-0 pointer-events-none z-0">
         {/* Top-right coral/peach glow */}
