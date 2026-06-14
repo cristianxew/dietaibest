@@ -5,14 +5,11 @@ import {
   selectIngestStrategy,
   type IngestStrategy,
 } from "@/lib/chat/ingestion/select-strategy";
-import { getSupadataClient, SupadataError } from "@/lib/supadata";
-import {
-  GemmaExtractionError,
-  getGemmaProvider,
-} from "@/lib/chat/llm-gemma";
+import { SupadataError } from "@/lib/supadata";
+import { GemmaExtractionError } from "@/lib/chat/llm-gemma";
+import { extractRecipe } from "@/lib/ingest/extract-recipe";
 import { importedRecipeSchema } from "@/lib/ingest/imported-recipe-schema";
 import type { ImportedRecipe } from "@/types/recipe";
-import type { ScrapeResult } from "@/lib/supadata";
 import type { AgentContext } from "../context";
 import { ToolFailure, type ConfirmDescriptor, type Tool } from "./types";
 
@@ -27,34 +24,6 @@ import { ToolFailure, type ConfirmDescriptor, type Tool } from "./types";
  *  - execute(): runs only after the user confirms; persists input.recipe with
  *    NO re-extraction.
  */
-
-// Recipe JSON Schema sent to Supadata's /extract endpoint (video path only).
-const RECIPE_EXTRACT_SCHEMA = {
-  type: "object",
-  properties: {
-    title: { type: "string" },
-    description: { type: "string" },
-    prepTime: { type: "number" },
-    cookTime: { type: "number" },
-    servings: { type: "number" },
-    ingredients: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          amount: { type: "number" },
-          unit: { type: "string" },
-        },
-        required: ["name", "amount", "unit"],
-      },
-    },
-    instructions: { type: "array", items: { type: "string" } },
-    tags: { type: "array", items: { type: "string" } },
-    imageUrl: { type: "string" },
-  },
-  required: ["title", "ingredients", "instructions"],
-} as const;
 
 const inputSchema = z.object({
   url: z.string().url(),
@@ -98,78 +67,6 @@ function safeHost(url: string): string | null {
   }
 }
 
-function normaliseExtracted(
-  data: Partial<ImportedRecipe> | null | undefined,
-  sourceUrl: string
-): ImportedRecipe {
-  return {
-    title: (data?.title ?? "").trim(),
-    description: data?.description?.trim() || undefined,
-    prepTime: data?.prepTime,
-    cookTime: data?.cookTime,
-    servings: data?.servings,
-    ingredients: Array.isArray(data?.ingredients) ? data!.ingredients! : [],
-    instructions: Array.isArray(data?.instructions) ? data!.instructions! : [],
-    tags: Array.isArray(data?.tags) ? data!.tags! : [],
-    imageUrl: data?.imageUrl,
-    sourceUrl,
-    extractedAt: new Date().toISOString(),
-  };
-}
-
-/** Map a Gemma-extracted recipe + scrape metadata into the canonical shape. */
-function mapScrapeToImported(
-  data: {
-    title: string;
-    description?: string;
-    prepTime?: number;
-    cookTime?: number;
-    servings?: number;
-    ingredients: ImportedRecipe["ingredients"];
-    instructions: string[];
-    tags?: string[];
-    imageUrl?: string;
-  },
-  scrape: ScrapeResult,
-  sourceUrl: string
-): ImportedRecipe {
-  return {
-    title: (data.title || scrape.name || "").trim(),
-    description: data.description?.trim() || scrape.description?.trim() || undefined,
-    prepTime: data.prepTime,
-    cookTime: data.cookTime,
-    servings: data.servings,
-    ingredients: data.ingredients,
-    instructions: data.instructions,
-    tags: data.tags ?? [],
-    imageUrl: data.imageUrl || scrape.ogUrl || undefined,
-    sourceUrl,
-    extractedAt: new Date().toISOString(),
-  };
-}
-
-async function extractRecipe(
-  strategy: IngestStrategy,
-  url: string,
-  ctx: AgentContext
-): Promise<ImportedRecipe> {
-  const client = getSupadataClient();
-  if (strategy === "supadata-video") {
-    const data = await client.extractVideo<Partial<ImportedRecipe>>(
-      url,
-      RECIPE_EXTRACT_SCHEMA
-    );
-    return normaliseExtracted(data, url);
-  }
-  const scrape = await client.scrapeWeb(url);
-  const extracted = await getGemmaProvider().extractRecipeFromText({
-    content: scrape.content ?? "",
-    locale: ctx.locale,
-    sourceUrl: url,
-  });
-  return mapScrapeToImported(extracted, scrape, url);
-}
-
 export const importRecipeFromUrl: Tool<
   typeof inputSchema,
   { id: string; title: string; hasImage: boolean }
@@ -206,7 +103,7 @@ export const importRecipeFromUrl: Tool<
 
     let imported: ImportedRecipe;
     try {
-      imported = await extractRecipe(strategy, url, ctx);
+      imported = await extractRecipe(strategy, url, ctx.locale);
     } catch (error) {
       if (error instanceof GemmaExtractionError) {
         logImportFailure({

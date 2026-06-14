@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { useRecipeForm } from "@/hooks/use-recipe-form";
-import { useRecipeExtraction } from "@/hooks/use-recipe-extraction";
 import { importedToFormData } from "@/lib/recipe-utils";
 import {
   Link2,
@@ -15,75 +14,49 @@ import {
   ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { ImportedRecipe } from "@/types/recipe";
 
 type EntryView = "chooser" | "import";
 
+/** Server error envelope: `{ error: { code, message } }` (or entitlement payload). */
+type ApiError = { code?: string; message?: string } | undefined;
+
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
+  const locale = useLocale();
   const { goToScreen, setImportedPreview, close } = useRecipeModal();
   const { form } = useRecipeForm();
   const [view, setView] = useState<EntryView>("chooser");
   const [url, setUrl] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { extract, cancel, state } = useRecipeExtraction();
+  // Map a server error code to a friendly message; fall back to the server's
+  // own message, then a generic string.
+  const toErrorMessage = useCallback(
+    (err: ApiError): string => {
+      const map: Record<string, string> = {
+        "no-recipe": t("import.errors.noRecipe"),
+        "rate-limited": t("import.errors.rateLimited"),
+        "daily-cap": t("import.errors.dailyCap"),
+        "unsupported-format": t("import.errors.unsupportedFormat"),
+        "file-too-large": t("import.errors.fileTooLarge"),
+        PRO_ONLY: t("import.errors.proOnly"),
+      };
+      const code = err?.code;
+      return (code && map[code]) || err?.message || t("import.errors.generic");
+    },
+    [t]
+  );
 
-  const handleExtractURL = useCallback(async () => {
-    const trimmed = url.trim();
-    if (!trimmed) return;
-    try {
-      const recipe = await extract(trimmed);
-      if (recipe) {
-        const preview: ImportedRecipe = {
-          title: recipe.title || "",
-          description: recipe.description,
-          ingredients: recipe.ingredients || [],
-          instructions: recipe.instructions || [],
-          prepTime: recipe.prepTime,
-          cookTime: recipe.cookTime,
-          servings: recipe.servings,
-          difficulty: recipe.difficulty,
-          cuisine: recipe.cuisine,
-          tags: recipe.tags,
-          calories: recipe.calories,
-          protein: recipe.protein,
-          carbs: recipe.carbs,
-          fat: recipe.fat,
-          fiber: recipe.fiber,
-          sugar: recipe.sugar,
-          sodium: recipe.sodium,
-          imageUrl: recipe.imageUrl,
-          sourceUrl: trimmed,
-        };
-        setImportedPreview(preview);
-        form.reset(importedToFormData(preview));
-        goToScreen("preview");
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to extract recipe");
-    }
-  }, [url, extract, goToScreen, setImportedPreview, form]);
-
-  const handleFileUpload = useCallback(async (file: File) => {
-    goToScreen("loading");
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/recipes/import/document", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Upload failed");
-      }
-      const data = await res.json();
-      const recipe = data.recipe || data.data || data;
+  // Map an extracted recipe into the preview + prefill the form, then show the
+  // preview screen. `sourceUrl` drives the persisted recipe's provenance: an
+  // http(s) URL → "url", a filename → "imported" (see use-recipe-form).
+  const applyImported = useCallback(
+    (recipe: Partial<ImportedRecipe>, sourceUrl: string) => {
       const preview: ImportedRecipe = {
         title: recipe.title || "",
         description: recipe.description,
@@ -103,28 +76,81 @@ export function EntryScreen() {
         sugar: recipe.sugar,
         sodium: recipe.sodium,
         imageUrl: recipe.imageUrl,
-        sourceUrl: file.name,
+        sourceUrl,
       };
       setImportedPreview(preview);
       form.reset(importedToFormData(preview));
       goToScreen("preview");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to process file");
-      goToScreen("entry");
+    },
+    [form, goToScreen, setImportedPreview]
+  );
+
+  const handleExtractURL = useCallback(async () => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/recipes/import/url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: trimmed, locale }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(toErrorMessage(data?.error));
+        setIsLoading(false);
+        return;
+      }
+      applyImported(data.recipe ?? {}, trimmed);
+    } catch {
+      toast.error(t("import.errors.generic"));
+      setIsLoading(false);
     }
-  }, [goToScreen, setImportedPreview, form]);
+  }, [url, locale, applyImported, toErrorMessage, t]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileUpload(file);
-  }, [handleFileUpload]);
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      goToScreen("loading");
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("locale", locale);
+        const res = await fetch("/api/recipes/import/image", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(toErrorMessage(data?.error));
+          goToScreen("entry");
+          return;
+        }
+        applyImported(data.recipe ?? {}, file.name);
+      } catch {
+        toast.error(t("import.errors.generic"));
+        goToScreen("entry");
+      }
+    },
+    [locale, applyImported, goToScreen, toErrorMessage, t]
+  );
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileUpload(file);
-  }, [handleFileUpload]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleFileUpload(file);
+    },
+    [handleFileUpload]
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleFileUpload(file);
+    },
+    [handleFileUpload]
+  );
 
   const handleManual = () => {
     goToScreen("step0");
@@ -141,8 +167,6 @@ export function EntryScreen() {
     close();
   };
 
-  const isLoading = ["starting", "polling", "processing", "validating"].includes(state.status);
-
   return (
     <div className="flex-1 flex items-center justify-center p-8 animate-in fade-in duration-300">
       <div className="w-full max-w-md">
@@ -154,32 +178,14 @@ export function EntryScreen() {
                 <Sparkles className="w-5 h-5" />
               </div>
             </div>
-
             <div>
               <h3 className="font-display text-xl font-semibold text-foreground mb-1.5">
                 {t("loading.title")}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {state.message || t("loading.subtitle")}
+                {t("loading.subtitle")}
               </p>
             </div>
-
-            <div className="space-y-2 text-left">
-              <Progress value={state.progress} className="h-2 w-full" />
-              <div className="flex justify-between text-xs text-muted-foreground font-medium px-1">
-                <span>{state.progress}%</span>
-                {state.currentStep !== undefined && (
-                  <span>Step {state.currentStep}</span>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={cancel}
-              className="mt-6 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         ) : view === "chooser" ? (
           <>
@@ -243,20 +249,35 @@ export function EntryScreen() {
                 url ? "border-primary" : "border-border"
               )}
             >
-              <Link2 className={cn("w-4 h-4 shrink-0 transition-colors", url ? "text-primary" : "text-muted-foreground")} />
+              <Link2
+                className={cn(
+                  "w-4 h-4 shrink-0 transition-colors",
+                  url ? "text-primary" : "text-muted-foreground"
+                )}
+              />
               <input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") handleExtractURL(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleExtractURL();
+                }}
                 placeholder={t("entry.urlPlaceholder")}
                 className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
               />
               {url && (
-                <button onClick={() => setUrl("")} className="text-muted-foreground hover:text-foreground transition-colors">
+                <button
+                  onClick={() => setUrl("")}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   ×
                 </button>
               )}
             </div>
+
+            {/* Supported sources hint — paste from social video or any recipe site */}
+            <p className="text-[11px] text-muted-foreground leading-snug mb-4 px-1">
+              {t("entry.urlHint")}
+            </p>
 
             <button
               onClick={handleExtractURL}
@@ -283,8 +304,14 @@ export function EntryScreen() {
 
             {/* Drop zone */}
             <div
-              onDragEnter={(e) => { e.preventDefault(); setDragging(true); }}
-              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
               onDragLeave={() => setDragging(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
@@ -300,7 +327,9 @@ export function EntryScreen() {
                   <Camera className="w-5 h-5 text-primary" />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full border-2 border-card flex items-center justify-center">
-                  <span className="text-primary-foreground text-[8px] font-bold leading-none">+</span>
+                  <span className="text-primary-foreground text-[8px] font-bold leading-none">
+                    +
+                  </span>
                 </div>
               </div>
               <p className="text-sm font-semibold text-foreground mb-1">
@@ -314,7 +343,7 @@ export function EntryScreen() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
+              accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
               className="hidden"
               onChange={handleFileChange}
             />

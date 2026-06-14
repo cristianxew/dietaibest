@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { useRecipeForm } from "@/hooks/use-recipe-form";
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImagePlus, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
@@ -30,6 +32,46 @@ export function Step0Details() {
 
   const [imgError, setImgError] = useState(false);
   const hasValidImage = !!imageUrl?.trim() && !imgError;
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Upload a real photo: store it via the generic recipe-image route and drop
+  // the returned public URL into the form's imageUrl (works in create + edit).
+  const handlePhotoUpload = async (file: File) => {
+    setUploading(true);
+    setImgError(false);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/recipes/image-upload", {
+        method: "POST",
+        body: fd,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const code = data?.error?.code;
+        const msg =
+          code === "file-too-large"
+            ? t("import.errors.fileTooLarge")
+            : code === "unsupported-format"
+              ? t("import.errors.unsupportedFormat")
+              : t("import.errors.generic");
+        toast.error(msg);
+        return;
+      }
+      form.setValue("imageUrl", data.imageUrl, { shouldValidate: true });
+    } catch {
+      toast.error(t("import.errors.generic"));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const clearPhoto = () => {
+    form.setValue("imageUrl", "", { shouldValidate: true });
+    setImgError(false);
+  };
 
   const toggleCategory = (id: string) => {
     const current = form.getValues("categoryIds") as string[];
@@ -79,30 +121,59 @@ export function Step0Details() {
           />
         </div>
 
-        {/* Photo preview + Image URL */}
+        {/* Photo: upload a real file OR paste an image URL */}
         <div className="flex gap-3 mb-4">
-          {/* Photo preview — shows image from URL or placeholder */}
-          <div
-            className={cn(
-              "w-[76px] h-[76px] rounded-md bg-muted border-[1.5px] border-border flex flex-col items-center justify-center shrink-0 overflow-hidden transition-colors",
-              hasValidImage
-                ? "border-solid"
-                : "border-dashed text-muted-foreground hover:border-primary hover:text-primary cursor-pointer"
+          {/* Thumbnail doubles as the upload button */}
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              disabled={uploading}
+              aria-label={t("step0.uploadPhoto")}
+              className={cn(
+                "w-[76px] h-[76px] rounded-md bg-muted border-[1.5px] flex flex-col items-center justify-center overflow-hidden transition-colors",
+                hasValidImage
+                  ? "border-solid border-border"
+                  : "border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary cursor-pointer"
+              )}
+            >
+              {uploading ? (
+                <span className="w-5 h-5 rounded-full border-2 border-border border-t-primary animate-spin" />
+              ) : hasValidImage ? (
+                <img
+                  src={imageUrl!.trim()}
+                  alt={t("step0.photo")}
+                  className="w-full h-full object-cover"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <>
+                  <ImagePlus className="w-5 h-5 mb-0.5" />
+                  <span className="text-[10px]">{t("step0.uploadPhoto")}</span>
+                </>
+              )}
+            </button>
+            {hasValidImage && !uploading && (
+              <button
+                type="button"
+                onClick={clearPhoto}
+                aria-label={t("step0.removePhoto")}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center hover:opacity-90 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
             )}
-          >
-            {hasValidImage ? (
-              <img
-                src={imageUrl!.trim()}
-                alt="Recipe preview"
-                className="w-full h-full object-cover"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <>
-                <span className="text-xl mb-0.5">📷</span>
-                <span className="text-[10px]">{t("step0.photo")}</span>
-              </>
-            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/heic"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handlePhotoUpload(file);
+                e.target.value = "";
+              }}
+            />
           </div>
 
           {/* Image URL input */}
@@ -113,7 +184,7 @@ export function Step0Details() {
               render={({ field }) => (
                 <FormItem className="w-full">
                   <div className="text-xs font-medium text-muted-foreground mb-1">
-                    Image URL
+                    {t("step0.imageUrlLabel")}
                     <span className="text-muted-foreground/60 font-normal ml-1">
                       ({t("step0.descriptionOptional")})
                     </span>

@@ -8,8 +8,8 @@
 
 /**
  * Service-account auth resolved from the environment. Maps to the
- * `google-auth-library` `GoogleAuthOptions` fields both the `@google/genai`
- * and `@google-cloud/documentai` clients accept:
+ * `google-auth-library` `GoogleAuthOptions` fields the `@google/genai`
+ * client accepts:
  *  - `credentials`: an inline service-account object (parsed from a JSON env var)
  *  - `keyFilename`: a path to the service-account JSON file on disk
  */
