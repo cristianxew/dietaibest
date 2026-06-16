@@ -19,6 +19,7 @@ import {
 import { serverAction } from "@/lib/server-action";
 import { formatIngredientsForNutrition } from "@/lib/ingredients";
 import { getAuthorName } from "@/lib/author-name";
+import type { Profile } from "@/lib/fdc";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -217,6 +218,53 @@ export async function updateRecipe(id: string, data: RecipeFormData) {
     return {
       data: null,
       error: error instanceof Error ? error.message : "Failed to update recipe",
+    };
+  }
+}
+
+/**
+ * Persist a freshly-computed per-serving nutrition profile (the full
+ * 22-nutrient set — macros + micros) onto an existing recipe the user owns.
+ *
+ * Used by the chat `getNutrition` tool to backfill recipes that had no stored
+ * profile, so the recipe detail page (and the next lookup) shows the same
+ * numbers — including micronutrients — exactly as analyzed. This replaces the
+ * old "LLM copies the 5 macros back via editRecipe" dance, which dropped every
+ * micronutrient and risked transcription drift.
+ */
+export async function saveRecipeNutritionProfile(
+  recipeId: string,
+  profile: Profile
+) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const existing = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { userId: true },
+    });
+
+    if (!existing) {
+      return { data: null, error: "Recipe not found" };
+    }
+    if (existing.userId !== user.id) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    const recipe = await prisma.recipe.update({
+      where: { id: recipeId },
+      data: { ...profile },
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath(`/recipes/${recipeId}`);
+    return { data: { id: recipe.id }, error: null };
+  } catch (error) {
+    console.error("Save recipe nutrition profile error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to save nutrition",
     };
   }
 }
