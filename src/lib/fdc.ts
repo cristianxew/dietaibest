@@ -43,6 +43,115 @@ export type Macro = {
 };
 
 /**
+ * Full nutrient profile (5 macros + 17 micronutrients) keyed by the column
+ * names on the Prisma `Recipe` model, so persistence is a direct spread.
+ */
+export type Profile = {
+  // Macros
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  // Micronutrients
+  sugar: number;
+  sodium: number;
+  cholesterol: number;
+  saturatedFat: number;
+  transFat: number;
+  vitaminA: number;
+  vitaminC: number;
+  vitaminD: number;
+  vitaminE: number;
+  vitaminK: number;
+  vitaminB12: number;
+  folate: number;
+  iron: number;
+  calcium: number;
+  magnesium: number;
+  potassium: number;
+  zinc: number;
+};
+
+/**
+ * Maps each `Profile` field to its canonical USDA FDC nutrient number.
+ *
+ * ⚠️ Mineral numbers are easy to get wrong — the canonical values are
+ * calcium=301, iron=303, magnesium=304, potassium=306 (305 is Phosphorus).
+ * Vitamins use the µg/mg-native numbers, NOT the IU variants:
+ * vitaminA=320 (RAE, not 318 IU), vitaminD=328 (µg, not 324 IU),
+ * folate=417 (total µg, not 435 DFE).
+ */
+export const PROFILE_NUTRIENT_MAP: Record<keyof Profile, string> = {
+  calories: "208",
+  protein: "203",
+  fat: "204",
+  carbs: "205",
+  fiber: "291",
+  sugar: "269",
+  sodium: "307",
+  cholesterol: "601",
+  saturatedFat: "606",
+  transFat: "605",
+  vitaminA: "320",
+  vitaminC: "401",
+  vitaminD: "328",
+  vitaminE: "323",
+  vitaminK: "430",
+  vitaminB12: "418",
+  folate: "417",
+  iron: "303",
+  calcium: "301",
+  magnesium: "304",
+  potassium: "306",
+  zinc: "309",
+};
+
+/**
+ * Expected unit per `Profile` field — matches the units declared in
+ * `nutrition-fields.ts`. Used to reject wrong-magnitude values (e.g. an IU
+ * reading where we expect µg) instead of silently persisting them.
+ */
+export const PROFILE_EXPECTED_UNITS: Record<keyof Profile, string> = {
+  calories: "kcal",
+  protein: "g",
+  fat: "g",
+  carbs: "g",
+  fiber: "g",
+  sugar: "g",
+  sodium: "mg",
+  cholesterol: "mg",
+  saturatedFat: "g",
+  transFat: "g",
+  vitaminA: "µg",
+  vitaminC: "mg",
+  vitaminD: "µg",
+  vitaminE: "mg",
+  vitaminK: "µg",
+  vitaminB12: "µg",
+  folate: "µg",
+  iron: "mg",
+  calcium: "mg",
+  magnesium: "mg",
+  potassium: "mg",
+  zinc: "mg",
+};
+
+/** All FDC nutrient numbers we request and extract (the 22 profile fields). */
+export const PROFILE_NUTRIENT_NUMBERS: string[] = Object.values(
+  PROFILE_NUTRIENT_MAP
+);
+
+/**
+ * The 17 micronutrient numbers (profile minus the 5 core macros). A cached
+ * food carrying at least one of these was fetched under the full-profile
+ * schema — used to detect and refresh legacy core-only cache rows.
+ */
+export const MICRO_NUTRIENT_NUMBERS: string[] = PROFILE_NUTRIENT_NUMBERS.filter(
+  (n) => !(CORE_NUTRIENTS as readonly string[]).includes(n)
+);
+
+/**
  * Priority order for choosing food data types
  * Foundation > Survey (FNDDS) > SR Legacy > Branded
  */
@@ -161,8 +270,9 @@ export async function fdcSearch(
 }
 
 /**
- * Fetch detailed food information for multiple FDC IDs
- * Uses abridged format with only core nutrients for efficiency
+ * Fetch detailed food information for multiple FDC IDs.
+ * Uses abridged format requesting the full 22-nutrient profile (5 macros + 17
+ * micronutrients) so the complete profile can be extracted and persisted.
  *
  * @param fdcIds - Array of FDC food IDs to fetch
  * @returns Array of food objects with nutritional data
@@ -170,7 +280,7 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${CORE_NUTRIENTS.join(
+  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${PROFILE_NUTRIENT_NUMBERS.join(
     ","
   )}`;
 
@@ -233,6 +343,89 @@ export function scalePer100g(mac: Macro, grams: number): Macro {
     carbs: mac.carbs * f,
     fiber: mac.fiber * f,
   };
+}
+
+// --- Full profile extraction, scaling & aggregation helpers ---
+
+/** Canonicalize an FDC unit string for comparison (µg/ug/mcg → "ug"). */
+function canonUnit(u: string): string {
+  const x = u.toLowerCase().trim();
+  if (x === "µg" || x === "ug" || x === "mcg") return "ug";
+  return x;
+}
+
+/**
+ * Extract the full 22-nutrient profile from an FDC food object (per 100g).
+ *
+ * A field is left at 0 when the nutrient is absent OR reported in an
+ * unexpected unit (e.g. an IU value where we expect µg) — we never persist a
+ * wrong-magnitude number.
+ */
+export function extractProfileFromFood(food: FdcFood): Profile {
+  const byNum = new Map<string, { amount: number; unit: string }>();
+  for (const fn of food.foodNutrients ?? []) {
+    const num = fn.nutrient?.number ?? fn.nutrientNumber;
+    const unit = fn.unitName ?? fn.nutrient?.unitName ?? "";
+    if (num && typeof fn.amount === "number") {
+      byNum.set(String(num), { amount: fn.amount, unit });
+    }
+  }
+
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    const hit = byNum.get(PROFILE_NUTRIENT_MAP[key]);
+    if (!hit) {
+      out[key] = 0;
+      continue;
+    }
+    if (canonUnit(hit.unit) !== canonUnit(PROFILE_EXPECTED_UNITS[key])) {
+      console.warn(
+        `[fdc] ${key} (#${PROFILE_NUTRIENT_MAP[key]}) unexpected unit "${hit.unit}", expected "${PROFILE_EXPECTED_UNITS[key]}" — skipping`
+      );
+      out[key] = 0;
+      continue;
+    }
+    out[key] = hit.amount;
+  }
+  return out;
+}
+
+/** A profile with every field at 0 — additive identity for aggregation. */
+export function zeroProfile(): Profile {
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = 0;
+  }
+  return out;
+}
+
+/** Scale a per-100g profile to a given gram amount. */
+export function scaleProfilePer100g(p: Profile, grams: number): Profile {
+  const f = grams / 100;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = p[key] * f;
+  }
+  return out;
+}
+
+/** Field-wise sum of two profiles. */
+export function addProfile(a: Profile, b: Profile): Profile {
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = a[key] + b[key];
+  }
+  return out;
+}
+
+/** Field-wise division of a profile by a divisor (e.g. servings). */
+export function divideProfile(p: Profile, divisor: number): Profile {
+  const d = divisor || 1;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = p[key] / d;
+  }
+  return out;
 }
 
 /**

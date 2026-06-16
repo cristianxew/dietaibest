@@ -18,8 +18,14 @@ import {
   scalePer100g,
   resolveGramWeightFromPortions,
   extractBrandedServing,
+  extractProfileFromFood,
+  scaleProfilePer100g,
+  addProfile,
+  divideProfile,
+  zeroProfile,
   DATATYPE_PRIORITY,
   type Macro,
+  type Profile,
   type FdcFood,
   type FdcSearchFood,
 } from "@/lib/fdc";
@@ -72,6 +78,35 @@ export interface AnalyzeResult {
   /** Overall success status */
   success: boolean;
   /** Error message if analysis failed */
+  error?: string;
+}
+
+/**
+ * Per-ingredient result for the full-profile pipeline. Carries the fields the
+ * `RecipeIngredient` row needs (originalText/nameNorm/qty/unit/fdcId/grams/confidence).
+ */
+export interface IngredientProfileResult {
+  original: string;
+  name: string;
+  nameNorm: string;
+  qty: number;
+  unit: string;
+  fdcId: number | null;
+  description: string | null;
+  gramsTotal: number;
+  confidence: number;
+  portionNote: string;
+  dataType: string | null;
+}
+
+/**
+ * Complete full-profile (22-nutrient) recipe analysis result.
+ */
+export interface AnalyzeProfileResult {
+  items: IngredientProfileResult[];
+  total: Profile;
+  perServing: Profile;
+  success: boolean;
   error?: string;
 }
 
@@ -279,111 +314,45 @@ export async function analyzeRecipeAction(
       };
     }
 
-    // Step 1: Parse all ingredient lines
-    console.log(`[analyzeRecipe] Parsing ${ingredients.length} ingredients`);
-    const parsed: ParsedIngredient[] = ingredients
-      .filter((line) => line.trim().length > 0)
-      .map((line) => parseIngredientLine(line));
+    // Resolve FDC matches + gram weights via the shared pipeline
+    const resolved = await resolveIngredientMatches(ingredients);
 
-    // Step 2: Search USDA FDC for each ingredient name (parallel)
-    console.log("[analyzeRecipe] Searching USDA FDC for ingredients");
-    const searchResults = await Promise.all(
-      parsed.map(async (p) => {
-        try {
-          const result = await fdcSearch(p.name);
-          return { parsed: p, foods: result.foods || [] };
-        } catch (error) {
-          console.error(
-            `[analyzeRecipe] Search failed for "${p.name}":`,
-            error
-          );
-          return { parsed: p, foods: [] };
-        }
-      })
-    );
-
-    // Step 3: Choose best match per ingredient using DATATYPE_PRIORITY
-    const matches = searchResults.map(({ parsed, foods }) => ({
-      parsed,
-      bestMatch: chooseBestMatch(foods),
-    }));
-
-    // Step 4: Batch fetch full food details via getFoodsCached
-    const fdcIds = matches
-      .map((m) => m.bestMatch?.fdcId)
-      .filter((id): id is number => id !== undefined && id !== null);
-
-    console.log(
-      `[analyzeRecipe] Fetching ${fdcIds.length} foods from cache/API`
-    );
-    const foodsDetailed = await getFoodsCached(fdcIds);
-    const foodsById = new Map<number, FdcFood>();
-    for (const food of foodsDetailed) {
-      foodsById.set(food.fdcId, food);
-    }
-
-    // Step 5-7: Process each ingredient
     const items: IngredientResult[] = [];
     let totalMacros = zeroMacro();
 
-    for (const { parsed, bestMatch } of matches) {
-      if (!bestMatch) {
-        // No FDC match found
+    for (const m of resolved) {
+      const base = { original: m.parsed.original, name: m.parsed.name };
+
+      if (!m.food) {
         items.push({
-          original: parsed.original,
-          name: parsed.name,
-          fdcId: null,
-          description: null,
+          ...base,
+          fdcId: m.bestMatch?.fdcId ?? null,
+          description: m.bestMatch?.description ?? null,
           gramsTotal: 0,
           macros: zeroMacro(),
           confidence: 0,
-          portionNote: "No USDA match found",
-          dataType: null,
+          portionNote: m.note,
+          dataType: m.bestMatch?.dataType ?? null,
         });
         continue;
       }
 
-      const food = foodsById.get(bestMatch.fdcId);
-      if (!food) {
-        // Food was in search results but not in detailed fetch (shouldn't happen)
-        items.push({
-          original: parsed.original,
-          name: parsed.name,
-          fdcId: bestMatch.fdcId,
-          description: bestMatch.description,
-          gramsTotal: 0,
-          macros: zeroMacro(),
-          confidence: 0,
-          portionNote: "Failed to fetch food details",
-          dataType: bestMatch.dataType,
-        });
-        continue;
-      }
-
-      // Step 5: Resolve gram weight
-      const { grams, confidence, note } = await resolveGramWeight(parsed, food);
-
-      // Step 6: Extract per-100g macros and scale to actual grams
-      const per100g = extractMacrosFromFood(food);
-      const scaledMacros = scalePer100g(per100g, grams);
-
-      // Step 7: Compute confidence and aggregate
+      const scaledMacros = scalePer100g(extractMacrosFromFood(m.food), m.grams);
       items.push({
-        original: parsed.original,
-        name: parsed.name,
-        fdcId: food.fdcId,
-        description: food.description,
-        gramsTotal: grams,
+        ...base,
+        fdcId: m.food.fdcId,
+        description: m.food.description,
+        gramsTotal: m.grams,
         macros: scaledMacros,
-        confidence,
-        portionNote: note,
-        dataType: food.dataType,
+        confidence: m.confidence,
+        portionNote: m.note,
+        dataType: m.food.dataType,
       });
 
       totalMacros = addMacros(totalMacros, scaledMacros);
     }
 
-    // Step 8-9: Calculate per-serving macros
+    // Calculate per-serving macros
     const perServing = divideMacros(totalMacros, servings);
 
     console.log(
@@ -402,6 +371,193 @@ export async function analyzeRecipeAction(
       items: [],
       total: zeroMacro(),
       perServing: zeroMacro(),
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred during analysis",
+    };
+  }
+}
+
+/**
+ * Resolved FDC match for one ingredient line: the parsed ingredient, the chosen
+ * food (or null when unmatched), and its resolved gram weight + confidence.
+ *
+ * Shared gram-resolution pipeline (parse → search → best-match → cache → grams)
+ * used by the full-profile analysis. Reuses the leaf helpers `chooseBestMatch`
+ * and `resolveGramWeight`.
+ */
+interface ResolvedIngredientMatch {
+  parsed: ParsedIngredient;
+  bestMatch: FdcSearchFood | null;
+  food: FdcFood | null;
+  grams: number;
+  confidence: number;
+  note: string;
+}
+
+async function resolveIngredientMatches(
+  ingredients: string[]
+): Promise<ResolvedIngredientMatch[]> {
+  const parsed: ParsedIngredient[] = ingredients
+    .filter((line) => line.trim().length > 0)
+    .map((line) => parseIngredientLine(line));
+
+  const searchResults = await Promise.all(
+    parsed.map(async (p) => {
+      try {
+        const result = await fdcSearch(p.name);
+        return { parsed: p, foods: result.foods || [] };
+      } catch (error) {
+        console.error(`[analyzeRecipe] Search failed for "${p.name}":`, error);
+        return { parsed: p, foods: [] };
+      }
+    })
+  );
+
+  const matches = searchResults.map(({ parsed, foods }) => ({
+    parsed,
+    bestMatch: chooseBestMatch(foods),
+  }));
+
+  const fdcIds = matches
+    .map((m) => m.bestMatch?.fdcId)
+    .filter((id): id is number => id !== undefined && id !== null);
+
+  const foodsDetailed = await getFoodsCached(fdcIds);
+  const foodsById = new Map<number, FdcFood>();
+  for (const food of foodsDetailed) {
+    foodsById.set(food.fdcId, food);
+  }
+
+  const resolved: ResolvedIngredientMatch[] = [];
+  for (const { parsed, bestMatch } of matches) {
+    if (!bestMatch) {
+      resolved.push({
+        parsed,
+        bestMatch: null,
+        food: null,
+        grams: 0,
+        confidence: 0,
+        note: "No USDA match found",
+      });
+      continue;
+    }
+    const food = foodsById.get(bestMatch.fdcId) ?? null;
+    if (!food) {
+      resolved.push({
+        parsed,
+        bestMatch,
+        food: null,
+        grams: 0,
+        confidence: 0,
+        note: "Failed to fetch food details",
+      });
+      continue;
+    }
+    const { grams, confidence, note } = await resolveGramWeight(parsed, food);
+    resolved.push({ parsed, bestMatch, food, grams, confidence, note });
+  }
+
+  return resolved;
+}
+
+/**
+ * Analyze a list of ingredients into a full 22-nutrient profile (per serving).
+ *
+ * Reuses the shared gram-resolution pipeline, then extracts/scales/aggregates
+ * the full `Profile` per ingredient and divides by servings. This is the FDC
+ * engine that backs recipe persistence (replacing Edamam).
+ *
+ * @param input - Analysis input with ingredient lines and servings
+ * @returns Per-ingredient items, total, and per-serving profile
+ */
+export async function analyzeRecipeProfileAction(
+  input: AnalyzeInput
+): Promise<AnalyzeProfileResult> {
+  try {
+    const { ingredients, servings } = input;
+
+    if (!ingredients || ingredients.length === 0) {
+      return {
+        items: [],
+        total: zeroProfile(),
+        perServing: zeroProfile(),
+        success: false,
+        error: "No ingredients provided",
+      };
+    }
+
+    if (!servings || servings <= 0) {
+      return {
+        items: [],
+        total: zeroProfile(),
+        perServing: zeroProfile(),
+        success: false,
+        error: "Servings must be a positive number",
+      };
+    }
+
+    if (ingredients.length > 100) {
+      return {
+        items: [],
+        total: zeroProfile(),
+        perServing: zeroProfile(),
+        success: false,
+        error: "Too many ingredients (max 100)",
+      };
+    }
+
+    const resolved = await resolveIngredientMatches(ingredients);
+
+    const items: IngredientProfileResult[] = [];
+    let total = zeroProfile();
+
+    for (const m of resolved) {
+      const base = {
+        original: m.parsed.original,
+        name: m.parsed.name,
+        nameNorm: m.parsed.name,
+        qty: m.parsed.qty,
+        unit: m.parsed.unit,
+      };
+
+      if (!m.food) {
+        items.push({
+          ...base,
+          fdcId: m.bestMatch?.fdcId ?? null,
+          description: m.bestMatch?.description ?? null,
+          gramsTotal: 0,
+          confidence: 0,
+          portionNote: m.note,
+          dataType: m.bestMatch?.dataType ?? null,
+        });
+        continue;
+      }
+
+      const scaled = scaleProfilePer100g(extractProfileFromFood(m.food), m.grams);
+      items.push({
+        ...base,
+        fdcId: m.food.fdcId,
+        description: m.food.description,
+        gramsTotal: m.grams,
+        confidence: m.confidence,
+        portionNote: m.note,
+        dataType: m.food.dataType,
+      });
+      total = addProfile(total, scaled);
+    }
+
+    const perServing = divideProfile(total, servings);
+
+    return { items, total, perServing, success: true };
+  } catch (error) {
+    console.error("[analyzeRecipeProfile] Unexpected error:", error);
+    return {
+      items: [],
+      total: zeroProfile(),
+      perServing: zeroProfile(),
       success: false,
       error:
         error instanceof Error

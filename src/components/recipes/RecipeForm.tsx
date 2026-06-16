@@ -89,29 +89,18 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
   // Watch ingredients and servings for nutrition analysis
   const watchedIngredients = form.watch("ingredients");
   const watchedServings = form.watch("servings");
-  // const watchedUrl = form.watch("sourceUrl");
-  const watchedInstructions = form.watch("instructions");
 
-  // Use new nutrition calculator with Edamam
+  // USDA FDC nutrition calculator — fills the full 22-nutrient profile
   const {
     analyze: analyzeNutrition,
     isLoading: nutritionLoading,
     data: nutritionData,
   } = useRecipeNutrition({
-    onSuccess: (result) => {
-      // Update form with per-serving nutrition values from Edamam
-      form.setValue("calories", Math.round(result.macros.calories * 10) / 10);
-      form.setValue("protein", Math.round(result.macros.protein * 10) / 10);
-      form.setValue("carbs", Math.round(result.macros.netCarbs * 10) / 10);
-      form.setValue("fat", Math.round(result.macros.fat * 10) / 10);
-
-      // Note: fiber is not in the 4 cached macros per Edamam policy
-      // It's available in fullNutrients for display but not for persistent storage
-      if (result.fullNutrients?.FIBTG) {
-        const fiberPerServing =
-          result.fullNutrients.FIBTG.quantity / result.servings;
-        form.setValue("fiber", Math.round(fiberPerServing * 10) / 10);
-      }
+    onSuccess: (profile) => {
+      // FDC returns the full per-serving profile; pre-fill every macro/micro
+      (Object.keys(profile) as Array<keyof typeof profile>).forEach((key) => {
+        form.setValue(key, Math.round(profile[key] * 10) / 10);
+      });
     },
   });
 
@@ -121,7 +110,6 @@ export function RecipeForm({ recipe, mode, recipeId }: RecipeFormProps) {
       form: form,
       watchedIngredients,
       watchedServings: watchedServings || 1,
-      watchedInstructions: watchedInstructions || [],
       analyzeNutrition,
     });
 

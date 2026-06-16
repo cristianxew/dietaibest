@@ -12,7 +12,11 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { fdcFoodsByIds, type FdcFood } from "@/lib/fdc";
+import {
+  fdcFoodsByIds,
+  MICRO_NUTRIENT_NUMBERS,
+  type FdcFood,
+} from "@/lib/fdc";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
@@ -43,6 +47,29 @@ function isStale(
   return Date.now() - lastFetchedAt.getTime() > ttl;
 }
 
+const MICRO_NUMBER_SET = new Set(MICRO_NUTRIENT_NUMBERS);
+
+/**
+ * Detect legacy cache rows that predate the full-profile schema. Older rows
+ * were stored with only the 5 core macros; they carry none of the 17
+ * micronutrient numbers, so we treat them as stale to force a one-time
+ * refetch of the complete profile (self-healing, no DB migration).
+ *
+ * Note: a food that genuinely reports none of the 17 micros would refetch on
+ * every access. That set is negligible (virtually every food has sodium /
+ * potassium / calcium), so the cost is acceptable.
+ */
+function lacksFullProfile(foodNutrients: unknown): boolean {
+  if (!Array.isArray(foodNutrients)) return true;
+  return !foodNutrients.some((fn) => {
+    const num =
+      (fn as { nutrient?: { number?: string }; nutrientNumber?: string })
+        ?.nutrient?.number ??
+      (fn as { nutrientNumber?: string })?.nutrientNumber;
+    return num != null && MICRO_NUMBER_SET.has(String(num));
+  });
+}
+
 /**
  * Get food data for multiple FDC IDs with intelligent caching
  *
@@ -68,9 +95,13 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
   const missingOrStale = new Set<number>();
   const byId = new Map<number, FdcFood>();
 
-  // 2. Check which entries are still fresh
+  // 2. Check which entries are still fresh. Legacy rows that predate the
+  // full-profile schema (core-only) are refreshed even if within TTL.
   for (const row of cached) {
-    if (isStale(row.dataType, row.lastFetchedAt)) {
+    if (
+      isStale(row.dataType, row.lastFetchedAt) ||
+      lacksFullProfile(row.foodNutrients)
+    ) {
       missingOrStale.add(row.fdcId);
     } else {
       // Entry is fresh, reconstruct food object from cache

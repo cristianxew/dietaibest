@@ -14,7 +14,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { recipeFormSchema, type RecipeFormData } from "@/types/recipe";
 import { persistRecipe, updateRecipe, getCategories } from "@/actions/recipe";
-import { analyzeRecipeNutritionAction, type NutritionAnalysisResult } from "@/actions/nutrition";
+import { analyzeRecipeProfileForFormAction } from "@/actions/nutrition";
+import type { Profile } from "@/lib/fdc";
 import { ingredientsToNutritionLines } from "@/lib/recipe-utils";
 import { toast } from "sonner";
 
@@ -34,7 +35,7 @@ export interface RecipeFormCtx {
   };
   categories: RecipeCategory[];
   nutritionLoading: boolean;
-  nutritionResult: NutritionAnalysisResult | null;
+  nutritionResult: Profile | null;
   isSubmitting: boolean;
   savedRecipeId: string | null;
   analyzeNutrition: () => Promise<void>;
@@ -74,7 +75,7 @@ export function useRecipeFormState(opts: {
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [nutritionLoading, setNutritionLoading] = useState(false);
-  const [nutritionResult, setNutritionResult] = useState<NutritionAnalysisResult | null>(null);
+  const [nutritionResult, setNutritionResult] = useState<Profile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null);
 
@@ -119,7 +120,7 @@ export function useRecipeFormState(opts: {
   }, [form]);
 
   const analyzeNutrition = useCallback(async () => {
-    const { title, ingredients, servings } = form.getValues();
+    const { ingredients, servings } = form.getValues();
     const lines = ingredientsToNutritionLines(ingredients);
     if (!lines.length) {
       toast.error("Add ingredients before analyzing nutrition");
@@ -127,14 +128,17 @@ export function useRecipeFormState(opts: {
     }
     setNutritionLoading(true);
     try {
-      const result = await analyzeRecipeNutritionAction({ title, ingredients: lines, servings });
+      const result = await analyzeRecipeProfileForFormAction({
+        ingredients: lines,
+        servings,
+      });
       if (result.success && result.data) {
         setNutritionResult(result.data);
-        const { macros } = result.data;
-        form.setValue("calories", Math.round(macros.calories));
-        form.setValue("protein", Math.round(macros.protein));
-        form.setValue("carbs", Math.round(macros.netCarbs));
-        form.setValue("fat", Math.round(macros.fat));
+        // FDC returns the full per-serving profile; pre-fill every macro/micro
+        const profile = result.data;
+        (Object.keys(profile) as Array<keyof typeof profile>).forEach((key) => {
+          form.setValue(key, Math.round(profile[key] * 10) / 10);
+        });
       } else {
         toast.error(result.error || "Failed to analyze nutrition");
       }

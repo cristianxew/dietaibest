@@ -11,10 +11,7 @@ import {
 } from "@/types/recipe";
 import { Prisma } from "@/generated/prisma";
 import { revalidatePath } from "next/cache";
-import {
-  analyzeRecipeNutrition,
-  type RecipeNutritionInput,
-} from "@/lib/edamam-service";
+import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
 import {
   assertCanCreateRecipe,
   assertCanImportRecipe,
@@ -63,7 +60,9 @@ export async function persistRecipe(
 ) {
   const source: RecipeSource = options.source ?? "manual";
   const isImport = isImportSource(source);
-  const shouldAnalyze = options.analyzeNutrition ?? isImport;
+  // FDC is now the single nutrition engine: every creation path computes the
+  // full profile by default. Callers can still opt out explicitly.
+  const shouldAnalyze = options.analyzeNutrition ?? true;
 
   return serverAction(
     {
@@ -110,8 +109,9 @@ export async function persistRecipe(
         },
       });
 
-      // Side-effect: nutrition orchestration. Kept body-side because a
-      // failure must not roll the recipe back.
+      // Side-effect: FDC nutrition orchestration. Kept body-side because a
+      // failure must not roll the recipe back. Persists the full 22-nutrient
+      // per-serving profile plus the per-ingredient FDC matches.
       if (shouldAnalyze) {
         try {
           const ingredientLines = formatIngredientsForNutrition(
@@ -119,36 +119,44 @@ export async function persistRecipe(
           );
 
           if (ingredientLines.length > 0) {
-            const nutritionInput: RecipeNutritionInput = {
-              title: recipe.title,
+            const analysis = await analyzeRecipeProfileAction({
               ingredients: ingredientLines,
               servings: recipe.servings,
-              url: recipe.sourceUrl || undefined,
-              instructions: recipe.instructions,
-            };
+            });
 
-            const nutritionResult = await analyzeRecipeNutrition(
-              nutritionInput,
-              ctx.user.id,
-              { locale: options.locale }
-            );
-
-            if (!("error" in nutritionResult)) {
+            if (analysis.success) {
               await prisma.recipe.update({
                 where: { id: recipe.id },
-                data: {
-                  calories: nutritionResult.macros.calories,
-                  protein: nutritionResult.macros.protein,
-                  carbs: nutritionResult.macros.netCarbs,
-                  fat: nutritionResult.macros.fat,
-                },
+                data: { ...analysis.perServing },
               });
+
+              // Per-ingredient FDC matches. Delete-then-insert keeps re-saves
+              // idempotent (a recipe is only ever re-created here, but the
+              // pattern guards future re-analysis paths).
+              await prisma.recipeIngredient.deleteMany({
+                where: { recipeId: recipe.id },
+              });
+              if (analysis.items.length > 0) {
+                await prisma.recipeIngredient.createMany({
+                  data: analysis.items.map((item) => ({
+                    recipeId: recipe.id,
+                    originalText: item.original,
+                    nameNorm: item.nameNorm,
+                    qty: item.qty,
+                    unit: item.unit,
+                    fdcId: item.fdcId,
+                    gramWeight: item.gramsTotal,
+                    confidence: item.confidence,
+                  })),
+                });
+              }
+
               console.info(
-                `[Recipe] Auto-analyzed nutrition for recipe: ${recipe.id}`
+                `[Recipe] FDC-analyzed nutrition for recipe: ${recipe.id}`
               );
             } else {
               console.warn(
-                `[Recipe] Failed to auto-analyze nutrition: ${nutritionResult.error}`
+                `[Recipe] FDC analysis failed: ${analysis.error ?? "unknown"}`
               );
             }
           }

@@ -2,30 +2,25 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { useLocale } from "next-intl";
-import { analyzeRecipeNutritionAction } from "@/actions/nutrition";
-import type { NutritionAnalysisResult } from "@/lib/edamam-service";
+import { analyzeRecipeProfileForFormAction } from "@/actions/nutrition";
+import type { Profile } from "@/lib/fdc";
 
 interface UseRecipeNutritionOptions {
-  onSuccess?: (result: NutritionAnalysisResult) => void;
+  onSuccess?: (result: Profile) => void;
   onError?: (error: string) => void;
 }
 
 export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
   const { onSuccess, onError } = options;
-  const locale = useLocale() as "en" | "es" | "pl";
 
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<NutritionAnalysisResult | null>(null);
+  const [data, setData] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const analyze = useCallback(
     async (
-      title: string,
       ingredients: Array<{ name: string; amount: number; unit?: string }>,
-      servings: number,
-      url: string | undefined,
-      instructions: string[]
+      servings: number
     ) => {
       // Validate inputs
       const validIngredients = ingredients.filter(
@@ -47,7 +42,7 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
       setError(null);
 
       try {
-        // Format ingredients as strings
+        // Format ingredients as "amount unit name" lines for the FDC engine
         const ingredientStrings = validIngredients.map((ing) => {
           const parts = [];
           if (ing.amount) parts.push(ing.amount.toString());
@@ -56,57 +51,19 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
           return parts.join(" ");
         });
 
-        // Call the new Edamam nutrition action
-        const result = await analyzeRecipeNutritionAction(
-          {
-            title: title || "Untitled Recipe",
-            ingredients: ingredientStrings,
-            url,
-            instructions: instructions || [],
-            servings,
-          },
-          {
-            locale,
-            forceRefresh: false,
-          }
-        );
+        // Call the USDA FDC profile action (no Edamam on the creation path)
+        const result = await analyzeRecipeProfileForFormAction({
+          ingredients: ingredientStrings,
+          servings,
+        });
 
         if (result.success && result.data) {
           setData(result.data);
           onSuccess?.(result.data);
 
-          // Show success message with cache info
-          if (result.data.fromCache) {
-            toast.success("Nutrition loaded from cache", {
-              description: `${Math.round(
-                result.data.macros.calories
-              )} kcal per serving`,
-            });
-          } else {
-            toast.success("Nutrition analyzed successfully", {
-              description: `${Math.round(
-                result.data.macros.calories
-              )} kcal per serving`,
-            });
-          }
-
-          // Show diet/health labels if any
-          const labels = [
-            ...result.data.dietLabels,
-            ...result.data.healthLabels,
-          ];
-          if (labels.length > 0) {
-            toast.info(`Labels: ${labels.slice(0, 3).join(", ")}`);
-          }
-
-          // Show cautions if any
-          if (result.data.cautions && result.data.cautions.length > 0) {
-            toast.warning(
-              `Allergen warnings: ${result.data.cautions
-                .slice(0, 3)
-                .join(", ")}`
-            );
-          }
+          toast.success("Nutrition analyzed successfully", {
+            description: `${Math.round(result.data.calories)} kcal per serving`,
+          });
         } else {
           throw new Error(result.error || "Analysis failed");
         }
@@ -120,7 +77,7 @@ export function useRecipeNutrition(options: UseRecipeNutritionOptions = {}) {
         setIsLoading(false);
       }
     },
-    [onSuccess, onError, locale]
+    [onSuccess, onError]
   );
 
   return {

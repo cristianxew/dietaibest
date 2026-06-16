@@ -20,9 +20,14 @@ import {
   type NutritionAnalysisResult,
   type NutritionAnalysisError,
 } from "@/lib/edamam-service";
-import { assertCanUseEdamamAnalysis } from "@/lib/entitlements";
+import {
+  assertCanUseEdamamAnalysis,
+  assertCanCreateRecipe,
+} from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
 import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
+import type { Profile } from "@/lib/fdc";
 
 // Re-export types for use in components
 export type {
@@ -105,6 +110,51 @@ export async function analyzeRecipeNutritionAction(
         error instanceof Error ? error.message : "Failed to analyze recipe",
       code: "INTERNAL_ERROR",
       retryable: false,
+    };
+  }
+}
+
+/**
+ * Analyze a recipe into the full USDA FDC profile for the create/edit form.
+ *
+ * Returns the per-serving 22-nutrient profile so the form can pre-fill every
+ * macro/micro field. Gated by `assertCanCreateRecipe` (same gate as the save).
+ * This replaces the Edamam-backed `analyzeRecipeNutritionAction` on the recipe
+ * creation path — no Edamam call is made here.
+ */
+export async function analyzeRecipeProfileForFormAction(input: {
+  ingredients: string[];
+  servings: number;
+}): Promise<{
+  success: boolean;
+  data?: Profile;
+  error?: string;
+  code?: string;
+}> {
+  try {
+    const user = await getAuthenticatedUser();
+    await assertCanCreateRecipe(user);
+
+    const result = await analyzeRecipeProfileAction(input);
+    if (!result.success) {
+      return { success: false, error: result.error ?? "Analysis failed" };
+    }
+
+    return { success: true, data: result.perServing };
+  } catch (error) {
+    const entError = toEntitlementError(error);
+    if (entError) {
+      return {
+        success: false,
+        error: JSON.stringify(entError),
+        code: entError.code,
+      };
+    }
+    console.error("[Action] analyzeRecipeProfileForForm failed:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to analyze recipe",
     };
   }
 }

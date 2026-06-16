@@ -515,7 +515,10 @@ model UserFavorite {
 ## Nutrition & Caching Models
 
 ### RecipeIngredient
-**Purpose:** Parsed ingredient data with USDA FoodData Central matches
+**Purpose:** Parsed ingredient data with USDA FoodData Central matches.
+**Populated on recipe creation (DIE-42)** by `persistRecipe()` from the FDC
+analysis (`analyzeRecipeProfileAction.items`) — one row per ingredient with its
+resolved `fdcId`, `gramWeight`, and `confidence`. Re-saves use delete-then-insert.
 
 ```prisma
 model RecipeIngredient {

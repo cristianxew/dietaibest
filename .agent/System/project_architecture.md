@@ -292,27 +292,34 @@ dietaibest/
 - Full `next-intl` i18n across `en` / `es` / `pl` under the existing `mealPlans.*` namespace
 
 ### 3. Nutritional Analysis
-**Location:** `src/lib/edamam-service.ts`, `src/components/nutrition/`
 
-**Capabilities:**
-- 28-nutrient analysis via Edamam API
-- ETag-based caching for cost control
-- Ingredient synonym translation (en/es/pl)
-- Diet label detection (vegan, vegetarian, keto, etc.)
-- Health label detection (gluten-free, dairy-free, etc.)
-- Allergen warnings
-- User-specific macro caching (Edamam policy compliance)
+**USDA FoodData Central (FDC) is the single nutrition engine for recipe
+creation** (DIE-42). Every creation path — manual form, URL/image import, and
+the chat `createRecipe` tool — computes the full **22-nutrient profile** (5
+macros + 17 micronutrients) per serving and persists all fields on the Recipe
+row. No Edamam call is made on the creation path.
 
-**Key Functions:**
-- `analyzeRecipeNutrition()` - Full nutrition analysis
-- `getCachedRecipeNutrition()` - Retrieve cached data
-- `saveUserMacroCache()` - Store user-specific macros
-- `getRecipeNutritionSummary()` - Aggregate multiple recipes
+**Location (creation path):** `src/lib/fdc.ts` (extraction/scaling/aggregation
+helpers + nutrient-number map), `src/lib/fdcRepo.ts` (FdcCache TTL + legacy
+core-only refresh), `src/actions/analyzeRecipe.ts` (`analyzeRecipeProfileAction`
++ shared `resolveIngredientMatches`), `src/actions/recipe.ts` `persistRecipe()`
+(writes the 22 fields + `RecipeIngredient` rows), `src/actions/nutrition.ts`
+`analyzeRecipeProfileForFormAction` (form preview button).
 
-**Caching Strategy:**
-1. **Recipe-level cache:** `EdamamRecipeCache` table stores full API responses with ETag
-2. **User-level cache:** `EdamamUserMacroCache` stores only 4 macros (calories, protein, fat, net carbs) per Edamam policy
-3. **Cache invalidation:** 304 Not Modified responses reuse cached data
+**Pipeline:** parse ingredient line → `fdcSearch` → `chooseBestMatch`
+(`DATATYPE_PRIORITY`) → `getFoodsCached` → 7-tier `resolveGramWeight` →
+`extractProfileFromFood` (per 100g, unit-guarded) → `scaleProfilePer100g` →
+`addProfile` across ingredients → `divideProfile` by servings.
+
+**Nutrient mapping:** `PROFILE_NUTRIENT_MAP` in `fdc.ts` (canonical USDA numbers;
+µg/mg-native, never IU). `carbs` stores FDC total carbs (nutrient 205); fiber is
+stored separately.
+
+**Edamam (legacy, retained for non-creation flows only):**
+`src/lib/edamam-service.ts` + the remaining `nutrition.ts` actions
+(`analyzeAndUpdateRecipe`, cached-summary readers) and the `EdamamRecipeCache` /
+`EdamamUserMacroCache` tables are kept for backward compatibility but are no
+longer invoked when creating a recipe. Full removal is a follow-up cleanup.
 
 ### 4. User Onboarding
 **Location:** `src/components/onboarding/`, `src/actions/onboarding.ts`
@@ -353,7 +360,7 @@ See [Recipe Import System](./recipe_import_system.md).
 **Chat import flow:**
 1. User pastes a URL or uploads a photo in the chat
 2. The model calls `importRecipeFromUrl` / `importRecipeFromImage`
-3. The tool extracts structured recipe data, runs Edamam nutrition analysis, and `persistRecipe`s it
+3. The tool extracts structured recipe data, runs FDC nutrition analysis (full 22-nutrient profile), and `persistRecipe`s it
 4. The chat returns a link to the saved recipe
 
 ### 6. Shopping List Generation (Planned)
