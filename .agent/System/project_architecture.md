@@ -309,16 +309,34 @@ macros + 17 micronutrients) per serving and persists all fields on the Recipe
 row. No Edamam call is made on the creation path.
 
 **Location (creation path):** `src/lib/fdc.ts` (extraction/scaling/aggregation
-helpers + nutrient-number map), `src/lib/fdcRepo.ts` (FdcCache TTL + legacy
-core-only refresh), `src/actions/analyzeRecipe.ts` (`analyzeRecipeProfileAction`
-+ shared `resolveIngredientMatches`), `src/actions/recipe.ts` `persistRecipe()`
-(writes the 22 fields + `RecipeIngredient` rows), `src/actions/nutrition.ts`
+helpers + nutrient-number map + `resolveGramWeightFromPortions`),
+`src/lib/gram-resolution.ts` (the pure ingredient→grams `resolveGramWeight`
+ladder), `src/lib/fdcRepo.ts` (FdcCache TTL + legacy core-only refresh),
+`src/actions/analyzeRecipe.ts` (`analyzeRecipeProfileAction` + shared
+`resolveIngredientMatches`), `src/actions/recipe.ts` `persistRecipe()` (writes
+the 22 fields + `RecipeIngredient` rows), `src/actions/nutrition.ts`
 `analyzeRecipeProfileForFormAction` (form preview button).
 
 **Pipeline:** parse ingredient line → `fdcSearch` → `chooseBestMatch`
-(`DATATYPE_PRIORITY`) → `getFoodsCached` → 7-tier `resolveGramWeight` →
-`extractProfileFromFood` (per 100g, unit-guarded) → `scaleProfilePer100g` →
-`addProfile` across ingredients → `divideProfile` by servings.
+(`DATATYPE_PRIORITY`) → `getFoodsCached` → `resolveGramWeight` (6-tier ladder in
+`gram-resolution.ts`) → `extractProfileFromFood` (per 100g, unit-guarded) →
+`scaleProfilePer100g` → `addProfile` across ingredients → `divideProfile` by
+servings.
+
+**Gram-resolution accuracy (DIE-45):** the ingredient→grams step is the FDC
+engine's weak point, so it is resolved by a confidence-scored ladder
+(`gram-resolution.ts`), most-accurate first: direct grams (1.0) → USDA food
+portions (0.9) → branded serving (0.85) → density table exact/whole-word
+(0.7/0.6) → generic water-density conversion (0.5) → assume grams (0.3). Two
+accuracy fixes: `resolveGramWeightFromPortions` now matches USDA's structured
+`measureUnit` (with plural/synonym normalization via `normalizeUnit`) and
+divides `gramWeight` by the portion `amount` (a "2 tbsp = 30g" portion yields
+15g/tbsp, not 30); and `DENSITY_FALLBACK_G_PER_UNIT` (`ingredients.ts`) was
+expanded to ~85 common ingredients so volume/count units rarely fall through to
+the coarse water-density fallback. The per-ingredient `confidence` is persisted
+on `RecipeIngredient.confidence` (internal/debug — no user-facing flagging by
+product decision). Covered by `tests/unit/gram-resolution.test.ts` and
+`tests/unit/fdc-portions.test.ts`.
 
 **Nutrient mapping:** `PROFILE_NUTRIENT_MAP` in `fdc.ts` (canonical USDA numbers;
 µg/mg-native, never IU). `carbs` stores FDC total carbs (nutrient 205); fiber is

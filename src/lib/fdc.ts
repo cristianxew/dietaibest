@@ -7,6 +7,8 @@
 
 import "server-only";
 
+import { normalizeUnit } from "./ingredients";
+
 const API_BASE = "https://api.nal.usda.gov/fdc/v1";
 
 /**
@@ -184,6 +186,12 @@ export interface FdcFoodNutrient {
  */
 export interface FdcFoodPortion {
   id?: number;
+  /**
+   * How many measure units this portion's `gramWeight` covers (e.g. `2` for a
+   * "2 tbsp = 30g" portion). Defaults to 1 when absent. Dividing by it yields
+   * the per-unit gram weight — omitting this silently doubled/tripled weights.
+   */
+  amount?: number;
   portionDescription?: string;
   modifier?: string;
   gramWeight: number;
@@ -441,27 +449,51 @@ export function divideProfile(p: Profile, divisor: number): Profile {
   return out;
 }
 
+/** Does this portion's free-text description/modifier name the target unit? */
+function portionTextMatchesUnit(p: FdcFoodPortion, target: string): boolean {
+  const text = `${p.portionDescription ?? ""} ${p.modifier ?? ""}`;
+  // Tokenize on non-letters and normalize each word so "tablespoons"→"tbsp",
+  // "cups"→"cup". Word-level matching (not substring) avoids false hits like
+  // unit "g" matching the "g" inside "large egg".
+  return text
+    .split(/[^a-zà-ÿ]+/i)
+    .filter(Boolean)
+    .some((w) => normalizeUnit(w) === target);
+}
+
 /**
- * Try to find a portion matching the unit in foodPortions array
- * Returns gram weight for ONE unit (not multiplied by quantity)
+ * Resolve the per-unit gram weight for `unit` from a food's `foodPortions`.
+ *
+ * Prefers USDA's structured `measureUnit` (the reliable signal), falling back to
+ * word-level matching of the free-text description/modifier. The matched
+ * portion's `gramWeight` is divided by its `amount`, so a "2 tbsp = 30g" portion
+ * yields 15g per tbsp. Units are normalized (plurals/synonyms) before comparing.
  *
  * @param food - FDC food object with foodPortions
- * @param unit - Unit to match (e.g., "cup", "tbsp")
- * @returns Gram weight per unit, or null if no match found
+ * @param unit - Unit to match (e.g., "cup", "tbsp", "cloves")
+ * @returns Gram weight for ONE unit, or null if no portion matches
  */
 export function resolveGramWeightFromPortions(
   food: FdcFood,
   unit: string
 ): number | null {
   const portions = food.foodPortions ?? [];
-  const u = unit.toLowerCase();
+  const target = normalizeUnit(unit);
 
-  const hit = portions.find((p) => {
-    const d = `${p.portionDescription ?? ""} ${p.modifier ?? ""}`.toLowerCase();
-    return d.includes(u) || d.replace(/s\b/, "") === u; // crude plural handling
-  });
+  // 1. Structured measureUnit match — the most reliable signal. USDA uses the
+  //    sentinel "undetermined" when there is no real measure unit; skip it.
+  const structuredHit = portions.find((p) =>
+    [p.measureUnit?.abbreviation, p.measureUnit?.name].some(
+      (c) => c && c.toLowerCase() !== "undetermined" && normalizeUnit(c) === target
+    )
+  );
 
-  return hit?.gramWeight ?? null;
+  // 2. Fall back to the free-text description/modifier.
+  const hit = structuredHit ?? portions.find((p) => portionTextMatchesUnit(p, target));
+
+  if (!hit) return null;
+  const amount = hit.amount && hit.amount > 0 ? hit.amount : 1;
+  return hit.gramWeight / amount;
 }
 
 /**

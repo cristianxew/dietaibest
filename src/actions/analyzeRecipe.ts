@@ -9,15 +9,12 @@
 
 import {
   parseIngredientLine,
-  DENSITY_FALLBACK_G_PER_UNIT,
   type ParsedIngredient,
 } from "@/lib/ingredients";
 import {
   fdcSearch,
   extractMacrosFromFood,
   scalePer100g,
-  resolveGramWeightFromPortions,
-  extractBrandedServing,
   extractProfileFromFood,
   scaleProfilePer100g,
   addProfile,
@@ -29,6 +26,7 @@ import {
   type FdcFood,
   type FdcSearchFood,
 } from "@/lib/fdc";
+import { resolveGramWeight } from "@/lib/gram-resolution";
 import { getFoodsCached } from "@/lib/fdcRepo";
 
 /**
@@ -164,111 +162,6 @@ function chooseBestMatch(foods: FdcSearchFood[]): FdcSearchFood | null {
   });
 
   return sorted[0];
-}
-
-/**
- * Resolve gram weight for an ingredient using multiple strategies
- * Returns { grams, confidence, note }
- */
-async function resolveGramWeight(
-  parsed: ParsedIngredient,
-  food: FdcFood
-): Promise<{ grams: number; confidence: number; note: string }> {
-  const { qty, unit, name } = parsed;
-
-  // Strategy 1: If unit is already grams, use directly
-  if (unit === "g" || unit === "gram" || unit === "grams") {
-    return {
-      grams: qty,
-      confidence: 1.0,
-      note: "Direct gram measurement",
-    };
-  }
-
-  // Strategy 2: Try resolving from FDC food portions
-  const portionGrams = resolveGramWeightFromPortions(food, unit);
-  if (portionGrams !== null) {
-    return {
-      grams: qty * portionGrams,
-      confidence: 0.9,
-      note: `USDA portion: ${portionGrams}g per ${unit}`,
-    };
-  }
-
-  // Strategy 3: Try branded serving info (for branded foods)
-  if (food.dataType === "Branded") {
-    const branded = extractBrandedServing(food);
-    if (branded.gramsPerServing !== null) {
-      // Assume "piece" or "serving" maps to one branded serving
-      if (unit === "piece" || unit === "serving" || unit === "package") {
-        return {
-          grams: qty * branded.gramsPerServing,
-          confidence: 0.85,
-          note: `Branded serving: ${branded.gramsPerServing}g per serving`,
-        };
-      }
-    }
-  }
-
-  // Strategy 4: Try density fallback lookup
-  const densityKey = name.toLowerCase();
-  if (DENSITY_FALLBACK_G_PER_UNIT[densityKey]) {
-    const gramsPerUnit = DENSITY_FALLBACK_G_PER_UNIT[densityKey][unit];
-    if (gramsPerUnit !== undefined) {
-      return {
-        grams: qty * gramsPerUnit,
-        confidence: 0.7,
-        note: `Density fallback: ${gramsPerUnit}g per ${unit}`,
-      };
-    }
-  }
-
-  // Strategy 5: Try partial name match in density fallback
-  for (const [key, units] of Object.entries(DENSITY_FALLBACK_G_PER_UNIT)) {
-    if (densityKey.includes(key) || key.includes(densityKey)) {
-      const gramsPerUnit = units[unit];
-      if (gramsPerUnit !== undefined) {
-        return {
-          grams: qty * gramsPerUnit,
-          confidence: 0.6,
-          note: `Density fallback (partial match "${key}"): ${gramsPerUnit}g per ${unit}`,
-        };
-      }
-    }
-  }
-
-  // Strategy 6: Common volume/weight conversions
-  const commonConversions: Record<string, number> = {
-    oz: 28.35,
-    lb: 453.6,
-    kg: 1000,
-    ml: 1, // assume water density
-    l: 1000,
-    cup: 240, // assume water/liquid density
-    tbsp: 15,
-    tsp: 5,
-    pint: 473,
-    quart: 946,
-    gallon: 3785,
-  };
-
-  if (commonConversions[unit]) {
-    return {
-      grams: qty * commonConversions[unit],
-      confidence: 0.5,
-      note: `Generic conversion: ${commonConversions[unit]}g per ${unit}`,
-    };
-  }
-
-  // Strategy 7: Last resort - assume qty is in grams
-  console.warn(
-    `[analyzeRecipe] Could not resolve unit "${unit}" for "${name}", assuming quantity is grams`
-  );
-  return {
-    grams: qty,
-    confidence: 0.3,
-    note: `Assumed ${qty} ${unit} = ${qty}g (low confidence)`,
-  };
 }
 
 /**
@@ -456,7 +349,7 @@ async function resolveIngredientMatches(
       });
       continue;
     }
-    const { grams, confidence, note } = await resolveGramWeight(parsed, food);
+    const { grams, confidence, note } = resolveGramWeight(parsed, food);
     resolved.push({ parsed, bestMatch, food, grams, confidence, note });
   }
 
