@@ -18,6 +18,7 @@ export {
 import {
   useRecipeFlowState,
   validationFieldsFor,
+  firstStepWithError,
   type ModalScreen,
   type RecipeFlowCtx,
 } from "./use-recipe-flow";
@@ -47,6 +48,10 @@ export function useRecipeModalState(): { modal: RecipeFlowCtx; form: RecipeFormC
     recipeId: flow.recipeId,
     isOpen: flow.isOpen,
     onSubmitSuccess: useCallback(() => flow.goToScreen("success"), [flow.goToScreen]),
+    onValidationError: useCallback((errorFields: string[]) => {
+      const step = firstStepWithError(errorFields);
+      if (step) flow.goToScreen(step);
+    }, [flow.goToScreen]),
   });
 
   // Wire refs to the latest form methods (synchronous during render — safe)

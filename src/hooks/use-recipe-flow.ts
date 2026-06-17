@@ -60,6 +60,20 @@ export function validationFieldsFor(screen: ModalScreen): (keyof RecipeFormData)
   return step ? [...step.fields] : [];
 }
 
+/**
+ * Given the names of fields that failed validation, return the first stepper
+ * screen that owns one of them — so a failed save can jump to the step holding
+ * the first invalid field. Returns null when no errored field maps to a step.
+ */
+export function firstStepWithError(errorFields: string[]): ModalScreen | null {
+  for (const step of STEPPER_CONFIG) {
+    if (step.fields.some((f) => errorFields.includes(f))) {
+      return step.id as ModalScreen;
+    }
+  }
+  return null;
+}
+
 export interface RecipeFlowCtx {
   isOpen: boolean;
   screen: ModalScreen;
