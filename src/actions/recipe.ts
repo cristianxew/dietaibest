@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import {
@@ -15,7 +16,11 @@ import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
 import {
   assertCanCreateRecipe,
   assertCanImportRecipe,
+  assertCanUseAiChat,
+  getEntitlements,
 } from "@/lib/entitlements";
+import type { AgentContext } from "@/lib/chat/context";
+import { generateRecipeImage } from "@/lib/chat/tools/generateRecipeImage";
 import { serverAction } from "@/lib/server-action";
 import { formatIngredientsForNutrition } from "@/lib/ingredients";
 import { getAuthorName } from "@/lib/author-name";
@@ -864,4 +869,50 @@ export async function createDefaultCategories() {
         error instanceof Error ? error.message : "Failed to create categories",
     };
   }
+}
+
+// Generate recipe image using AI
+export async function generateRecipeImageWithAI(recipeId: string) {
+  return serverAction(
+    {
+      input: z.string().min(1),
+      requires: async (_, ctx) => {
+        await assertCanUseAiChat(ctx.user);
+      },
+      revalidates: () => ["/recipes", `/recipes/${recipeId}`],
+    },
+    async (ctx, id) => {
+      const recipe = await prisma.recipe.findUnique({
+        where: { id: id },
+        select: { userId: true },
+      });
+
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+
+      if (recipe.userId !== ctx.user.id) {
+        throw new Error("Only the owner can update the recipe image");
+      }
+
+      const entitlements = getEntitlements(ctx.user);
+      const agentCtx: AgentContext = {
+        userId: ctx.user.id,
+        locale: "en",
+        entitlements,
+        conversationId: "server-action-direct",
+      };
+
+      const result = await generateRecipeImage.execute(
+        { recipeId: id, confirmed: true },
+        agentCtx
+      );
+
+      if (!result.ok) {
+        throw new Error(result.message || "Failed to generate image");
+      }
+
+      return result.data;
+    }
+  )(recipeId);
 }

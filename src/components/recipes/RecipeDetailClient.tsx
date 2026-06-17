@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Prisma } from "@/generated/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine, ChefHat, Camera, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine, ChefHat, Camera, Trash2, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -16,11 +16,18 @@ import { RecipeScalableContent } from "./RecipeScalableContent";
 import { InstructionsList } from "./InstructionsList";
 import { MacroDisplay } from "./MacroDisplay";
 import { RecipeMicronutrients } from "./RecipeMicronutrients";
-import { AskDietAIButton } from "@/components/chat/AskDietAIButton";
-import { selectCapabilitiesForPath } from "@/lib/chat/capabilities";
+
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { recipeToFormData } from "@/lib/recipe-utils";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { generateRecipeImageWithAI } from "@/actions/recipe";
+import { usePaywall } from "@/components/billing/PaywallProvider";
 
 interface RecipeDetailClientProps {
   recipe: {
@@ -119,22 +126,17 @@ export function RecipeDetailClient({
   authorName,
 }: RecipeDetailClientProps) {
   const t = useTranslations("recipes");
-  const tChat = useTranslations("chat");
-  const tCaps = useTranslations("chat.capabilities");
+  const paywall = usePaywall();
   const [selectedPortions, setSelectedPortions] = useState(recipe.servings);
   const [imageError, setImageError] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(recipe.imageUrl);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { openEdit } = useRecipeModal();
 
   const multiplier = selectedPortions / recipe.servings;
   const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
-  const askCapabilities = selectCapabilitiesForPath(
-    `/${locale}/recipes/${recipe.id}`,
-    locale,
-    3
-  );
   const showImage = Boolean(currentImageUrl && !imageError);
   const primaryCategory = recipe.categories[0]?.name || 'DINNER';
   const styles = getCategoryStyles(primaryCategory);
@@ -203,6 +205,33 @@ export function RecipeDetailClient({
     }
   };
 
+  const handleGenerateAIImage = async () => {
+    setIsGeneratingAI(true);
+    try {
+      const result = await generateRecipeImageWithAI(recipe.id);
+      if (result.error) {
+        if (typeof result.error === "string") {
+          throw new Error(result.error);
+        } else {
+          paywall.open(result.error);
+          return;
+        }
+      }
+      if (result.data?.imageUrl) {
+        setCurrentImageUrl(result.data.imageUrl);
+        setImageError(false);
+        toast.success(t("imageUpdated"));
+      } else {
+        throw new Error("No image URL returned");
+      }
+    } catch (error: any) {
+      console.error("[RecipeDetailClient] Failed to generate image:", error);
+      toast.error(t("generateImageError") + (error.message ? `: ${error.message}` : ""));
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   return (
     <PageContainer>
       <Link
@@ -230,27 +259,29 @@ export function RecipeDetailClient({
               />
               {isOwner && (
                 <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px] z-10">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-medium text-sm border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
-                  >
-                    <Camera className="h-4 w-4" />
-                    {t("editImage")}
-                  </button>
-                  <button
-                    onClick={handleDeleteImage}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-100 font-medium text-sm border border-red-500/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {t("deleteImage")}
-                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                        >
+                          <Camera className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("editImage")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               )}
-              {isUploading && (
+              {(isUploading || isGeneratingAI) && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-all duration-300 z-20">
                   <Loader2 className="h-8 w-8 text-white animate-spin" />
                   <span className="text-sm font-semibold text-white tracking-wide">
-                    {t("uploadingImage")}
+                    {isUploading ? t("uploadingImage") : t("generatingImageWithAI")}
                   </span>
                 </div>
               )}
@@ -280,23 +311,47 @@ export function RecipeDetailClient({
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/5" />
               {isOwner && (
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 cursor-pointer backdrop-blur-[2px] z-20"
-                >
-                  <div className="h-12 w-12 rounded-full bg-white/20 border border-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg transition-transform hover:scale-110 active:scale-95">
-                    <Camera className="h-5 w-5" />
-                  </div>
-                  <span className="text-xs font-semibold text-white tracking-wide">
-                    {t("editImage")}
-                  </span>
+                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-row items-center justify-center gap-4 backdrop-blur-[2px] z-20">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                        >
+                          <Camera className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("editImage")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={handleGenerateAIImage}
+                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                        >
+                          <Sparkles className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t("generateImageWithAI")}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               )}
-              {isUploading && (
+              {(isUploading || isGeneratingAI) && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3 transition-all duration-300 z-30">
                   <Loader2 className="h-8 w-8 text-white animate-spin" />
                   <span className="text-sm font-semibold text-white tracking-wide">
-                    {t("uploadingImage")}
+                    {isUploading ? t("uploadingImage") : t("generatingImageWithAI")}
                   </span>
                 </div>
               )}
@@ -383,22 +438,7 @@ export function RecipeDetailClient({
             </div>
           </div>
 
-          {/* Ask DietAI */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              {tChat("entry.recipeDetail.ask")}
-            </span>
-            {askCapabilities.map((cap) => (
-              <AskDietAIButton
-                key={cap.id}
-                prompt={tCaps(
-                  cap.entityAware ? `${cap.id}.entityPrompt` : `${cap.id}.prompt`
-                )}
-              >
-                {tCaps(`${cap.id}.label`)}
-              </AskDietAIButton>
-            ))}
-          </div>
+
 
           {/* Adjust Servings */}
           <div className="flex items-center justify-between bg-card border border-border/60 rounded-xl px-5 py-3.5 shadow-sm">
