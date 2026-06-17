@@ -168,17 +168,32 @@ model UserFavorite {
 // ============================================================================
 
 model FdcCache {
-  fdcId          Int      @id
-  description    String
-  dataType       String
-  brandOwner     String?  @db.VarChar(255)
-  foodPortions   Json? // from FDC foodPortions array
-  foodNutrients  Json? // from FDC foodNutrients (abridged or full)
-  labelNutrients Json? // Branded foods per serving info if present
-  lastFetchedAt  DateTime @default(now())
+  fdcId           Int      @id
+  description     String
+  dataType        String
+  brandOwner      String?  @db.VarChar(255)
+  foodPortions    Json? // from FDC foodPortions array
+  foodNutrients   Json? // from FDC foodNutrients (abridged or full)
+  labelNutrients  Json? // Branded foods per serving info if present
+  lastFetchedAt   DateTime @default(now())
+  // Which nutrient set this cached row holds: "core" (5 macros, legacy) or
+  // "extended" (full registry). Added by 20260610000000; modeled here to keep
+  // schema↔migrations↔DB consistent (the column exists on the shared DB).
+  nutrientProfile String   @default("core")
 
   @@index([dataType])
   @@index([description])
+}
+
+// Caches the USDA FDC ingredient *search* step (food detail is cached above in
+// FdcCache). Keyed by the normalized query so repeated analyses of recipes that
+// share ingredients reuse cached results instead of re-hitting USDA search.
+model FdcSearchCache {
+  query         String   @id // normalized query (lowercased, whitespace-collapsed)
+  results       Json // cached FdcSearchFood[] from the USDA search endpoint
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
 }
 
 model RecipeIngredient {

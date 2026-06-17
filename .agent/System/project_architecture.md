@@ -311,17 +311,30 @@ row. No Edamam call is made on the creation path.
 **Location (creation path):** `src/lib/fdc.ts` (extraction/scaling/aggregation
 helpers + nutrient-number map + `resolveGramWeightFromPortions`),
 `src/lib/gram-resolution.ts` (the pure ingredient→grams `resolveGramWeight`
-ladder), `src/lib/fdcRepo.ts` (FdcCache TTL + legacy core-only refresh),
+ladder), `src/lib/fdcRepo.ts` (FdcCache food-detail TTL + legacy core-only
+refresh + `searchFoodsCached` ingredient-search cache),
 `src/actions/analyzeRecipe.ts` (`analyzeRecipeProfileAction` + shared
 `resolveIngredientMatches`), `src/actions/recipe.ts` `persistRecipe()` (writes
 the 22 fields + `RecipeIngredient` rows), `src/actions/nutrition.ts`
 `analyzeRecipeProfileForFormAction` (form preview button).
 
-**Pipeline:** parse ingredient line → `fdcSearch` → `chooseBestMatch`
+**Pipeline:** parse ingredient line → `searchFoodsCached` → `chooseBestMatch`
 (`DATATYPE_PRIORITY`) → `getFoodsCached` → `resolveGramWeight` (6-tier ladder in
 `gram-resolution.ts`) → `extractProfileFromFood` (per 100g, unit-guarded) →
 `scaleProfilePer100g` → `addProfile` across ingredients → `divideProfile` by
 servings.
+
+**Search caching (DIE-46):** both USDA round-trips are now DB-cached. The
+food-*detail* fetch was already cached (`getFoodsCached` → `FdcCache`); the
+ingredient *search* step is cached by `searchFoodsCached` (`fdcRepo.ts`) into the
+`FdcSearchCache` table, keyed by the normalized query (lowercased,
+whitespace-collapsed). TTL is **90 days** — the same value `FdcCache`'s `isStale`
+falls back to for entries without a known dataType, since a search result spans
+multiple dataTypes. On a USDA error with a stale row present it serves stale
+(rate-limit resilience); with nothing cached it rethrows so callers' existing
+handling applies. Both callers use it — `resolveIngredientMatches`
+(`analyzeRecipe.ts`) and the `/api/fdc/search` autocomplete route. `fdcSearch`
+stays pure (network only). Covered by `tests/unit/fdc-search-cache.test.ts`.
 
 **Gram-resolution accuracy (DIE-45):** the ingredient→grams step is the FDC
 engine's weak point, so it is resolved by a confidence-scored ladder

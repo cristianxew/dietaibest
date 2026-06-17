@@ -14,11 +14,24 @@ import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import {
   fdcFoodsByIds,
+  fdcSearch,
   MICRO_NUTRIENT_NUMBERS,
   type FdcFood,
+  type FdcSearchFood,
 } from "@/lib/fdc";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * TTL for cached ingredient SEARCH results.
+ *
+ * A search result spans multiple data types (Foundation, SR Legacy, Branded…),
+ * so it has no single dataType to key a TTL on. We use 90 days — the same value
+ * `isStale` falls back to for entries without a known dataType — keeping the
+ * search cache consistent with the food-detail cache. Ingredient→food mappings
+ * are extremely stable, so the savings are large and the staleness risk is low.
+ */
+const SEARCH_TTL_MS = 90 * MS_DAY;
 
 /**
  * Time-to-live (TTL) for different data types in milliseconds
@@ -206,6 +219,91 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
   return fdcIds
     .map((id) => byId.get(id))
     .filter((food): food is FdcFood => food !== undefined);
+}
+
+/**
+ * Normalize a search query into a stable cache key: lowercased, with internal
+ * whitespace collapsed to single spaces and the ends trimmed. Both callers
+ * (recipe analysis and the autocomplete route) feed user/parsed text, so this
+ * collapses trivial variants ("Yellow  Onion " ≡ "yellow onion") onto one key.
+ */
+export function normalizeSearchQuery(query: string): string {
+  return query.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** Search results older than the TTL must be refreshed. */
+function isSearchStale(lastFetchedAt: Date | null | undefined): boolean {
+  if (!lastFetchedAt) return true;
+  return Date.now() - lastFetchedAt.getTime() > SEARCH_TTL_MS;
+}
+
+/**
+ * Search USDA FDC for foods matching a query, with DB caching.
+ *
+ * Mirrors `getFoodsCached` for the search step: the food-detail fetch was
+ * already cached, but each analysis still fired one live USDA *search* per
+ * ingredient. Caching by normalized query lets recipes that share ingredients
+ * reuse results instead of re-hitting the search endpoint.
+ *
+ * Logic Flow:
+ * 1. Normalize the query into the cache key (empty key → no work, return []).
+ * 2. Look up the cached row; serve it when still fresh (within TTL).
+ * 3. On miss/stale, fetch live via `fdcSearch` and upsert the result.
+ * 4. On USDA error, serve a stale-but-present row (rate-limit resilience);
+ *    rethrow only when there's nothing cached, so callers' existing error
+ *    handling is preserved.
+ *
+ * @param query - Ingredient search term (e.g. "chicken breast", "onion")
+ * @returns The search foods (USDA's default data-type set), possibly stale
+ */
+export async function searchFoodsCached(
+  query: string
+): Promise<FdcSearchFood[]> {
+  const key = normalizeSearchQuery(query);
+  if (!key) return [];
+
+  // 1. Look up the cached row.
+  const cached = await prisma.fdcSearchCache.findUnique({
+    where: { query: key },
+  });
+
+  // 2. Fresh? Serve it without touching USDA.
+  if (cached && !isSearchStale(cached.lastFetchedAt)) {
+    console.log(`[FDC Search Cache] Hit for "${key}"`);
+    return (cached.results as unknown as FdcSearchFood[]) ?? [];
+  }
+
+  // 3. Miss or stale → fetch live and refresh the cache.
+  try {
+    console.log(`[FDC Search Cache] ${cached ? "Stale" : "Miss"} for "${key}" — querying USDA`);
+    const result = await fdcSearch(key);
+    const foods = result.foods ?? [];
+
+    await prisma.fdcSearchCache.upsert({
+      where: { query: key },
+      update: {
+        results: foods as unknown as Prisma.InputJsonValue,
+        lastFetchedAt: new Date(),
+      },
+      create: {
+        query: key,
+        results: foods as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    return foods;
+  } catch (error) {
+    // 4. Graceful degradation: a stale row beats nothing when USDA is down or
+    // rate-limiting. Only rethrow when we have no cached fallback.
+    if (cached) {
+      console.warn(
+        `[FDC Search Cache] USDA search failed for "${key}"; serving stale cache:`,
+        error
+      );
+      return (cached.results as unknown as FdcSearchFood[]) ?? [];
+    }
+    throw error;
+  }
 }
 
 /**

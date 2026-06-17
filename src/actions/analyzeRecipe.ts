@@ -12,7 +12,6 @@ import {
   type ParsedIngredient,
 } from "@/lib/ingredients";
 import {
-  fdcSearch,
   extractMacrosFromFood,
   scalePer100g,
   extractProfileFromFood,
@@ -27,7 +26,7 @@ import {
   type FdcSearchFood,
 } from "@/lib/fdc";
 import { resolveGramWeight } from "@/lib/gram-resolution";
-import { getFoodsCached } from "@/lib/fdcRepo";
+import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
 
 /**
  * Input parameters for recipe analysis
@@ -300,8 +299,8 @@ async function resolveIngredientMatches(
   const searchResults = await Promise.all(
     parsed.map(async (p) => {
       try {
-        const result = await fdcSearch(p.name);
-        return { parsed: p, foods: result.foods || [] };
+        const foods = await searchFoodsCached(p.name);
+        return { parsed: p, foods };
       } catch (error) {
         console.error(`[analyzeRecipe] Search failed for "${p.name}":`, error);
         return { parsed: p, foods: [] };

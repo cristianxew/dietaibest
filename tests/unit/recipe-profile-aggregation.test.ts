@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock only the network leaves: keep the real pure extract/scale/add/divide.
-vi.mock("@/lib/fdc", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fdc")>();
-  return { ...actual, fdcSearch: vi.fn() };
-});
-vi.mock("@/lib/fdcRepo", () => ({ getFoodsCached: vi.fn() }));
+// Mock only the cache/network seam in fdcRepo (search + food-detail). The pure
+// extract/scale/add/divide helpers in @/lib/fdc stay real so the math is tested.
+vi.mock("@/lib/fdcRepo", () => ({
+  getFoodsCached: vi.fn(),
+  searchFoodsCached: vi.fn(),
+}));
 
-import { fdcSearch, type FdcFood } from "@/lib/fdc";
-import { getFoodsCached } from "@/lib/fdcRepo";
+import { type FdcFood } from "@/lib/fdc";
+import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
 import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
 
 const spinachFood: FdcFood = {
@@ -35,12 +35,12 @@ const chickenFood: FdcFood = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(fdcSearch).mockImplementation(async (q: string) => {
+  vi.mocked(searchFoodsCached).mockImplementation(async (q: string) => {
     if (q.includes("spinach"))
-      return { foods: [{ fdcId: 168462, description: "Spinach, raw", dataType: "SR Legacy" }] };
+      return [{ fdcId: 168462, description: "Spinach, raw", dataType: "SR Legacy" }];
     if (q.includes("chicken"))
-      return { foods: [{ fdcId: 171077, description: "Chicken breast, raw", dataType: "SR Legacy" }] };
-    return { foods: [] };
+      return [{ fdcId: 171077, description: "Chicken breast, raw", dataType: "SR Legacy" }];
+    return [];
   });
   vi.mocked(getFoodsCached).mockImplementation(async (ids: number[]) =>
     [spinachFood, chickenFood].filter((f) => ids.includes(f.fdcId))
@@ -84,7 +84,7 @@ describe("analyzeRecipeProfileAction — full-profile aggregation", () => {
   });
 
   it("lets an unmatched ingredient contribute zeros without breaking", async () => {
-    vi.mocked(fdcSearch).mockResolvedValue({ foods: [] });
+    vi.mocked(searchFoodsCached).mockResolvedValue([]);
     const r = await analyzeRecipeProfileAction({
       ingredients: ["1 cup zzzznotafood"],
       servings: 1,

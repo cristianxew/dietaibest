@@ -558,14 +558,15 @@ model RecipeIngredient {
 
 ```prisma
 model FdcCache {
-  fdcId          Int      @id
-  description    String
-  dataType       String   // Foundation, SR Legacy, Branded, etc.
-  brandOwner     String?  @db.VarChar(255)
-  foodPortions   Json?    // Portion size data
-  foodNutrients  Json?    // Full nutritional breakdown
-  labelNutrients Json?    // Branded food label info
-  lastFetchedAt  DateTime @default(now())
+  fdcId           Int      @id
+  description     String
+  dataType        String   // Foundation, SR Legacy, Branded, etc.
+  brandOwner      String?  @db.VarChar(255)
+  foodPortions    Json?    // Portion size data
+  foodNutrients   Json?    // Full nutritional breakdown
+  labelNutrients  Json?    // Branded food label info
+  lastFetchedAt   DateTime @default(now())
+  nutrientProfile String   @default("core") // "core" (5 macros) | "extended" (full registry)
 
   @@index([dataType])
   @@index([description])
@@ -578,9 +579,34 @@ model FdcCache {
 - JSON fields for flexible storage
 
 **Use Cases:**
-- Reduce API calls to USDA
+- Reduce API calls to USDA (food *detail* step)
 - Offline ingredient matching
 - Performance optimization
+
+---
+
+### FdcSearchCache
+**Purpose:** Cache the USDA FDC ingredient *search* step (DIE-46). Complements
+`FdcCache` (which caches food *detail*) so a recipe analysis issues no live USDA
+search for an ingredient already seen.
+
+```prisma
+model FdcSearchCache {
+  query         String   @id // normalized query (lowercased, whitespace-collapsed)
+  results       Json         // cached FdcSearchFood[] from the search endpoint
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+```
+
+**Key Constraints:**
+- `query` (normalized) is the primary key — repeated/shared ingredients collapse onto one row
+- Index on `lastFetchedAt` for stale-entry maintenance
+
+**Freshness:** 90-day TTL (consistent with `FdcCache`'s unknown-dataType
+fallback). Managed by `searchFoodsCached` in `src/lib/fdcRepo.ts`; serves stale
+on USDA error when a row exists (rate-limit resilience).
 
 ---
 
