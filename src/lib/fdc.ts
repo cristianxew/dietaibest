@@ -295,7 +295,20 @@ export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
     throw new Error(`FDC foods fetch failed: ${res.status} ${res.statusText}`);
   }
 
-  return (await res.json()) as FdcFood[];
+  // The endpoint normally returns a JSON array, but USDA has been observed
+  // replying `200` with a non-array body (e.g. `{}`) under rate-limit/error.
+  // The old `as FdcFood[]` cast lied to the compiler and let `{}` reach a
+  // `for...of` downstream, throwing "not iterable" and silently dropping the
+  // whole batch. Always hand callers a real array.
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    console.warn(
+      `[fdc] foods endpoint returned a non-array response (${typeof data}) for ${fdcIds.length} id(s); treating as empty`
+    );
+    return [];
+  }
+
+  return data as FdcFood[];
 }
 
 // --- Macros extraction & scaling helpers ---

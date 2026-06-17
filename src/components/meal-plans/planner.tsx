@@ -15,6 +15,8 @@ import { toast } from 'sonner';
 import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
 import { compareMacro, getMacroStatusColor } from '@/lib/meal-plan-macros';
 import { RecipeSidebarSkeleton } from './MealPlannerSkeletons';
+import { MicronutrientPanel } from './MicronutrientPanel';
+import type { ReferenceIntakes } from '@/lib/nutrition-rda';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -616,9 +618,10 @@ interface LayoutProps {
   onServingsChange: (mealId: string, servings: number) => void;
   onSlotSelect?: (dayId: string, mealType: MealType) => void;
   showServings?: boolean;
+  reference: ReferenceIntakes;
 }
 
-export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false }: LayoutProps) {
+export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false, reference }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
 
@@ -662,6 +665,12 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
                 );
               })}
             </div>
+            <MicronutrientPanel
+              variant="day"
+              micros={day.micros}
+              reference={reference}
+              className="mt-3.5"
+            />
           </div>
         );
       })}
@@ -670,7 +679,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
 }
 
 /* ── SplitLayout ───────────────────────────────── */
-export function SplitLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = true }: LayoutProps) {
+export function SplitLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = true, reference }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
@@ -761,6 +770,12 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
               );
             })}
           </div>
+          <MicronutrientPanel
+            variant="day"
+            micros={selectedDay.micros}
+            reference={reference}
+            className="mt-5"
+          />
         </div>
       )}
     </div>

@@ -134,8 +134,21 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
     try {
       const fetched = await fdcFoodsByIds([...missingOrStale]);
 
+      // Defense in depth: `fdcFoodsByIds` is hardened to always return an
+      // array, but a non-array slipping through here would throw "not
+      // iterable" and the catch below would swallow it — silently dropping
+      // the entire batch. Guard explicitly so the batch can't vanish without
+      // a trace; the unresolved-id warning after this block reports the gap.
+      const foods = Array.isArray(fetched) ? fetched : [];
+      if (!Array.isArray(fetched)) {
+        console.warn(
+          `[FDC Cache] fdcFoodsByIds returned a non-array (${typeof fetched}); ` +
+            `${missingOrStale.size} id(s) left unresolved`
+        );
+      }
+
       // 5. Upsert fetched data into cache
-      for (const food of fetched) {
+      for (const food of foods) {
         await prisma.fdcCache.upsert({
           where: { fdcId: food.fdcId },
           update: {
@@ -165,11 +178,23 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
         byId.set(food.fdcId, food);
       }
 
-      console.log(`[FDC Cache] Successfully cached ${fetched.length} entries`);
+      console.log(`[FDC Cache] Successfully cached ${foods.length} entries`);
     } catch (error) {
       console.error("[FDC Cache] Error fetching from USDA API:", error);
       // Don't throw - return whatever we have cached even if stale
       // This provides graceful degradation when API is unavailable
+    }
+
+    // Surface the count of ids we could not resolve (non-array response,
+    // network error, or the API simply omitting some ids). Callers consuming
+    // the returned foods then know the profile is incomplete rather than
+    // trusting a silently-truncated batch.
+    const unresolvedIds = [...missingOrStale].filter((id) => !byId.has(id));
+    if (unresolvedIds.length > 0) {
+      console.warn(
+        `[FDC Cache] ${unresolvedIds.length} of ${missingOrStale.size} requested ` +
+          `id(s) unresolved (incomplete profile): ${unresolvedIds.join(", ")}`
+      );
     }
   } else {
     console.log(

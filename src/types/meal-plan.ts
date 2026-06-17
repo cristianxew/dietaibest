@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { MicronutrientKey } from "@/lib/nutrition-fields";
 
 // ============================================================================
 // Meal Type Enum
@@ -216,6 +217,13 @@ export interface MacroSummary {
   fat: number;
 }
 
+/**
+ * Daily-aggregated micronutrient totals. Keyed by the 17 micronutrient columns
+ * persisted on the Recipe (see `MICRONUTRIENT_KEYS`, the single source of truth).
+ * Every value is in the same unit as the corresponding Recipe column.
+ */
+export type MicronutrientSummary = Record<MicronutrientKey, number>;
+
 export interface DayMacros extends MacroSummary {
   dayNumber: number; // Relative day number in template (1, 2, 3, ...)
   date?: Date; // Optional: calculated date for schedules
@@ -263,6 +271,7 @@ export interface MealDisplay {
   protein: number;
   carbs: number;
   fat: number;
+  micros: MicronutrientSummary;
 }
 
 export interface DayDisplay {
@@ -271,6 +280,7 @@ export interface DayDisplay {
   date?: Date; // Optional: calculated date for schedules
   meals: MealDisplay[];
   macros: MacroSummary;
+  micros: MicronutrientSummary;
 }
 
 // Template display (no dates, just structure)
@@ -284,6 +294,7 @@ export interface MealPlanTemplateDisplay {
   targets?: MacroTarget;
   days: DayDisplay[];
   averageMacros: MacroSummary; // Average macros per day
+  averageMicros: MicronutrientSummary; // Average micronutrients per day
 }
 
 // Schedule display (template + dates)

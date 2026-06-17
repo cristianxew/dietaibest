@@ -709,6 +709,21 @@
       "carbs": "Carbos",
       "fat": "Grasas"
     },
+    "micronutrients": {
+      "title": "Micronutrientes",
+      "dailyAverage": "promedio diario",
+      "perDay": "este día",
+      "ofTarget": "{pct}% VD",
+      "ofLimit": "{pct}% del límite",
+      "sourcePersonalized": "Según tu edad y sexo",
+      "sourceStandard": "Según los valores diarios estándar (%VD)",
+      "empty": "Todavía no hay datos de micronutrientes para estas recetas.",
+      "group": {
+        "vitamins": "Vitaminas",
+        "minerals": "Minerales",
+        "other": "Otros"
+      }
+    },
     "layout": {
       "grid": "Grilla",
       "stack": "Apilado",

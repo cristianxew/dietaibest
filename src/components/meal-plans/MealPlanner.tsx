@@ -39,7 +39,9 @@ import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } fro
 import { PublicPlans } from "./PublicPlans";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
+import { MicronutrientPanel } from "./MicronutrientPanel";
 import { RecipePicker } from "./RecipePicker";
+import type { ReferenceIntakes } from "@/lib/nutrition-rda";
 import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
@@ -54,8 +56,13 @@ import {
   StackLayoutSkeleton,
   SplitLayoutSkeleton,
 } from "./MealPlannerSkeletons";
-import { sumMacros } from "@/lib/meal-plan-macros";
-import type { DayDisplay, MacroSummary } from "@/types/meal-plan";
+import { sumMacros, sumMicros, emptyMicros } from "@/lib/meal-plan-macros";
+import { MICRONUTRIENT_KEYS } from "@/lib/nutrition-fields";
+import type {
+  DayDisplay,
+  MacroSummary,
+  MicronutrientSummary,
+} from "@/types/meal-plan";
 import { openChatWithPrompt } from "@/components/chat/openChat";
 
 function updateTemplateServingsOptimistically(
@@ -78,6 +85,12 @@ function updateTemplateServingsOptimistically(
       const baseServings = base.servings || 1;
       const scale = (v: number) => Math.round((v / baseServings) * newServings * 10) / 10;
 
+      const baseMicros = base.micros ?? emptyMicros();
+      const scaledMicros = {} as MicronutrientSummary;
+      for (const key of MICRONUTRIENT_KEYS) {
+        scaledMicros[key] = scale(baseMicros[key] ?? 0);
+      }
+
       return {
         ...meal,
         servings: newServings,
@@ -85,6 +98,7 @@ function updateTemplateServingsOptimistically(
         protein: scale(base.protein),
         carbs: scale(base.carbs),
         fat: scale(base.fat),
+        micros: scaledMicros,
       };
     });
 
@@ -92,6 +106,7 @@ function updateTemplateServingsOptimistically(
       ...day,
       meals: updatedMeals,
       macros: sumMacros(updatedMeals),
+      micros: sumMicros(updatedMeals.map((m) => m.micros)),
     };
   });
 
@@ -107,14 +122,28 @@ function updateTemplateServingsOptimistically(
     }
     : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
+  const averageMicros: MicronutrientSummary = emptyMicros();
+  if (updatedDays.length) {
+    const summed = sumMicros(updatedDays.map((d) => d.micros));
+    for (const key of MICRONUTRIENT_KEYS) {
+      averageMicros[key] = Math.round((summed[key] / updatedDays.length) * 10) / 10;
+    }
+  }
+
   return {
     ...template,
     days: updatedDays,
     averageMacros,
+    averageMicros,
   };
 }
 
-export function MealPlanner() {
+interface MealPlannerProps {
+  /** Micronutrient reference intakes (personalized or standard DV). */
+  reference: ReferenceIntakes;
+}
+
+export function MealPlanner({ reference }: MealPlannerProps) {
   const t = useTranslations("mealPlans");
   const searchParams = useSearchParams();
 
@@ -626,7 +655,15 @@ export function MealPlanner() {
                   <WeeklyMacroStripSkeleton />
                 ) : (
                   editingTemplate && (
-                    <WeeklyMacroStrip template={editingTemplate} />
+                    <>
+                      <WeeklyMacroStrip template={editingTemplate} />
+                      {/* Daily-average micronutrient totals — full width */}
+                      <MicronutrientPanel
+                        variant="aggregate"
+                        micros={editingTemplate.averageMicros}
+                        reference={reference}
+                      />
+                    </>
                   )
                 )}
                 {/* Unified control panel wrapper */}
@@ -798,6 +835,7 @@ export function MealPlanner() {
                             onServingsChange={handleServingsChange}
                             onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
+                            reference={reference}
                           />
                         )}
                         {layout === "split" && (
@@ -808,6 +846,7 @@ export function MealPlanner() {
                             onServingsChange={handleServingsChange}
                             onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
+                            reference={reference}
                           />
                         )}
                       </>

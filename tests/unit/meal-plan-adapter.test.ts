@@ -58,6 +58,69 @@ describe("toTemplateDisplay", () => {
     expect(result.averageMacros.calories).toBe(150.5); // (100 + 201) / 2
   });
 
+  it("aggregates micronutrients per day and averages them per template", () => {
+    const t = {
+      ...fakeTemplate,
+      days: [
+        {
+          id: "d1",
+          dayNumber: 1,
+          meals: [
+            {
+              id: "m1",
+              recipeId: "r",
+              mealType: "breakfast",
+              servings: 2,
+              recipe: {
+                title: "A",
+                imageUrl: null,
+                calories: 100,
+                protein: 10,
+                carbs: 20,
+                fat: 5,
+                iron: 4,
+                calcium: 100,
+                vitaminC: 15,
+              },
+            },
+          ],
+        },
+        {
+          id: "d2",
+          dayNumber: 2,
+          meals: [
+            {
+              id: "m2",
+              recipeId: "r",
+              mealType: "breakfast",
+              servings: 1,
+              recipe: {
+                title: "B",
+                imageUrl: null,
+                calories: 200,
+                protein: 11,
+                carbs: 21,
+                fat: 6,
+                iron: 6,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = toTemplateDisplay(t as never);
+    // Day 1: iron 4 * 2 servings = 8; calcium 100 * 2 = 200
+    expect(result.days[0].micros.iron).toBe(8);
+    expect(result.days[0].micros.calcium).toBe(200);
+    expect(result.days[0].meals[0].micros.vitaminC).toBe(30);
+    // Day 2: iron 6 * 1 = 6
+    expect(result.days[1].micros.iron).toBe(6);
+    // Average iron per day: (8 + 6) / 2 = 7
+    expect(result.averageMicros.iron).toBe(7);
+    // Absent everywhere stays zero
+    expect(result.averageMicros.zinc).toBe(0);
+  });
+
   it("handles a meal whose recipe is missing", () => {
     const t = { ...fakeTemplate, days: [{ id: "d", dayNumber: 1, meals: [
       { id: "m", recipeId: null, mealType: "lunch", servings: 1, recipe: null },

@@ -704,6 +704,21 @@
       "carbs": "Węglowodany",
       "fat": "Tłuszcz"
     },
+    "micronutrients": {
+      "title": "Mikroskładniki",
+      "dailyAverage": "średnia dzienna",
+      "perDay": "ten dzień",
+      "ofTarget": "{pct}% DV",
+      "ofLimit": "{pct}% limitu",
+      "sourcePersonalized": "Na podstawie Twojego wieku i płci",
+      "sourceStandard": "Na podstawie standardowych wartości dziennych (%DV)",
+      "empty": "Brak danych o mikroskładnikach dla tych przepisów.",
+      "group": {
+        "vitamins": "Witaminy",
+        "minerals": "Minerały",
+        "other": "Inne"
+      }
+    },
     "layout": {
       "grid": "Siatka",
       "stack": "Stos",

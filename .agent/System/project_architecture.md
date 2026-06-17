@@ -262,6 +262,7 @@ dietaibest/
 - `planner.tsx` - Exports `PlanSwitcher`, `RecipeLibrary`, `MealCell`, `DayMacros`, and the 3 editor layouts (`GridLayout` / `StackLayout` / `SplitLayout`)
 - `ScheduleCalendar.tsx` - Month-grid calendar for scheduling templates on specific dates
 - `WeeklyMacroStrip.tsx` - Weekly macro summary strip
+- `MicronutrientPanel.tsx` - Collapsible micronutrient totals (`variant="aggregate"` daily-average panel + `variant="day"` per-day panel) with %DV bars (DIE-44)
 - `shared.tsx` - Shared primitives: `RecipeThumb`, `MacroBar`, `Chip`
 - `icons.tsx` - Lucide-react icon wrapper
 - `MealPlanForm.tsx` - Create/edit meal plan dialog (unchanged)
@@ -269,7 +270,8 @@ dietaibest/
 **Shared Libraries:**
 - `src/lib/meal-plan-adapter.ts` - `toTemplateDisplay()`: converts a Prisma `MealPlanTemplate` payload to the `MealPlanTemplateDisplay` display type
 - `src/lib/meal-slot-meta.ts` - `MEAL_SLOT_META`: per-`MealType` icon / color / i18n-key metadata map (7 entries)
-- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()` (unchanged)
+- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()`; plus `calculateMealMicros()` / `sumMicros()` / `emptyMicros()` for daily micronutrient aggregation (DIE-44)
+- `src/lib/nutrition-rda.ts` - `getReferenceIntakes(profile?)` (DRI RDA by age+sex, FDA Daily Value fallback) + `percentOfReference()` for the micronutrient %DV display (DIE-44)
 
 **Server Actions (`src/actions/meal-plan.ts` — unchanged from pre-migration):**
 - `createMealPlan()` - Create new plan
@@ -286,6 +288,13 @@ dietaibest/
 - Per-meal macros: `calculateMealMacros()` in `src/lib/meal-plan-macros.ts`
 - Daily totals: `sumMacros()`
 - Weekly averages: Calculated in `getMealPlan()`
+
+**Micronutrient totals (DIE-44):** `toTemplateDisplay()` also aggregates the 17
+micronutrients per meal (`calculateMealMicros`), per day (`sumMicros`), and as a
+template `averageMicros` — no DB/Prisma change (the adapter already loads the full
+recipe). The planner shows them via `MicronutrientPanel` with a **%DV** figure
+resolved by `getReferenceIntakes()` (personalized by `UserProfile` age+sex, FDA
+Daily Value fallback). Design recorded in `docs/adr/0002-meal-plan-micronutrient-totals-ui.md`.
 
 **Styling & i18n:**
 - All styling uses Tailwind/shadcn tokens — no custom CSS-variable system

@@ -7,7 +7,12 @@ import type {
   WeeklyMacros,
   MealDisplay,
   DayDisplay,
+  MicronutrientSummary,
 } from "@/types/meal-plan";
+import {
+  MICRONUTRIENT_KEYS,
+  type MicronutrientKey,
+} from "@/lib/nutrition-fields";
 
 /**
  * Calculate macros for a single meal based on recipe data and servings
@@ -33,6 +38,34 @@ export function calculateMealMacros(
   };
 }
 
+/** All-zero micronutrient summary (every key present). */
+export function emptyMicros(): MicronutrientSummary {
+  const result = {} as MicronutrientSummary;
+  for (const key of MICRONUTRIENT_KEYS) {
+    result[key] = 0;
+  }
+  return result;
+}
+
+/**
+ * Calculate the micronutrient contribution of a single meal.
+ *
+ * Mirrors `calculateMealMacros`: recipe micronutrient columns are stored
+ * PER-SERVING, so each value is multiplied by the meal's serving count.
+ * Missing/null columns count as zero. Rounded to 1 decimal for display parity.
+ */
+export function calculateMealMicros(
+  recipe: Partial<Record<MicronutrientKey, number | null>>,
+  mealServings: number
+): MicronutrientSummary {
+  const result = {} as MicronutrientSummary;
+  for (const key of MICRONUTRIENT_KEYS) {
+    const perServing = recipe[key] ?? 0;
+    result[key] = Math.round(perServing * mealServings * 10) / 10;
+  }
+  return result;
+}
+
 /**
  * Sum macros from multiple meals
  */
@@ -53,6 +86,22 @@ export function sumMacros(meals: MacroSummary[]): MacroSummary {
     carbs: Math.round(total.carbs * 10) / 10,
     fat: Math.round(total.fat * 10) / 10,
   };
+}
+
+/**
+ * Sum micronutrients from multiple meals (each already serving-scaled).
+ */
+export function sumMicros(meals: MicronutrientSummary[]): MicronutrientSummary {
+  const total = emptyMicros();
+  for (const meal of meals) {
+    for (const key of MICRONUTRIENT_KEYS) {
+      total[key] += meal[key] ?? 0;
+    }
+  }
+  for (const key of MICRONUTRIENT_KEYS) {
+    total[key] = Math.round(total[key] * 10) / 10;
+  }
+  return total;
 }
 
 /**
