@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { Prisma } from "@/generated/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine, ChefHat, Camera, Trash2, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Edit, Star, Minus, Plus, ExternalLink, FileText, PenLine, ChefHat, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -258,16 +258,16 @@ export function RecipeDetailClient({
                 onError={() => setImageError(true)}
               />
               {isOwner && (
-                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3 backdrop-blur-[2px] z-10">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-10">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                          className="h-9 w-9 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-md"
                         >
-                          <Camera className="h-5 w-5" />
+                          <Edit className="h-4 w-4" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -311,16 +311,16 @@ export function RecipeDetailClient({
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/5" />
               {isOwner && (
-                <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-row items-center justify-center gap-4 backdrop-blur-[2px] z-20">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-20">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                          className="h-9 w-9 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-md"
                         >
-                          <Camera className="h-5 w-5" />
+                          <Edit className="h-4 w-4" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -335,9 +335,9 @@ export function RecipeDetailClient({
                         <button
                           type="button"
                           onClick={handleGenerateAIImage}
-                          className="h-12 w-12 rounded-full flex items-center justify-center bg-white/20 hover:bg-white/30 text-white border border-white/20 backdrop-blur-md transition-all active:scale-95 shadow-lg shadow-black/10"
+                          className="h-9 w-9 rounded-full flex items-center justify-center bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md transition-all active:scale-95 shadow-md"
                         >
-                          <Sparkles className="h-5 w-5" />
+                          <Sparkles className="h-4 w-4" />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>

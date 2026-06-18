@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
+import { RecipeDetailSheet } from "../recipes/RecipeDetailSheet";
 import {
   StyledTabs as Tabs,
   StyledTabsContent as TabsContent,
@@ -146,6 +147,8 @@ interface MealPlannerProps {
 export function MealPlanner({ reference }: MealPlannerProps) {
   const t = useTranslations("mealPlans");
   const searchParams = useSearchParams();
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
 
   // ── Data state ──────────────────────────────────────────────────────────────
   const [templates, setTemplates] = useState<TemplateWithMealsAndSchedules[]>([]);
@@ -169,6 +172,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showServings, setShowServings] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRecipeIdForDetail, setSelectedRecipeIdForDetail] = useState<string | null>(null);
 
   // Tap-to-add: which (day, slot) the recipe picker is targeting. This is a
   // mobile-only add path (drag-and-drop from the sidebar stays the desktop flow).
@@ -825,6 +829,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             onServingsChange={handleServingsChange}
                             onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
+                            onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
                         {layout === "stack" && (
@@ -836,6 +841,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                             reference={reference}
+                            onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
                         {layout === "split" && (
@@ -847,6 +853,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
                             showServings={showServings}
                             reference={reference}
+                            onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
                       </>
@@ -923,6 +930,11 @@ export function MealPlanner({ reference }: MealPlannerProps) {
         }}
         onSelectRecipe={handlePickRecipe}
         mealTypeLabel={pickerSlot ? t(MEAL_SLOT_META[pickerSlot.mealType].i18nKey) : undefined}
+      />
+      <RecipeDetailSheet
+        recipeId={selectedRecipeIdForDetail}
+        onClose={() => setSelectedRecipeIdForDetail(null)}
+        locale={locale}
       />
     </PageContainer>
   );

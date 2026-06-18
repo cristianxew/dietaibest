@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { Badge } from '@/components/ui/badge';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
 import type { MealDisplay, MealType, MacroSummary, MacroTarget, MealPlanTemplateDisplay } from '@/types/meal-plan';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
@@ -132,7 +135,15 @@ interface RecipeLibraryProps {
   selectedCategory?: string;
 }
 
-function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean }) {
+type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
+
+const difficultyBadgeClass: Record<string, string> = {
+  easy: 'border-sage-300 text-sage-600 dark:border-sage-700 dark:text-sage-400',
+  medium: 'border-gold-300 text-gold-600 dark:border-gold-700 dark:text-gold-400',
+  hard: 'border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400',
+};
+
+function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; dense: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `library-${recipe.id}`,
     data: {
@@ -142,6 +153,11 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
     },
   });
 
+  const t = useTranslations('recipes');
+  const tPlanner = useTranslations('mealPlans');
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
+
   // Hide source in place while dragging — MealPlanner's DragOverlay renders the
   // floating preview outside overflow-y-auto so it's never clipped.
   const style: React.CSSProperties = {
@@ -149,42 +165,179 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: Recipe; dense: boolean 
     transition: isDragging ? undefined : "opacity 150ms",
   };
 
+  let ingredientsList: any[] = [];
+  if (recipe.ingredients) {
+    if (Array.isArray(recipe.ingredients)) {
+      ingredientsList = recipe.ingredients;
+    } else if (typeof recipe.ingredients === 'string') {
+      try {
+        ingredientsList = JSON.parse(recipe.ingredients);
+      } catch {
+        ingredientsList = [];
+      }
+    }
+  }
+
+  const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={cn(
-        'flex gap-2.5 rounded-[10px] border border-border bg-card cursor-grab transition-all duration-150',
-        'hover:border-brand-500 hover:-translate-y-px',
-        dense ? 'p-2' : 'p-2.5',
-      )}
-    >
-      <RecipeThumb recipe={recipe} size={dense ? 40 : 48} radius={8} />
-      <div className="flex-1 min-w-0">
-        <div className="text-[13px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.3]">
-          {recipe.title}
+    <HoverCard openDelay={300} closeDelay={150} open={isDragging ? false : undefined}>
+      <HoverCardTrigger asChild>
+        <div
+          ref={setNodeRef}
+          style={style}
+          {...attributes}
+          {...listeners}
+          className={cn(
+            'flex gap-2.5 rounded-[10px] border border-border bg-card cursor-grab transition-all duration-150',
+            'hover:border-brand-500 hover:-translate-y-px',
+            dense ? 'p-2' : 'p-2.5',
+          )}
+        >
+          <RecipeThumb recipe={recipe} size={dense ? 40 : 48} radius={8} />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.3]">
+              {recipe.title}
+            </div>
+            <div className="flex gap-1.5 mt-[5px] flex-wrap items-center">
+              {recipe.calories != null && (
+                <Chip color="coral" size="xs">{Math.round(recipe.calories)} kcal</Chip>
+              )}
+              {recipe.protein != null && (
+                <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
+              )}
+              {recipe.prepTime != null && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
+                  <Icon name="Clock" size={10} />{recipe.prepTime}m
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-1.5 mt-[5px] flex-wrap items-center">
+      </HoverCardTrigger>
+      <HoverCardContent
+        side="right"
+        align="start"
+        sideOffset={12}
+        className="w-[320px] p-4 bg-popover border border-border shadow-xl rounded-xl z-50 space-y-3 before:absolute before:inset-y-0 before:-left-3 before:w-3 before:content-['']"
+      >
+        {/* Header with Title and Category badge */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            {recipe.categories?.slice(0, 2).map((cat) => (
+              <Badge key={cat.id} className="badge-brand text-[9px] uppercase tracking-wider font-bold px-2 py-0.5">
+                {cat.name}
+              </Badge>
+            ))}
+            {recipe.difficulty && (
+              <Badge
+                variant="outline"
+                className={cn("text-[9px] font-semibold px-2 py-0.5", difficultyBadgeClass[recipe.difficulty])}
+              >
+                {t(`difficulty.${recipe.difficulty}`, { fallback: recipe.difficulty })}
+              </Badge>
+            )}
+          </div>
+          <h4 className="font-display font-semibold text-sm text-foreground leading-tight">
+            {recipe.title}
+          </h4>
+        </div>
+
+        {/* Cover Image or placeholder */}
+        {recipe.imageUrl ? (
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-lg border border-border/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={recipe.imageUrl}
+              alt={recipe.title}
+              className="object-cover w-full h-full"
+            />
+          </div>
+        ) : (
+          <div className="aspect-[16/9] w-full rounded-lg bg-brand-50/40 dark:bg-brand-900/10 border border-border/40 flex flex-col items-center justify-center relative overflow-hidden">
+            <Icon name="ChefHat" size={24} className="text-brand-500/60" />
+          </div>
+        )}
+
+        {/* Description */}
+        {recipe.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+            {recipe.description}
+          </p>
+        )}
+
+        {/* Stats line */}
+        <div className="flex gap-3 text-[10px] text-muted-foreground">
+          {recipe.prepTime != null && (
+            <span className="flex items-center gap-1">
+              <Icon name="Clock" size={11} /> {recipe.prepTime}m {t('prepTime', { fallback: 'prep' }).toLowerCase()}
+            </span>
+          )}
+          {recipe.cookTime != null && (
+            <span className="flex items-center gap-1">
+              <Icon name="Flame" size={11} /> {recipe.cookTime}m {t('cookTime', { fallback: 'cook' }).toLowerCase()}
+            </span>
+          )}
+          <span>
+            <Icon name="Utensils" size={11} className="inline mr-1" />
+            {recipe.servings} {tPlanner('servingsAbbrev', { fallback: 'serv.' })}
+          </span>
+        </div>
+
+        {/* Macros */}
+        <div className="flex gap-1.5 flex-wrap items-center pt-0.5">
           {recipe.calories != null && (
             <Chip color="coral" size="xs">{Math.round(recipe.calories)} kcal</Chip>
           )}
           {recipe.protein != null && (
             <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
           )}
-          {recipe.prepTime != null && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
-              <Icon name="Clock" size={10} />{recipe.prepTime}m
-            </span>
+          {recipe.carbs != null && (
+            <Chip color="gold" size="xs">{Math.round(recipe.carbs)}g C</Chip>
+          )}
+          {recipe.fat != null && (
+            <Chip color="sage" size="xs">{Math.round(recipe.fat)}g F</Chip>
           )}
         </div>
-      </div>
-    </div>
+
+        {/* Ingredients preview */}
+        {ingredientsList.length > 0 && (
+          <div className="space-y-1 pt-1 border-t border-border/40">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t('ingredients', { fallback: 'Ingredients' })}
+            </div>
+            <div className="grid grid-cols-1 gap-1">
+              {ingredientsList.slice(0, 4).map((ing, idx) => (
+                <div key={idx} className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-brand-500 flex-shrink-0" />
+                  <span className="truncate">
+                    {ing.amount} {ing.unit} {ing.name}
+                  </span>
+                </div>
+              ))}
+              {ingredientsList.length > 4 && (
+                <div className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 pl-2">
+                  {t('moreIngredients', { count: ingredientsList.length - 4, fallback: `+ ${ingredientsList.length - 4} more` })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* View full recipe link */}
+        <div className="pt-2 border-t border-border/40 flex justify-end">
+          <Link
+            href={`/${locale}/recipes/${recipe.id}`}
+            className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors inline-flex items-center gap-1"
+          >
+            <span>{t('viewFullRecipe', { fallback: 'View full recipe' })}</span>
+            <Icon name="ArrowUpRight" size={13} />
+          </Link>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
-
-type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
 
 export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategory = 'all' }: RecipeLibraryProps) {
   const t = useTranslations('mealPlans');
@@ -248,6 +401,7 @@ interface MealCellProps {
   dense?: boolean;
   compact?: boolean;
   showServings?: boolean;
+  onViewRecipeDetail?: (id: string) => void;
 }
 
 export function MealCell({
@@ -260,6 +414,7 @@ export function MealCell({
   dense = false,
   compact = false,
   showServings = false,
+  onViewRecipeDetail,
 }: MealCellProps) {
   const t = useTranslations('mealPlans');
   // Drop target: always active regardless of filled/empty
@@ -368,6 +523,23 @@ export function MealCell({
       >
         <Icon name="X" size={11} className="text-white" />
       </button>
+
+      {/* View Details button — hover-revealed, outside drag listeners */}
+      {meal.recipeId && onViewRecipeDetail && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onViewRecipeDetail(meal.recipeId!); }}
+          className={cn(
+            'absolute top-1 right-7 z-10 w-5 h-5 rounded-full',
+            'bg-black/50 flex items-center justify-center',
+            'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150',
+            'cursor-pointer border-none',
+          )}
+          aria-label={t('slot.viewRecipe')}
+        >
+          <Icon name="Eye" size={11} className="text-white" />
+        </button>
+      )}
 
       {compact ? (
         /* Compact layout: horizontal row */
@@ -527,9 +699,10 @@ interface GridLayoutProps {
   onServingsChange: (mealId: string, servings: number) => void;
   onSlotSelect?: (dayId: string, mealType: MealType) => void;
   showServings?: boolean;
+  onViewRecipeDetail?: (id: string) => void;
 }
 
-export function GridLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false }: GridLayoutProps) {
+export function GridLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false, onViewRecipeDetail }: GridLayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
   const numDays = template.days.length;
@@ -586,6 +759,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange, onSl
                 onSlotSelect={onSlotSelect}
                 dense={dense}
                 showServings={showServings}
+                onViewRecipeDetail={onViewRecipeDetail}
               />
             ))}
           </div>
@@ -619,9 +793,10 @@ interface LayoutProps {
   onSlotSelect?: (dayId: string, mealType: MealType) => void;
   showServings?: boolean;
   reference: ReferenceIntakes;
+  onViewRecipeDetail?: (id: string) => void;
 }
 
-export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false, reference }: LayoutProps) {
+export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false, reference, onViewRecipeDetail }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
 
@@ -660,6 +835,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
                       onSlotSelect={onSlotSelect}
                       dense={dense}
                       showServings={showServings}
+                      onViewRecipeDetail={onViewRecipeDetail}
                     />
                   </div>
                 );
@@ -679,7 +855,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
 }
 
 /* ── SplitLayout ───────────────────────────────── */
-export function SplitLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = true, reference }: LayoutProps) {
+export function SplitLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = true, reference, onViewRecipeDetail }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
@@ -765,6 +941,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
                     onSlotSelect={onSlotSelect}
                     dense={dense}
                     showServings={showServings}
+                    onViewRecipeDetail={onViewRecipeDetail}
                   />
                 </div>
               );

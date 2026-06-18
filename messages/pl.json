@@ -352,6 +352,8 @@
     },
     "servings": "porcji",
     "ingredients": "Składniki",
+    "moreIngredients": "+ {count} więcej",
+    "viewFullRecipe": "Zobacz pełny przepis",
     "nutrition": "Dane Odżywcze",
     "nutritionPerServing": "Wartości odżywcze na porcję",
     "fullNutritionTitle": "Pełne wartości odżywcze",
@@ -736,7 +738,8 @@
       "dragToMove": "Przeciągnij, aby przenieść posiłek",
       "removeMeal": "Usuń posiłek",
       "decreaseServings": "Zmniejsz porcje",
-      "increaseServings": "Zwiększ porcje"
+      "increaseServings": "Zwiększ porcje",
+      "viewRecipe": "Pokaż szczegóły przepisu"
     },
     "picker": {
       "selectRecipe": "Wybierz Przepis",

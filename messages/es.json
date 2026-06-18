@@ -357,6 +357,8 @@
     },
     "servings": "porciones",
     "ingredients": "Ingredientes",
+    "moreIngredients": "+ {count} más",
+    "viewFullRecipe": "Ver receta completa",
     "nutrition": "Datos Nutricionales",
     "nutritionPerServing": "Nutrición por porción",
     "fullNutritionTitle": "Nutrición completa",
@@ -741,7 +743,8 @@
       "dragToMove": "Arrastra para mover comida",
       "removeMeal": "Eliminar comida",
       "decreaseServings": "Reducir porciones",
-      "increaseServings": "Aumentar porciones"
+      "increaseServings": "Aumentar porciones",
+      "viewRecipe": "Ver detalles de la receta"
     },
     "picker": {
       "selectRecipe": "Seleccionar Receta",
