@@ -11,45 +11,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { XCircle } from "lucide-react";
 import type { AnalyzeResult } from "@/actions/analyzeRecipe";
 import { MacrosSummary } from "./MacrosSummary";
 
 interface NutritionResultsProps {
   results: AnalyzeResult;
   servings: number;
-}
-
-function ConfidenceBadge({ confidence }: { confidence: number }) {
-  if (confidence >= 0.8) {
-    return (
-      <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-        <CheckCircle2 className="mr-1 h-3 w-3" />
-        High
-      </Badge>
-    );
-  } else if (confidence >= 0.5) {
-    return (
-      <Badge variant="secondary" className="bg-yellow-600 hover:bg-yellow-700">
-        <AlertCircle className="mr-1 h-3 w-3" />
-        Medium
-      </Badge>
-    );
-  } else if (confidence > 0) {
-    return (
-      <Badge variant="destructive">
-        <AlertCircle className="mr-1 h-3 w-3" />
-        Low
-      </Badge>
-    );
-  } else {
-    return (
-      <Badge variant="outline" className="border-red-500 text-red-500">
-        <XCircle className="mr-1 h-3 w-3" />
-        No Match
-      </Badge>
-    );
-  }
 }
 
 function DataTypeBadge({ dataType }: { dataType: string | null }) {
@@ -78,10 +46,11 @@ function DataTypeBadge({ dataType }: { dataType: string | null }) {
 }
 
 export function NutritionResults({ results, servings }: NutritionResultsProps) {
+  // `confidence` stays in the data for internal debugging/logging, but is never
+  // surfaced as a score to the user. We only use it here to flag ingredients we
+  // genuinely could not match to USDA data (a useful "we couldn't find this"
+  // notice, not a confidence score).
   const hasFailedItems = results.items.some((item) => item.confidence === 0);
-  const hasLowConfidence = results.items.some(
-    (item) => item.confidence > 0 && item.confidence < 0.5
-  );
 
   return (
     <div className="space-y-6">
@@ -94,17 +63,6 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
             No USDA data was found for some ingredients. Their nutritional
             values are shown as zero. Try rephrasing or using more specific
             names.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {hasLowConfidence && !hasFailedItems && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Low confidence warnings</AlertTitle>
-          <AlertDescription>
-            Some ingredients have low confidence scores. Check the portion notes
-            to understand how measurements were estimated.
           </AlertDescription>
         </Alert>
       )}
@@ -134,7 +92,6 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
                   <TableHead className="text-right">Fat (g)</TableHead>
                   <TableHead className="text-right">Carbs (g)</TableHead>
                   <TableHead className="text-right">Fiber (g)</TableHead>
-                  <TableHead>Confidence</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -148,9 +105,6 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
                             {item.description}
                           </div>
                         )}
-                        <div className="text-xs text-muted-foreground italic">
-                          {item.portionNote}
-                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -179,9 +133,6 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
                       {item.macros.fiber > 0
                         ? item.macros.fiber.toFixed(1)
                         : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <ConfidenceBadge confidence={item.confidence} />
                     </TableCell>
                   </TableRow>
                 ))}

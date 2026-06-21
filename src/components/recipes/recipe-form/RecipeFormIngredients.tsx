@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash2 } from "lucide-react";
+import { UnitCombobox } from "@/components/recipes/UnitCombobox";
 // import { IngredientAutocomplete } from "@/components/recipes/IngredientAutocomplete";
 
 interface RecipeFormIngredientsProps {
@@ -60,12 +61,13 @@ export function RecipeFormIngredients({
               control={form.control}
               name={`ingredients.${index}.unit`}
               render={({ field }) => (
-                <FormItem className="w-[80px]">
+                <FormItem className="w-[96px]">
                   <FormControl>
-                    <Input
+                    <UnitCombobox
+                      value={field.value}
+                      onChange={field.onChange}
                       placeholder="cup"
                       className="h-11 bg-secondary/40 border-border rounded-lg text-center"
-                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

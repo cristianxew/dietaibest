@@ -16,6 +16,7 @@ import {
   extractBrandedServing,
 } from "./fdc";
 import { DENSITY_FALLBACK_G_PER_UNIT, type ParsedIngredient } from "./ingredients";
+import { getUnitDefinition } from "./unit-registry";
 
 export interface GramResolution {
   /** Total grams for the ingredient (qty already applied). */
@@ -26,27 +27,28 @@ export interface GramResolution {
   note: string;
 }
 
-/**
- * Generic, ingredient-agnostic conversions. The last resort before assuming the
- * quantity is grams — volume units here assume a water-like density, so they are
- * only reached when neither USDA portions nor the density table know the
- * ingredient. Expanding the density table shrinks how often this fires.
- */
-const GENERIC_CONVERSIONS_G_PER_UNIT: Record<string, number> = {
-  oz: 28.35,
-  lb: 453.6,
-  kg: 1000,
-  ml: 1,
-  l: 1000,
-  cup: 240,
-  tbsp: 15,
-  tsp: 5,
-  pint: 473,
-  quart: 946,
-  gallon: 3785,
-};
-
 const round = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Typical weight (grams) for a single count unit, used when no ingredient
+ * portion or density entry resolved it. Rough by nature — but a sensible
+ * estimate beats the old "assume 1 unit = 1 gram" last resort, which silently
+ * zeroed the nutrition of canned/packaged/bunched ingredients.
+ *
+ * `piece` is deliberately omitted: a "piece" of an unknown ingredient has no
+ * meaningful default and stays handled by the ingredient-specific density table.
+ */
+const COUNT_UNIT_DEFAULT_GRAMS: Record<string, number> = {
+  can: 400,
+  package: 250,
+  box: 300,
+  bunch: 150,
+  stick: 113,
+  slice: 25,
+  clove: 3,
+  pinch: 0.36,
+  dash: 0.6,
+};
 
 /**
  * Find the density-table entry for an ingredient name.
@@ -94,8 +96,9 @@ function findDensityEntry(
  * 2. USDA structured food portions (0.9)
  * 3. Branded per-serving weight for piece/serving/package units (0.85)
  * 4. Density fallback table — exact (0.7) or whole-word (0.6)
- * 5. Generic water-density conversion (0.5)
- * 6. Assume the quantity is grams (0.3)
+ * 5. Count-unit default weight (0.4)
+ * 6. Generic water-density conversion (0.5)
+ * 7. Assume the quantity is grams (0.3)
  */
 export function resolveGramWeight(
   parsed: ParsedIngredient,
@@ -148,17 +151,35 @@ export function resolveGramWeight(
     }
   }
 
-  // 5. Generic conversion (assumes water-like density for volume units).
-  const generic = GENERIC_CONVERSIONS_G_PER_UNIT[unit];
-  if (generic !== undefined) {
+  // 5. Count-unit default weight. Count units (can/package/bunch/…) have no
+  //    universal volume, so when the density table didn't cover this ingredient
+  //    we fall back to a typical per-unit weight. Rough, but far better than the
+  //    assume-1g last resort that used to zero out canned/packaged ingredients.
+  const countDefault = COUNT_UNIT_DEFAULT_GRAMS[unit];
+  if (countDefault !== undefined) {
     return {
-      grams: qty * generic,
-      confidence: 0.5,
-      note: `Generic conversion: ${generic}g per ${unit}`,
+      grams: qty * countDefault,
+      confidence: 0.4,
+      note: `Count default: ${countDefault}g per ${unit}`,
     };
   }
 
-  // 6. Last resort: assume the quantity is grams.
+  // 6. Generic conversion via the unit registry. Weight units convert straight
+  //    to grams; volume units convert to millilitres and assume a water-like
+  //    density (1 g/ml). Count units have no universal weight (toBase === null)
+  //    so they skip this and fall through. Fires only when neither USDA portions
+  //    nor the density table knew the ingredient.
+  const def = getUnitDefinition(unit);
+  if (def && def.toBase !== null) {
+    const gramsPerUnit = def.toBase; // grams (weight) or ml-as-grams (volume)
+    return {
+      grams: qty * gramsPerUnit,
+      confidence: 0.5,
+      note: `Generic conversion: ${round(gramsPerUnit)}g per ${unit}`,
+    };
+  }
+
+  // 7. Last resort: assume the quantity is grams.
   return {
     grams: qty,
     confidence: 0.3,

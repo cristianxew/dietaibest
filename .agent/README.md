@@ -73,6 +73,26 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Nutrition Unit Handling (FDC pipeline)](./System/nutrition_units.md)
+**Purpose:** How ingredient lines become grams and then a nutrition profile via USDA FDC — the source of truth for ingredient **units**
+
+**Contains:**
+- The `unit-registry.ts` single source of truth (canonical units, en/es/pl aliases, kind, base conversion, dropdown list)
+- Parser behavior: attached units (`200ml`), multi-word units (`fl oz`)
+- The gram-resolution ladder (7 strategies incl. count-unit defaults) and that confidence is **internal-only**
+- FDC-only calculation (Edamam off the hot path)
+- The recipe-form `UnitCombobox` and the no-confidence `/nutrition` results UI
+- The reliability harness (Capa 0): golden-recipe eval in `tests/eval/nutrition/`, deterministic + in CI, with an opt-in live recorder
+- Rules for adding new units / where ingredient density lives
+
+**When to read:**
+- Touching ingredient units, parsing, gram resolution, or the unit dropdown
+- Adding a new unit or locale spelling
+- Working on nutrition analysis or the shopping-list quantity transform
+- Adding a golden recipe or changing nutrition-calc behavior (run/extend the harness)
+
+---
+
 #### [Chat AI Agent](./System/chat_agent.md)
 **Purpose:** Architecture of the in-app chat agent — runtime, LLM layer, tools, prompt composition
 

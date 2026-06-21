@@ -19,13 +19,14 @@ import {
   addProfile,
   divideProfile,
   zeroProfile,
-  DATATYPE_PRIORITY,
   type Macro,
   type Profile,
   type FdcFood,
   type FdcSearchFood,
 } from "@/lib/fdc";
 import { resolveGramWeight } from "@/lib/gram-resolution";
+import { rankMatches, matchPlausible } from "@/lib/fdc-match";
+import { stapleFdcId } from "@/lib/fdc-staples";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
 
 /**
@@ -140,28 +141,8 @@ function divideMacros(m: Macro, divisor: number): Macro {
   };
 }
 
-/**
- * Choose best FDC match based on data type priority
- * Foundation > Survey (FNDDS) > SR Legacy > Branded
- */
-function chooseBestMatch(foods: FdcSearchFood[]): FdcSearchFood | null {
-  if (!foods.length) return null;
-
-  // Sort by priority
-  const sorted = [...foods].sort((a, b) => {
-    const aIdx = DATATYPE_PRIORITY.indexOf(
-      a.dataType as (typeof DATATYPE_PRIORITY)[number]
-    );
-    const bIdx = DATATYPE_PRIORITY.indexOf(
-      b.dataType as (typeof DATATYPE_PRIORITY)[number]
-    );
-    const aPri = aIdx === -1 ? 999 : aIdx;
-    const bPri = bIdx === -1 ? 999 : bIdx;
-    return aPri - bPri;
-  });
-
-  return sorted[0];
-}
+/** How many top-ranked search candidates to keep per ingredient as fallbacks. */
+const MAX_CANDIDATES_PER_INGREDIENT = 5;
 
 /**
  * Analyze a list of ingredients and calculate nutrition
@@ -308,15 +289,35 @@ async function resolveIngredientMatches(
     })
   );
 
-  const matches = searchResults.map(({ parsed, foods }) => ({
-    parsed,
-    bestMatch: chooseBestMatch(foods),
-  }));
+  // Keep the top-N ranked candidates per ingredient (not just the single best)
+  // so we can fall back when a higher-ranked food can't be fetched. When the
+  // name is a curated staple, pin its verified fdcId as the first candidate —
+  // free-text search mis-ranks staples ("onion" → "onion rings", "egg" → "Egg,
+  // creamed") — while keeping the search hits as fallback.
+  const ranked = searchResults.map(({ parsed, foods }) => {
+    const searchCandidates = rankMatches(foods, parsed.name).slice(
+      0,
+      MAX_CANDIDATES_PER_INGREDIENT
+    );
+    const staple = stapleFdcId(parsed.name);
+    const candidates =
+      staple !== null
+        ? [
+            {
+              fdcId: staple,
+              description: parsed.name,
+              dataType: "SR Legacy",
+            } as FdcSearchFood,
+            ...searchCandidates.filter((c) => c.fdcId !== staple),
+          ]
+        : searchCandidates;
+    return { parsed, candidates };
+  });
 
-  const fdcIds = matches
-    .map((m) => m.bestMatch?.fdcId)
-    .filter((id): id is number => id !== undefined && id !== null);
-
+  // One batch fetch for every candidate across all ingredients.
+  const fdcIds = [
+    ...new Set(ranked.flatMap((m) => m.candidates.map((c) => c.fdcId))),
+  ];
   const foodsDetailed = await getFoodsCached(fdcIds);
   const foodsById = new Map<number, FdcFood>();
   for (const food of foodsDetailed) {
@@ -324,8 +325,8 @@ async function resolveIngredientMatches(
   }
 
   const resolved: ResolvedIngredientMatch[] = [];
-  for (const { parsed, bestMatch } of matches) {
-    if (!bestMatch) {
+  for (const { parsed, candidates } of ranked) {
+    if (!candidates.length) {
       resolved.push({
         parsed,
         bestMatch: null,
@@ -336,20 +337,43 @@ async function resolveIngredientMatches(
       });
       continue;
     }
-    const food = foodsById.get(bestMatch.fdcId) ?? null;
-    if (!food) {
+
+    // Walk candidates best-first and use the first that BOTH fetched and passes
+    // the match-quality guard. USDA's /foods endpoint answers `{}` for some ids
+    // that search returns (e.g. fdcId 747997), so the top hit can be unfetchable
+    // — falling through keeps the ingredient from dropping to 0g. The guard then
+    // rejects a non-staple food sharing no token with the query (the
+    // "chicken→Clif bar" class) — a flagged no-match is more honest than
+    // silently using the wrong food. Staple matches are trusted and bypass it.
+    const staple = stapleFdcId(parsed.name);
+    const fetchable = candidates.filter((c) => foodsById.has(c.fdcId));
+    const hit = fetchable.find(
+      (c) =>
+        c.fdcId === staple ||
+        matchPlausible(foodsById.get(c.fdcId)!.description, parsed.name)
+    );
+    if (!hit) {
+      // A quality rejection is a clean no-match (fdcId null) — not a match that
+      // resolved to 0g — so the UI flags "couldn't match" and the harness's
+      // matched-but-zero-grams invariant doesn't misfire. A fetch failure keeps
+      // the attempted id for debugging.
+      const fetchFailed = fetchable.length === 0;
       resolved.push({
         parsed,
-        bestMatch,
+        bestMatch: fetchFailed ? candidates[0] : null,
         food: null,
         grams: 0,
         confidence: 0,
-        note: "Failed to fetch food details",
+        note: fetchFailed
+          ? "Failed to fetch food details"
+          : "No plausible USDA match (low match quality)",
       });
       continue;
     }
+
+    const food = foodsById.get(hit.fdcId)!;
     const { grams, confidence, note } = resolveGramWeight(parsed, food);
-    resolved.push({ parsed, bestMatch, food, grams, confidence, note });
+    resolved.push({ parsed, bestMatch: hit, food, grams, confidence, note });
   }
 
   return resolved;

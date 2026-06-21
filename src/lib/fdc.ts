@@ -288,7 +288,11 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${PROFILE_NUTRIENT_NUMBERS.join(
+  // Request the 22 profile nutrients PLUS the Atwater energy numbers (957
+  // General, 958 Specific). Foundation foods report energy there instead of
+  // 208, so omitting them left Foundation calories at 0 after extraction.
+  const fetchNutrients = [...PROFILE_NUTRIENT_NUMBERS, "957", "958"];
+  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${fetchNutrients.join(
     ","
   )}`;
 
@@ -340,7 +344,10 @@ export function extractMacrosFromFood(food: FdcFood): Macro {
   }
 
   return {
-    kcal: byNum.get("208") ?? 0,
+    // Energy: Foundation foods report Atwater factors (957 General, 958
+    // Specific) and usually OMIT 208; Survey/SR Legacy/Branded use 208. Prefer
+    // 208, then Atwater General, then Atwater Specific — all in kcal.
+    kcal: byNum.get("208") ?? byNum.get("957") ?? byNum.get("958") ?? 0,
     protein: byNum.get("203") ?? 0,
     fat: byNum.get("204") ?? 0,
     carbs: byNum.get("205") ?? 0,
@@ -394,7 +401,13 @@ export function extractProfileFromFood(food: FdcFood): Profile {
 
   const out = {} as Profile;
   for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
-    const hit = byNum.get(PROFILE_NUTRIENT_MAP[key]);
+    // Energy: Foundation foods report Atwater factors (957 General, 958
+    // Specific) and usually omit 208. Prefer 208, then Atwater General, then
+    // Atwater Specific — all kcal — so Foundation calories aren't zeroed.
+    const hit =
+      key === "calories"
+        ? byNum.get("208") ?? byNum.get("957") ?? byNum.get("958")
+        : byNum.get(PROFILE_NUTRIENT_MAP[key]);
     if (!hit) {
       out[key] = 0;
       continue;

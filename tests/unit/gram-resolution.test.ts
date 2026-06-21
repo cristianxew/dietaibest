@@ -54,8 +54,9 @@ describe("resolveGramWeight — strategy ladder", () => {
       parsed({ qty: 1, unit: "tbsp", name: "saltine crackers" }),
       food()
     );
-    // Falls through to the generic conversion (15g/tbsp), NOT salt's 18g/tbsp.
-    expect(r.grams).toBe(15);
+    // Falls through to the registry generic conversion (1 tbsp = 14.787 ml ≈
+    // 14.787 g as water), NOT salt's 18g/tbsp.
+    expect(r.grams).toBeCloseTo(14.787, 3);
     expect(r.confidence).toBe(0.5);
   });
 
@@ -68,6 +69,15 @@ describe("resolveGramWeight — strategy ladder", () => {
     expect(r.confidence).toBe(0.5);
   });
 
+  it("resolves 'fl oz' via the registry generic conversion (regression: was missing → assumed grams)", () => {
+    const r = resolveGramWeight(
+      parsed({ qty: 2, unit: "fl oz", name: "exotic mystery liquid" }),
+      food()
+    );
+    expect(r.grams).toBeCloseTo(2 * 29.574, 2); // 1 fl oz = 29.574 ml as water
+    expect(r.confidence).toBe(0.5);
+  });
+
   it("assumes grams as the last resort for an unknown unit (0.3)", () => {
     const r = resolveGramWeight(
       parsed({ qty: 7, unit: "blob", name: "exotic mystery root" }),
@@ -75,6 +85,35 @@ describe("resolveGramWeight — strategy ladder", () => {
     );
     expect(r.grams).toBe(7);
     expect(r.confidence).toBe(0.3);
+  });
+});
+
+describe("resolveGramWeight — count-unit defaults (no more assume-1g)", () => {
+  it("uses a typical weight for a can when nothing else resolves it (not 1g)", () => {
+    const r = resolveGramWeight(
+      parsed({ qty: 1, unit: "can", name: "chickpeas" }),
+      food()
+    );
+    expect(r.grams).toBe(400); // standard can default, not the assume-grams 1g
+    expect(r.confidence).toBeGreaterThan(0.3);
+    expect(r.confidence).toBeLessThan(0.6);
+  });
+
+  it("uses a typical weight for a bunch", () => {
+    const r = resolveGramWeight(
+      parsed({ qty: 2, unit: "bunch", name: "exotic greens" }),
+      food()
+    );
+    expect(r.grams).toBe(300); // 2 × 150g
+  });
+
+  it("still prefers an ingredient-specific density entry over the count default", () => {
+    const r = resolveGramWeight(
+      parsed({ qty: 3, unit: "clove", name: "garlic" }),
+      food()
+    );
+    expect(r.grams).toBe(9); // garlic clove = 3g (density 0.7), not a generic default
+    expect(r.confidence).toBe(0.7);
   });
 });
 
