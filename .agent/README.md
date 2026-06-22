@@ -231,6 +231,20 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Ingredient LLM Name Canonicalizer](./Tasks/ingredient-llm-canonicalizer.md)
+**Purpose:** Cached LLM (Gemini 2.5 Flash) fallback that normalizes untranslatable ingredient names to USDA-friendly English, behind the deterministic layer and in front of the match-quality guard
+
+**Contains:**
+- Why: the Capa 0 harness proved name canonicalization (not gram resolution) is the dominant FDC reliability gap
+- Components: `ingredient-canonicalizer.ts`, `IngredientNameCache` model, `ingredient-name-repo.ts`, the two-pass hook in `resolveIngredientMatches`
+- Locked decisions (Gemini Flash, sync fallback + cache, single nullable canonical, flag-gated) and the harness as the definition of done
+
+**When to read:**
+- Implementing or changing the LLM ingredient-name fallback
+- Touching `resolveIngredientMatches` match selection or the name cache
+
+---
+
 **Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD
