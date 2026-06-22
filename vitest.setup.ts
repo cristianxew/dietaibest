@@ -11,20 +11,22 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
-// Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {}, // deprecated
-    removeListener: () => {}, // deprecated
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => {},
-  }),
-});
+// Mock window.matchMedia (jsdom only — node-environment test files have no window)
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {}, // deprecated
+      removeListener: () => {}, // deprecated
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    }),
+  });
+}
 
 // Mock IntersectionObserver
 if (!global.IntersectionObserver) {
@@ -43,8 +45,10 @@ if (!global.IntersectionObserver) {
   } as unknown as typeof IntersectionObserver;
 }
 
-// Mock HTMLElement methods
-Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
-  value: () => {},
-  writable: true,
-});
+// Mock HTMLElement methods (jsdom only)
+if (typeof HTMLElement !== "undefined") {
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    value: () => {},
+    writable: true,
+  });
+}
