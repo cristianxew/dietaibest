@@ -28,6 +28,7 @@ import { resolveGramWeight } from "@/lib/gram-resolution";
 import { rankMatches, matchPlausible } from "@/lib/fdc-match";
 import { stapleFdcId } from "@/lib/fdc-staples";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
+import { canonicalizeCached } from "@/lib/ingredient-name-repo";
 
 /**
  * Input parameters for recipe analysis
@@ -276,7 +277,42 @@ async function resolveIngredientMatches(
   const parsed: ParsedIngredient[] = ingredients
     .filter((line) => line.trim().length > 0)
     .map((line) => parseIngredientLine(line));
+  const resolved = await resolveBatch(parsed);
 
+  // LLM fallback (cached, flag-gated inside canonicalizeCached): for ingredients
+  // the deterministic pass couldn't match, canonicalize the name and retry the
+  // SAME pipeline (search → rank → guard) once with the canonical name.
+  const unmatchedIdx = resolved.flatMap((m, i) => (m.food === null ? [i] : []));
+  if (unmatchedIdx.length === 0) return resolved;
+
+  const canonical = await canonicalizeCached(
+    unmatchedIdx.map((i) => resolved[i].parsed.name)
+  );
+  const retryIdx = unmatchedIdx.filter((i) => {
+    const c = canonical.get(resolved[i].parsed.name);
+    return c != null && c.toLowerCase() !== resolved[i].parsed.name.toLowerCase();
+  });
+  if (retryIdx.length === 0) return resolved;
+
+  const retryParsed = retryIdx.map((i) => ({
+    ...resolved[i].parsed,
+    name: canonical.get(resolved[i].parsed.name)!,
+  }));
+  const retried = await resolveBatch(retryParsed);
+  retryIdx.forEach((origIdx, k) => {
+    if (retried[k].food !== null) resolved[origIdx] = retried[k];
+  });
+  return resolved;
+}
+
+/**
+ * Resolve a list of already-parsed ingredients to FDC matches + gram weights:
+ * search (cached) -> rank -> staple pin -> batch-fetch -> first plausible
+ * candidate (staple bypasses the match-quality guard) -> resolveGramWeight.
+ */
+async function resolveBatch(
+  parsed: ParsedIngredient[]
+): Promise<ResolvedIngredientMatch[]> {
   const searchResults = await Promise.all(
     parsed.map(async (p) => {
       try {

@@ -196,6 +196,14 @@ model FdcSearchCache {
   @@index([lastFetchedAt])
 }
 
+model IngredientNameCache {
+  key           String   @id // normalized raw name (lowercased, whitespace-collapsed)
+  canonical     String? // English canonical name, or null = not a food
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+
 model RecipeIngredient {
   id           String @id @default(uuid())
   recipeId     String
