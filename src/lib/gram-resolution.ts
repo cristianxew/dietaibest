@@ -151,6 +151,25 @@ export function resolveGramWeight(
     }
   }
 
+  // 4b. Generic "piece"/"sztuka" with a single USDA portion. A piece rarely
+  //     names the portion ("slice", "fruit"…) so the exact match in step 2
+  //     misses, but when the food has exactly one portion it unambiguously
+  //     represents one item — far better than the assume-1g last resort (e.g.
+  //     "2 sztuki bread" → 2×28g slice, not 2g). Only the single-portion case,
+  //     to avoid guessing which of several portions a "piece" means.
+  if (unit === "piece") {
+    const portions = food.foodPortions ?? [];
+    if (portions.length === 1 && portions[0].gramWeight > 0) {
+      const p = portions[0];
+      const perUnit = p.gramWeight / (p.amount && p.amount > 0 ? p.amount : 1);
+      return {
+        grams: qty * perUnit,
+        confidence: 0.6,
+        note: `USDA single portion: ${round(perUnit)}g per piece`,
+      };
+    }
+  }
+
   // 5. Count-unit default weight. Count units (can/package/bunch/…) have no
   //    universal volume, so when the density table didn't cover this ingredient
   //    we fall back to a typical per-unit weight. Rough, but far better than the

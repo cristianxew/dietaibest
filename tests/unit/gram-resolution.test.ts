@@ -117,6 +117,56 @@ describe("resolveGramWeight — count-unit defaults (no more assume-1g)", () => 
   });
 });
 
+describe("resolveGramWeight — generic 'piece' falls back to a single USDA portion", () => {
+  it("uses the food's only portion for a piece/sztuka (bread slice 28g), not assume-1g", () => {
+    const f = food({
+      foodPortions: [
+        { amount: 1, gramWeight: 28, measureUnit: { name: "slice", abbreviation: "slice" } },
+      ],
+    });
+    // "2 sztuki bread" → unit normalizes to "piece"; the only portion is a slice.
+    const r = resolveGramWeight(parsed({ qty: 2, unit: "piece", name: "bread" }), f);
+    expect(r.grams).toBe(56); // 2 × 28g, not 2g
+    expect(r.confidence).toBe(0.6);
+  });
+
+  it("divides gramWeight by the portion amount (2 slices = 56g → 28g per piece)", () => {
+    const f = food({
+      foodPortions: [
+        { amount: 2, gramWeight: 56, measureUnit: { name: "slice", abbreviation: "slice" } },
+      ],
+    });
+    const r = resolveGramWeight(parsed({ qty: 1, unit: "piece", name: "bread" }), f);
+    expect(r.grams).toBe(28);
+    expect(r.confidence).toBe(0.6);
+  });
+
+  it("does NOT guess when the food has multiple portions (ambiguous → assume-grams)", () => {
+    const f = food({
+      foodPortions: [
+        { amount: 1, gramWeight: 28, measureUnit: { name: "slice", abbreviation: "slice" } },
+        { amount: 1, gramWeight: 200, measureUnit: { name: "cup", abbreviation: "cup" } },
+      ],
+    });
+    const r = resolveGramWeight(parsed({ qty: 1, unit: "piece", name: "bread" }), f);
+    expect(r.confidence).toBe(0.3);
+    expect(r.grams).toBe(1);
+  });
+
+  it("leaves a density-table piece (egg) on the density value, not the single portion", () => {
+    // measureUnit "cup" does NOT normalize to piece, so step 2 won't match it;
+    // density (step 4) must still win over the single-portion fallback (step 4.5).
+    const f = food({
+      foodPortions: [
+        { amount: 1, gramWeight: 999, measureUnit: { name: "cup", abbreviation: "cup" } },
+      ],
+    });
+    const r = resolveGramWeight(parsed({ qty: 1, unit: "piece", name: "egg" }), f);
+    expect(r.grams).toBe(50); // egg density (0.7), not the 999g portion
+    expect(r.confidence).toBe(0.7);
+  });
+});
+
 describe("density table — expanded common-ingredient coverage", () => {
   // Each ingredient/unit pair below should resolve via the density table
   // (confidence 0.7), not the generic water-density fallback (0.5) or the
