@@ -128,6 +128,7 @@ export async function persistRecipe(
             const analysis = await analyzeRecipeProfileAction({
               ingredients: ingredientLines,
               servings: recipe.servings,
+              title: recipe.title,
             });
 
             if (analysis.success) {

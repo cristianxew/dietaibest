@@ -1,13 +1,14 @@
 # Nutrition engine: LLM-primary canonicalization, own USDA, honest output
 
 **Status:** Redesign approved (LLM-primary) — supersedes the prior "cached
-fallback, default off" design. **Phases A+B+B-UI + D(estimates) implemented**
-(2026-06-22/23) behind `INGREDIENT_LLM_FALLBACK`: LLM-primary single-pass
-pipeline, honest data contract, the calculator UI surfacing, and persisted macro
-estimates (`IngredientEstimateCache`, migration applied to the dev DB). Pending:
-Stage 2 (C), the full `RecipeAnalysisCache` + cached Profile, Edamam retirement
-(E), real-tier CI gate (F), and the rollout flag-flip (G). See "Implementation
-status" below.
+fallback, default off" design. **Phases A+B+B-UI + D(estimates) + C + D-remainder
+implemented** (2026-06-22/23) behind `INGREDIENT_LLM_FALLBACK`: LLM-primary
+single-pass pipeline, honest data contract, the calculator UI surfacing, persisted
+macro estimates (`IngredientEstimateCache`), the Stage-2 recipe LLM (cooked/raw +
+retention + diet/health labels) and the full `RecipeAnalysisCache` (fingerprint →
+cached 22-nutrient Profile + Stage-2 output) — all migrations applied to the dev
+DB. Pending: Edamam retirement (E), real-tier CI gate (F), and the rollout
+flag-flip (G). See "Implementation status" below.
 **Date:** 2026-06-22
 **Branch:** `feature/nutrition-calc-improvements`
 **Related:** [ADR 0003](../../docs/adr/0003-llm-primary-nutrition-canonicalization.md) ·
@@ -154,13 +155,47 @@ Recipe (lines + servings)
   `canonicalizeCached`. Migration `20260623000000_ingredient_estimate_cache`
   authored and **applied to the dev DB** (`prisma migrate deploy`, no drift).
 
+**Done — Phase C (Stage 2) + D-remainder (RecipeAnalysisCache), 2026-06-23:**
+- **Fingerprint extracted** to [`src/lib/recipe-fingerprint.ts`](../../src/lib/recipe-fingerprint.ts)
+  (neutral, dependency-free); `edamam.ts` re-exports it. Unblocks Phase E's
+  deletion of `edamam.ts` without doing E yet.
+- **Stage 2 LLM seam** — [`src/lib/recipe-analyzer.ts`](../../src/lib/recipe-analyzer.ts)
+  (`RecipeAnalyzer`, mirrors `IngredientCanonicalizer`: Vertex, zod schema,
+  best-effort empty, `setRecipeAnalyzerForTest`/`getRecipeAnalyzer`). Returns per
+  ingredient `{ cookedState, retentionFactor, confidence, flagged }` + recipe
+  `dietLabels`/`healthLabels`. **Cooked-weight safety:** confidence < 0.6 → forced
+  raw + retention 1.0 + `flagged`; retention always clamped to [0,1].
+- **RecipeAnalysisCache** — new Prisma model keyed by fingerprint
+  (`profileJson` = full result core, `stage2Json`, `coverageJson`, `servings`).
+  Migration `20260623120000_recipe_analysis_cache` applied to the dev DB
+  (`prisma migrate deploy`, no drift). The cached `total`/`items` are
+  servings-independent; `perServing` is recomputed per request, so the fingerprint
+  needn't include servings.
+- **Flag-gated wrapper** — [`src/lib/recipe-analysis-repo.ts`](../../src/lib/recipe-analysis-repo.ts)
+  (`runRecipeStage2` / `getRecipeAnalysisCached` / `saveRecipeAnalysis`): all
+  **early-return before any LLM/Prisma call when the flag is off** (same rule that
+  keeps the anchor eval network-free). Best-effort cache writes; only successful
+  analyses are saved (no-poison).
+- **Pipeline wired** — `resolveIngredientMatches(ingredients, title?)` runs Stage 2
+  after grams resolve and returns `{ matches, stage2 }`. Retention is applied to
+  **OK (USDA) items only** via effective grams (`grams × retentionFactor`) so
+  **reported grams stay raw-as-entered** (never silently scaled); estimates are
+  already "as prepared" so retention is not double-applied. `analyzeRecipeProfileAction`
+  checks the cache first (hit → skip pipeline + both LLM stages), upserts on a
+  successful miss, and both actions attach `dietLabels`/`healthLabels`; items carry
+  optional `cookedState`/`cookedFlagged`. `recipe.ts` passes the recipe title.
+- **Cooked-weight gram-scaling deferred (decision):** Stage 2 captures + flags the
+  cooked/raw judgment but does **not** auto-convert raw↔cooked gram weight this
+  iteration (the 2–3× risk). Grams are always raw-as-entered; revisit under F once
+  the harness can measure a gram transform safely.
+- Tests: `recipe-fingerprint.test.ts` (3), `recipe-analyzer.test.ts` (5),
+  `recipe-analysis-repo.test.ts` (8), extended `analyze-recipe-pipeline.test.ts`
+  (+4: retention, labels, cache hit/save). Full `test:unit` (783) + anchor eval +
+  `tsc` green.
+
 **Pending:**
-- **C (Stage 2):** recipe-fingerprint LLM stage (cooked/raw + retention +
-  diet/health labels), raw-default-on-low-confidence.
-- **D (remainder):** the full `RecipeAnalysisCache` (fingerprint → Stage-2 output
-  + cached 22-nutrient Profile) — deferred because it couples to Stage 2 (C).
-- **E (retire Edamam):** extract `generateRecipeFingerprint` out of `edamam.ts`,
-  retire call sites, delete `edamam*.ts`.
+- **E (retire Edamam):** the fingerprint is already extracted; retire call sites,
+  delete `edamam*.ts`.
 - **F:** extend the recorder for both LLM stages; promote the real tier to a CI gate.
 - **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
   backfill `IngredientNameCache`.

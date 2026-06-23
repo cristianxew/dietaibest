@@ -20,6 +20,11 @@ vi.mock("@/lib/ingredient-name-repo", () => ({
   canonicalizeCached: vi.fn(),
   getMacroEstimates: vi.fn(),
 }));
+vi.mock("@/lib/recipe-analysis-repo", () => ({
+  runRecipeStage2: vi.fn(),
+  getRecipeAnalysisCached: vi.fn(),
+  saveRecipeAnalysis: vi.fn(),
+}));
 
 import { type FdcFood } from "@/lib/fdc";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
@@ -28,9 +33,16 @@ import {
   getMacroEstimates,
 } from "@/lib/ingredient-name-repo";
 import {
+  getRecipeAnalysisCached,
+  runRecipeStage2,
+  saveRecipeAnalysis,
+} from "@/lib/recipe-analysis-repo";
+import {
   analyzeRecipeAction,
   analyzeRecipeProfileAction,
 } from "@/actions/analyzeRecipe";
+
+const EMPTY_STAGE2 = { perIngredient: [], dietLabels: [], healthLabels: [] };
 
 // A non-staple food with a token shared with its canonical name, so the
 // `matchPlausible` guard accepts it.
@@ -61,6 +73,10 @@ beforeEach(() => {
   );
   vi.mocked(canonicalizeCached).mockResolvedValue(new Map());
   vi.mocked(getMacroEstimates).mockResolvedValue(new Map());
+  // Stage 2 + cache default to the flag-off behavior: no adjustment, no hit.
+  vi.mocked(runRecipeStage2).mockResolvedValue(EMPTY_STAGE2);
+  vi.mocked(getRecipeAnalysisCached).mockResolvedValue(null);
+  vi.mocked(saveRecipeAnalysis).mockResolvedValue(undefined);
 });
 
 describe("LLM-primary pipeline · OK (canonical → FDC, single pass)", () => {
@@ -206,6 +222,79 @@ describe("LLM-primary pipeline · macro path (AnalyzeResult) is honest too", () 
     expect(r.total.kcal).toBeCloseTo(r.items[0].macros.kcal, 5);
   });
 });
+
+describe("LLM-primary pipeline · Stage 2 (cooked-weight + labels)", () => {
+  it("applies the retention factor to an OK item's nutrition without changing reported grams", async () => {
+    vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
+    vi.mocked(runRecipeStage2).mockResolvedValue({
+      perIngredient: [
+        { name: "tempeh", cookedState: "cooked", retentionFactor: 0.5, confidence: 0.95, flagged: false },
+      ],
+      dietLabels: [],
+      healthLabels: [],
+    });
+
+    const r = await analyzeRecipeProfileAction({ ingredients: ["100 g tempeh"], servings: 1 });
+
+    expect(r.items[0].status).toBe("OK");
+    expect(r.items[0].gramsTotal).toBe(100); // grams unchanged
+    expect(r.perServing.calories).toBeCloseTo(96, 1); // 192 kcal/100g * 0.5 retention
+    expect(r.items[0].cookedState).toBe("cooked");
+    expect(r.items[0].cookedFlagged).toBe(false);
+  });
+
+  it("attaches recipe diet/health labels to the profile result", async () => {
+    vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
+    vi.mocked(runRecipeStage2).mockResolvedValue({
+      perIngredient: [],
+      dietLabels: ["high-protein"],
+      healthLabels: ["vegan"],
+    });
+
+    const r = await analyzeRecipeProfileAction({ ingredients: ["100 g tempeh"], servings: 1 });
+    expect(r.dietLabels).toEqual(["high-protein"]);
+    expect(r.healthLabels).toEqual(["vegan"]);
+  });
+
+  it("returns the cached analysis on a fingerprint hit, skipping the pipeline", async () => {
+    vi.mocked(getRecipeAnalysisCached).mockResolvedValue({
+      servings: 2,
+      profile: {
+        items: [],
+        total: { ...zeroProfileLike(), calories: 400 },
+        perServing: { ...zeroProfileLike(), calories: 200 },
+      },
+      stage2: { perIngredient: [], dietLabels: ["cached-label"], healthLabels: [] },
+      coverage: { total: 1, resolved: 1, estimated: 0, unrecognized: 0 },
+    });
+
+    const r = await analyzeRecipeProfileAction({ ingredients: ["100 g tempeh"], servings: 2 });
+
+    expect(r.success).toBe(true);
+    expect(r.perServing.calories).toBe(200);
+    expect(r.dietLabels).toEqual(["cached-label"]);
+    // The pipeline was skipped: no USDA search, no Stage-2 call, no re-save.
+    expect(searchFoodsCached).not.toHaveBeenCalled();
+    expect(runRecipeStage2).not.toHaveBeenCalled();
+    expect(saveRecipeAnalysis).not.toHaveBeenCalled();
+  });
+
+  it("saves a successful fresh analysis to the cache", async () => {
+    vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
+    await analyzeRecipeProfileAction({ ingredients: ["100 g tempeh"], servings: 1 });
+    expect(saveRecipeAnalysis).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Minimal zeroed 22-nutrient profile for cache-hit fixtures.
+function zeroProfileLike() {
+  return {
+    calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sugar: 0, sodium: 0,
+    cholesterol: 0, saturatedFat: 0, transFat: 0, vitaminA: 0, vitaminC: 0,
+    vitaminD: 0, vitaminE: 0, vitaminK: 0, vitaminB12: 0, folate: 0, iron: 0,
+    calcium: 0, magnesium: 0, potassium: 0, zinc: 0,
+  };
+}
 
 describe("LLM-primary pipeline · coverage over a mixed recipe", () => {
   it("summarizes OK + ESTIMATED + UNRECOGNIZED and only counts real nutrition", async () => {

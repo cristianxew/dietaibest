@@ -5,8 +5,6 @@
  * Per Edamam policy: Only 4 macros (calories, protein, fat, net carbs) may be cached per user.
  */
 
-import { createHash } from "crypto";
-
 // ============================================================================
 // Type Definitions (from OpenAPI spec)
 // ============================================================================
@@ -118,15 +116,12 @@ let lastRequestTime = 0;
 
 /**
  * Generate deterministic fingerprint for recipe content
- * Used to identify duplicate recipes and avoid re-billing
+ * Used to identify duplicate recipes and avoid re-billing.
+ *
+ * Re-exported from the neutral `recipe-fingerprint` module (ADR 0003) so the
+ * LLM-primary engine can share the same key without importing this Edamam client.
  */
-export function generateRecipeFingerprint(recipe: EdamamRecipeInput): string {
-  const content = JSON.stringify({
-    title: recipe.title.trim().toLowerCase(),
-    ingredients: recipe.ingr.map((i) => i.trim().toLowerCase()).sort(),
-  });
-  return createHash("sha256").update(content).digest("hex");
-}
+export { generateRecipeFingerprint } from "./recipe-fingerprint";
 
 /**
  * Rate limiting: ensure minimum delay between API requests

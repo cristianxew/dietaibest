@@ -31,6 +31,13 @@ import { stapleFdcId } from "@/lib/fdc-staples";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
 import { canonicalizeCached, getMacroEstimates } from "@/lib/ingredient-name-repo";
 import { type MacroEstimate } from "@/lib/ingredient-canonicalizer";
+import { generateRecipeFingerprint } from "@/lib/recipe-fingerprint";
+import {
+  getRecipeAnalysisCached,
+  runRecipeStage2,
+  saveRecipeAnalysis,
+} from "@/lib/recipe-analysis-repo";
+import { type RecipeAnalysis } from "@/lib/recipe-analyzer";
 
 /**
  * Input parameters for recipe analysis
@@ -40,6 +47,8 @@ export interface AnalyzeInput {
   ingredients: string[];
   /** Number of servings the recipe yields */
   servings: number;
+  /** Recipe title — feeds the fingerprint cache key + Stage-2 cooked/raw judgment. */
+  title?: string;
 }
 
 /**
@@ -68,6 +77,10 @@ export interface IngredientResult {
   status: IngredientStatus;
   /** Nutrition provenance (fdc | llm_estimate | none). */
   source: IngredientSource;
+  /** Stage-2 cooked/raw judgment, when available. */
+  cookedState?: "raw" | "cooked";
+  /** True when Stage 2 defaulted to raw-as-entered on low confidence. */
+  cookedFlagged?: boolean;
 }
 
 /**
@@ -82,6 +95,10 @@ export interface AnalyzeResult {
   perServing: Macro;
   /** Honest coverage summary (resolved / estimated / unrecognized counts). */
   coverage: CoverageSummary;
+  /** Recipe-level diet labels from Stage 2 (e.g. "high-protein"). */
+  dietLabels?: string[];
+  /** Recipe-level health labels from Stage 2 (e.g. "vegan", "gluten-free"). */
+  healthLabels?: string[];
   /** Overall success status */
   success: boolean;
   /** Error message if analysis failed */
@@ -130,6 +147,10 @@ export interface IngredientProfileResult {
   dataType: string | null;
   status: IngredientStatus;
   source: IngredientSource;
+  /** Stage-2 cooked/raw judgment, when available. */
+  cookedState?: "raw" | "cooked";
+  /** True when Stage 2 defaulted to raw-as-entered on low confidence. */
+  cookedFlagged?: boolean;
 }
 
 /**
@@ -141,6 +162,10 @@ export interface AnalyzeProfileResult {
   perServing: Profile;
   /** Honest coverage summary (resolved / estimated / unrecognized counts). */
   coverage: CoverageSummary;
+  /** Recipe-level diet labels from Stage 2 (e.g. "high-protein"). */
+  dietLabels?: string[];
+  /** Recipe-level health labels from Stage 2 (e.g. "vegan", "gluten-free"). */
+  healthLabels?: string[];
   success: boolean;
   error?: string;
 }
@@ -207,7 +232,10 @@ export async function analyzeRecipeAction(
     }
 
     // Resolve FDC matches + gram weights via the shared pipeline
-    const resolved = await resolveIngredientMatches(ingredients);
+    const { matches: resolved, stage2 } = await resolveIngredientMatches(
+      ingredients,
+      input.title
+    );
 
     const items: IngredientResult[] = [];
     let totalMacros = zeroMacro();
@@ -218,12 +246,16 @@ export async function analyzeRecipeAction(
         name: m.parsed.name,
         status: m.status,
         source: m.source,
+        cookedState: m.cookedState,
+        cookedFlagged: m.cookedFlagged,
       };
 
       if (m.status === "OK" && m.food) {
+        // Retention scales nutrition only (via effective grams); reported grams
+        // stay raw-as-entered — we never silently scale the weight (ADR 0003).
         const scaledMacros = scalePer100g(
           extractMacrosFromFood(m.food),
-          m.grams
+          m.grams * m.retentionFactor
         );
         items.push({
           ...base,
@@ -281,6 +313,8 @@ export async function analyzeRecipeAction(
       total: totalMacros,
       perServing,
       coverage: summarize(items),
+      dietLabels: stage2.dietLabels,
+      healthLabels: stage2.healthLabels,
       success: true,
     };
   } catch (error) {
@@ -325,12 +359,26 @@ interface ResolvedIngredientMatch {
   source: IngredientSource;
   /** Per-100g macros when `source === "llm_estimate"`, else null. */
   estimate: MacroEstimate | null;
+  /**
+   * Stage-2 nutrient-retention multiplier in [0,1] (1 = no cooking-loss applied).
+   * Defaults to 1 when Stage 2 is off or gave no entry for this ingredient.
+   */
+  retentionFactor: number;
+  /** Stage-2 cooked/raw judgment, when available. */
+  cookedState?: "raw" | "cooked";
+  /** True when Stage 2 defaulted to raw-as-entered on low confidence. */
+  cookedFlagged?: boolean;
 }
 
-/** What `resolveBatch` produces before honest status/source are assigned. */
+/** What `resolveBatch` produces before honest status/source + Stage 2 are assigned. */
 type BatchResolution = Omit<
   ResolvedIngredientMatch,
-  "status" | "source" | "estimate"
+  | "status"
+  | "source"
+  | "estimate"
+  | "retentionFactor"
+  | "cookedState"
+  | "cookedFlagged"
 >;
 
 /**
@@ -345,8 +393,9 @@ type BatchResolution = Omit<
  * degrades to raw-name matching (honest UNRECOGNIZED on a miss).
  */
 async function resolveIngredientMatches(
-  ingredients: string[]
-): Promise<ResolvedIngredientMatch[]> {
+  ingredients: string[],
+  title?: string
+): Promise<{ matches: ResolvedIngredientMatch[]; stage2: RecipeAnalysis }> {
   const parsed: ParsedIngredient[] = ingredients
     .filter((line) => line.trim().length > 0)
     .map((line) => parseIngredientLine(line));
@@ -376,14 +425,14 @@ async function resolveIngredientMatches(
     ? await getMacroEstimates(estimateIdx.map((i) => forMatch[i].name))
     : new Map<string, MacroEstimate | null>();
 
-  return resolved.map((m, i): ResolvedIngredientMatch => {
+  const baseMatches = resolved.map((m, i): ResolvedIngredientMatch => {
     // The LLM is authoritative on "not a food" — surface it even if free-text
     // search incidentally matched something.
     if (notFood[i]) {
-      return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null };
+      return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1 };
     }
     if (m.food) {
-      return { ...m, status: "OK", source: "fdc", estimate: null };
+      return { ...m, status: "OK", source: "fdc", estimate: null, retentionFactor: 1 };
     }
     const est = estimates.get(forMatch[i].name) ?? null;
     if (est) {
@@ -396,10 +445,39 @@ async function resolveIngredientMatches(
         status: "ESTIMATED",
         source: "llm_estimate",
         estimate: est,
+        retentionFactor: 1,
       };
     }
-    return { ...m, status: "UNRECOGNIZED", source: "none", estimate: null };
+    return { ...m, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1 };
   });
+
+  // ③ Stage 2 — recipe-scoped cooked/raw + retention + diet/health labels. Off
+  // (flag) → an empty analysis, so every retentionFactor stays 1 and nothing is
+  // scaled. Applied to OK (USDA) items only; estimates are already "as prepared".
+  const stage2 = await runRecipeStage2({
+    title,
+    items: baseMatches.map((m) => ({
+      name: m.parsed.name,
+      grams: m.grams,
+      description: m.food?.description ?? null,
+    })),
+  });
+  const stage2ByName = new Map(stage2.perIngredient.map((p) => [p.name, p]));
+
+  const matches = baseMatches.map((m): ResolvedIngredientMatch => {
+    const s2 = stage2ByName.get(m.parsed.name);
+    if (!s2) return m;
+    return {
+      ...m,
+      // Retention only adjusts real USDA nutrition; estimates already reflect
+      // the prepared food, so we don't double-apply a cooking loss to them.
+      retentionFactor: m.status === "OK" ? s2.retentionFactor : 1,
+      cookedState: s2.cookedState,
+      cookedFlagged: s2.flagged,
+    };
+  });
+
+  return { matches, stage2 };
 }
 
 /**
@@ -526,7 +604,7 @@ export async function analyzeRecipeProfileAction(
   input: AnalyzeInput
 ): Promise<AnalyzeProfileResult> {
   try {
-    const { ingredients, servings } = input;
+    const { ingredients, servings, title } = input;
 
     if (!ingredients || ingredients.length === 0) {
       return failedProfile("No ingredients provided");
@@ -540,7 +618,36 @@ export async function analyzeRecipeProfileAction(
       return failedProfile("Too many ingredients (max 100)");
     }
 
-    const resolved = await resolveIngredientMatches(ingredients);
+    // Recipe-analysis cache (ADR 0003 D): a fingerprint hit short-circuits the
+    // whole pipeline — no USDA fetch, no LLM stages. Flag-gated (off → null), so
+    // the eval (flag off) never touches the DB. The cached `total`/`items` are
+    // servings-independent; perServing is recomputed for the requested servings.
+    const fingerprint = generateRecipeFingerprint({
+      title: title ?? "",
+      ingr: ingredients,
+    });
+    const cached = await getRecipeAnalysisCached(fingerprint);
+    if (cached) {
+      const p = cached.profile as {
+        items: IngredientProfileResult[];
+        total: Profile;
+        perServing: Profile;
+      };
+      return {
+        items: p.items,
+        total: p.total,
+        perServing: divideProfile(p.total, servings),
+        coverage: cached.coverage,
+        dietLabels: cached.stage2.dietLabels,
+        healthLabels: cached.stage2.healthLabels,
+        success: true,
+      };
+    }
+
+    const { matches: resolved, stage2 } = await resolveIngredientMatches(
+      ingredients,
+      title
+    );
 
     const items: IngredientProfileResult[] = [];
     let total = zeroProfile();
@@ -554,12 +661,16 @@ export async function analyzeRecipeProfileAction(
         unit: m.parsed.unit,
         status: m.status,
         source: m.source,
+        cookedState: m.cookedState,
+        cookedFlagged: m.cookedFlagged,
       };
 
       if (m.status === "OK" && m.food) {
+        // Retention scales nutrition only (via effective grams); reported grams
+        // stay raw-as-entered — we never silently scale the weight (ADR 0003).
         const scaled = scaleProfilePer100g(
           extractProfileFromFood(m.food),
-          m.grams
+          m.grams * m.retentionFactor
         );
         items.push({
           ...base,
@@ -608,8 +719,28 @@ export async function analyzeRecipeProfileAction(
     }
 
     const perServing = divideProfile(total, servings);
+    const coverage = summarize(items);
 
-    return { items, total, perServing, coverage: summarize(items), success: true };
+    // Persist the analysis (the cacheable USDA asset). Flag-gated → no-op when
+    // off; best-effort write never breaks the response. Only successful results
+    // reach here (exceptions are caught below and never cached).
+    await saveRecipeAnalysis({
+      fingerprint,
+      servings,
+      profile: { items, total, perServing },
+      stage2,
+      coverage,
+    });
+
+    return {
+      items,
+      total,
+      perServing,
+      coverage,
+      dietLabels: stage2.dietLabels,
+      healthLabels: stage2.healthLabels,
+      success: true,
+    };
   } catch (error) {
     console.error("[analyzeRecipeProfile] Unexpected error:", error);
     return failedProfile(

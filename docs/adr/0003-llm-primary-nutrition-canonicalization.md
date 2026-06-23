@@ -1,10 +1,19 @@
 # LLM-primary ingredient canonicalization; own the nutrition engine on USDA FDC
 
-**Status:** accepted — **Phase A+B implemented** (LLM-primary single-pass +
-honest data contract, behind `INGREDIENT_LLM_FALLBACK`); Stage 2, persistence,
-Edamam retirement, UI surfacing, and the rollout flag-flip remain. Open items
-tracked in
+**Status:** accepted — **Phases A+B+B-UI + D(estimates) + C + D-remainder
+implemented** behind `INGREDIENT_LLM_FALLBACK` (LLM-primary single-pass, honest
+contract, calculator UI, the Stage-2 recipe LLM, and the full `RecipeAnalysisCache`
++ cached 22-nutrient profile). Edamam retirement (E), the real-tier CI gate (F),
+and the rollout flag-flip (G) remain. Open items tracked in
 [.agent/Tasks/ingredient-llm-canonicalizer.md](../../.agent/Tasks/ingredient-llm-canonicalizer.md)
+
+**Cooked-weight implementation note (C):** Stage 2 *captures + flags* the
+cooked/raw judgment and applies the nutrient `retentionFactor` (clamped [0,1]) to
+USDA items, but it does **not** auto-convert raw↔cooked gram weight in this
+iteration — reported grams stay raw-as-entered. This is the conservative reading
+of decision 6's "never silently scale grams": a wrong gram transform is the 2–3×
+risk, whereas retention only reduces nutrient values. A measured gram transform is
+deferred to Phase F (when the harness can validate it).
 
 The recipe nutrition pipeline reached a reliability ceiling that name-fallback
 patches could not break through. Three findings forced an architectural rethink:

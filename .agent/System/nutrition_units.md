@@ -177,8 +177,34 @@ generic-but-wrong matches that passed the guard and pre-empted the LLM.
 - **Status/source ARE user-facing** (the whole point: honest output); the
   `confidence`/`portionNote` fields remain internal-only.
 - Tests: [`analyze-recipe-pipeline.test.ts`](../../tests/unit/analyze-recipe-pipeline.test.ts)
-  mocks both seams (`fdcRepo`, `ingredient-name-repo`) and asserts each status
-  transition + coverage.
+  mocks the seams (`fdcRepo`, `ingredient-name-repo`, `recipe-analysis-repo`) and
+  asserts each status transition + coverage + Stage 2.
+
+### Stage 2 — recipe LLM + analysis cache (ADR 0003 C + D)
+
+After matching, a second, recipe-scoped LLM stage runs once per recipe:
+[`RecipeAnalyzer`](../../src/lib/recipe-analyzer.ts) (Gemini on Vertex) returns,
+per ingredient, a cooked/raw judgment + a nutrient-`retentionFactor`, plus
+recipe-level `dietLabels`/`healthLabels`. It is reached through the flag-gated
+wrapper [`recipe-analysis-repo.ts`](../../src/lib/recipe-analysis-repo.ts)
+(`runRecipeStage2`), which — like the Stage-1 wrappers — **early-returns before any
+LLM/Prisma call when `INGREDIENT_LLM_FALLBACK` is off** (this is what keeps the
+anchor eval network-free).
+
+- **Cooked-weight safety:** `retentionFactor` (clamped to [0,1]) scales the
+  per-ingredient nutrition of **OK/USDA items only**, applied via *effective grams*
+  (`grams × retentionFactor`) so the **reported grams stay raw-as-entered** — we
+  never silently scale the weight. Confidence < 0.6 → forced raw + retention 1.0 +
+  `cookedFlagged`. LLM-estimated items are already "as prepared", so retention is
+  not double-applied to them. (Raw↔cooked gram conversion is intentionally
+  deferred — see the task doc's deferral decision.)
+- **Analysis cache (`RecipeAnalysisCache`):** keyed by
+  [`generateRecipeFingerprint`](../../src/lib/recipe-fingerprint.ts) (title +
+  ingredient lines). USDA is public domain, so — unlike Edamam — the full
+  22-nutrient profile is persisted. A hit in `analyzeRecipeProfileAction`
+  short-circuits the whole pipeline (no USDA fetch, no LLM stages); `perServing`
+  is recomputed from the servings-independent cached `total`, so servings is not
+  part of the key. Only successful analyses are cached; writes are best-effort.
 
 ## UI
 
