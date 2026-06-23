@@ -1,160 +1,176 @@
-# Ingredient LLM Name Canonicalizer (cached fallback)
+# Nutrition engine: LLM-primary canonicalization, own USDA, honest output
 
-**Status:** Design approved — pending implementation
-**Date:** 2026-06-21
+**Status:** Redesign approved (LLM-primary) — supersedes the prior "cached
+fallback, default off" design. **Phase A+B implemented** (2026-06-22): the
+LLM-primary single-pass pipeline + honest data contract are live behind
+`INGREDIENT_LLM_FALLBACK`; Stage 2, persistence (RecipeAnalysisCache), Edamam
+retirement, the UI surfacing, and the flag flip are pending (see
+"Implementation status" below).
+**Date:** 2026-06-22
 **Branch:** `feature/nutrition-calc-improvements`
-**Related:** [.agent/System/nutrition_units.md](../System/nutrition_units.md) (the FDC pipeline + Capa 0 harness + the match-quality guard)
+**Related:** [ADR 0003](../../docs/adr/0003-llm-primary-nutrition-canonicalization.md) ·
+[.agent/System/nutrition_units.md](../System/nutrition_units.md) (FDC pipeline +
+harness + match guard)
+
+> **History:** v1 of this doc specced the LLM as a *fallback* behind the static
+> `SYNONYMS` table, default off. A grill-me design session (2026-06-22) found
+> that the synonym table both (a) cannot cover open-ended multilingual vocab and
+> (b) *pre-empts* the fallback by producing generic-but-wrong matches that pass
+> the guard. The architecture was inverted to LLM-primary. See ADR 0003.
 
 ## Context / problem
 
-The Capa 0 golden-recipe harness measured the FDC pipeline against real Polish
-recipes and proved the dominant reliability failure is **ingredient-NAME
-canonicalization**, not gram resolution. The static substring `SYNONYMS` table in
-`src/lib/ingredients.ts` cannot cover open-ended multilingual vocabulary or
-descriptive phrases — e.g. `mięso z piersi kurczaka` (chicken breast),
-`komosa ryżowa` (quinoa), `sezam nasiona` (sesame) all fail to translate, so the
-ingredient either drops to no-match or (before the guard) matched branded junk.
+Three findings (see ADR 0003 for detail):
 
-The recently shipped **match-quality guard** (`matchPlausible` in
-`src/lib/fdc-match.ts`) stops the silent wrong-food class, but turns these into
-honest *no-matches* — it doesn't make the recipes correct. We need real coverage.
+1. **`SYNONYMS` (348 lines) is the wrong tool** — open-ended hand-maintained
+   translation that over-collapses multi-word names (`"pasta miso"`→`"pasta"`),
+   producing generic matches that pass the guard and block the LLM fallback. The
+   losos-miso carbs gap (−60%) is this pre-emption, not a missing entry.
+2. **The total silently absorbs per-ingredient failure** — a no-match → 0 g →
+   folded into a confident total. The signal to be honest already exists
+   (`confidence`, `fdcId: null`) but is discarded.
+3. **Edamam's licence forbids caching micronutrients** — the product's core
+   need. USDA FDC is public domain → cacheable. This is the migration driver.
 
 ## Goal
 
-Add an **LLM name canonicalizer** that translates/normalizes an untranslatable
-ingredient name to a generic English name suitable for USDA FDC matching, **as a
-cached fallback behind the deterministic layer and in front of the guard** — so
-the LLM solves coverage while the deterministic pipeline + guard still pick and
-protect the food. Success is measured by the real-tier harness.
+Own a reliable nutrition engine on USDA FDC, where LLM canonicalization is the
+**primary** normalizer, the output is **honest** about per-ingredient
+confidence, and the full nutrient profile is **cacheable** — matching Edamam's
+*capability contract* without its data licence. Measured by the real-tier
+golden-recipe harness.
 
-## Non-goals (out of scope)
+## Non-goals (v1)
 
-- The LLM does **not** pick FDC food ids — it only normalizes the name; the
-  deterministic search/rank/guard still choose the food.
-- The LLM does **not** resolve grams/units — that stays in `gram-resolution.ts`.
-- Expanding the static `SYNONYMS` table for the common case (complementary,
-  separate work).
+- The LLM does **not** pick FDC food ids — it normalizes the name and (on a true
+  miss) estimates macros. Deterministic search/rank/guard still choose the food.
+- No semantic/embedding search over USDA (revisit only if matching plateaus).
+- Recipe classification beyond diet/health labels + cooked-weight (e.g.
+  glycemic/inflammatory indices) is out of scope.
 
-## Design decisions (locked)
+## Architecture — single pass, two cached LLM stages
 
-| Decision | Choice | Why |
-| --- | --- | --- |
-| Model | **Gemini 2.5 Flash** (via existing Vertex `@google/genai`) | User choice; cheap, native structured output, already wired for recipe import. |
-| Timing | **Synchronous fallback + cache** | Latency hits only the first time a novel name appears system-wide; simplest, no background-job machinery. |
-| Output | Single canonical English name (nullable) | Simple; deterministic search + guard handle the rest. `null` = not a food. |
-| Batching | One LLM call per recipe (only if there are unmatched names) | Cheap; amortized by cache. |
-| Rollout | Feature flag `INGREDIENT_LLM_FALLBACK`, default **off** | Bound cost; measure before enabling; mirrors `FEATURE_MULTIMODAL_IMPORT`. |
+```
+Recipe (lines + servings)
+  → parseIngredientLine            (qty / unit / name — NO synonyms)
+  → ① LLM name stage               canonicalize + macro-estimate-on-miss
+        cache: IngredientNameCache (by name, system-wide, ~0 after warmup)
+  → staple-pin? → FDC search → rank → matchPlausible guard
+  → resolveGramWeight              (qty × unit → grams)
+  → ② LLM recipe stage             cooked/raw + retention + diet/health labels
+        cache: RecipeAnalysisCache (by generateRecipeFingerprint)
+  → Honest output contract:
+        per item { 22-nutrient profile, grams, confidence, status, source }
+        + recipe totals + per-serving + %DV + coverage ("12/13 resolved")
+```
+
+**Deleted/retired:** `SYNONYMS` map · two-pass retry + `rawName` · Edamam engine.
+**Kept:** `STAPLE_FDC_IDS` (verified pins) · `matchPlausible` guard ·
+`resolveGramWeight`. Shopping-list reuses the same cached canonical identity.
 
 ## Components
 
-### 1. `src/lib/ingredient-canonicalizer.ts` (new, single-purpose)
+### ① LLM name stage — `ingredient-canonicalizer.ts` + `ingredient-name-repo.ts`
+- Existing `IngredientCanonicalizer` (Gemini 2.5 Flash, Vertex, structured
+  output). Extend the prompt/schema to also return per-100g macro **estimates**
+  for foods absent from USDA, marked as estimates.
+- `canonicalizeCached` becomes primary (no longer flag-short-circuited off by
+  default once rolled out). Reads `IngredientNameCache`, batches misses to the
+  LLM, upserts (including `null` = not a food). Keyed by normalized raw name.
 
-Reuses `buildGenAIVertexOptions(process.env)` + `GoogleGenAI` (the same Vertex
-setup as `llm-gemma.ts`), model `gemini-2.5-flash`, with a `responseSchema`
-(Zod → `zodToJsonSchema`).
+### ② LLM recipe stage — new
+- Input: the full recipe (title + ingredient lines + matched foods). Output:
+  per-ingredient `{ cookedState: raw|cooked, retentionFactor }` + recipe
+  `dietLabels`/`healthLabels`. Cached by `generateRecipeFingerprint`
+  (`src/lib/edamam.ts:123`) in a new `RecipeAnalysisCache`.
+- **Safety:** when `cookedState` confidence is low → default to raw-as-entered,
+  set a flag; never silently scale grams.
 
-```ts
-// Batched: one generateContent call for all names.
-canonicalizeNames(rawNames: string[]): Promise<Map<string, string | null>>
-```
+### Output contract — `IngredientProfileResult` extension
+- Add `status: "OK" | "ESTIMATED" | "UNRECOGNIZED" | "MISSING_QTY"` and
+  `source: "fdc" | "llm_estimate" | "none"`. Recipe result gains a `coverage`
+  summary. UI surfaces flagged/estimated items and the coverage line.
 
-- **Prompt:** "For each ingredient name, return a generic English ingredient name
-  suitable for the USDA FoodData Central database — singular, no brand, no
-  preparation words (e.g. `mięso z piersi kurczaka` → `chicken breast`,
-  `oliwa z oliwek` → `olive oil`). Return `null` for anything that is not a food
-  ingredient (section headers, noise)."
-- **Schema:** `{ items: { raw: string; canonical: string | null }[] }`.
-- **Error handling:** on transport/parse/timeout failure, return an empty map
-  (every name a miss) — the caller falls back to the deterministic no-match. The
-  LLM is best-effort; a failure must never break recipe analysis.
+### Persistence (USDA is cacheable)
+- Cache the full 22-nutrient `Profile` per recipe (the Edamam-forbidden asset).
+- `IngredientNameCache` (exists). New `RecipeAnalysisCache` (fingerprint → stage-2
+  output + cached profile). Migrations follow the shared-DB drift workflow
+  (manual `migration.sql` + `db execute --schema` + `migrate resolve --applied`).
 
-### 2. `IngredientNameCache` (new Prisma model — mirrors `FdcSearchCache`)
+## Open implementation decisions (resolve during planning)
 
-```prisma
-model IngredientNameCache {
-  key           String   @id        // normalized raw name (lowercased, ws-collapsed)
-  canonical     String?             // English canonical, or null = not a food
-  lastFetchedAt DateTime @default(now())
+1. **Estimated macros in the total** — counted-but-flagged (complete total,
+   marked soft) vs. excluded-and-listed. *Lean: counted + flagged.*
+2. **Data model** — exact enum/provenance fields + the `RecipeAnalysisCache`
+   schema + where the cached profile lives.
+3. **Eval determinism** — extend the recorder to capture both LLM stages into
+   fixtures; mock in CI; promote the real tier to a green gate once it passes.
+4. **Prod Vertex auth** — verify ADC / service-account on the Dokploy VPS
+   (the one real ship risk; LLM is now hot-path).
+5. **Migration sequencing** — flip `INGREDIENT_LLM_FALLBACK` on, backfill
+   `IngredientNameCache`, retire Edamam call sites
+   (`analyzeRecipeNutritionAction`, `analyzeAndUpdateRecipe`,
+   `/api/nutrition/analyze`) + Edamam entitlement gating, then delete
+   `src/lib/edamam*.ts`.
 
-  @@index([lastFetchedAt])
-}
-```
+## Implementation status
 
-Key normalization reuses the same scheme as `normalizeSearchQuery`
-(lowercase, whitespace-collapse). Mappings are stable → no active TTL; refresh
-only if we ever need to (the `lastFetchedAt` index supports manual cleanup).
+**Done — Phase A+B (data contract, 2026-06-22):**
+- `parseIngredientLine` no longer calls `applySynonyms` — the parser returns the
+  raw (state-stripped) name; the LLM owns canonicalization. `SYNONYMS` /
+  `applySynonyms` are **retained but parser-detached**, used only by
+  shopping-list dedup (`shopping-list.ts`, `ShoppingListPage.tsx`) until that
+  path migrates to the cached canonical identity.
+- `resolveIngredientMatches` rewritten to **single-pass canonicalize-first**:
+  parse → `canonicalizeCached` (all names, up front) → search/rank/staple/guard →
+  grams → `getMacroEstimates` on a true miss. The old two-pass retry is gone.
+- Stage 1 estimate-on-miss: `IngredientCanonicalizer.estimateMacros` +
+  `getMacroEstimates` (flag-gated, **request-scoped** — not yet persisted;
+  Phase D adds the cache).
+- Honest contract: `IngredientProfileResult` gains `status`
+  (`OK | ESTIMATED | UNRECOGNIZED | MISSING_QTY`) + `source`
+  (`fdc | llm_estimate | none`); `AnalyzeProfileResult` gains `coverage`.
+  Estimated macros are counted-but-flagged (decision 1); a no-match is surfaced,
+  never a silent confident zero.
+- `resolveGramWeight(parsed, food | null)` weighs food-less ESTIMATED items via
+  the density/registry ladder.
+- Tests: `analyze-recipe-pipeline.test.ts` (OK/ESTIMATED/UNRECOGNIZED/coverage),
+  extended `ingredient-canonicalizer`, `ingredient-name-repo`, `gram-resolution`,
+  `parse-ingredient-line`. Full `test:unit` + anchor eval green; `tsc` clean.
 
-> Migration follows the shared-DB drift workflow: manual `migration.sql` +
-> `prisma db execute --schema` + `migrate resolve --applied` (NOT `migrate dev`,
-> which wants to reset the remote dev DB).
-
-### 3. `src/lib/ingredient-name-repo.ts` (new sibling — keeps `fdcRepo` FDC-only)
-
-```ts
-canonicalizeCached(rawNames: string[]): Promise<Map<string, string | null>>
-```
-
-Reads `IngredientNameCache` for all keys; for misses, calls
-`canonicalizeNames`; upserts results (including `null`s, so a confirmed
-non-food is not re-queried); returns the merged map. Gated by
-`INGREDIENT_LLM_FALLBACK` — when off, returns an all-empty map (no LLM, no cache
-write).
-
-### 4. Hook in `resolveIngredientMatches` (`src/actions/analyzeRecipe.ts`)
-
-Two-pass, LLM strictly as fallback:
-
-1. **Pass 1** — current deterministic resolution for every ingredient
-   (parse → synonyms → staple → search → rank → guard).
-2. Collect ingredients that ended **no-match / guard-rejected** (food null).
-3. If any **and the flag is on** → one `canonicalizeCached(names)` call.
-4. **Pass 2** — for each such ingredient with a non-null canonical name, re-run
-   the existing match path using the **canonical** name (staple lookup,
-   `searchFoodsCached`, `rankMatches`, `matchPlausible`, `resolveGramWeight`).
-   Keep the result only if it now produces a plausible match.
-5. Ingredients still unmatched stay honest no-matches.
-
-The guard runs unchanged in pass 2 — a hallucinated canonical that still doesn't
-match real USDA data resolves to a flagged no-match, never silent junk.
-
-## Data flow
-
-```
-parse → applySynonyms → staple? → search → rank → guard ─ plausible? ─ yes → resolve grams
-                                                            │ no
-                                          collect unmatched ▼ (flag on)
-                          canonicalizeCached(names)  →  cache hit? → use; miss → Gemini (batched) → upsert
-                                          │
-                          re-run search → rank → guard with canonical name → resolve grams / honest no-match
-```
+**Pending:**
+- **B-UI:** surface `status` (estimated/unrecognized badges) + the coverage line.
+  Note: the `/nutrition` calculator consumes the 5-macro `AnalyzeResult` path
+  (not the honest profile path) — needs the macro path extended OR the calculator
+  migrated to `analyzeRecipeProfileAction`; plus next-intl keys (en/es/pl).
+- **C (Stage 2):** recipe-fingerprint LLM stage (cooked/raw + retention +
+  diet/health labels), raw-default-on-low-confidence.
+- **D (persistence):** `RecipeAnalysisCache` + cached estimates + cached Profile
+  (shared-DB migration via the drift workflow).
+- **E (retire Edamam):** extract `generateRecipeFingerprint` out of `edamam.ts`,
+  retire call sites, delete `edamam*.ts`.
+- **F:** extend the recorder for both LLM stages; promote the real tier to a CI gate.
+- **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
+  backfill `IngredientNameCache`.
 
 ## Testing & measurement (definition of done)
 
-- **Unit (in CI):** `canonicalizeNames` (mock the GoogleGenAI client, like
-  `llm-gemma` tests) — batch shape, null handling, transport-failure → empty map.
-  `canonicalizeCached` — cache hit/miss/upsert, flag-off short-circuit.
-  `resolveIngredientMatches` two-pass — a name that fails pass 1 but a stubbed
-  canonical makes pass 2 match; flag-off path unchanged.
-- **Harness (the real bar):** with the flag on, run `bun run test:eval:nutrition:real`
-  (`RUN_REAL_EVAL=1`) — the Polish Day-1 recipes (`pl-d1-*`) should move into the
-  `real` tolerance. **No regression:** anchor tier + full `test:unit` (731) stay
-  green with the flag both off and on.
-- Promote the real tier into the CI gate only once it passes green.
-- The canonicalizer unit tests must mock the LLM — no live calls in CI.
+- **Unit (CI):** both LLM stages mock the GoogleGenAI client (no live calls).
+  Single-pass `resolveIngredientMatches`: canonical name drives staple/search;
+  no-match → `llm_estimate` → `ESTIMATED`; total no answer → `UNRECOGNIZED`,
+  never silent 0 g. Cooked-weight low-confidence → defaults to raw + flag.
+- **Harness (the real bar):** `RUN_REAL_EVAL=1 bun run test:eval:nutrition:real`
+  — the Polish Day-1 recipes (`pl-d1-*`) move into the `real` tolerance with the
+  honest coverage signal. No regression: anchor tier + full `test:unit` green.
+- Promote the real tier into the CI gate once green.
 
 ## Risks
 
-- **Vertex auth on the VPS:** `llm-gemma.ts` warns that ADC fails on the
-  self-hosted VPS; this depends on the same `GOOGLE_CLOUD_SERVICE_ACCOUNT_*`
-  config that image-gen/import already use in prod. Deploy dependency, not new.
-- **Latency on cold names:** one Gemini call on a recipe with never-seen names;
-  bounded by cache + fallback-only. Acceptable; flag-gated.
-- **Hallucinated canonical:** mitigated by the downstream guard (no silent wrong
-  food) and measured by the harness.
-- **Cost:** ~1 call per novel name ever (cache) on recipes that have unmatched
-  names; flag-gated.
-
-## Open questions
-
-None blocking. (Locale is not part of the cache key — the raw name is already
-language-specific; revisit only if collisions appear.)
+- **Vertex auth on the VPS** (hot-path now) — biggest ship risk; mitigated by
+  warm cache + honest `UNRECOGNIZED` degradation, but cold-start needs it solid.
+- **Hallucinated canonical / macro estimate** — guard rejects wrong foods;
+  estimates are flagged `ESTIMATED`/low-confidence and measured by the harness.
+- **Cooked-weight misjudgment** — mitigated by raw-default + flag on low
+  confidence.
+- **Cost** — Stage 1 ~1 call per novel name ever (cached); Stage 2 once per
+  unique recipe (fingerprint-cached). Amortizes low.

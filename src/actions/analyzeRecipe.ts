@@ -16,6 +16,7 @@ import {
   scalePer100g,
   extractProfileFromFood,
   scaleProfilePer100g,
+  profileFromMacroEstimate,
   addProfile,
   divideProfile,
   zeroProfile,
@@ -28,7 +29,8 @@ import { resolveGramWeight } from "@/lib/gram-resolution";
 import { rankMatches, matchPlausible } from "@/lib/fdc-match";
 import { stapleFdcId } from "@/lib/fdc-staples";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
-import { canonicalizeCached } from "@/lib/ingredient-name-repo";
+import { canonicalizeCached, getMacroEstimates } from "@/lib/ingredient-name-repo";
+import { type MacroEstimate } from "@/lib/ingredient-canonicalizer";
 
 /**
  * Input parameters for recipe analysis
@@ -81,8 +83,32 @@ export interface AnalyzeResult {
 }
 
 /**
+ * Honest per-ingredient outcome (ADR 0003). `OK` = matched a USDA food;
+ * `ESTIMATED` = no USDA match, macros estimated by the LLM (flagged, soft);
+ * `UNRECOGNIZED` = not a food, or a food we could neither match nor estimate —
+ * surfaced, never silently zeroed into a confident total; `MISSING_QTY` reserved
+ * for a line with no resolvable quantity.
+ */
+export type IngredientStatus = "OK" | "ESTIMATED" | "UNRECOGNIZED" | "MISSING_QTY";
+
+/** Where this ingredient's nutrition came from. */
+export type IngredientSource = "fdc" | "llm_estimate" | "none";
+
+/**
+ * Recipe-level honesty summary — how many ingredients resolved, were estimated,
+ * or could not be recognized. Drives the "12/13 resolved" coverage line.
+ */
+export interface CoverageSummary {
+  total: number;
+  resolved: number;
+  estimated: number;
+  unrecognized: number;
+}
+
+/**
  * Per-ingredient result for the full-profile pipeline. Carries the fields the
- * `RecipeIngredient` row needs (originalText/nameNorm/qty/unit/fdcId/grams/confidence).
+ * `RecipeIngredient` row needs (originalText/nameNorm/qty/unit/fdcId/grams/confidence)
+ * plus the honest `status`/`source` provenance.
  */
 export interface IngredientProfileResult {
   original: string;
@@ -96,6 +122,8 @@ export interface IngredientProfileResult {
   confidence: number;
   portionNote: string;
   dataType: string | null;
+  status: IngredientStatus;
+  source: IngredientSource;
 }
 
 /**
@@ -105,6 +133,8 @@ export interface AnalyzeProfileResult {
   items: IngredientProfileResult[];
   total: Profile;
   perServing: Profile;
+  /** Honest coverage summary (resolved / estimated / unrecognized counts). */
+  coverage: CoverageSummary;
   success: boolean;
   error?: string;
 }
@@ -263,46 +293,92 @@ export async function analyzeRecipeAction(
  * and `resolveGramWeight`.
  */
 interface ResolvedIngredientMatch {
+  /** Parsed ingredient, with the LLM canonical name applied for matching. */
   parsed: ParsedIngredient;
   bestMatch: FdcSearchFood | null;
   food: FdcFood | null;
   grams: number;
   confidence: number;
   note: string;
+  status: IngredientStatus;
+  source: IngredientSource;
+  /** Per-100g macros when `source === "llm_estimate"`, else null. */
+  estimate: MacroEstimate | null;
 }
 
+/** What `resolveBatch` produces before honest status/source are assigned. */
+type BatchResolution = Omit<
+  ResolvedIngredientMatch,
+  "status" | "source" | "estimate"
+>;
+
+/**
+ * LLM-primary, single-pass resolution (ADR 0003):
+ *   parse → ① canonicalize ALL names → search/rank/staple/guard → grams
+ *         → ② estimate macros for foods USDA does not carry → honest status.
+ *
+ * Stage 1 (`canonicalizeCached`) is the PRIMARY normalizer (was a fallback): it
+ * runs up front for every name so a multilingual name matches USDA without the
+ * old `SYNONYMS` table. It is flag-gated and cached, so it amortizes to ~0 calls
+ * after warmup; when the flag is off it returns an empty map and the pipeline
+ * degrades to raw-name matching (honest UNRECOGNIZED on a miss).
+ */
 async function resolveIngredientMatches(
   ingredients: string[]
 ): Promise<ResolvedIngredientMatch[]> {
   const parsed: ParsedIngredient[] = ingredients
     .filter((line) => line.trim().length > 0)
     .map((line) => parseIngredientLine(line));
-  const resolved = await resolveBatch(parsed);
 
-  // LLM fallback (cached, flag-gated inside canonicalizeCached): for ingredients
-  // the deterministic pass couldn't match, canonicalize the name and retry the
-  // SAME pipeline (search → rank → guard) once with the canonical name.
-  const unmatchedIdx = resolved.flatMap((m, i) => (m.food === null ? [i] : []));
-  if (unmatchedIdx.length === 0) return resolved;
+  // ① Canonicalize every name once, up front (keyed by the raw parsed name).
+  const canonical = await canonicalizeCached(parsed.map((p) => p.name));
 
-  const canonical = await canonicalizeCached(
-    unmatchedIdx.map((i) => resolved[i].parsed.name)
+  // The name we actually search USDA with: the canonical when the LLM gave a
+  // different one, else the raw parsed name (flag off / cache miss / same).
+  const forMatch: ParsedIngredient[] = parsed.map((p) => {
+    const c = canonical.get(p.name);
+    return c != null && c.toLowerCase() !== p.name.toLowerCase()
+      ? { ...p, name: c }
+      : p;
+  });
+  // An explicit `null` from the LLM means "not a food" (section header, noise).
+  const notFood = parsed.map((p) => canonical.get(p.name) === null);
+
+  const resolved = await resolveBatch(forMatch);
+
+  // ② For a food the deterministic pass could not match (and the LLM did NOT
+  // call a non-food), estimate per-100g macros as the last coverage step.
+  const estimateIdx = resolved.flatMap((m, i) =>
+    m.food === null && !notFood[i] ? [i] : []
   );
-  const retryIdx = unmatchedIdx.filter((i) => {
-    const c = canonical.get(resolved[i].parsed.name);
-    return c != null && c.toLowerCase() !== resolved[i].parsed.name.toLowerCase();
-  });
-  if (retryIdx.length === 0) return resolved;
+  const estimates = estimateIdx.length
+    ? await getMacroEstimates(estimateIdx.map((i) => forMatch[i].name))
+    : new Map<string, MacroEstimate | null>();
 
-  const retryParsed = retryIdx.map((i) => ({
-    ...resolved[i].parsed,
-    name: canonical.get(resolved[i].parsed.name)!,
-  }));
-  const retried = await resolveBatch(retryParsed);
-  retryIdx.forEach((origIdx, k) => {
-    if (retried[k].food !== null) resolved[origIdx] = retried[k];
+  return resolved.map((m, i): ResolvedIngredientMatch => {
+    // The LLM is authoritative on "not a food" — surface it even if free-text
+    // search incidentally matched something.
+    if (notFood[i]) {
+      return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null };
+    }
+    if (m.food) {
+      return { ...m, status: "OK", source: "fdc", estimate: null };
+    }
+    const est = estimates.get(forMatch[i].name) ?? null;
+    if (est) {
+      const g = resolveGramWeight(forMatch[i], null);
+      return {
+        ...m,
+        grams: g.grams,
+        confidence: g.confidence,
+        note: `LLM macro estimate (no USDA match); ${g.note}`,
+        status: "ESTIMATED",
+        source: "llm_estimate",
+        estimate: est,
+      };
+    }
+    return { ...m, status: "UNRECOGNIZED", source: "none", estimate: null };
   });
-  return resolved;
 }
 
 /**
@@ -312,7 +388,7 @@ async function resolveIngredientMatches(
  */
 async function resolveBatch(
   parsed: ParsedIngredient[]
-): Promise<ResolvedIngredientMatch[]> {
+): Promise<BatchResolution[]> {
   const searchResults = await Promise.all(
     parsed.map(async (p) => {
       try {
@@ -360,7 +436,7 @@ async function resolveBatch(
     foodsById.set(food.fdcId, food);
   }
 
-  const resolved: ResolvedIngredientMatch[] = [];
+  const resolved: BatchResolution[] = [];
   for (const { parsed, candidates } of ranked) {
     if (!candidates.length) {
       resolved.push({
@@ -432,33 +508,15 @@ export async function analyzeRecipeProfileAction(
     const { ingredients, servings } = input;
 
     if (!ingredients || ingredients.length === 0) {
-      return {
-        items: [],
-        total: zeroProfile(),
-        perServing: zeroProfile(),
-        success: false,
-        error: "No ingredients provided",
-      };
+      return failedProfile("No ingredients provided");
     }
 
     if (!servings || servings <= 0) {
-      return {
-        items: [],
-        total: zeroProfile(),
-        perServing: zeroProfile(),
-        success: false,
-        error: "Servings must be a positive number",
-      };
+      return failedProfile("Servings must be a positive number");
     }
 
     if (ingredients.length > 100) {
-      return {
-        items: [],
-        total: zeroProfile(),
-        perServing: zeroProfile(),
-        success: false,
-        error: "Too many ingredients (max 100)",
-      };
+      return failedProfile("Too many ingredients (max 100)");
     }
 
     const resolved = await resolveIngredientMatches(ingredients);
@@ -473,48 +531,99 @@ export async function analyzeRecipeProfileAction(
         nameNorm: m.parsed.name,
         qty: m.parsed.qty,
         unit: m.parsed.unit,
+        status: m.status,
+        source: m.source,
       };
 
-      if (!m.food) {
+      if (m.status === "OK" && m.food) {
+        const scaled = scaleProfilePer100g(
+          extractProfileFromFood(m.food),
+          m.grams
+        );
         items.push({
           ...base,
-          fdcId: m.bestMatch?.fdcId ?? null,
-          description: m.bestMatch?.description ?? null,
-          gramsTotal: 0,
-          confidence: 0,
+          fdcId: m.food.fdcId,
+          description: m.food.description,
+          gramsTotal: m.grams,
+          confidence: m.confidence,
           portionNote: m.note,
-          dataType: m.bestMatch?.dataType ?? null,
+          dataType: m.food.dataType,
         });
+        total = addProfile(total, scaled);
         continue;
       }
 
-      const scaled = scaleProfilePer100g(extractProfileFromFood(m.food), m.grams);
+      if (m.status === "ESTIMATED" && m.estimate) {
+        // Counted but flagged (ADR 0003 decision 1): the total stays complete,
+        // the item is marked soft. Only the 5 macros are known; micros are 0.
+        const scaled = scaleProfilePer100g(
+          profileFromMacroEstimate(m.estimate),
+          m.grams
+        );
+        items.push({
+          ...base,
+          fdcId: null,
+          description: null,
+          gramsTotal: m.grams,
+          confidence: m.confidence,
+          portionNote: m.note,
+          dataType: null,
+        });
+        total = addProfile(total, scaled);
+        continue;
+      }
+
+      // UNRECOGNIZED / MISSING_QTY: surfaced, contributes 0 — never a silent
+      // confident zero folded into the total.
       items.push({
         ...base,
-        fdcId: m.food.fdcId,
-        description: m.food.description,
-        gramsTotal: m.grams,
-        confidence: m.confidence,
+        fdcId: m.bestMatch?.fdcId ?? null,
+        description: m.bestMatch?.description ?? null,
+        gramsTotal: 0,
+        confidence: 0,
         portionNote: m.note,
-        dataType: m.food.dataType,
+        dataType: m.bestMatch?.dataType ?? null,
       });
-      total = addProfile(total, scaled);
     }
 
     const perServing = divideProfile(total, servings);
 
-    return { items, total, perServing, success: true };
+    return { items, total, perServing, coverage: summarize(items), success: true };
   } catch (error) {
     console.error("[analyzeRecipeProfile] Unexpected error:", error);
-    return {
-      items: [],
-      total: zeroProfile(),
-      perServing: zeroProfile(),
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred during analysis",
-    };
+    return failedProfile(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred during analysis"
+    );
   }
+}
+
+/** Empty coverage for failed/short-circuited analyses. */
+function emptyCoverage(): CoverageSummary {
+  return { total: 0, resolved: 0, estimated: 0, unrecognized: 0 };
+}
+
+/** A failed full-profile result with zeroed totals and empty coverage. */
+function failedProfile(error: string): AnalyzeProfileResult {
+  return {
+    items: [],
+    total: zeroProfile(),
+    perServing: zeroProfile(),
+    coverage: emptyCoverage(),
+    success: false,
+    error,
+  };
+}
+
+/** Roll per-ingredient statuses up into the recipe coverage summary. */
+function summarize(items: IngredientProfileResult[]): CoverageSummary {
+  return {
+    total: items.length,
+    resolved: items.filter((i) => i.status === "OK").length,
+    estimated: items.filter((i) => i.status === "ESTIMATED").length,
+    unrecognized: items.filter(
+      (i) => i.status === "UNRECOGNIZED" || i.status === "MISSING_QTY"
+    ).length,
+  };
 }

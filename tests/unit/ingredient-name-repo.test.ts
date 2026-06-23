@@ -10,13 +10,23 @@ import { prisma } from "@/lib/prisma";
 import {
   IngredientCanonicalizer,
   setIngredientCanonicalizerForTest,
+  type MacroEstimate,
 } from "@/lib/ingredient-canonicalizer";
-import { canonicalizeCached } from "@/lib/ingredient-name-repo";
+import { canonicalizeCached, getMacroEstimates } from "@/lib/ingredient-name-repo";
 
 const fakeCanon = (map: Record<string, string | null>) =>
   ({
     canonicalize: vi.fn(async (names: string[]) => {
       const m = new Map<string, string | null>();
+      for (const n of names) if (n in map) m.set(n, map[n]);
+      return m;
+    }),
+  }) as unknown as IngredientCanonicalizer;
+
+const fakeEstimator = (map: Record<string, MacroEstimate | null>) =>
+  ({
+    estimateMacros: vi.fn(async (names: string[]) => {
+      const m = new Map<string, MacroEstimate | null>();
       for (const n of names) if (n in map) m.set(n, map[n]);
       return m;
     }),
@@ -69,5 +79,35 @@ describe("canonicalizeCached", () => {
         create: { key: "komosa ryżowa", canonical: "quinoa" },
       })
     );
+  });
+});
+
+describe("getMacroEstimates", () => {
+  const miso: MacroEstimate = {
+    kcal: 199,
+    protein: 12,
+    fat: 6,
+    carbs: 26,
+    fiber: 5,
+  };
+
+  it("returns an empty map and skips the LLM when the flag is off", async () => {
+    vi.stubEnv("INGREDIENT_LLM_FALLBACK", "0");
+    const est = fakeEstimator({ "miso paste": miso });
+    setIngredientCanonicalizerForTest(est);
+
+    const out = await getMacroEstimates(["miso paste"]);
+    expect(out.size).toBe(0);
+    expect(
+      (est as unknown as { estimateMacros: ReturnType<typeof vi.fn> })
+        .estimateMacros
+    ).not.toHaveBeenCalled();
+  });
+
+  it("returns per-100g estimates from the LLM when the flag is on", async () => {
+    setIngredientCanonicalizerForTest(fakeEstimator({ "miso paste": miso }));
+
+    const out = await getMacroEstimates(["miso paste"]);
+    expect(out.get("miso paste")).toEqual(miso);
   });
 });

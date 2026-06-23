@@ -50,3 +50,59 @@ describe("IngredientCanonicalizer", () => {
     ).not.toHaveBeenCalled();
   });
 });
+
+describe("IngredientCanonicalizer.estimateMacros", () => {
+  it("parses per-100g macro estimates for each name", async () => {
+    const c = new IngredientCanonicalizer({
+      clientOverride: fakeClient(
+        JSON.stringify({
+          items: [
+            { name: "miso paste", kcal: 199, protein: 12, fat: 6, carbs: 26, fiber: 5 },
+          ],
+        })
+      ),
+    });
+    const out = await c.estimateMacros(["miso paste"]);
+    expect(out.get("miso paste")).toEqual({
+      kcal: 199,
+      protein: 12,
+      fat: 6,
+      carbs: 26,
+      fiber: 5,
+    });
+  });
+
+  it("maps to null when the model cannot estimate a name (kcal null)", async () => {
+    const c = new IngredientCanonicalizer({
+      clientOverride: fakeClient(
+        JSON.stringify({
+          items: [
+            { name: "Posiłek 1", kcal: null, protein: null, fat: null, carbs: null, fiber: null },
+          ],
+        })
+      ),
+    });
+    const out = await c.estimateMacros(["Posiłek 1"]);
+    expect(out.get("Posiłek 1")).toBeNull();
+  });
+
+  it("returns an empty map on transport failure (best-effort, never throws)", async () => {
+    const c = new IngredientCanonicalizer({
+      clientOverride: fakeClient(() => {
+        throw new Error("vertex down");
+      }),
+    });
+    expect((await c.estimateMacros(["whatever"])).size).toBe(0);
+  });
+
+  it("returns an empty map for no input without calling the model", async () => {
+    const client = fakeClient("{}");
+    const c = new IngredientCanonicalizer({ clientOverride: client });
+    const out = await c.estimateMacros([]);
+    expect(out.size).toBe(0);
+    expect(
+      (client as never as { models: { generateContent: ReturnType<typeof vi.fn> } })
+        .models.generateContent
+    ).not.toHaveBeenCalled();
+  });
+});

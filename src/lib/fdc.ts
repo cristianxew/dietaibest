@@ -433,6 +433,28 @@ export function zeroProfile(): Profile {
   return out;
 }
 
+/**
+ * Build a per-100g `Profile` from an LLM macro estimate (ADR 0003 coverage
+ * chain). Only the five macros are known; every micronutrient stays 0 — the
+ * value is flagged `ESTIMATED` upstream so the gap is honest, not hidden.
+ */
+export function profileFromMacroEstimate(est: {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  fiber: number;
+}): Profile {
+  return {
+    ...zeroProfile(),
+    calories: est.kcal,
+    protein: est.protein,
+    fat: est.fat,
+    carbs: est.carbs,
+    fiber: est.fiber,
+  };
+}
+
 /** Scale a per-100g profile to a given gram amount. */
 export function scaleProfilePer100g(p: Profile, grams: number): Profile {
   const f = grams / 100;

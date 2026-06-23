@@ -115,6 +115,28 @@ describe("parseIngredientLine · non-ASCII (Polish) units parse (P0 regression)"
   });
 });
 
+describe("parseIngredientLine · does NOT translate (LLM owns canonicalization)", () => {
+  // ADR 0003: the parser must NOT collapse names via the SYNONYMS table — that
+  // over-collapses multi-word names ("sos sojowy" → "sauce", "pasta miso" →
+  // "pasta") into generic-but-wrong matches that pass the guard and pre-empt the
+  // LLM canonicalizer. The parser now returns the raw (state-stripped) name and
+  // the LLM canonicalizer is the single normalizer.
+  it("keeps a single-word foreign name raw ('cebolla', not 'onion')", () => {
+    const p = parseIngredientLine("100 g cebolla");
+    expect(p.name).toBe("cebolla");
+  });
+
+  it("does not over-collapse a multi-word name ('sos sojowy' stays intact)", () => {
+    const p = parseIngredientLine("15 ml sos sojowy");
+    expect(p.name).toBe("sos sojowy");
+  });
+
+  it("keeps an English name untouched ('chicken breast')", () => {
+    const p = parseIngredientLine("150 g chicken breast");
+    expect(p.name).toBe("chicken breast");
+  });
+});
+
 describe("parseIngredientLine · existing behavior still holds", () => {
   it("parses spaced qty/unit/name", () => {
     const p = parseIngredientLine("150 g chicken breast");

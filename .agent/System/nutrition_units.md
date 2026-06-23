@@ -1,6 +1,6 @@
 # Nutrition Unit Handling (FDC pipeline)
 
-**Last Updated:** 2026-06-19
+**Last Updated:** 2026-06-22
 
 How DietAI turns a written ingredient line into grams, and from grams into a
 nutrition profile via USDA FoodData Central (FDC). This is the source of truth
@@ -70,13 +70,15 @@ Turns a free-text line into `{ qty, unit, name }`. Notable behaviors:
   (tsp), `ząbki` (cloves). With `[a-zA-Z]` they silently collapsed to `piece`.
 - Names are not singularized; the density table and staple map handle plurals
   via a singular fallback (`chickpeas` → `chickpea`, `cherries` → `cherry`).
-- **Synonyms match on Unicode word boundaries, longest-first** (`applySynonyms`).
-  The old `name.includes(synonym)` treated short keys as substrings, so the
-  `"sal" → "salt"` synonym silently turned **`salmon` / `salsa` / `salad` into
-  `"salt"`** — zeroing a very common protein. Matching is now bounded
-  (`(^|[^\p{L}])syn([^\p{L}]|$)`) and tries the longest synonym first, so
-  `aceite de oliva` → `olive oil` (not `oil`). Covered by
-  [`apply-synonyms.test.ts`](../../tests/unit/apply-synonyms.test.ts).
+- **The parser no longer translates names** (ADR 0003). It returns the raw,
+  state-stripped name; the **LLM canonicalizer is the single normalizer** (see
+  "LLM-primary canonicalization" below). The `SYNONYMS` map / `applySynonyms`
+  still exist but are **detached from the parser** — used only by shopping-list
+  dedup (`shopping-list.ts`, `ShoppingListPage.tsx`) until that path migrates to
+  the cached canonical identity. They are still word-boundary + longest-first
+  matched (covered by
+  [`apply-synonyms.test.ts`](../../tests/unit/apply-synonyms.test.ts)); the
+  retired in-parser use is why `cebolla` / `sos sojowy` now parse raw.
 - **State-word strip caveat:** `ground` is a state word, so `ground turkey`/
   `ground beef` normalize to `turkey`/`beef` and resolve to the base cut — there
   is no reachable dedicated ground-meat staple key.
@@ -145,6 +147,38 @@ Foundation matches — the biggest source of wrong recipe nutrition.
 > to extraction/matching only affect **new** analyses; existing recipes keep
 > their old values until re-analyzed.
 
+## LLM-primary canonicalization & honest output (ADR 0003)
+
+`analyzeRecipeProfileAction` is **LLM-primary, single-pass**. Before matching, it
+canonicalizes **every** ingredient name once via
+[`canonicalizeCached`](../../src/lib/ingredient-name-repo.ts) (Gemini 2.5 Flash
+on Vertex, [`ingredient-canonicalizer.ts`](../../src/lib/ingredient-canonicalizer.ts)),
+then runs the deterministic staple/search/rank/guard layers on the canonical
+name. This replaced the old two-pass retry + the in-parser `SYNONYMS` table,
+which over-collapsed multi-word names (`pasta miso` → `pasta`) into
+generic-but-wrong matches that passed the guard and pre-empted the LLM.
+
+- **Flag-gated, cached.** Gated by `INGREDIENT_LLM_FALLBACK`. Off → empty map, no
+  LLM/DB call, the pipeline matches on raw names and a miss degrades to an honest
+  `UNRECOGNIZED` (the anchor eval relies on this early-return to stay network-free
+  in CI). On → one batched call per novel name ever; cached in
+  `IngredientNameCache` system-wide, so it amortizes to ~0 after warmup.
+- **Coverage chain:** USDA FDC → LLM **macro estimate** (`getMacroEstimates` /
+  `estimateMacros`, per-100g, request-scoped today) → honest gap. The estimate is
+  weighed by `resolveGramWeight(parsed, null)` (food-less density/registry ladder).
+- **Honest per-ingredient contract** on `IngredientProfileResult`:
+  - `status`: `OK` (USDA match) · `ESTIMATED` (LLM macros, counted but flagged,
+    micros 0) · `UNRECOGNIZED` (not a food, or no match + no estimate — surfaced,
+    **never a silent confident zero**) · `MISSING_QTY` (reserved).
+  - `source`: `fdc | llm_estimate | none`.
+  - `AnalyzeProfileResult.coverage` = `{ total, resolved, estimated, unrecognized }`
+    — the "12/13 resolved" signal.
+- **Status/source ARE user-facing** (the whole point: honest output); the
+  `confidence`/`portionNote` fields remain internal-only.
+- Tests: [`analyze-recipe-pipeline.test.ts`](../../tests/unit/analyze-recipe-pipeline.test.ts)
+  mocks both seams (`fdcRepo`, `ingredient-name-repo`) and asserts each status
+  transition + coverage.
+
 ## UI
 
 - **Recipe create/edit** (`RecipeFormIngredients.tsx`, used by both the page form
@@ -212,10 +246,14 @@ total. It does NOT make the recipes pass — that needs the synonyms below. The
 guard's limit: an incidental substring overlap still slips (`imbir mielony` →
 "CINNAMON MIELONY"), which the synonym fix resolves.
 
-This re-frames the roadmap: Polish name canonicalization (Capa 3 — expand
-`SYNONYMS`: komosa ryżowa→quinoa, sezam→sesame, imbir→ginger, mięso z piersi
-kurczaka→chicken breast, unit `plastra`→slice) is the biggest remaining lever,
-ahead of gram-resolution consolidation (Capa 2).
+> **Superseded (ADR 0003):** the original roadmap here called for *expanding*
+> `SYNONYMS` (komosa ryżowa→quinoa, etc.). That approach was rejected — a
+> hand-maintained multilingual table is open-ended and over-collapses multi-word
+> names. The fix shipped instead is **LLM-primary canonicalization** (see the
+> section above): the parser stopped translating and the Gemini canonicalizer
+> normalizes pl→en up front. To make the `pl-d1-*` real-tier recipes pass
+> deterministically the recorder must capture the LLM stages into fixtures
+> (Phase F); only then is the real tier promoted to a CI gate.
 
 The same `checkInvariants` is intended to become the runtime sanity gate (Capa 1).
 

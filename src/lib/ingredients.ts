@@ -867,7 +867,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
       const unit = normalizeUnit(unitRaw);
       let name = rest.toLowerCase();
       name = stripStateWords(name);
-      name = applySynonyms(name);
       name = name.trim();
 
       return { original, name, qty, unit };
@@ -884,7 +883,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
     const unit = normalizeUnit(match2[3]);
     let name = match2[1].toLowerCase();
     name = stripStateWords(name);
-    name = applySynonyms(name);
     name = name.trim();
 
     return { original, name, qty, unit };
@@ -899,7 +897,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
     const qty = toNumber(match3[1]);
     let name = match3[2].toLowerCase();
     name = stripStateWords(name);
-    name = applySynonyms(name);
     name = name.trim();
 
     return { original, name, qty, unit: "piece" };
@@ -908,7 +905,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
   // Fallback: No quantity found, treat as single piece
   let name = cleaned.toLowerCase();
   name = stripStateWords(name);
-  name = applySynonyms(name);
   name = name.trim();
 
   return { original, name, qty: 1, unit: "piece" };

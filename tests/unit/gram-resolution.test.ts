@@ -88,6 +88,29 @@ describe("resolveGramWeight — strategy ladder", () => {
   });
 });
 
+describe("resolveGramWeight — food-less (ESTIMATED items have no USDA food)", () => {
+  // ADR 0003: when no USDA food matches but the LLM estimates macros, we still
+  // need grams from qty × unit. The USDA-portion strategies (2, 3, 4b) are
+  // skipped; the density/registry ladder carries the weight.
+  it("resolves direct grams when food is null", () => {
+    const r = resolveGramWeight(parsed({ qty: 80, unit: "g", name: "tempeh" }), null);
+    expect(r.grams).toBe(80);
+    expect(r.confidence).toBe(1.0);
+  });
+
+  it("resolves via the density table when food is null", () => {
+    const r = resolveGramWeight(parsed({ qty: 1, unit: "cup", name: "flour" }), null);
+    expect(r.grams).toBe(120);
+    expect(r.confidence).toBe(0.7);
+  });
+
+  it("falls to the registry generic conversion when food is null and name unknown", () => {
+    const r = resolveGramWeight(parsed({ qty: 1, unit: "tbsp", name: "xyzzy" }), null);
+    expect(r.grams).toBeCloseTo(14.787, 3);
+    expect(r.confidence).toBe(0.5);
+  });
+});
+
 describe("resolveGramWeight — count-unit defaults (no more assume-1g)", () => {
   it("uses a typical weight for a can when nothing else resolves it (not 1g)", () => {
     const r = resolveGramWeight(

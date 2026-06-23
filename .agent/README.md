@@ -231,17 +231,17 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
-#### [Ingredient LLM Name Canonicalizer](./Tasks/ingredient-llm-canonicalizer.md)
-**Purpose:** Cached LLM (Gemini 2.5 Flash) fallback that normalizes untranslatable ingredient names to USDA-friendly English, behind the deterministic layer and in front of the match-quality guard
+#### [Nutrition engine: LLM-primary canonicalization](./Tasks/ingredient-llm-canonicalizer.md)
+**Purpose:** Redesign making LLM canonicalization (Gemini 2.5 Flash) the **primary** normalizer, owning the engine on USDA FDC, retiring Edamam and the `SYNONYMS` table, with an honest per-ingredient output contract. Supersedes the prior fallback design — see [ADR 0003](../docs/adr/0003-llm-primary-nutrition-canonicalization.md).
 
 **Contains:**
-- Why: the Capa 0 harness proved name canonicalization (not gram resolution) is the dominant FDC reliability gap
-- Components: `ingredient-canonicalizer.ts`, `IngredientNameCache` model, `ingredient-name-repo.ts`, the two-pass hook in `resolveIngredientMatches`
-- Locked decisions (Gemini Flash, sync fallback + cache, single nullable canonical, flag-gated) and the harness as the definition of done
+- Why: the synonym table over-collapses multi-word names and pre-empts the fallback; the total silently zeroes no-matches; Edamam's licence forbids caching micronutrients (USDA FDC is public-domain → cacheable)
+- Single-pass pipeline + two cached LLM stages (name-scoped Stage 1; recipe-fingerprint Stage 2 for cooked-weight + diet/health labels)
+- Honest output contract (`status`/`source`/coverage), coverage chain (FDC → LLM-estimate → honest gap), and the 5 open implementation decisions
 
 **When to read:**
-- Implementing or changing the LLM ingredient-name fallback
-- Touching `resolveIngredientMatches` match selection or the name cache
+- Implementing the LLM-primary nutrition pipeline or retiring Edamam
+- Touching `resolveIngredientMatches`, `IngredientNameCache`, `SYNONYMS`, or the canonicalizer
 
 ---
 

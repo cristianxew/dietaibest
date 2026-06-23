@@ -11,7 +11,10 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getIngredientCanonicalizer } from "./ingredient-canonicalizer";
+import {
+  getIngredientCanonicalizer,
+  type MacroEstimate,
+} from "./ingredient-canonicalizer";
 
 function normalizeNameKey(raw: string): string {
   return raw.toLowerCase().trim().replace(/\s+/g, " ");
@@ -59,4 +62,26 @@ export async function canonicalizeCached(
     out.set(raw, byKey.get(keyOf.get(raw)!) ?? null);
   }
   return out;
+}
+
+/**
+ * Per-100g macro estimates for canonical foods USDA does not carry — the last
+ * resort in the coverage chain (FDC → estimate → honest gap). Gated by the same
+ * INGREDIENT_LLM_FALLBACK flag; off → empty map (no LLM call), so the ingredient
+ * degrades to an honest UNRECOGNIZED instead of a silent zero.
+ *
+ * Request-scoped today: estimates are not persisted. A future
+ * `RecipeAnalysisCache`/estimate cache (ADR 0003 Phase D) will back this so a
+ * novel food is estimated at most once system-wide. Best-effort: an LLM failure
+ * yields an empty map and the caller falls through to UNRECOGNIZED.
+ */
+export async function getMacroEstimates(
+  names: string[]
+): Promise<Map<string, MacroEstimate | null>> {
+  const out = new Map<string, MacroEstimate | null>();
+  if (process.env.INGREDIENT_LLM_FALLBACK !== "1" || names.length === 0) {
+    return out;
+  }
+  const unique = [...new Set(names)];
+  return getIngredientCanonicalizer().estimateMacros(unique);
 }

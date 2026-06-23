@@ -102,7 +102,7 @@ function findDensityEntry(
  */
 export function resolveGramWeight(
   parsed: ParsedIngredient,
-  food: FdcFood
+  food: FdcFood | null
 ): GramResolution {
   const { qty, unit, name } = parsed;
 
@@ -111,18 +111,22 @@ export function resolveGramWeight(
     return { grams: qty, confidence: 1.0, note: "Direct gram measurement" };
   }
 
-  // 2. USDA food portions (preferred — real measured weights).
-  const portionGrams = resolveGramWeightFromPortions(food, unit);
-  if (portionGrams !== null) {
-    return {
-      grams: qty * portionGrams,
-      confidence: 0.9,
-      note: `USDA portion: ${round(portionGrams)}g per ${unit}`,
-    };
+  // 2. USDA food portions (preferred — real measured weights). Skipped for an
+  //    LLM-estimated ingredient (food === null), which has no USDA payload — its
+  //    grams come from the density/registry ladder below.
+  if (food) {
+    const portionGrams = resolveGramWeightFromPortions(food, unit);
+    if (portionGrams !== null) {
+      return {
+        grams: qty * portionGrams,
+        confidence: 0.9,
+        note: `USDA portion: ${round(portionGrams)}g per ${unit}`,
+      };
+    }
   }
 
   // 3. Branded serving weight (a "piece"/"serving"/"package" of a branded food).
-  if (food.dataType === "Branded") {
+  if (food && food.dataType === "Branded") {
     const branded = extractBrandedServing(food);
     if (
       branded.gramsPerServing !== null &&
@@ -157,7 +161,7 @@ export function resolveGramWeight(
   //     represents one item — far better than the assume-1g last resort (e.g.
   //     "2 sztuki bread" → 2×28g slice, not 2g). Only the single-portion case,
   //     to avoid guessing which of several portions a "piece" means.
-  if (unit === "piece") {
+  if (food && unit === "piece") {
     const portions = food.foodPortions ?? [];
     if (portions.length === 1 && portions[0].gramWeight > 0) {
       const p = portions[0];
