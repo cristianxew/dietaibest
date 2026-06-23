@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     ingredientNameCache: { findMany: vi.fn(), upsert: vi.fn() },
+    ingredientEstimateCache: { findMany: vi.fn(), upsert: vi.fn() },
   },
 }));
 
@@ -91,7 +92,7 @@ describe("getMacroEstimates", () => {
     fiber: 5,
   };
 
-  it("returns an empty map and skips the LLM when the flag is off", async () => {
+  it("returns an empty map and skips the LLM + DB when the flag is off", async () => {
     vi.stubEnv("INGREDIENT_LLM_FALLBACK", "0");
     const est = fakeEstimator({ "miso paste": miso });
     setIngredientCanonicalizerForTest(est);
@@ -102,12 +103,48 @@ describe("getMacroEstimates", () => {
       (est as unknown as { estimateMacros: ReturnType<typeof vi.fn> })
         .estimateMacros
     ).not.toHaveBeenCalled();
+    expect(prisma.ingredientEstimateCache.findMany).not.toHaveBeenCalled();
   });
 
-  it("returns per-100g estimates from the LLM when the flag is on", async () => {
+  it("serves a cache hit without calling the LLM", async () => {
+    vi.mocked(prisma.ingredientEstimateCache.findMany).mockResolvedValue([
+      { name: "miso paste", ...miso, lastFetchedAt: new Date() },
+    ] as never);
+    const est = fakeEstimator({});
+    setIngredientCanonicalizerForTest(est);
+
+    const out = await getMacroEstimates(["miso paste"]);
+    expect(out.get("miso paste")).toEqual(miso);
+    expect(
+      (est as unknown as { estimateMacros: ReturnType<typeof vi.fn> })
+        .estimateMacros
+    ).not.toHaveBeenCalled();
+  });
+
+  it("calls the LLM for a miss and upserts the estimate", async () => {
+    vi.mocked(prisma.ingredientEstimateCache.findMany).mockResolvedValue(
+      [] as never
+    );
     setIngredientCanonicalizerForTest(fakeEstimator({ "miso paste": miso }));
 
     const out = await getMacroEstimates(["miso paste"]);
     expect(out.get("miso paste")).toEqual(miso);
+    expect(prisma.ingredientEstimateCache.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { name: "miso paste" },
+        create: { name: "miso paste", ...miso },
+      })
+    );
+  });
+
+  it("does NOT cache a null estimate (no poisoning on a declined/transient estimate)", async () => {
+    vi.mocked(prisma.ingredientEstimateCache.findMany).mockResolvedValue(
+      [] as never
+    );
+    setIngredientCanonicalizerForTest(fakeEstimator({ obscurething: null }));
+
+    const out = await getMacroEstimates(["obscurething"]);
+    expect(out.get("obscurething")).toBeNull();
+    expect(prisma.ingredientEstimateCache.upsert).not.toHaveBeenCalled();
   });
 });

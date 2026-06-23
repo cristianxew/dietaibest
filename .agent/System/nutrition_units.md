@@ -164,8 +164,9 @@ generic-but-wrong matches that passed the guard and pre-empted the LLM.
   in CI). On → one batched call per novel name ever; cached in
   `IngredientNameCache` system-wide, so it amortizes to ~0 after warmup.
 - **Coverage chain:** USDA FDC → LLM **macro estimate** (`getMacroEstimates` /
-  `estimateMacros`, per-100g, request-scoped today) → honest gap. The estimate is
-  weighed by `resolveGramWeight(parsed, null)` (food-less density/registry ladder).
+  `estimateMacros`, per-100g, **cached in `IngredientEstimateCache`** by canonical
+  name) → honest gap. The estimate is weighed by `resolveGramWeight(parsed, null)`
+  (food-less density/registry ladder).
 - **Honest per-ingredient contract** on `IngredientProfileResult`:
   - `status`: `OK` (USDA match) · `ESTIMATED` (LLM macros, counted but flagged,
     micros 0) · `UNRECOGNIZED` (not a food, or no match + no estimate — surfaced,

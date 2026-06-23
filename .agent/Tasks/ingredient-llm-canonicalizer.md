@@ -1,11 +1,13 @@
 # Nutrition engine: LLM-primary canonicalization, own USDA, honest output
 
 **Status:** Redesign approved (LLM-primary) — supersedes the prior "cached
-fallback, default off" design. **Phase A+B implemented** (2026-06-22): the
-LLM-primary single-pass pipeline + honest data contract are live behind
-`INGREDIENT_LLM_FALLBACK`; Stage 2, persistence (RecipeAnalysisCache), Edamam
-retirement, the UI surfacing, and the flag flip are pending (see
-"Implementation status" below).
+fallback, default off" design. **Phases A+B+B-UI + D(estimates) implemented**
+(2026-06-22/23) behind `INGREDIENT_LLM_FALLBACK`: LLM-primary single-pass
+pipeline, honest data contract, the calculator UI surfacing, and persisted macro
+estimates (`IngredientEstimateCache`, migration applied to the dev DB). Pending:
+Stage 2 (C), the full `RecipeAnalysisCache` + cached Profile, Edamam retirement
+(E), real-tier CI gate (F), and the rollout flag-flip (G). See "Implementation
+status" below.
 **Date:** 2026-06-22
 **Branch:** `feature/nutrition-calc-improvements`
 **Related:** [ADR 0003](../../docs/adr/0003-llm-primary-nutrition-canonicalization.md) ·
@@ -125,8 +127,8 @@ Recipe (lines + servings)
   parse → `canonicalizeCached` (all names, up front) → search/rank/staple/guard →
   grams → `getMacroEstimates` on a true miss. The old two-pass retry is gone.
 - Stage 1 estimate-on-miss: `IngredientCanonicalizer.estimateMacros` +
-  `getMacroEstimates` (flag-gated, **request-scoped** — not yet persisted;
-  Phase D adds the cache).
+  `getMacroEstimates` (flag-gated; **now cached** in `IngredientEstimateCache` —
+  see Phase D below).
 - Honest contract: `IngredientProfileResult` gains `status`
   (`OK | ESTIMATED | UNRECOGNIZED | MISSING_QTY`) + `source`
   (`fdc | llm_estimate | none`); `AnalyzeProfileResult` gains `coverage`.
@@ -138,20 +140,32 @@ Recipe (lines + servings)
   extended `ingredient-canonicalizer`, `ingredient-name-repo`, `gram-resolution`,
   `parse-ingredient-line`. Full `test:unit` + anchor eval green; `tsc` clean.
 
+**Done — Phase B-UI + D (estimates), 2026-06-23:**
+- **B-UI:** the 5-macro path (`analyzeRecipeAction` / `AnalyzeResult`, used by the
+  `/nutrition` calculator) now carries `status`/`source`/`coverage` too, alongside
+  the profile path. `NutritionResults.tsx` surfaces an amber **Estimated** badge,
+  a red **Not found** badge, an estimated-values info alert, an unmatched-items
+  warning, and a `Coverage: X/Y matched` line. Strings are English to match the
+  component (it has no `useTranslations` — full i18n is pre-existing debt, tracked
+  separately). Covered by the macro-path tests in `analyze-recipe-pipeline.test.ts`.
+- **D (estimates only):** `IngredientEstimateCache` Prisma model (keyed by
+  normalized canonical name); `getMacroEstimates` now reads/upserts it — a novel
+  food is estimated once system-wide, same no-poison-on-null rule as
+  `canonicalizeCached`. Migration `20260623000000_ingredient_estimate_cache`
+  authored and **applied to the dev DB** (`prisma migrate deploy`, no drift).
+
 **Pending:**
-- **B-UI:** surface `status` (estimated/unrecognized badges) + the coverage line.
-  Note: the `/nutrition` calculator consumes the 5-macro `AnalyzeResult` path
-  (not the honest profile path) — needs the macro path extended OR the calculator
-  migrated to `analyzeRecipeProfileAction`; plus next-intl keys (en/es/pl).
 - **C (Stage 2):** recipe-fingerprint LLM stage (cooked/raw + retention +
   diet/health labels), raw-default-on-low-confidence.
-- **D (persistence):** `RecipeAnalysisCache` + cached estimates + cached Profile
-  (shared-DB migration via the drift workflow).
+- **D (remainder):** the full `RecipeAnalysisCache` (fingerprint → Stage-2 output
+  + cached 22-nutrient Profile) — deferred because it couples to Stage 2 (C).
 - **E (retire Edamam):** extract `generateRecipeFingerprint` out of `edamam.ts`,
   retire call sites, delete `edamam*.ts`.
 - **F:** extend the recorder for both LLM stages; promote the real tier to a CI gate.
 - **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
   backfill `IngredientNameCache`.
+- **i18n debt:** the `/nutrition` calculator + `NutritionResults` are hardcoded
+  English (predates this work); needs next-intl keys (en/es/pl).
 
 ## Testing & measurement (definition of done)
 

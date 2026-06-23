@@ -64,6 +64,10 @@ export interface IngredientResult {
   portionNote: string;
   /** Data type from FDC */
   dataType: string | null;
+  /** Honest outcome (see IngredientStatus). */
+  status: IngredientStatus;
+  /** Nutrition provenance (fdc | llm_estimate | none). */
+  source: IngredientSource;
 }
 
 /**
@@ -76,6 +80,8 @@ export interface AnalyzeResult {
   total: Macro;
   /** Macros per serving */
   perServing: Macro;
+  /** Honest coverage summary (resolved / estimated / unrecognized counts). */
+  coverage: CoverageSummary;
   /** Overall success status */
   success: boolean;
   /** Error message if analysis failed */
@@ -189,33 +195,15 @@ export async function analyzeRecipeAction(
 
     // Validation
     if (!ingredients || ingredients.length === 0) {
-      return {
-        items: [],
-        total: zeroMacro(),
-        perServing: zeroMacro(),
-        success: false,
-        error: "No ingredients provided",
-      };
+      return failedMacro("No ingredients provided");
     }
 
     if (!servings || servings <= 0) {
-      return {
-        items: [],
-        total: zeroMacro(),
-        perServing: zeroMacro(),
-        success: false,
-        error: "Servings must be a positive number",
-      };
+      return failedMacro("Servings must be a positive number");
     }
 
     if (ingredients.length > 100) {
-      return {
-        items: [],
-        total: zeroMacro(),
-        perServing: zeroMacro(),
-        success: false,
-        error: "Too many ingredients (max 100)",
-      };
+      return failedMacro("Too many ingredients (max 100)");
     }
 
     // Resolve FDC matches + gram weights via the shared pipeline
@@ -225,35 +213,60 @@ export async function analyzeRecipeAction(
     let totalMacros = zeroMacro();
 
     for (const m of resolved) {
-      const base = { original: m.parsed.original, name: m.parsed.name };
+      const base = {
+        original: m.parsed.original,
+        name: m.parsed.name,
+        status: m.status,
+        source: m.source,
+      };
 
-      if (!m.food) {
+      if (m.status === "OK" && m.food) {
+        const scaledMacros = scalePer100g(
+          extractMacrosFromFood(m.food),
+          m.grams
+        );
         items.push({
           ...base,
-          fdcId: m.bestMatch?.fdcId ?? null,
-          description: m.bestMatch?.description ?? null,
-          gramsTotal: 0,
-          macros: zeroMacro(),
-          confidence: 0,
+          fdcId: m.food.fdcId,
+          description: m.food.description,
+          gramsTotal: m.grams,
+          macros: scaledMacros,
+          confidence: m.confidence,
           portionNote: m.note,
-          dataType: m.bestMatch?.dataType ?? null,
+          dataType: m.food.dataType,
         });
+        totalMacros = addMacros(totalMacros, scaledMacros);
         continue;
       }
 
-      const scaledMacros = scalePer100g(extractMacrosFromFood(m.food), m.grams);
+      if (m.status === "ESTIMATED" && m.estimate) {
+        // The MacroEstimate is per-100g and shares Macro's shape; scale by grams.
+        const scaledMacros = scalePer100g(m.estimate, m.grams);
+        items.push({
+          ...base,
+          fdcId: null,
+          description: null,
+          gramsTotal: m.grams,
+          macros: scaledMacros,
+          confidence: m.confidence,
+          portionNote: m.note,
+          dataType: null,
+        });
+        totalMacros = addMacros(totalMacros, scaledMacros);
+        continue;
+      }
+
+      // UNRECOGNIZED / MISSING_QTY — surfaced, contributes 0.
       items.push({
         ...base,
-        fdcId: m.food.fdcId,
-        description: m.food.description,
-        gramsTotal: m.grams,
-        macros: scaledMacros,
-        confidence: m.confidence,
+        fdcId: m.bestMatch?.fdcId ?? null,
+        description: m.bestMatch?.description ?? null,
+        gramsTotal: 0,
+        macros: zeroMacro(),
+        confidence: 0,
         portionNote: m.note,
-        dataType: m.food.dataType,
+        dataType: m.bestMatch?.dataType ?? null,
       });
-
-      totalMacros = addMacros(totalMacros, scaledMacros);
     }
 
     // Calculate per-serving macros
@@ -267,21 +280,29 @@ export async function analyzeRecipeAction(
       items,
       total: totalMacros,
       perServing,
+      coverage: summarize(items),
       success: true,
     };
   } catch (error) {
     console.error("[analyzeRecipe] Unexpected error:", error);
-    return {
-      items: [],
-      total: zeroMacro(),
-      perServing: zeroMacro(),
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred during analysis",
-    };
+    return failedMacro(
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred during analysis"
+    );
   }
+}
+
+/** A failed 5-macro result with zeroed totals and empty coverage. */
+function failedMacro(error: string): AnalyzeResult {
+  return {
+    items: [],
+    total: zeroMacro(),
+    perServing: zeroMacro(),
+    coverage: { total: 0, resolved: 0, estimated: 0, unrecognized: 0 },
+    success: false,
+    error,
+  };
 }
 
 /**
@@ -617,7 +638,7 @@ function failedProfile(error: string): AnalyzeProfileResult {
 }
 
 /** Roll per-ingredient statuses up into the recipe coverage summary. */
-function summarize(items: IngredientProfileResult[]): CoverageSummary {
+function summarize(items: { status: IngredientStatus }[]): CoverageSummary {
   return {
     total: items.length,
     resolved: items.filter((i) => i.status === "OK").length,

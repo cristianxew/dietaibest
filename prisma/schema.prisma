@@ -204,6 +204,22 @@ model IngredientNameCache {
   @@index([lastFetchedAt])
 }
 
+// LLM per-100g macro estimates for foods USDA does not carry (ADR 0003 coverage
+// chain). Keyed by the normalized CANONICAL name, so one estimate serves every
+// raw spelling that canonicalizes to it. Only successful (non-null) estimates
+// are cached; a transient/declined estimate is left to retry.
+model IngredientEstimateCache {
+  name          String   @id // normalized canonical English name
+  kcal          Float
+  protein       Float
+  fat           Float
+  carbs         Float
+  fiber         Float
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+
 model RecipeIngredient {
   id           String @id @default(uuid())
   recipeId     String

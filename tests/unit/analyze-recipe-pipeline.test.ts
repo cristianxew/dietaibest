@@ -27,7 +27,10 @@ import {
   canonicalizeCached,
   getMacroEstimates,
 } from "@/lib/ingredient-name-repo";
-import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
+import {
+  analyzeRecipeAction,
+  analyzeRecipeProfileAction,
+} from "@/actions/analyzeRecipe";
 
 // A non-staple food with a token shared with its canonical name, so the
 // `matchPlausible` guard accepts it.
@@ -158,6 +161,49 @@ describe("LLM-primary pipeline · UNRECOGNIZED (honest gap, never silent zero)",
     expect(r.items[0].status).toBe("UNRECOGNIZED");
     expect(r.items[0].source).toBe("none");
     expect(r.perServing.calories).toBe(0);
+  });
+});
+
+describe("LLM-primary pipeline · macro path (AnalyzeResult) is honest too", () => {
+  it("carries status/source/coverage on the 5-macro result", async () => {
+    vi.mocked(canonicalizeCached).mockResolvedValue(
+      new Map([["tempeh sojowe", "tempeh"]])
+    );
+
+    const r = await analyzeRecipeAction({
+      ingredients: ["100 g tempeh sojowe"],
+      servings: 1,
+    });
+
+    expect(r.items[0].status).toBe("OK");
+    expect(r.items[0].source).toBe("fdc");
+    expect(r.coverage).toEqual({
+      total: 1,
+      resolved: 1,
+      estimated: 0,
+      unrecognized: 0,
+    });
+  });
+
+  it("counts an ESTIMATED item's macros in the macro total", async () => {
+    vi.mocked(canonicalizeCached).mockResolvedValue(
+      new Map([["pasta miso", "miso paste"]])
+    );
+    vi.mocked(getMacroEstimates).mockResolvedValue(
+      new Map([
+        ["miso paste", { kcal: 199, protein: 12, fat: 6, carbs: 26, fiber: 5 }],
+      ])
+    );
+
+    const r = await analyzeRecipeAction({
+      ingredients: ["1.5 tsp pasta miso"],
+      servings: 1,
+    });
+
+    expect(r.items[0].status).toBe("ESTIMATED");
+    expect(r.items[0].source).toBe("llm_estimate");
+    expect(r.items[0].macros.kcal).toBeGreaterThan(0);
+    expect(r.total.kcal).toBeCloseTo(r.items[0].macros.kcal, 5);
   });
 });
 

@@ -67,13 +67,14 @@ export async function canonicalizeCached(
 /**
  * Per-100g macro estimates for canonical foods USDA does not carry — the last
  * resort in the coverage chain (FDC → estimate → honest gap). Gated by the same
- * INGREDIENT_LLM_FALLBACK flag; off → empty map (no LLM call), so the ingredient
+ * INGREDIENT_LLM_FALLBACK flag; off → empty map (no LLM/DB), so the ingredient
  * degrades to an honest UNRECOGNIZED instead of a silent zero.
  *
- * Request-scoped today: estimates are not persisted. A future
- * `RecipeAnalysisCache`/estimate cache (ADR 0003 Phase D) will back this so a
- * novel food is estimated at most once system-wide. Best-effort: an LLM failure
- * yields an empty map and the caller falls through to UNRECOGNIZED.
+ * Cached system-wide in `IngredientEstimateCache`, keyed by the normalized
+ * canonical name, so a novel food is estimated at most once. Mirrors
+ * `canonicalizeCached`: only successful (non-null) estimates are persisted — a
+ * transient/declined estimate is left to retry, never poisoned. Best-effort: an
+ * LLM failure yields an empty map and the caller falls through to UNRECOGNIZED.
  */
 export async function getMacroEstimates(
   names: string[]
@@ -82,6 +83,43 @@ export async function getMacroEstimates(
   if (process.env.INGREDIENT_LLM_FALLBACK !== "1" || names.length === 0) {
     return out;
   }
+
   const unique = [...new Set(names)];
-  return getIngredientCanonicalizer().estimateMacros(unique);
+  const keyOf = new Map(unique.map((n) => [n, normalizeNameKey(n)]));
+  const keys = [...new Set(keyOf.values())];
+
+  const cached = await prisma.ingredientEstimateCache.findMany({
+    where: { name: { in: keys } },
+  });
+  const byKey = new Map<string, MacroEstimate | null>(
+    cached.map((r) => [
+      r.name,
+      { kcal: r.kcal, protein: r.protein, fat: r.fat, carbs: r.carbs, fiber: r.fiber },
+    ])
+  );
+
+  const misses = unique.filter((n) => !byKey.has(keyOf.get(n)!));
+  if (misses.length > 0) {
+    const fresh = await getIngredientCanonicalizer().estimateMacros(misses);
+    for (const raw of misses) {
+      // A name the LLM didn't return (transient failure) stays unmapped to retry.
+      if (!fresh.has(raw)) continue;
+      const key = keyOf.get(raw)!;
+      const est = fresh.get(raw)!;
+      byKey.set(key, est);
+      // Only persist a real estimate; a null (declined) is not cached.
+      if (est) {
+        await prisma.ingredientEstimateCache.upsert({
+          where: { name: key },
+          create: { name: key, ...est },
+          update: { ...est, lastFetchedAt: new Date() },
+        });
+      }
+    }
+  }
+
+  for (const n of names) {
+    out.set(n, byKey.get(keyOf.get(n)!) ?? null);
+  }
+  return out;
 }

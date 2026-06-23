@@ -11,8 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { XCircle } from "lucide-react";
-import type { AnalyzeResult } from "@/actions/analyzeRecipe";
+import { XCircle, Sparkles } from "lucide-react";
+import type { AnalyzeResult, IngredientResult } from "@/actions/analyzeRecipe";
 import { MacrosSummary } from "./MacrosSummary";
 
 interface NutritionResultsProps {
@@ -45,27 +45,75 @@ function DataTypeBadge({ dataType }: { dataType: string | null }) {
   );
 }
 
+/**
+ * Honest per-ingredient provenance (ADR 0003): a USDA match shows its data-type
+ * badge; an LLM estimate is flagged amber; an unrecognized item is flagged red.
+ */
+function SourceCell({ item }: { item: IngredientResult }) {
+  if (item.status === "ESTIMATED") {
+    return (
+      <Badge
+        variant="secondary"
+        className="bg-amber-500 hover:bg-amber-600 text-white"
+      >
+        <Sparkles className="mr-1 h-3 w-3" />
+        Estimated
+      </Badge>
+    );
+  }
+  if (item.status === "UNRECOGNIZED" || item.status === "MISSING_QTY") {
+    return (
+      <Badge variant="destructive">
+        <XCircle className="mr-1 h-3 w-3" />
+        Not found
+      </Badge>
+    );
+  }
+  return <DataTypeBadge dataType={item.dataType} />;
+}
+
 export function NutritionResults({ results, servings }: NutritionResultsProps) {
-  // `confidence` stays in the data for internal debugging/logging, but is never
-  // surfaced as a score to the user. We only use it here to flag ingredients we
-  // genuinely could not match to USDA data (a useful "we couldn't find this"
-  // notice, not a confidence score).
-  const hasFailedItems = results.items.some((item) => item.confidence === 0);
+  // `confidence` stays in the data for internal debugging/logging and is never
+  // surfaced. The honest, user-facing signal is `coverage` + per-item `status`.
+  const { total, resolved, estimated, unrecognized } = results.coverage;
 
   return (
     <div className="space-y-6">
-      {/* Warnings */}
-      {hasFailedItems && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertTitle>Some ingredients could not be matched</AlertTitle>
+      {/* Honest coverage signal (ADR 0003) */}
+      {estimated > 0 && (
+        <Alert>
+          <Sparkles className="h-4 w-4" />
+          <AlertTitle>
+            {estimated} ingredient{estimated === 1 ? "" : "s"} use estimated
+            values
+          </AlertTitle>
           <AlertDescription>
-            No USDA data was found for some ingredients. Their nutritional
-            values are shown as zero. Try rephrasing or using more specific
-            names.
+            These weren&apos;t in the USDA database, so their macros are AI
+            estimates and less precise. They are counted in the totals and
+            flagged below.
           </AlertDescription>
         </Alert>
       )}
+
+      {unrecognized > 0 && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>
+            {unrecognized} ingredient{unrecognized === 1 ? "" : "s"} could not be
+            matched
+          </AlertTitle>
+          <AlertDescription>
+            No USDA match and no estimate was possible. These are excluded from
+            the totals — try a more specific name.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <p className="text-sm text-muted-foreground">
+        Coverage: {resolved}/{total} matched to USDA
+        {estimated > 0 ? ` · ${estimated} estimated` : ""}
+        {unrecognized > 0 ? ` · ${unrecognized} unmatched` : ""}
+      </p>
 
       {/* Macros Summary */}
       <MacrosSummary
@@ -85,7 +133,7 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[200px]">Ingredient</TableHead>
-                  <TableHead>USDA Match</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead className="text-right">Grams</TableHead>
                   <TableHead className="text-right">Calories</TableHead>
                   <TableHead className="text-right">Protein (g)</TableHead>
@@ -108,7 +156,7 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <DataTypeBadge dataType={item.dataType} />
+                      <SourceCell item={item} />
                     </TableCell>
                     <TableCell className="text-right font-mono">
                       {item.gramsTotal > 0 ? item.gramsTotal.toFixed(1) : "-"}
