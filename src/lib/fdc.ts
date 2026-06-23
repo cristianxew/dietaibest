@@ -356,6 +356,17 @@ export function extractMacrosFromFood(food: FdcFood): Macro {
 }
 
 /**
+ * Whether a food carries a usable energy value (kcal > 0). Some branded entries
+ * list macros but omit every energy nutrient (208/957/958), so they would
+ * silently contribute 0 kcal if matched. Match selection prefers foods that pass
+ * this check (see `resolveBatch`); genuinely calorie-free foods (salt, water)
+ * correctly return false and are only used when no energy-bearing match exists.
+ */
+export function foodHasEnergy(food: FdcFood): boolean {
+  return extractMacrosFromFood(food).kcal > 0;
+}
+
+/**
  * Scale per-100g macros to a given gram amount
  *
  * @param mac - Macro nutrients per 100g

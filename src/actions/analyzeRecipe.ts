@@ -13,6 +13,7 @@ import {
 } from "@/lib/ingredients";
 import {
   extractMacrosFromFood,
+  foodHasEnergy,
   scalePer100g,
   extractProfileFromFood,
   scaleProfilePer100g,
@@ -559,11 +560,20 @@ async function resolveBatch(
     // silently using the wrong food. Staple matches are trusted and bypass it.
     const staple = stapleFdcId(parsed.name);
     const fetchable = candidates.filter((c) => foodsById.has(c.fdcId));
-    const hit = fetchable.find(
+    const plausible = fetchable.filter(
       (c) =>
         c.fdcId === staple ||
         matchPlausible(foodsById.get(c.fdcId)!.description, parsed.name)
     );
+    // Prefer the staple (trusted), then the first plausible candidate that
+    // actually carries energy — a branded food missing all energy nutrients
+    // (208/957/958) would silently contribute 0 kcal (e.g. an energy-less
+    // "BASMATI RICE" entry beating a proper one). Fall back to the first
+    // plausible match for legitimately calorie-free foods (salt, water).
+    const hit =
+      plausible.find((c) => c.fdcId === staple) ??
+      plausible.find((c) => foodHasEnergy(foodsById.get(c.fdcId)!)) ??
+      plausible[0];
     if (!hit) {
       // A quality rejection is a clean no-match (fdcId null) — not a match that
       // resolved to 0g — so the UI flags "couldn't match" and the harness's

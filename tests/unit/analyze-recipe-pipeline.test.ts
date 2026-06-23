@@ -224,6 +224,47 @@ describe("LLM-primary pipeline · macro path (AnalyzeResult) is honest too", () 
   });
 });
 
+describe("LLM-primary pipeline · match quality (energy preference)", () => {
+  it("skips a plausible candidate with no energy for one that carries calories", async () => {
+    // Two plausible "rice" hits: the top-ranked one has macros but NO energy
+    // nutrient (a real branded-data gap); the next carries energy.
+    const riceNoEnergy: FdcFood = {
+      fdcId: 5001,
+      description: "Basmati rice",
+      dataType: "Branded",
+      foodNutrients: [{ nutrientNumber: "205", amount: 43, unitName: "G" }], // carbs only, no 208/957/958
+    };
+    const riceWithEnergy: FdcFood = {
+      fdcId: 5002,
+      description: "Basmati rice, dry",
+      dataType: "Branded",
+      foodNutrients: [
+        { nutrientNumber: "208", amount: 360, unitName: "KCAL" },
+        { nutrientNumber: "205", amount: 79, unitName: "G" },
+      ],
+    };
+    vi.mocked(searchFoodsCached).mockImplementation(async (q: string) =>
+      q.includes("rice")
+        ? [
+            { fdcId: 5001, description: "Basmati rice", dataType: "Branded" },
+            { fdcId: 5002, description: "Basmati rice, dry", dataType: "Branded" },
+          ]
+        : []
+    );
+    vi.mocked(getFoodsCached).mockImplementation(async (ids: number[]) =>
+      [riceNoEnergy, riceWithEnergy].filter((f) => ids.includes(f.fdcId))
+    );
+
+    const r = await analyzeRecipeProfileAction({
+      ingredients: ["100 g rice"],
+      servings: 1,
+    });
+
+    expect(r.items[0].fdcId).toBe(5002); // the energy-bearing match
+    expect(r.perServing.calories).toBeCloseTo(360, 1);
+  });
+});
+
 describe("LLM-primary pipeline · Stage 2 (cooked-weight + labels)", () => {
   it("applies retention to micronutrients only — energy + macros are conserved", async () => {
     vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
