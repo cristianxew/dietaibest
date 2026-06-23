@@ -270,7 +270,7 @@ describe("LLM-primary pipeline · Stage 2 (cooked-weight + labels)", () => {
     vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
     vi.mocked(runRecipeStage2).mockResolvedValue({
       perIngredient: [
-        { name: "tempeh", cookedState: "cooked", retentionFactor: 0.5, confidence: 0.95, flagged: false },
+        { name: "tempeh", chosenFdcId: 1001, grams: null, cookedState: "cooked", retentionFactor: 0.5, confidence: 0.95, flagged: false },
       ],
       dietLabels: [],
       healthLabels: [],

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { RecipeAnalyzer } from "@/lib/recipe-analyzer";
+import {
+  RecipeAnalyzer,
+  type RecipeAnalyzerItem,
+} from "@/lib/recipe-analyzer";
 
 function fakeClient(text: string | (() => never)) {
   return {
@@ -12,70 +15,111 @@ function fakeClient(text: string | (() => never)) {
   } as never;
 }
 
-const item = (name: string) => ({ name, grams: 100, description: name });
+const item = (
+  name: string,
+  candidateIds: number[] = [],
+  over: Partial<RecipeAnalyzerItem> = {}
+): RecipeAnalyzerItem => ({
+  line: `100 g ${name}`,
+  qty: 100,
+  unit: "g",
+  name,
+  candidates: candidateIds.map((fdcId) => ({
+    fdcId,
+    description: name,
+    dataType: "SR Legacy",
+    kcal: 100,
+    protein: 5,
+    fat: 1,
+    carbs: 10,
+  })),
+  ...over,
+});
 
-describe("RecipeAnalyzer.analyze", () => {
-  it("parses per-ingredient cooked-state/retention and recipe labels", async () => {
+describe("RecipeAnalyzer.analyze (RAG resolution)", () => {
+  it("selects a candidate, parses grams + cooked-state, and recipe labels", async () => {
     const a = new RecipeAnalyzer({
       clientOverride: fakeClient(
         JSON.stringify({
           ingredients: [
-            { name: "chicken breast", cookedState: "cooked", retentionFactor: 0.9, confidence: 0.95 },
+            { name: "salmon", chosenFdcId: 1002, grams: 200, cookedState: "cooked", retentionFactor: 0.9, confidence: 0.95 },
           ],
           dietLabels: ["high-protein"],
-          healthLabels: ["gluten-free"],
+          healthLabels: ["pescatarian"],
         })
       ),
     });
 
-    const out = await a.analyze({ title: "Grilled chicken", items: [item("chicken breast")] });
+    const out = await a.analyze({ title: "Salmon bowl", items: [item("salmon", [1001, 1002])] });
 
-    expect(out.perIngredient).toEqual([
-      { name: "chicken breast", cookedState: "cooked", retentionFactor: 0.9, confidence: 0.95, flagged: false },
-    ]);
+    expect(out.perIngredient[0]).toEqual({
+      name: "salmon",
+      chosenFdcId: 1002,
+      grams: 200,
+      cookedState: "cooked",
+      retentionFactor: 0.9,
+      confidence: 0.95,
+      flagged: false,
+    });
     expect(out.dietLabels).toEqual(["high-protein"]);
-    expect(out.healthLabels).toEqual(["gluten-free"]);
+    expect(out.healthLabels).toEqual(["pescatarian"]);
   });
 
-  it("forces raw + retention 1.0 + flag when confidence is low (never silently scale)", async () => {
+  it("rejects a chosenFdcId that was not among the offered candidates (no invented ids)", async () => {
     const a = new RecipeAnalyzer({
       clientOverride: fakeClient(
         JSON.stringify({
           ingredients: [
-            { name: "rice", cookedState: "cooked", retentionFactor: 0.5, confidence: 0.2 },
+            { name: "salmon", chosenFdcId: 9999, grams: 200, cookedState: "raw", retentionFactor: 1, confidence: 0.9 },
           ],
           dietLabels: [],
           healthLabels: [],
         })
       ),
     });
+    const out = await a.analyze({ items: [item("salmon", [1001, 1002])] });
+    expect(out.perIngredient[0].chosenFdcId).toBeNull();
+  });
 
-    const out = await a.analyze({ items: [item("rice")] });
-
+  it("forces raw + retention 1.0 + no gram override + flag when confidence is low (selection kept)", async () => {
+    const a = new RecipeAnalyzer({
+      clientOverride: fakeClient(
+        JSON.stringify({
+          ingredients: [
+            { name: "rice", chosenFdcId: 2001, grams: 250, cookedState: "cooked", retentionFactor: 0.5, confidence: 0.2 },
+          ],
+          dietLabels: [],
+          healthLabels: [],
+        })
+      ),
+    });
+    const out = await a.analyze({ items: [item("rice", [2001])] });
     expect(out.perIngredient[0]).toEqual({
       name: "rice",
+      chosenFdcId: 2001, // selection is a real candidate, kept regardless of confidence
+      grams: null, // low-confidence portion not trusted → defer to deterministic
       cookedState: "raw",
-      retentionFactor: 1.0,
+      retentionFactor: 1,
       confidence: 0.2,
       flagged: true,
     });
   });
 
-  it("clamps an out-of-range retention factor into [0,1]", async () => {
+  it("clamps an out-of-range retention factor into [0,1] and drops non-positive grams", async () => {
     const a = new RecipeAnalyzer({
       clientOverride: fakeClient(
         JSON.stringify({
           ingredients: [
-            { name: "spinach", cookedState: "cooked", retentionFactor: 1.4, confidence: 0.9 },
+            { name: "spinach", chosenFdcId: 3001, grams: 0, cookedState: "cooked", retentionFactor: 1.4, confidence: 0.9 },
           ],
           dietLabels: [],
           healthLabels: [],
         })
       ),
     });
-
-    const out = await a.analyze({ items: [item("spinach")] });
+    const out = await a.analyze({ items: [item("spinach", [3001])] });
     expect(out.perIngredient[0].retentionFactor).toBe(1);
+    expect(out.perIngredient[0].grams).toBeNull(); // 0 g is not a usable estimate
   });
 
   it("returns a safe empty result on transport failure (best-effort, never throws)", async () => {
@@ -84,7 +128,7 @@ describe("RecipeAnalyzer.analyze", () => {
         throw new Error("vertex down");
       }),
     });
-    const out = await a.analyze({ items: [item("anything")] });
+    const out = await a.analyze({ items: [item("anything", [1])] });
     expect(out).toEqual({ perIngredient: [], dietLabels: [], healthLabels: [] });
   });
 

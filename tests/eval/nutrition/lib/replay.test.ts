@@ -70,7 +70,7 @@ const llmStore: LlmFixtureStore = {
   stage2: {
     "pl-d1-losos-miso": {
       perIngredient: [
-        { name: "salmon", cookedState: "cooked", retentionFactor: 0.9, confidence: 0.9, flagged: false },
+        { name: "salmon", chosenFdcId: 173686, grams: 200, cookedState: "cooked", retentionFactor: 0.9, confidence: 0.9, flagged: false },
       ],
       dietLabels: ["high-protein"],
       healthLabels: [],

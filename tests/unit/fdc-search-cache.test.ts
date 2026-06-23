@@ -123,9 +123,42 @@ describe("searchFoodsCached — caches FDC ingredient search by normalized query
     expect(fdcSearchCache.findUnique).toHaveBeenCalledWith({
       where: { query: "yellow onion" },
     });
-    // The live search is issued with the normalized term too (keeps key↔term in sync).
-    expect(mockedFdcSearch).toHaveBeenCalledWith("yellow onion");
+    // The live search is issued with the normalized term too (keeps key↔term in
+    // sync), preferring pure single-ingredient data types first (ADR 0004).
+    expect(mockedFdcSearch).toHaveBeenCalledWith("yellow onion", [
+      "Foundation",
+      "SR Legacy",
+    ]);
     expect(fdcSearchCache.upsert.mock.calls[0][0].create.query).toBe("yellow onion");
+  });
+
+  it("no Foundation/SR or Survey hits → falls back to a Branded search (ADR 0004)", async () => {
+    fdcSearchCache.findUnique.mockResolvedValue(null);
+    fdcSearchCache.upsert.mockResolvedValue({});
+    const BRANDED: FdcSearchFood = {
+      fdcId: 9,
+      description: "PROTEIN BAR",
+      dataType: "Branded",
+    };
+    // Foundation/SR empty, then Survey empty, then Branded supplies the hit.
+    mockedFdcSearch
+      .mockResolvedValueOnce({ foods: [] })
+      .mockResolvedValueOnce({ foods: [] })
+      .mockResolvedValueOnce({ foods: [BRANDED] });
+
+    const foods = await searchFoodsCached("obscure protein bar");
+
+    expect(foods).toEqual([BRANDED]);
+    expect(mockedFdcSearch).toHaveBeenNthCalledWith(1, "obscure protein bar", [
+      "Foundation",
+      "SR Legacy",
+    ]);
+    expect(mockedFdcSearch).toHaveBeenNthCalledWith(2, "obscure protein bar", [
+      "Survey (FNDDS)",
+    ]);
+    expect(mockedFdcSearch).toHaveBeenNthCalledWith(3, "obscure protein bar", [
+      "Branded",
+    ]);
   });
 
   it("USDA error with a stale row present → serves stale (rate-limit resilience), no throw", async () => {

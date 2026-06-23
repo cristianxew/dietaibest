@@ -65,10 +65,6 @@ const store = recordedStoreJson as unknown as FdcFixtureStore;
 const llm = recordedLlmJson as unknown as LlmFixtureStore;
 const realRecipes = goldenRecipes.filter((r) => r.tier === "real");
 
-// Opt-in until the recorded LLM fixtures land the pl-d1 recipes in tolerance;
-// then this is promoted into the CI gate (see Phase F). Run with RUN_REAL_EVAL=1.
-const ENABLED = process.env.RUN_REAL_EVAL === "1";
-
 beforeAll(() => {
   vi.mocked(searchFoodsCached).mockImplementation(async (q: string) =>
     searchFromStore(store, q)
@@ -123,7 +119,7 @@ function trace(r: GoldenRecipe, result: AnalyzeProfileResult): string {
   );
 }
 
-describe.skipIf(!ENABLED)("golden recipes (real tier)", () => {
+describe("golden recipes (real tier)", () => {
   for (const recipe of realRecipes) {
     it(`${recipe.id}: per-serving macros within real tolerance`, async () => {
       vi.mocked(runRecipeStage2).mockResolvedValue(

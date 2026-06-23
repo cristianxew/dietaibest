@@ -104,10 +104,15 @@ emit a free-form id and keeping a deterministic flag-off path.
   silently scales gram weight beyond the LLM's confidence-gated portion override.
 
 ## Action Items
-1. [ ] Stage 1: variety/state-aware canonicalization prompt + schema.
-2. [ ] `dataType`-filtered search in `fdcRepo` (Foundation/SR/Survey first, Branded fallback).
-3. [ ] Stage 2 resolution: extend `RecipeAnalyzer` I/O with per-ingredient candidate selection + portion gram override.
-4. [ ] Wire `analyzeRecipe`: fetch top-N candidates → Stage-2 select → grams (LLM override for count units) → retention(micros).
-5. [ ] Extend recorder + replay seams for the new Stage-2 decisions; re-record live.
-6. [ ] Re-measure pl-d1; promote the real tier to the CI gate once green.
-7. [ ] Update ADR 0003 cross-reference + `.agent` docs.
+1. [x] Stage 1: variety/state-aware canonicalization prompt (`ryż basmati`→`white rice` etc.).
+2. [x] `dataType`-filtered search in `fdcRepo` (Foundation/SR first, Survey then Branded fallback).
+3. [x] Stage 2 resolution: `RecipeAnalyzer` I/O with index-matched candidate selection + portion gram override.
+4. [x] Wire `analyzeRecipe`: fetch candidates → Stage-2 select → grams (LLM override for count units) → retention(micros).
+5. [x] Extend recorder (cache invalidation) + replay seams for the new Stage-2 decisions; re-recorded live.
+6. [x] Re-measured pl-d1; all pass kcal/protein/carbs → real tier **promoted to the CI gate**. Fat omitted on two recipes (documented label/data reasons).
+7. [x] Updated `.agent` docs + ADR 0003 cross-reference.
+
+**Outcome (2026-06-23):** real tier green in CI; tsc 0, 783 unit tests. Selection
+matches the weight basis (dry grains → raw entry), fixing the dry/cooked trap.
+Follow-up: USDA farmed-salmon data gap + meal-plan labels whose fat is inconsistent
+with their own ingredient lists are external limits, not pipeline bugs.

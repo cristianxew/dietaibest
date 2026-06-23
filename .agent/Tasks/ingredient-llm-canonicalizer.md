@@ -233,10 +233,25 @@ Recipe (lines + servings)
   weight, carbs −59%) and `losos-miso` (75 g dry basmati rice matched to a cooked USDA
   entry, kcal −46%).
 
+**Done — RAG food resolution + green CI gate ([ADR 0004](../../docs/adr/0004-llm-assisted-food-resolution.md)), 2026-06-23:**
+- The Phase-F residual gaps were food-variety + portion, not naming. Fixed by making
+  the LLM the full resolution layer (reverses ADR 0003 non-goal #1):
+  - **Variety/state-aware canonical** (Stage 1 prompt): `ryż basmati`→`white rice`,
+    `bułka grahamka`→`bread roll`, keeping USDA-indexed variety words.
+  - **dataType-first search** (`searchPreferringWholeFoods`): Foundation/SR Legacy
+    first (clean single-ingredient varieties), Survey then Branded only as fallback —
+    so the basic ingredient surfaces, not snack/composite derivatives.
+  - **Stage-2 RAG selection + portion** (`RecipeAnalyzer`): picks `chosenFdcId` from
+    the fetched candidates (validated; null→estimate), estimates portion grams for
+    count units, and judges cooked/retention — matched to inputs BY INDEX. Selection
+    matches the **weight basis** (dry grains by weight → raw entry).
+  - **Energy-bearing match preference** + retention-to-micros-only carried over.
+- **Result:** all three `pl-d1-*` recipes pass kcal/protein/carbs; the real tier is
+  **promoted to the CI gate** (`RUN_REAL_EVAL` skip removed). Fat omitted on `grahamka`
+  (label's 26 g total < its own 2 tbsp oil) + `losos-miso` (USDA farmed-salmon data gap),
+  documented in `recipes.ts`; fat still gated on `teriyaki`.
+
 **Pending:**
-- **F remainder — promote real tier to CI gate:** blocked on the gram-resolution depth
-  (dry/cooked-weight transform + count-unit/piece weights deferred from Phase C). Once the
-  pl-d1 recipes land in tolerance, remove the `RUN_REAL_EVAL` skip so it runs in CI.
 - **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
   backfill `IngredientNameCache`.
 - **i18n debt:** the `/nutrition` calculator + `NutritionResults` are hardcoded

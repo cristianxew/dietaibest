@@ -20,10 +20,18 @@ import {
 
 const analysis: RecipeAnalysis = {
   perIngredient: [
-    { name: "spinach", cookedState: "cooked", retentionFactor: 0.75, confidence: 0.9, flagged: false },
+    { name: "spinach", chosenFdcId: 168462, grams: 100, cookedState: "cooked", retentionFactor: 0.75, confidence: 0.9, flagged: false },
   ],
   dietLabels: ["low-carb"],
   healthLabels: ["vegan"],
+};
+
+const stage2Item = {
+  line: "100 g spinach",
+  qty: 100,
+  unit: "g",
+  name: "spinach",
+  candidates: [],
 };
 
 const fakeAnalyzer = (result: RecipeAnalysis) =>
@@ -45,14 +53,14 @@ describe("runRecipeStage2", () => {
     const a = fakeAnalyzer(analysis);
     setRecipeAnalyzerForTest(a);
 
-    const out = await runRecipeStage2({ items: [{ name: "spinach", grams: 100, description: "Spinach" }] });
+    const out = await runRecipeStage2({ items: [stage2Item] });
     expect(out).toEqual({ perIngredient: [], dietLabels: [], healthLabels: [] });
     expect((a as unknown as { analyze: ReturnType<typeof vi.fn> }).analyze).not.toHaveBeenCalled();
   });
 
   it("delegates to the analyzer when the flag is on", async () => {
     setRecipeAnalyzerForTest(fakeAnalyzer(analysis));
-    const out = await runRecipeStage2({ items: [{ name: "spinach", grams: 100, description: "Spinach" }] });
+    const out = await runRecipeStage2({ items: [stage2Item] });
     expect(out).toEqual(analysis);
   });
 });

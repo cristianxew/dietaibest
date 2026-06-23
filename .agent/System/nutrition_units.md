@@ -181,24 +181,36 @@ generic-but-wrong matches that passed the guard and pre-empted the LLM.
   mocks the seams (`fdcRepo`, `ingredient-name-repo`, `recipe-analysis-repo`) and
   asserts each status transition + coverage + Stage 2.
 
-### Stage 2 — recipe LLM + analysis cache (ADR 0003 C + D)
+### Stage 2 — recipe RAG resolution + analysis cache (ADR 0003 C+D, ADR 0004)
 
-After matching, a second, recipe-scoped LLM stage runs once per recipe:
-[`RecipeAnalyzer`](../../src/lib/recipe-analyzer.ts) (Gemini on Vertex) returns,
-per ingredient, a cooked/raw judgment + a nutrient-`retentionFactor`, plus
-recipe-level `dietLabels`/`healthLabels`. It is reached through the flag-gated
-wrapper [`recipe-analysis-repo.ts`](../../src/lib/recipe-analysis-repo.ts)
-(`runRecipeStage2`), which — like the Stage-1 wrappers — **early-returns before any
-LLM/Prisma call when `INGREDIENT_LLM_FALLBACK` is off** (this is what keeps the
-anchor eval network-free).
+After search + candidate fetch, one recipe-scoped LLM call resolves the recipe:
+[`RecipeAnalyzer`](../../src/lib/recipe-analyzer.ts) (Gemini on Vertex) is given the
+recipe + each ingredient's top-N fetched USDA candidates (id, description, dataType,
+per-100g macros) and returns, **per ingredient (matched by index)**:
 
-- **Cooked-weight safety:** `retentionFactor` (clamped to [0,1]) scales the
-  per-ingredient nutrition of **OK/USDA items only**, applied via *effective grams*
-  (`grams × retentionFactor`) so the **reported grams stay raw-as-entered** — we
-  never silently scale the weight. Confidence < 0.6 → forced raw + retention 1.0 +
-  `cookedFlagged`. LLM-estimated items are already "as prepared", so retention is
-  not double-applied to them. (Raw↔cooked gram conversion is intentionally
-  deferred — see the task doc's deferral decision.)
+- **`chosenFdcId`** — the candidate that best fits what the recipe means
+  (variety-aware: "fresh salmon" → farmed Atlantic; **dry staples given by weight
+  → the raw/uncooked entry**, since the entered grams are dry). Validated against
+  the offered ids — the model can never invent one; null → flagged macro estimate.
+- **`grams`** — the LLM's portion estimate, used for count/household units the
+  deterministic ladder can't weigh (a bread roll ≈ 57 g, a clove ≈ 3 g); explicit
+  weights keep the ladder.
+- **`cookedState` + `retentionFactor`** — cooking nutrient loss, applied to
+  **micronutrients only** ([`scaleProfileWithRetention`](../../src/lib/fdc.ts));
+  energy + the five macros are conserved (Phase F fixed an earlier bug that cut
+  kcal/protein). Clamped to [0,1]; confidence < 0.6 → raw + 1.0 + `cookedFlagged`.
+- plus recipe `dietLabels`/`healthLabels`.
+
+Reached through the flag-gated wrapper
+[`recipe-analysis-repo.ts`](../../src/lib/recipe-analysis-repo.ts) (`runRecipeStage2`),
+which **early-returns before any LLM/Prisma call when `INGREDIENT_LLM_FALLBACK` is
+off** — flag-off falls back to the deterministic pick (staple → rank →
+`matchPlausible` → energy guard → gram ladder), keeping the anchor eval network-free.
+Search itself prefers pure data types (`searchPreferringWholeFoods`: Foundation/SR
+Legacy first, Survey then Branded only as fallback) so clean single-ingredient
+varieties surface as candidates. Raw↔cooked gram *conversion* is still not done —
+the LLM instead selects the form matching the entered weight basis.
+
 - **Analysis cache (`RecipeAnalysisCache`):** keyed by
   [`generateRecipeFingerprint`](../../src/lib/recipe-fingerprint.ts) (title +
   ingredient lines). USDA is public domain, so — unlike Edamam — the full
@@ -236,12 +248,12 @@ loop that previously let nutrition bugs whack-a-mole.
 | recorded store | `fixtures/fdc/recorded-store.json` | real USDA payloads (slimmed to the profile nutrients) for real-tier recipes, captured by the recorder. |
 | anchor runner | `golden-recipes.test.ts` | anchor tier; mocks `@/lib/fdcRepo`, serves `anchor-foods`, asserts. **In CI.** |
 | LLM store | `fixtures/llm/recorded-llm.json` | recorded outputs of both LLM stages (canonical / estimates / stage2), replayed via the mocked `ingredient-name-repo` + `recipe-analysis-repo` seams. |
-| real runner | `golden-recipes-real.test.ts` | real tier over the recorded FDC + LLM stores — full LLM-primary pipeline, deterministic, no network. **Opt-in** (`bun run test:eval:nutrition:real`, `RUN_REAL_EVAL=1`) — a measurement baseline, not yet a CI gate (see findings). |
-| recorder | `record-fixtures.test.ts` | **opt-in, live** (`bun run eval:nutrition:record`, needs `FDC_API_KEY` + Vertex auth + `INGREDIENT_LLM_FALLBACK=1`). Skipped in CI. Captures the FDC store AND both LLM stages. |
+| real runner | `golden-recipes-real.test.ts` | real tier over the recorded FDC + LLM stores — full RAG pipeline, deterministic, no network. **In CI** (also runnable via `bun run test:eval:nutrition:real`). |
+| recorder | `record-fixtures.test.ts` | **opt-in, live** (`bun run eval:nutrition:record`, needs `FDC_API_KEY` + Vertex auth + `INGREDIENT_LLM_FALLBACK=1`). Skipped in CI. Invalidates the relevant caches, then captures the FDC store AND both LLM stages. |
 
 **Two tiers** (tolerances in `assert-macros.ts` `TOLERANCES`):
 - `anchor` — truth = hand-verified FDC computation; tight (`kcal ±10%`). In CI.
-- `real` — truth = published label; loose + invariant floors (`kcal ±25%`). Opt-in.
+- `real` — truth = published label; loose + invariant floors (`kcal ±25%`). In CI.
 
 **Adding a recipe:** append to `goldenRecipes`. Anchor → add its foods to
 `anchor-foods.ts` and compute expected by hand. Real → run the recorder to
@@ -264,21 +276,25 @@ in CI** (see `lib/replay.ts` `LlmFixtureStore` + `canonicalMapFromStore` etc.).
 `łosoś świeży`→salmon, `pasta miso`→miso paste, `kapusta pak choi`→bok choy,
 `sos sojowy`→soy sauce, all correct. No more Clif-bar mismatches.
 
-**Retention bug fixed (Phase F):** Stage-2 `retentionFactor` was being applied to
-the whole profile, cutting energy + protein (a systematic −15% across recipes).
-Cooking conserves energy + macros, so retention now applies to
-**micronutrients only** (`scaleProfileWithRetention` in `fdc.ts`). Protein gaps
-dropped to ~−6%.
+**RAG resolution closed the gaps (ADR 0004) — the real tier is now a GREEN CI gate.**
+After Phase F validated naming + fixed the retention-on-macros bug, the residual
+misses were food-variety + portion (a graham *roll* → generic "bread" slice; dry
+basmati rice → a cooked USDA entry). The fix was to make the LLM the full
+resolution layer: variety-aware canonical + dataType-first search + Stage-2
+candidate selection + portion estimation (see the Stage 2 section above). Result —
+all three `pl-d1-*` recipes now pass **kcal/protein/carbs**:
+- `pl-d1-kurczak-teriyaki` — passes all four macros (uncooked quinoa selected for
+  the dry weight).
+- `pl-d1-grahamka-kurczak` — kcal/P/C pass (bread roll → 114 g). **Fat omitted**:
+  the listed 2 tbsp olive oil (~27 g fat) alone exceeds the label's 26 g *total*
+  fat — the published label is self-inconsistent.
+- `pl-d1-losos-miso` — kcal/P/C pass (white rice → raw entry). **Fat omitted**:
+  USDA's farmed-Atlantic-salmon entry has no usable data, so the leaner wild entry
+  is the best fetchable match (a USDA data gap).
 
-**Remaining gaps are GRAM RESOLUTION, not naming** (1/3 pass, the rest close):
-- `pl-d1-kurczak-teriyaki` — **passes** (kcal −3%).
-- `pl-d1-grahamka-kurczak` — carbs −59%: `2 sztuki bułka grahamka` canonicalizes
-  to generic "bread" and resolves to a too-small piece weight (a graham roll is
-  ~60 g; the count-unit default under-weights it).
-- `pl-d1-losos-miso` — kcal −46%: `75 g ryż basmati` matches a *cooked* USDA rice
-  entry while the entered weight is dry. This is the **deferred cooked-weight /
-  dry-vs-cooked ambiguity** (rice is deliberately excluded from the staple map for
-  exactly this reason).
+Fat stays asserted on teriyaki; the two omissions are documented in `recipes.ts`
+with the specific label/data reason — the engine's fat computation is correct, the
+*reference* is the outlier (the same rationale as omitting fiber on real recipes).
 
 So the real tier stays **opt-in** (`RUN_REAL_EVAL=1`) — now a *deterministic*
 measurement baseline. Promoting it to the CI gate needs the dry/cooked-weight +

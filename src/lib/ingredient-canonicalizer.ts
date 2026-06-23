@@ -45,9 +45,10 @@ const estimateSchema = z.object({
   ),
 });
 
-const SYSTEM_INSTRUCTION = `You normalize recipe ingredient names for the USDA FoodData Central database.
-For each input name return a generic English ingredient name: singular, no brand, no preparation/state words, no quantities.
-Examples: "mięso z piersi kurczaka" -> "chicken breast"; "oliwa z oliwek" -> "olive oil"; "komosa ryżowa" -> "quinoa".
+const SYSTEM_INSTRUCTION = `You normalize recipe ingredient names into the term the USDA FoodData Central database actually indexes, so a keyword search returns good whole-food matches.
+For each input return a generic English ingredient name: singular, no brand, no quantities, no cooking/preparation words (raw/cooked handling happens elsewhere).
+Drop regional/marketing qualifiers USDA does not carry, but KEEP the descriptive variety word USDA indexes so the basic ingredient (not a snack/derivative) surfaces: "ryż basmati"/"basmati rice" -> "white rice" (NOT bare "rice", which returns rice cakes/crackers); "bułka grahamka" -> "bread roll"; "mięso z piersi kurczaka" -> "chicken breast"; "oliwa z oliwek" -> "olive oil"; "komosa ryżowa" -> "quinoa".
+Keep an essential variety word when USDA distinguishes it and it changes nutrition (e.g. "white rice", "brown rice", "skim milk", "whole wheat bread").
 Return canonical = null for anything that is not a food ingredient (section headers, utensils, noise).
 Return exactly one object per input and copy the input verbatim into "raw".`;
 

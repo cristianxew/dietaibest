@@ -28,6 +28,7 @@ import {
   type FdcSearchFood,
 } from "@/lib/fdc";
 import { resolveGramWeight } from "@/lib/gram-resolution";
+import { getUnitKind } from "@/lib/unit-registry";
 import { rankMatches, matchPlausible } from "@/lib/fdc-match";
 import { stapleFdcId } from "@/lib/fdc-staples";
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
@@ -39,7 +40,10 @@ import {
   runRecipeStage2,
   saveRecipeAnalysis,
 } from "@/lib/recipe-analysis-repo";
-import { type RecipeAnalysis } from "@/lib/recipe-analyzer";
+import {
+  type RecipeAnalysis,
+  type RecipeIngredientAnalysis,
+} from "@/lib/recipe-analyzer";
 
 /**
  * Input parameters for recipe analysis
@@ -381,7 +385,10 @@ type BatchResolution = Omit<
   | "retentionFactor"
   | "cookedState"
   | "cookedFlagged"
->;
+> & {
+  /** Fetched, plausible candidate foods offered to the Stage-2 LLM selector. */
+  candidates: FdcFood[];
+};
 
 /**
  * LLM-primary, single-pass resolution (ADR 0003):
@@ -418,66 +425,122 @@ async function resolveIngredientMatches(
 
   const resolved = await resolveBatch(forMatch);
 
-  // ② For a food the deterministic pass could not match (and the LLM did NOT
-  // call a non-food), estimate per-100g macros as the last coverage step.
-  const estimateIdx = resolved.flatMap((m, i) =>
-    m.food === null && !notFood[i] ? [i] : []
+  // ② Stage 2 (RAG resolution, ADR 0004): hand the recipe + each ingredient's
+  // fetched candidates (with per-100g macros) to the LLM, which selects the best
+  // food, estimates portion grams for count/household units, and judges cooked/raw
+  // + retention. Flag-gated → empty when off, so the pipeline falls back to the
+  // deterministic pick + gram ladder (unchanged; keeps CI network-free).
+  const stage2 = await runRecipeStage2({
+    title,
+    items: resolved.map((m, i) => ({
+      line: m.parsed.original,
+      qty: m.parsed.qty,
+      unit: m.parsed.unit,
+      name: forMatch[i].name,
+      candidates: m.candidates.map((f) => {
+        const macros = extractMacrosFromFood(f);
+        return {
+          fdcId: f.fdcId,
+          description: f.description,
+          dataType: f.dataType ?? "",
+          kcal: macros.kcal,
+          protein: macros.protein,
+          fat: macros.fat,
+          carbs: macros.carbs,
+        };
+      }),
+    })),
+  });
+  // Food selection: flag-on → the LLM's chosen candidate (or null → estimate);
+  // flag-off / Stage-2 failure → the deterministic pick from resolveBatch.
+  // Stage-2 results align with `resolved` BY INDEX (one per input, in order).
+  const selected = resolved.map((m, i) => {
+    const s2 = stage2.perIngredient[i];
+    if (notFood[i]) return { m, s2, finalFood: null as FdcFood | null };
+    if (s2) {
+      const chosen =
+        s2.chosenFdcId != null
+          ? m.candidates.find((f) => f.fdcId === s2.chosenFdcId) ?? null
+          : null;
+      return { m, s2, finalFood: chosen };
+    }
+    return { m, s2: undefined, finalFood: m.food };
+  });
+
+  // ③ Estimate per-100g macros for a food we could not select (and the LLM did
+  // not call a non-food) — the last coverage step. Flag-off → empty map.
+  const estimateIdx = selected.flatMap((s, i) =>
+    s.finalFood === null && !notFood[i] ? [i] : []
   );
   const estimates = estimateIdx.length
     ? await getMacroEstimates(estimateIdx.map((i) => forMatch[i].name))
     : new Map<string, MacroEstimate | null>();
 
-  const baseMatches = resolved.map((m, i): ResolvedIngredientMatch => {
-    // The LLM is authoritative on "not a food" — surface it even if free-text
-    // search incidentally matched something.
-    if (notFood[i]) {
-      return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1 };
+  /**
+   * Grams for an ingredient: trust the LLM's portion estimate for count/household
+   * units it can weigh better than the ladder (a roll, a clove); keep the
+   * deterministic ladder for explicit weights (g/kg) and when no override exists.
+   */
+  const gramsFor = (
+    parsed: ParsedIngredient,
+    food: FdcFood | null,
+    s2?: RecipeIngredientAnalysis
+  ) => {
+    if (s2?.grams != null && getUnitKind(parsed.unit) !== "weight") {
+      return { grams: s2.grams, confidence: s2.confidence, note: "LLM portion estimate" };
     }
-    if (m.food) {
-      return { ...m, status: "OK", source: "fdc", estimate: null, retentionFactor: 1 };
-    }
-    const est = estimates.get(forMatch[i].name) ?? null;
-    if (est) {
-      const g = resolveGramWeight(forMatch[i], null);
-      return {
-        ...m,
-        grams: g.grams,
-        confidence: g.confidence,
-        note: `LLM macro estimate (no USDA match); ${g.note}`,
-        status: "ESTIMATED",
-        source: "llm_estimate",
-        estimate: est,
-        retentionFactor: 1,
-      };
-    }
-    return { ...m, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1 };
-  });
+    return resolveGramWeight(parsed, food);
+  };
 
-  // ③ Stage 2 — recipe-scoped cooked/raw + retention + diet/health labels. Off
-  // (flag) → an empty analysis, so every retentionFactor stays 1 and nothing is
-  // scaled. Applied to OK (USDA) items only; estimates are already "as prepared".
-  const stage2 = await runRecipeStage2({
-    title,
-    items: baseMatches.map((m) => ({
-      name: m.parsed.name,
-      grams: m.grams,
-      description: m.food?.description ?? null,
-    })),
-  });
-  const stage2ByName = new Map(stage2.perIngredient.map((p) => [p.name, p]));
-
-  const matches = baseMatches.map((m): ResolvedIngredientMatch => {
-    const s2 = stage2ByName.get(m.parsed.name);
-    if (!s2) return m;
-    return {
-      ...m,
-      // Retention only adjusts real USDA nutrition; estimates already reflect
-      // the prepared food, so we don't double-apply a cooking loss to them.
-      retentionFactor: m.status === "OK" ? s2.retentionFactor : 1,
-      cookedState: s2.cookedState,
-      cookedFlagged: s2.flagged,
-    };
-  });
+  const matches = selected.map(
+    ({ m, s2, finalFood }, i): ResolvedIngredientMatch => {
+      // The LLM is authoritative on "not a food" — surface it even if free-text
+      // search incidentally matched something.
+      if (notFood[i]) {
+        return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1 };
+      }
+      if (finalFood) {
+        const g = gramsFor(m.parsed, finalFood, s2);
+        return {
+          parsed: m.parsed,
+          bestMatch: {
+            fdcId: finalFood.fdcId,
+            description: finalFood.description,
+            dataType: finalFood.dataType,
+          } as FdcSearchFood,
+          food: finalFood,
+          grams: g.grams,
+          confidence: g.confidence,
+          note: g.note,
+          status: "OK",
+          source: "fdc",
+          estimate: null,
+          // Retention adjusts micronutrients only (energy/macros conserved).
+          retentionFactor: s2?.retentionFactor ?? 1,
+          cookedState: s2?.cookedState,
+          cookedFlagged: s2?.flagged,
+        };
+      }
+      const est = estimates.get(forMatch[i].name) ?? null;
+      if (est) {
+        const g = gramsFor(m.parsed, null, s2);
+        return {
+          ...m,
+          food: null,
+          grams: g.grams,
+          confidence: g.confidence,
+          note: `LLM macro estimate (no USDA match); ${g.note}`,
+          status: "ESTIMATED",
+          source: "llm_estimate",
+          estimate: est,
+          retentionFactor: 1,
+          cookedState: s2?.cookedState,
+          cookedFlagged: s2?.flagged,
+        };
+      }
+      return { ...m, food: null, status: "UNRECOGNIZED", source: "none", estimate: null, retentionFactor: 1, cookedState: s2?.cookedState, cookedFlagged: s2?.flagged };
+    }
+  );
 
   return { matches, stage2 };
 }
@@ -547,6 +610,7 @@ async function resolveBatch(
         grams: 0,
         confidence: 0,
         note: "No USDA match found",
+        candidates: [],
       });
       continue;
     }
@@ -570,6 +634,8 @@ async function resolveBatch(
     // (208/957/958) would silently contribute 0 kcal (e.g. an energy-less
     // "BASMATI RICE" entry beating a proper one). Fall back to the first
     // plausible match for legitimately calorie-free foods (salt, water).
+    // The plausible candidate foods, ranked — offered to the Stage-2 LLM selector.
+    const plausibleFoods = plausible.map((c) => foodsById.get(c.fdcId)!);
     const hit =
       plausible.find((c) => c.fdcId === staple) ??
       plausible.find((c) => foodHasEnergy(foodsById.get(c.fdcId)!)) ??
@@ -589,13 +655,14 @@ async function resolveBatch(
         note: fetchFailed
           ? "Failed to fetch food details"
           : "No plausible USDA match (low match quality)",
+        candidates: plausibleFoods,
       });
       continue;
     }
 
     const food = foodsById.get(hit.fdcId)!;
     const { grams, confidence, note } = resolveGramWeight(parsed, food);
-    resolved.push({ parsed, bestMatch: hit, food, grams, confidence, note });
+    resolved.push({ parsed, bestMatch: hit, food, grams, confidence, note, candidates: plausibleFoods });
   }
 
   return resolved;

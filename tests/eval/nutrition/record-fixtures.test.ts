@@ -25,7 +25,7 @@
  * @module tests/eval/nutrition/record-fixtures.test
  */
 
-import { describe, it, expect } from "vitest";
+import { beforeAll, describe, it, expect } from "vitest";
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
@@ -46,6 +46,51 @@ const LLM_OUT = path.resolve(__dirname, "fixtures/llm/recorded-llm.json");
 const MAX_CANDIDATES = 5;
 
 describe.skipIf(!ENABLED)("record fdc fixtures (live)", () => {
+  // Invalidate the caches the recorder reads BEFORE either test runs, so the
+  // whole recording reflects the CURRENT prompts + R1/R2/R3 logic — not stale
+  // rows from a previous run. Critically this includes the SEARCH cache (so the
+  // whole-food-first search actually fires) and re-canonicalizes (so the new
+  // canonical names + their searches land in the store, not the old ones).
+  beforeAll(async () => {
+    process.env.INGREDIENT_LLM_FALLBACK = "1";
+    const { parseIngredientLine } = await import("@/lib/ingredients");
+    const { canonicalizeCached } = await import("@/lib/ingredient-name-repo");
+    const { generateRecipeFingerprint } = await import("@/lib/recipe-fingerprint");
+    const { normalizeSearchQuery } = await import("@/lib/fdcRepo");
+    const { prisma } = await import("@/lib/prisma");
+
+    const real = goldenRecipes.filter((r) => r.tier === "real");
+    const rawNames = [
+      ...new Set(
+        real.flatMap((r) => r.ingredients.map((l) => parseIngredientLine(l).name))
+      ),
+    ];
+    const fingerprints = real.map((r) =>
+      generateRecipeFingerprint({ title: "", ingr: r.ingredients })
+    );
+
+    await prisma.recipeAnalysisCache.deleteMany({
+      where: { fingerprint: { in: fingerprints } },
+    });
+    await prisma.ingredientNameCache.deleteMany({
+      where: { key: { in: rawNames.map(normalizeKey) } },
+    });
+    // Re-canonicalize fresh (R2 prompt) to learn the NEW canonical query names,
+    // then clear the search + estimate caches keyed by raw AND canonical names.
+    const canon = await canonicalizeCached(rawNames);
+    const canonNames = [...canon.values()].filter((c): c is string => !!c);
+    await prisma.ingredientEstimateCache.deleteMany({
+      where: { name: { in: canonNames.map(normalizeKey) } },
+    });
+    await prisma.fdcSearchCache.deleteMany({
+      where: {
+        query: {
+          in: [...new Set([...rawNames, ...canonNames].map(normalizeSearchQuery))],
+        },
+      },
+    });
+  }, 120_000);
+
   it("records search + food payloads for every golden recipe", async () => {
     // generous: sequential live USDA calls for every real-tier ingredient.
     // Dynamic imports: keep the gitignored Prisma client out of collection.
@@ -127,6 +172,16 @@ describe.skipIf(!ENABLED)("record fdc fixtures (live)", () => {
 
     const realRecipes = goldenRecipes.filter((r) => r.tier === "real");
 
+    // Raw-name keys + recipe fingerprints for the real recipes.
+    const rawKeys = new Set<string>();
+    for (const recipe of realRecipes)
+      for (const line of recipe.ingredients)
+        rawKeys.add(normalizeKey(parseIngredientLine(line).name));
+    const fingerprints = realRecipes.map((r) =>
+      generateRecipeFingerprint({ title: "", ingr: r.ingredients })
+    );
+    // (Caches were invalidated in beforeAll, so this run reflects current logic.)
+
     // Run the live pipeline once per recipe. Beyond returning a result, this
     // PERSISTS all three LLM outputs to their caches (IngredientNameCache,
     // IngredientEstimateCache, RecipeAnalysisCache) — which we dump as the
@@ -139,10 +194,6 @@ describe.skipIf(!ENABLED)("record fdc fixtures (live)", () => {
     }
 
     // Stage 1 canonical — filter the name cache to the real recipes' raw names.
-    const rawKeys = new Set<string>();
-    for (const recipe of realRecipes)
-      for (const line of recipe.ingredients)
-        rawKeys.add(normalizeKey(parseIngredientLine(line).name));
     const canonicalRows = await prisma.ingredientNameCache.findMany({
       where: { key: { in: [...rawKeys] } },
     });

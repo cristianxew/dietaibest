@@ -238,6 +238,32 @@ function isSearchStale(lastFetchedAt: Date | null | undefined): boolean {
 }
 
 /**
+ * Pure single-ingredient data types — Foundation + SR Legacy carry the raw/cooked
+ * and variety entries (e.g. "Rice, white, … raw", "Salmon, Atlantic, farmed,
+ * raw") an ingredient query should match. Tried first.
+ */
+const PRIMARY_DATATYPES = ["Foundation", "SR Legacy"];
+
+/**
+ * Live USDA search by data-type quality (ADR 0004). Foundation/SR Legacy first —
+ * they hold the clean single-ingredient varieties the LLM selector needs as
+ * candidates. Survey (FNDDS) is only a fallback: it includes composite "as
+ * consumed" DISHES ("Dirty rice", "Rice pilaf") that crowd out the basic
+ * ingredient on a generic query. Branded (user-submitted, often energy-less or
+ * mislabelled) is the last resort for niche/branded-only items. Each tier only
+ * fires when the previous returned nothing, so common foods cost one call.
+ */
+async function searchPreferringWholeFoods(
+  query: string
+): Promise<FdcSearchFood[]> {
+  const primary = (await fdcSearch(query, PRIMARY_DATATYPES)).foods ?? [];
+  if (primary.length > 0) return primary;
+  const survey = (await fdcSearch(query, ["Survey (FNDDS)"])).foods ?? [];
+  if (survey.length > 0) return survey;
+  return (await fdcSearch(query, ["Branded"])).foods ?? [];
+}
+
+/**
  * Search USDA FDC for foods matching a query, with DB caching.
  *
  * Mirrors `getFoodsCached` for the search step: the food-detail fetch was
@@ -276,8 +302,7 @@ export async function searchFoodsCached(
   // 3. Miss or stale → fetch live and refresh the cache.
   try {
     console.log(`[FDC Search Cache] ${cached ? "Stale" : "Miss"} for "${key}" — querying USDA`);
-    const result = await fdcSearch(key);
-    const foods = result.foods ?? [];
+    const foods = await searchPreferringWholeFoods(key);
 
     await prisma.fdcSearchCache.upsert({
       where: { query: key },
