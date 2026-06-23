@@ -10,7 +10,7 @@ vi.mock("@/actions/recipe", () => ({
 }));
 
 vi.mock("@/actions/nutrition", () => ({
-  analyzeRecipeNutritionAction: vi.fn(),
+  analyzeRecipeProfileForFormAction: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({

@@ -39,7 +39,6 @@ const PRO: Entitlements = {
     recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
     mealPlanTemplates: Number.POSITIVE_INFINITY,
     mealPlanDurationDays: Number.POSITIVE_INFINITY,
-    edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,
   },
   features: {
     aiMealPlan: true,

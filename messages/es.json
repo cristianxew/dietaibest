@@ -1192,8 +1192,7 @@
       "savedRecipes": "recetas guardadas",
       "recipesCreatedPerMonth": "recetas por mes",
       "mealPlanTemplates": "plantillas de plan de comida",
-      "mealPlanDurationDays": "duración del plan de comida",
-      "edamamAnalysesPerMonth": "análisis nutricionales por mes"
+      "mealPlanDurationDays": "duración del plan de comida"
     },
     "pricing": {
       "title": "Pasate a DietAI Pro",

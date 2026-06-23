@@ -1193,8 +1193,7 @@
       "savedRecipes": "saved recipes",
       "recipesCreatedPerMonth": "recipes per month",
       "mealPlanTemplates": "meal plan templates",
-      "mealPlanDurationDays": "meal plan duration",
-      "edamamAnalysesPerMonth": "nutrition analyses per month"
+      "mealPlanDurationDays": "meal plan duration"
     },
     "pricing": {
       "title": "Upgrade to DietAI Pro",

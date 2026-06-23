@@ -2,39 +2,18 @@
  * Server Actions for Nutrition Analysis
  *
  * Provides server-side functions for analyzing recipe nutrition
- * with authentication and error handling built-in.
+ * with authentication and error handling built-in. Calculation is USDA
+ * FoodData Central only (ADR 0003) — the Edamam path has been retired.
  */
 
 "use server";
 
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
-import type { Recipe } from "@/generated/prisma";
-import {
-  analyzeRecipeNutrition,
-  getCachedRecipeNutrition,
-  getRecipeNutritionSummary,
-  clearRecipeNutritionCache,
-  saveUserMacroCache,
-  type RecipeNutritionInput,
-  type NutritionAnalysisResult,
-  type NutritionAnalysisError,
-} from "@/lib/edamam-service";
-import {
-  assertCanUseEdamamAnalysis,
-  assertCanCreateRecipe,
-} from "@/lib/entitlements";
+import { assertCanCreateRecipe } from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
 import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
 import type { Profile } from "@/lib/fdc";
-
-// Re-export types for use in components
-export type {
-  NutritionAnalysisResult,
-  NutritionAnalysisError,
-  RecipeNutritionInput,
-};
 
 // ============================================================================
 // Helper Functions
@@ -62,65 +41,11 @@ async function getAuthenticatedUser() {
 // ============================================================================
 
 /**
- * Analyze recipe nutrition
- * Returns nutrition data or error information
- */
-export async function analyzeRecipeNutritionAction(
-  recipe: RecipeNutritionInput,
-  options: {
-    forceRefresh?: boolean;
-    locale?: "en" | "es" | "pl";
-  } = {}
-): Promise<{
-  success: boolean;
-  data?: NutritionAnalysisResult;
-  error?: string;
-  code?: string;
-  retryable?: boolean;
-}> {
-  try {
-    const user = await getAuthenticatedUser();
-    await assertCanUseEdamamAnalysis(user);
-
-    const result = await analyzeRecipeNutrition(recipe, user.id, options);
-
-    // Check if result is an error
-    if ("error" in result) {
-      return {
-        success: false,
-        error: result.error,
-        code: result.code,
-        retryable: result.retryable,
-      };
-    }
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    const entError = toEntitlementError(error);
-    if (entError) {
-      return { success: false, error: JSON.stringify(entError), code: entError.code, retryable: false };
-    }
-    console.error("[Action] analyzeRecipeNutrition failed:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : "Failed to analyze recipe",
-      code: "INTERNAL_ERROR",
-      retryable: false,
-    };
-  }
-}
-
-/**
  * Analyze a recipe into the full USDA FDC profile for the create/edit form.
  *
  * Returns the per-serving 22-nutrient profile so the form can pre-fill every
  * macro/micro field. Gated by `assertCanCreateRecipe` (same gate as the save).
- * This replaces the Edamam-backed `analyzeRecipeNutritionAction` on the recipe
- * creation path — no Edamam call is made here.
+ * This is the USDA FDC engine (ADR 0003) — no Edamam call is made.
  */
 export async function analyzeRecipeProfileForFormAction(input: {
   ingredients: string[];
@@ -155,216 +80,6 @@ export async function analyzeRecipeProfileForFormAction(input: {
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to analyze recipe",
-    };
-  }
-}
-
-/**
- * Get cached nutrition for a recipe
- */
-export async function getCachedRecipeNutritionAction(
-  recipeId: string
-): Promise<{
-  success: boolean;
-  data?: NutritionAnalysisResult;
-  error?: string;
-}> {
-  try {
-    const user = await getAuthenticatedUser();
-
-    const result = await getCachedRecipeNutrition(user.id, recipeId);
-
-    if (!result) {
-      return {
-        success: false,
-        error: "No cached nutrition data found",
-      };
-    }
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    console.error("[Action] getCachedRecipeNutrition failed:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get cached nutrition",
-    };
-  }
-}
-
-/**
- * Get nutrition summary for multiple recipes
- */
-export async function getRecipeNutritionSummaryAction(
-  recipeIds: string[]
-): Promise<{
-  success: boolean;
-  data?: {
-    total: { calories: number; protein: number; fat: number; netCarbs: number };
-    byRecipe: Array<{
-      recipeId: string;
-      macros: {
-        calories: number;
-        protein: number;
-        fat: number;
-        netCarbs: number;
-      };
-    }>;
-  };
-  error?: string;
-}> {
-  try {
-    const user = await getAuthenticatedUser();
-
-    const result = await getRecipeNutritionSummary(recipeIds, user.id);
-
-    return {
-      success: true,
-      data: result,
-    };
-  } catch (error) {
-    console.error("[Action] getRecipeNutritionSummary failed:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to get nutrition summary",
-    };
-  }
-}
-
-/**
- * Clear cached nutrition for a recipe
- */
-export async function clearRecipeNutritionCacheAction(
-  recipeId: string
-): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  try {
-    const user = await getAuthenticatedUser();
-
-    await clearRecipeNutritionCache(recipeId, user.id);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("[Action] clearRecipeNutritionCache failed:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to clear cache",
-    };
-  }
-}
-
-/**
- * Analyze and update recipe with nutrition data
- * This is a convenience action that analyzes nutrition and updates the recipe in one go
- */
-export async function analyzeAndUpdateRecipe(
-  recipeId: string,
-  options: {
-    forceRefresh?: boolean;
-    locale?: "en" | "es" | "pl";
-  } = {}
-): Promise<{
-  success: boolean;
-  data?: {
-    recipe: Recipe;
-    nutrition: NutritionAnalysisResult;
-  };
-  error?: string;
-}> {
-  try {
-    const user = await getAuthenticatedUser();
-
-    // Get recipe
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: recipeId, userId: user.id },
-    });
-
-    if (!recipe) {
-      return {
-        success: false,
-        error: "Recipe not found",
-      };
-    }
-
-    const ingredientLines = formatIngredientsForNutrition(recipe.ingredients);
-
-    if (ingredientLines.length === 0) {
-      return {
-        success: false,
-        error: "Recipe has no ingredients to analyze",
-      };
-    }
-
-    const nutritionInput: RecipeNutritionInput = {
-      title: recipe.title,
-      ingredients: ingredientLines,
-      servings: recipe.servings,
-      url: recipe.sourceUrl || undefined,
-      instructions: recipe.instructions,
-    };
-
-    // Analyze nutrition
-    const nutritionResult = await analyzeRecipeNutrition(
-      nutritionInput,
-      user.id,
-      options
-    );
-
-    if ("error" in nutritionResult) {
-      return {
-        success: false,
-        error: nutritionResult.error,
-      };
-    }
-
-    // Update recipe with nutrition data
-    const updatedRecipe = await prisma.recipe.update({
-      where: { id: recipeId },
-      data: {
-        calories: nutritionResult.macros.calories,
-        protein: nutritionResult.macros.protein,
-        carbs: nutritionResult.macros.netCarbs, // Store net carbs as carbs
-        fat: nutritionResult.macros.fat,
-        // Note: fiber is not in the 4 allowed cached macros
-        updatedAt: new Date(),
-      },
-    });
-
-    // Save user-specific macro cache (Edamam policy: only 4 macros)
-    await saveUserMacroCache(
-      user.id,
-      recipeId,
-      nutritionResult.macros,
-      nutritionResult.servings
-    );
-
-    return {
-      success: true,
-      data: {
-        recipe: updatedRecipe,
-        nutrition: nutritionResult,
-      },
-    };
-  } catch (error) {
-    console.error("[Action] analyzeAndUpdateRecipe failed:", error);
-    return {
-      success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Failed to analyze and update recipe",
     };
   }
 }

@@ -14,8 +14,9 @@ for anything touching ingredient **units**.
   is the single source of truth. Everything (parsing, gram resolution, shopping
   list, the recipe-form dropdown) derives from it. Do **not** add a second alias
   table or conversion map anywhere else.
-- **Calculation is FDC-only.** Edamam code still exists but is **not** on any
-  active calculation path. Do not wire new nutrition features to Edamam.
+- **Calculation is FDC-only.** Edamam has been **removed** (ADR 0003 E) — the
+  client, service, caches, and the metered `edamamAnalysesPerMonth` entitlement
+  are all gone. Nutrition analysis is free + ungated. Do not reintroduce Edamam.
 - **Confidence is internal-only.** The pipeline computes a per-ingredient
   confidence + note for our debugging/logs. It is **never shown to the user**.
 

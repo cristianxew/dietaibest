@@ -16,12 +16,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Check, RefreshCw, Calculator, LockKeyhole, Globe } from "lucide-react";
+import { Check, RefreshCw, Calculator, Globe } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { useEntitlements } from "@/hooks/useEntitlements";
-import { usePaywall } from "@/components/billing/PaywallProvider";
-import { ProBadge } from "@/components/billing/ProBadge";
 import { MICRONUTRIENT_GROUPS } from "@/lib/nutrition-fields";
 
 const MACRO_TILES = [
@@ -41,7 +38,6 @@ const ACCENT_TEXT_CLASSES: Record<string, string> = {
 
 export function Step2Nutrition() {
   const t = useTranslations("recipeModal");
-  const tBilling = useTranslations("billing");
   const { goBack } = useRecipeModal();
   const {
     form,
@@ -51,30 +47,10 @@ export function Step2Nutrition() {
     handleSubmit,
     isSubmitting,
   } = useRecipeForm();
-  const { status: entStatus, data: entData } = useEntitlements();
-  const paywall = usePaywall();
 
   const analyzed = Boolean(nutritionResult);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const control = form.control as any;
-
-  const isPro = entStatus === "ready" && entData?.isPro;
-  const quotaLimit = entData?.limits?.edamamAnalysesPerMonth ?? null;
-  const quotaUsed = entData?.usage?.edamamAnalysesPerMonth ?? 0;
-  const quotaExhausted = !isPro && quotaLimit !== null && quotaUsed >= quotaLimit;
-
-  const handleAnalyzeClick = () => {
-    if (quotaExhausted) {
-      paywall.open({
-        code: "QUOTA_EXCEEDED",
-        quota: "edamamAnalysesPerMonth",
-        limit: quotaLimit!,
-        used: quotaUsed,
-      });
-      return;
-    }
-    analyzeNutrition();
-  };
 
   return (
     <Form {...form as any}>
@@ -82,7 +58,6 @@ export function Step2Nutrition() {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <h2 className="font-display text-3xl font-semibold">Nutrition</h2>
-            {!isPro && entStatus === "ready" && <ProBadge />}
           </div>
           <p className="text-muted-foreground text-[15px]">Review and adjust nutritional values for your recipe</p>
         </div>
@@ -108,28 +83,19 @@ export function Step2Nutrition() {
                   {analyzed ? t("step2.analyzed") : t("step2.analyzeTitle")}
                 </p>
                 <p className="text-[13px] text-muted-foreground mt-0.5">
-                  {analyzed
-                    ? t("step2.analyzeDescription")
-                    : quotaExhausted
-                      ? t("step2.quotaExhausted")
-                      : !isPro && quotaLimit !== null
-                        ? t("step2.remaining", { remaining: quotaLimit - quotaUsed, limit: quotaLimit })
-                        : t("step2.analyzeDescription")
-                  }
+                  {t("step2.analyzeDescription")}
                 </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={handleAnalyzeClick}
+              onClick={analyzeNutrition}
               disabled={nutritionLoading}
               className={cn(
                 "flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-md transition-all border",
-                quotaExhausted && !analyzed
-                  ? "border-border/50 text-muted-foreground bg-muted/30 cursor-not-allowed"
-                  : analyzed
-                    ? "border-sage-500/30 text-sage-500 hover:bg-sage-500/10 bg-transparent"
-                    : "bg-transparent border-border hover:bg-muted text-foreground",
+                analyzed
+                  ? "border-sage-500/30 text-sage-500 hover:bg-sage-500/10 bg-transparent"
+                  : "bg-transparent border-border hover:bg-muted text-foreground",
                 nutritionLoading && "opacity-60 cursor-not-allowed"
               )}
             >
@@ -137,11 +103,6 @@ export function Step2Nutrition() {
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
                   {t("step2.analyzing")}
-                </>
-              ) : quotaExhausted && !analyzed ? (
-                <>
-                  <LockKeyhole className="w-4 h-4" />
-                  {tBilling("upgradeButton")}
                 </>
               ) : analyzed ? (
                 <>

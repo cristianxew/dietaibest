@@ -193,9 +193,28 @@ Recipe (lines + servings)
   (+4: retention, labels, cache hit/save). Full `test:unit` (783) + anchor eval +
   `tsc` green.
 
+**Done — Phase E (retire Edamam), 2026-06-23:**
+- The Edamam analysis path was already orphaned (no app callers — the FDC engine
+  replaced it). Deleted `src/lib/edamam.ts`, `src/lib/edamam-service.ts`,
+  `src/lib/edamam-synonyms.ts`, the `/api/nutrition/analyze` route, and the dead
+  Edamam actions in `src/actions/nutrition.ts` (`analyzeRecipeNutritionAction`,
+  `getCachedRecipeNutritionAction`, `getRecipeNutritionSummaryAction`,
+  `clearRecipeNutritionCacheAction`, `analyzeAndUpdateRecipe`). Kept
+  `analyzeRecipeProfileForFormAction` (FDC).
+- **Removed the nutrition meter (product decision):** USDA FDC is our own free
+  engine, so the `edamamAnalysesPerMonth` quota (free 5/mo) — already unenforced
+  once the FDC path stopped writing `EdamamUserMacroCache` — was dropped entirely:
+  from `QuotaKey`/`FREE_LIMITS`/`PRO_LIMITS`, `checkCanUseEdamamAnalysis` +
+  `assertCanUseEdamamAnalysis`, the `getUsage` count, the `SettingsBilling` line,
+  the `Step2Nutrition` quota/paywall/ProBadge UI, and the en/es/pl `quotaNames`
+  key. Nutrition analysis is now free + ungated.
+- Dropped the Edamam Prisma caches (`EdamamRecipeCache`, `EdamamUserMacroCache`) +
+  their `User`/`Recipe` relations. Migration `20260623130000_drop_edamam_caches`
+  applied to the dev DB (`migrate deploy`, no drift).
+- Tests updated (removed the `checkCanUseEdamamAnalysis` suite + stale fixtures/
+  mocks). Full `test:unit` (780) + anchor eval + `tsc` green.
+
 **Pending:**
-- **E (retire Edamam):** the fingerprint is already extracted; retire call sites,
-  delete `edamam*.ts`.
 - **F:** extend the recorder for both LLM stages; promote the real tier to a CI gate.
 - **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
   backfill `IngredientNameCache`.

@@ -8,7 +8,6 @@ import {
   checkCanCreateRecipe,
   checkCanImportRecipe,
   checkCanUseAiMealPlan,
-  checkCanUseEdamamAnalysis,
   checkCanUseShoppingAutomation,
   enforce,
   getEntitlements,
@@ -79,7 +78,6 @@ const zeroUsage: Usage = {
   recipesCreatedPerMonth: 0,
   mealPlanTemplates: 0,
   mealPlanDurationDays: 0,
-  edamamAnalysesPerMonth: 0,
 };
 
 describe("checkCanCreateRecipe", () => {
@@ -187,33 +185,6 @@ describe("checkCanCreateMealPlanTemplate", () => {
     });
     expect(v).toBeInstanceOf(QuotaExceededError);
     expect((v as QuotaExceededError).quota).toBe("mealPlanTemplates");
-  });
-});
-
-describe("checkCanUseEdamamAnalysis", () => {
-  it("allows pro users regardless", () => {
-    const v = checkCanUseEdamamAnalysis(PRO, {
-      ...zeroUsage,
-      edamamAnalysesPerMonth: 9999,
-    });
-    expect(v).toBeNull();
-  });
-
-  it("allows free users below the monthly analysis limit", () => {
-    const v = checkCanUseEdamamAnalysis(FREE, {
-      ...zeroUsage,
-      edamamAnalysesPerMonth: FREE_LIMITS.edamamAnalysesPerMonth - 1,
-    });
-    expect(v).toBeNull();
-  });
-
-  it("blocks free users at the monthly analysis limit", () => {
-    const v = checkCanUseEdamamAnalysis(FREE, {
-      ...zeroUsage,
-      edamamAnalysesPerMonth: FREE_LIMITS.edamamAnalysesPerMonth,
-    });
-    expect(v).toBeInstanceOf(QuotaExceededError);
-    expect((v as QuotaExceededError).quota).toBe("edamamAnalysesPerMonth");
   });
 });
 

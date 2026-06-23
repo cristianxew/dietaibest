@@ -3,8 +3,10 @@
 **Status:** accepted — **Phases A+B+B-UI + D(estimates) + C + D-remainder
 implemented** behind `INGREDIENT_LLM_FALLBACK` (LLM-primary single-pass, honest
 contract, calculator UI, the Stage-2 recipe LLM, and the full `RecipeAnalysisCache`
-+ cached 22-nutrient profile). Edamam retirement (E), the real-tier CI gate (F),
-and the rollout flag-flip (G) remain. Open items tracked in
++ cached 22-nutrient profile) **and E (Edamam fully retired — code, caches, and
+the metered `edamamAnalysesPerMonth` entitlement all removed; nutrition analysis
+is now free + ungated)**. The real-tier CI gate (F) and the rollout flag-flip (G)
+remain. Open items tracked in
 [.agent/Tasks/ingredient-llm-canonicalizer.md](../../.agent/Tasks/ingredient-llm-canonicalizer.md)
 
 **Cooked-weight implementation note (C):** Stage 2 *captures + flags* the
