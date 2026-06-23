@@ -56,6 +56,7 @@ const tempeh: FdcFood = {
     { nutrientNumber: "204", amount: 11, unitName: "G" },
     { nutrientNumber: "205", amount: 8, unitName: "G" },
     { nutrientNumber: "291", amount: 0, unitName: "G" },
+    { nutrientNumber: "307", amount: 100, unitName: "MG" }, // sodium (a micro)
   ],
 };
 
@@ -224,7 +225,7 @@ describe("LLM-primary pipeline · macro path (AnalyzeResult) is honest too", () 
 });
 
 describe("LLM-primary pipeline · Stage 2 (cooked-weight + labels)", () => {
-  it("applies the retention factor to an OK item's nutrition without changing reported grams", async () => {
+  it("applies retention to micronutrients only — energy + macros are conserved", async () => {
     vi.mocked(canonicalizeCached).mockResolvedValue(new Map([["tempeh", "tempeh"]]));
     vi.mocked(runRecipeStage2).mockResolvedValue({
       perIngredient: [
@@ -238,7 +239,11 @@ describe("LLM-primary pipeline · Stage 2 (cooked-weight + labels)", () => {
 
     expect(r.items[0].status).toBe("OK");
     expect(r.items[0].gramsTotal).toBe(100); // grams unchanged
-    expect(r.perServing.calories).toBeCloseTo(96, 1); // 192 kcal/100g * 0.5 retention
+    // Cooking conserves energy + macros — retention must NOT cut these.
+    expect(r.perServing.calories).toBeCloseTo(192, 1);
+    expect(r.perServing.protein).toBeCloseTo(20, 1);
+    // Micronutrients ARE reduced by the retention factor (100 mg sodium * 0.5).
+    expect(r.perServing.sodium).toBeCloseTo(50, 1);
     expect(r.items[0].cookedState).toBe("cooked");
     expect(r.items[0].cookedFlagged).toBe(false);
   });

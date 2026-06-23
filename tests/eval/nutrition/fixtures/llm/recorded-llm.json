@@ -1,0 +1,314 @@
+{
+  "canonical": {
+    "mięso z piersi kurczaka": "chicken breast",
+    "bułka grahamka": "bread",
+    "miks sałat": "salad greens",
+    "plastra imbir": "ginger",
+    "kapusta pak choi": "bok choy",
+    "sezam nasiona": "sesame seed",
+    "komosa ryżowa": "quinoa",
+    "imbir mielony": "ginger",
+    "pomidor": "tomato",
+    "ogórek świeży": "cucumber",
+    "oliwa z oliwek": "olive oil",
+    "papryka słodka": "bell pepper",
+    "czosnek granulowany": "garlic",
+    "sól": "salt",
+    "pieprz czarny": "black pepper",
+    "ryż basmati": "basmati rice",
+    "łosoś świeży": "salmon",
+    "pasta miso": "miso paste",
+    "miód": "honey",
+    "sos sojowy": "soy sauce",
+    "olej sezamowy": "sesame oil",
+    "ząbku czosnek świeży": "garlic",
+    "papryka ostra suszona": "chili pepper",
+    "czosnek świeży": "garlic",
+    "brokuł": "broccoli",
+    "papryka czerwona": "bell pepper"
+  },
+  "estimates": {},
+  "stage2": {
+    "pl-d1-grahamka-kurczak": {
+      "dietLabels": [
+        "High-Protein",
+        "Low-Sodium"
+      ],
+      "healthLabels": [
+        "Dairy-Free",
+        "Egg-Free",
+        "Peanut-Free",
+        "Tree-Nut-Free",
+        "Soy-Free",
+        "Pork-Free",
+        "Red-Meat-Free"
+      ],
+      "perIngredient": [
+        {
+          "name": "chicken breast",
+          "flagged": false,
+          "confidence": 0.9,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "bread",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "salad greens",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "tomato",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "cucumber",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "olive oil",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "bell pepper",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "garlic",
+          "flagged": false,
+          "confidence": 0.6,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "salt",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "black pepper",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        }
+      ]
+    },
+    "pl-d1-losos-miso": {
+      "dietLabels": [
+        "high-protein"
+      ],
+      "healthLabels": [
+        "dairy-free",
+        "peanut-free",
+        "pescatarian",
+        "tree-nut-free"
+      ],
+      "perIngredient": [
+        {
+          "name": "basmati rice",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "salmon",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "miso paste",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "honey",
+          "flagged": false,
+          "confidence": 0.9,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "soy sauce",
+          "flagged": false,
+          "confidence": 0.9,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "sesame oil",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "ginger",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "garlic",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "bok choy",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 0.75
+        },
+        {
+          "name": "olive oil",
+          "flagged": false,
+          "confidence": 0.9,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "sesame seed",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "salt",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "black pepper",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "chili pepper",
+          "flagged": false,
+          "confidence": 1,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        }
+      ]
+    },
+    "pl-d1-kurczak-teriyaki": {
+      "dietLabels": [
+        "high-protein"
+      ],
+      "healthLabels": [
+        "gluten-free",
+        "dairy-free",
+        "peanut-free",
+        "tree-nut-free"
+      ],
+      "perIngredient": [
+        {
+          "name": "quinoa",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "cooked",
+          "retentionFactor": 0.95
+        },
+        {
+          "name": "chicken breast",
+          "flagged": false,
+          "confidence": 0.98,
+          "cookedState": "cooked",
+          "retentionFactor": 0.85
+        },
+        {
+          "name": "soy sauce",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "honey",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "sesame oil",
+          "flagged": false,
+          "confidence": 0.85,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "ginger",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "garlic",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "broccoli",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "cooked",
+          "retentionFactor": 0.85
+        },
+        {
+          "name": "bell pepper",
+          "flagged": false,
+          "confidence": 0.95,
+          "cookedState": "cooked",
+          "retentionFactor": 0.85
+        },
+        {
+          "name": "sesame seed",
+          "flagged": false,
+          "confidence": 0.8,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        }
+      ]
+    }
+  }
+}

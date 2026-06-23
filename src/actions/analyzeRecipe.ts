@@ -16,6 +16,7 @@ import {
   scalePer100g,
   extractProfileFromFood,
   scaleProfilePer100g,
+  scaleProfileWithRetention,
   profileFromMacroEstimate,
   addProfile,
   divideProfile,
@@ -251,11 +252,11 @@ export async function analyzeRecipeAction(
       };
 
       if (m.status === "OK" && m.food) {
-        // Retention scales nutrition only (via effective grams); reported grams
-        // stay raw-as-entered — we never silently scale the weight (ADR 0003).
+        // Macros (kcal/protein/fat/carbs/fiber) are conserved by cooking, so the
+        // Stage-2 retention factor does NOT apply on the macro path.
         const scaledMacros = scalePer100g(
           extractMacrosFromFood(m.food),
-          m.grams * m.retentionFactor
+          m.grams
         );
         items.push({
           ...base,
@@ -666,11 +667,13 @@ export async function analyzeRecipeProfileAction(
       };
 
       if (m.status === "OK" && m.food) {
-        // Retention scales nutrition only (via effective grams); reported grams
-        // stay raw-as-entered — we never silently scale the weight (ADR 0003).
-        const scaled = scaleProfilePer100g(
+        // Stage-2 retention applies to micronutrients only (vitamins/minerals);
+        // energy + macros are conserved, and reported grams stay raw-as-entered —
+        // we never silently scale the weight (ADR 0003).
+        const scaled = scaleProfileWithRetention(
           extractProfileFromFood(m.food),
-          m.grams * m.retentionFactor
+          m.grams,
+          m.retentionFactor
         );
         items.push({
           ...base,

@@ -12,14 +12,33 @@
  * @module tests/eval/nutrition/golden-recipes-real.test
  */
 
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/fdcRepo", () => ({
   getFoodsCached: vi.fn(),
   searchFoodsCached: vi.fn(),
 }));
+// The two LLM stages are replayed from recorded fixtures (no Vertex in CI).
+vi.mock("@/lib/ingredient-name-repo", () => ({
+  canonicalizeCached: vi.fn(),
+  getMacroEstimates: vi.fn(),
+}));
+vi.mock("@/lib/recipe-analysis-repo", () => ({
+  runRecipeStage2: vi.fn(),
+  getRecipeAnalysisCached: vi.fn(),
+  saveRecipeAnalysis: vi.fn(),
+}));
 
 import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
+import {
+  canonicalizeCached,
+  getMacroEstimates,
+} from "@/lib/ingredient-name-repo";
+import {
+  runRecipeStage2,
+  getRecipeAnalysisCached,
+  saveRecipeAnalysis,
+} from "@/lib/recipe-analysis-repo";
 import {
   analyzeRecipeProfileAction,
   type AnalyzeProfileResult,
@@ -28,7 +47,11 @@ import { goldenRecipes, type GoldenRecipe } from "./fixtures/recipes";
 import {
   searchFromStore,
   foodsFromStore,
+  canonicalMapFromStore,
+  estimatesMapFromStore,
+  stage2FromStore,
   type FdcFixtureStore,
+  type LlmFixtureStore,
 } from "./lib/replay";
 import {
   checkInvariants,
@@ -36,14 +59,14 @@ import {
   macrosPass,
 } from "./lib/assert-macros";
 import recordedStoreJson from "./fixtures/fdc/recorded-store.json";
+import recordedLlmJson from "./fixtures/llm/recorded-llm.json";
 
 const store = recordedStoreJson as unknown as FdcFixtureStore;
+const llm = recordedLlmJson as unknown as LlmFixtureStore;
 const realRecipes = goldenRecipes.filter((r) => r.tier === "real");
 
-// Opt-in: the real tier is currently a MEASUREMENT baseline, not a green gate —
-// these recipes expose live Polish name-canonicalization gaps (see the harness
-// section of .agent/System/nutrition_units.md). Run with RUN_REAL_EVAL=1. Once
-// the gaps are fixed and recipes pass, promote this into the CI gate.
+// Opt-in until the recorded LLM fixtures land the pl-d1 recipes in tolerance;
+// then this is promoted into the CI gate (see Phase F). Run with RUN_REAL_EVAL=1.
 const ENABLED = process.env.RUN_REAL_EVAL === "1";
 
 beforeAll(() => {
@@ -53,6 +76,21 @@ beforeAll(() => {
   vi.mocked(getFoodsCached).mockImplementation(async (ids: number[]) =>
     foodsFromStore(store, ids)
   );
+  // Stage 1 seams replay by name from the recorded LLM store.
+  vi.mocked(canonicalizeCached).mockImplementation(async (names: string[]) =>
+    canonicalMapFromStore(llm, names)
+  );
+  vi.mocked(getMacroEstimates).mockImplementation(async (names: string[]) =>
+    estimatesMapFromStore(llm, names)
+  );
+  // The analysis cache is bypassed so the full pipeline runs every time.
+  vi.mocked(getRecipeAnalysisCached).mockResolvedValue(null);
+  vi.mocked(saveRecipeAnalysis).mockResolvedValue(undefined);
+});
+
+beforeEach(() => {
+  // Stage 2 is recipe-scoped; each test sets it to the current recipe's fixture.
+  vi.mocked(runRecipeStage2).mockReset();
 });
 
 function trace(r: GoldenRecipe, result: AnalyzeProfileResult): string {
@@ -88,6 +126,10 @@ function trace(r: GoldenRecipe, result: AnalyzeProfileResult): string {
 describe.skipIf(!ENABLED)("golden recipes (real tier)", () => {
   for (const recipe of realRecipes) {
     it(`${recipe.id}: per-serving macros within real tolerance`, async () => {
+      vi.mocked(runRecipeStage2).mockResolvedValue(
+        stage2FromStore(llm, recipe.id)
+      );
+
       const result = await analyzeRecipeProfileAction({
         ingredients: recipe.ingredients,
         servings: recipe.servings,

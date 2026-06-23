@@ -214,8 +214,29 @@ Recipe (lines + servings)
 - Tests updated (removed the `checkCanUseEdamamAnalysis` suite + stale fixtures/
   mocks). Full `test:unit` (780) + anchor eval + `tsc` green.
 
+**Done — Phase F (determinism + retention fix), 2026-06-23 (CI-gate promotion still pending):**
+- **Recorder captures both LLM stages.** `record-fixtures.test.ts` runs the live pipeline
+  per real recipe (flag on) and dumps the populated caches into
+  `tests/eval/nutrition/fixtures/llm/recorded-llm.json` (`canonical` / `estimates` /
+  `stage2`). The real runner mocks the `ingredient-name-repo` + `recipe-analysis-repo`
+  seams and replays from it via `lib/replay.ts` (`LlmFixtureStore` + `canonicalMapFromStore`
+  / `estimatesMapFromStore` / `stage2FromStore`) — the real tier now runs the **full
+  LLM-primary pipeline deterministically, no Vertex in CI**.
+- **Canonicalization validated** (recorded live): all pl→en names correct (chicken breast,
+  quinoa, salmon, miso paste, bok choy, soy sauce…). No Clif-bar mismatch.
+- **Retention bug fixed.** Stage-2 `retentionFactor` was applied to the whole profile,
+  cutting energy + protein (~−15% systematic). It now applies to **micronutrients only**
+  (`scaleProfileWithRetention` in `fdc.ts`); the macro path drops retention (macros
+  conserved). Protein gaps → ~−6%. Pipeline unit test updated.
+- **Measurement:** 1/3 pl-d1 pass (`kurczak-teriyaki`, kcal −3%). The other two fail on
+  **gram resolution, not naming**: `grahamka` (graham roll → generic "bread" + small piece
+  weight, carbs −59%) and `losos-miso` (75 g dry basmati rice matched to a cooked USDA
+  entry, kcal −46%).
+
 **Pending:**
-- **F:** extend the recorder for both LLM stages; promote the real tier to a CI gate.
+- **F remainder — promote real tier to CI gate:** blocked on the gram-resolution depth
+  (dry/cooked-weight transform + count-unit/piece weights deferred from Phase C). Once the
+  pl-d1 recipes land in tolerance, remove the `RUN_REAL_EVAL` skip so it runs in CI.
 - **G (rollout):** verify Vertex auth on the VPS; flip `INGREDIENT_LLM_FALLBACK`;
   backfill `IngredientNameCache`.
 - **i18n debt:** the `/nutrition` calculator + `NutritionResults` are hardcoded

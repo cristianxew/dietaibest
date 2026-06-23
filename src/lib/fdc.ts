@@ -465,6 +465,42 @@ export function scaleProfilePer100g(p: Profile, grams: number): Profile {
   return out;
 }
 
+/**
+ * Energy + macronutrient fields. These are CONSERVED by cooking — a retention
+ * factor never scales them (heat doesn't destroy calories or protein). Only the
+ * remaining micronutrients (vitamins/minerals) are subject to retention loss.
+ */
+const CONSERVED_MACRO_KEYS: ReadonlySet<keyof Profile> = new Set([
+  "calories",
+  "protein",
+  "fat",
+  "carbs",
+  "fiber",
+]);
+
+/**
+ * Scale a per-100g profile to grams, then apply a cooking nutrient-retention
+ * factor to the MICRONUTRIENT fields only (ADR 0003 Stage 2). Retention models
+ * vitamin/mineral loss from heat + leaching; energy and the five macros are
+ * conserved, so they are never cut by retention. `retentionFactor === 1` is a
+ * plain gram scale.
+ */
+export function scaleProfileWithRetention(
+  p: Profile,
+  grams: number,
+  retentionFactor: number
+): Profile {
+  const f = grams / 100;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    const scaled = p[key] * f;
+    out[key] = CONSERVED_MACRO_KEYS.has(key)
+      ? scaled
+      : scaled * retentionFactor;
+  }
+  return out;
+}
+
 /** Field-wise sum of two profiles. */
 export function addProfile(a: Profile, b: Profile): Profile {
   const out = {} as Profile;

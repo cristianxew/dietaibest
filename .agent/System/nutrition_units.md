@@ -235,8 +235,9 @@ loop that previously let nutrition bugs whack-a-mole.
 | anchor store | `fixtures/anchor-foods.ts` | hand-built USDA payloads; anchor recipes' expected macros are computed by hand from these (closed-form check). |
 | recorded store | `fixtures/fdc/recorded-store.json` | real USDA payloads (slimmed to the profile nutrients) for real-tier recipes, captured by the recorder. |
 | anchor runner | `golden-recipes.test.ts` | anchor tier; mocks `@/lib/fdcRepo`, serves `anchor-foods`, asserts. **In CI.** |
-| real runner | `golden-recipes-real.test.ts` | real tier over the recorded store. **Opt-in** (`bun run test:eval:nutrition:real`, `RUN_REAL_EVAL=1`) — a measurement baseline, not yet a CI gate (see findings). |
-| recorder | `record-fixtures.test.ts` | **opt-in, live** (`bun run eval:nutrition:record`, needs `FDC_API_KEY`). Skipped in CI. Captures + slims + minifies the recorded store. |
+| LLM store | `fixtures/llm/recorded-llm.json` | recorded outputs of both LLM stages (canonical / estimates / stage2), replayed via the mocked `ingredient-name-repo` + `recipe-analysis-repo` seams. |
+| real runner | `golden-recipes-real.test.ts` | real tier over the recorded FDC + LLM stores — full LLM-primary pipeline, deterministic, no network. **Opt-in** (`bun run test:eval:nutrition:real`, `RUN_REAL_EVAL=1`) — a measurement baseline, not yet a CI gate (see findings). |
+| recorder | `record-fixtures.test.ts` | **opt-in, live** (`bun run eval:nutrition:record`, needs `FDC_API_KEY` + Vertex auth + `INGREDIENT_LLM_FALLBACK=1`). Skipped in CI. Captures the FDC store AND both LLM stages. |
 
 **Two tiers** (tolerances in `assert-macros.ts` `TOLERANCES`):
 - `anchor` — truth = hand-verified FDC computation; tight (`kcal ±10%`). In CI.
@@ -246,42 +247,42 @@ loop that previously let nutrition bugs whack-a-mole.
 `anchor-foods.ts` and compute expected by hand. Real → run the recorder to
 capture live payloads, then read the trusted macros off the source label.
 
-### Current real-tier measurement (Polish meal plan, 2026-06-19)
+### Deterministic real-tier replay (Phase F, 2026-06-23)
 
-The first real recipes (Polish, `pl-d1-*`) are far out of tolerance. The harness
-pinpointed the dominant cause: **ingredient-NAME canonicalization (pl→en), not
-gram resolution.** Concretely:
-- `mięso z piersi kurczaka` (chicken breast — the main protein) matched a branded
-  **"Clif Z bar"** at confidence 1.0 → protein −74%. An untranslated name falls
-  through to free-text search, which ranks branded junk first; the staple map
-  only covers English keys.
-- `komosa ryżowa`→quinoa, `sezam nasiona`→sesame, `imbir`→ginger were missed
-  (0 hits or matched **cinnamon**); `sos sojowy`→generic "sauce",
-  `pasta miso`→noodles. Unit `plastra` (slice) is unparsed.
-- **Key insight: `confidence` measures gram-resolution certainty, NOT match
-  correctness.** A perfectly-confident ingredient can be the wrong food, and the
-  kcal-density invariant won't catch a plausible-looking wrong match (a candy bar
-  has a normal kcal/g).
+The recorder ([`record-fixtures.test.ts`](../../tests/eval/nutrition/record-fixtures.test.ts))
+now captures **both LLM stages** into committed fixtures: it runs the live
+pipeline (flag on) for every real recipe and dumps the populated caches into
+[`fixtures/llm/recorded-llm.json`](../../tests/eval/nutrition/fixtures/llm/recorded-llm.json)
+— `canonical` (raw→English), `estimates` (per-100g misses), and `stage2`
+(cooked/raw + retention + labels, by recipe id). The real runner mocks the
+`ingredient-name-repo` / `recipe-analysis-repo` seams and replays from it, so the
+real tier now runs the **full LLM-primary pipeline deterministically, no Vertex
+in CI** (see `lib/replay.ts` `LlmFixtureStore` + `canonicalMapFromStore` etc.).
 
-**Fix shipped — match-quality guard (`matchPlausible` in `fdc-match.ts`).** The
-analyzer now rejects a NON-staple candidate that shares no content token (≥3
-chars, substring-tolerant) with the query name, walking to the next plausible
-candidate or resolving to a flagged no-match. Staples bypass it (trusted).
-Effect on the measurement: `mięso z piersi kurczaka` no longer matches "Clif Z
-bar" (confidence 1.0) — it resolves to a flagged no-match (0g). The recipe now
-fails *honestly* (protein visibly missing) instead of lying with a plausible
-total. It does NOT make the recipes pass — that needs the synonyms below. The
-guard's limit: an incidental substring overlap still slips (`imbir mielony` →
-"CINNAMON MIELONY"), which the synonym fix resolves.
+**Canonicalization is validated** — the pl→en gap ADR 0003 targeted is closed:
+`mięso z piersi kurczaka`→chicken breast, `komosa ryżowa`→quinoa,
+`łosoś świeży`→salmon, `pasta miso`→miso paste, `kapusta pak choi`→bok choy,
+`sos sojowy`→soy sauce, all correct. No more Clif-bar mismatches.
 
-> **Superseded (ADR 0003):** the original roadmap here called for *expanding*
-> `SYNONYMS` (komosa ryżowa→quinoa, etc.). That approach was rejected — a
-> hand-maintained multilingual table is open-ended and over-collapses multi-word
-> names. The fix shipped instead is **LLM-primary canonicalization** (see the
-> section above): the parser stopped translating and the Gemini canonicalizer
-> normalizes pl→en up front. To make the `pl-d1-*` real-tier recipes pass
-> deterministically the recorder must capture the LLM stages into fixtures
-> (Phase F); only then is the real tier promoted to a CI gate.
+**Retention bug fixed (Phase F):** Stage-2 `retentionFactor` was being applied to
+the whole profile, cutting energy + protein (a systematic −15% across recipes).
+Cooking conserves energy + macros, so retention now applies to
+**micronutrients only** (`scaleProfileWithRetention` in `fdc.ts`). Protein gaps
+dropped to ~−6%.
+
+**Remaining gaps are GRAM RESOLUTION, not naming** (1/3 pass, the rest close):
+- `pl-d1-kurczak-teriyaki` — **passes** (kcal −3%).
+- `pl-d1-grahamka-kurczak` — carbs −59%: `2 sztuki bułka grahamka` canonicalizes
+  to generic "bread" and resolves to a too-small piece weight (a graham roll is
+  ~60 g; the count-unit default under-weights it).
+- `pl-d1-losos-miso` — kcal −46%: `75 g ryż basmati` matches a *cooked* USDA rice
+  entry while the entered weight is dry. This is the **deferred cooked-weight /
+  dry-vs-cooked ambiguity** (rice is deliberately excluded from the staple map for
+  exactly this reason).
+
+So the real tier stays **opt-in** (`RUN_REAL_EVAL=1`) — now a *deterministic*
+measurement baseline. Promoting it to the CI gate needs the dry/cooked-weight +
+count-unit piece-weight work (the gram-resolution depth deferred from Phase C).
 
 The same `checkInvariants` is intended to become the runtime sanity gate (Capa 1).
 

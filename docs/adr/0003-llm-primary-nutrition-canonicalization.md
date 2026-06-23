@@ -3,19 +3,23 @@
 **Status:** accepted — **Phases A+B+B-UI + D(estimates) + C + D-remainder
 implemented** behind `INGREDIENT_LLM_FALLBACK` (LLM-primary single-pass, honest
 contract, calculator UI, the Stage-2 recipe LLM, and the full `RecipeAnalysisCache`
-+ cached 22-nutrient profile) **and E (Edamam fully retired — code, caches, and
-the metered `edamamAnalysesPerMonth` entitlement all removed; nutrition analysis
-is now free + ungated)**. The real-tier CI gate (F) and the rollout flag-flip (G)
-remain. Open items tracked in
++ cached 22-nutrient profile), **E (Edamam fully retired — code, caches, and the
+metered `edamamAnalysesPerMonth` entitlement all removed; nutrition analysis is
+now free + ungated)**, and **F-determinism (the recorder captures both LLM stages
+so the real tier replays the full pipeline deterministically; canonicalization
+validated; a retention-on-macros bug fixed)**. Promoting the real tier to a green
+CI gate (F remainder) is blocked on gram-resolution depth, and the rollout
+flag-flip (G) remains. Open items tracked in
 [.agent/Tasks/ingredient-llm-canonicalizer.md](../../.agent/Tasks/ingredient-llm-canonicalizer.md)
 
-**Cooked-weight implementation note (C):** Stage 2 *captures + flags* the
-cooked/raw judgment and applies the nutrient `retentionFactor` (clamped [0,1]) to
-USDA items, but it does **not** auto-convert raw↔cooked gram weight in this
-iteration — reported grams stay raw-as-entered. This is the conservative reading
-of decision 6's "never silently scale grams": a wrong gram transform is the 2–3×
-risk, whereas retention only reduces nutrient values. A measured gram transform is
-deferred to Phase F (when the harness can validate it).
+**Cooked-weight implementation note (C, corrected in F):** Stage 2 *captures +
+flags* the cooked/raw judgment and applies the `retentionFactor` (clamped [0,1])
+to **micronutrients only** — energy and the five macros are conserved by cooking,
+so retention never scales them (Phase F fixed an earlier bug that cut kcal +
+protein ~15%). Stage 2 does **not** auto-convert raw↔cooked gram weight — reported
+grams stay raw-as-entered (decision 6's "never silently scale grams"; a wrong gram
+transform is the 2–3× risk). The dry/cooked-weight transform remains the main gap
+keeping the real-tier harness from a green CI gate.
 
 The recipe nutrition pipeline reached a reliability ceiling that name-fallback
 patches could not break through. Three findings forced an architectural rethink:

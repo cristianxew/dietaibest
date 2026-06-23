@@ -30,11 +30,18 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 
 import type { FdcFood, FdcSearchFood } from "@/lib/fdc";
+import type { RecipeAnalysis } from "@/lib/recipe-analyzer";
+import type { MacroEstimate } from "@/lib/ingredient-canonicalizer";
 import { goldenRecipes } from "./fixtures/recipes";
-import { normalizeKey, type FdcFixtureStore } from "./lib/replay";
+import {
+  normalizeKey,
+  type FdcFixtureStore,
+  type LlmFixtureStore,
+} from "./lib/replay";
 
 const ENABLED = process.env.RECORD_FDC === "1";
 const OUT = path.resolve(__dirname, "fixtures/fdc/recorded-store.json");
+const LLM_OUT = path.resolve(__dirname, "fixtures/llm/recorded-llm.json");
 /** Mirror of analyzeRecipe's MAX_CANDIDATES_PER_INGREDIENT. */
 const MAX_CANDIDATES = 5;
 
@@ -107,5 +114,76 @@ describe.skipIf(!ENABLED)("record fdc fixtures (live)", () => {
     writeFileSync(OUT, JSON.stringify(store) + "\n");
 
     expect(Object.keys(store.foods).length).toBeGreaterThan(0);
+  }, 240_000);
+
+  it("records the two LLM stages (canonical, estimates, stage 2) for real recipes", async () => {
+    // Force the LLM-primary path on so canonicalize/estimate/stage-2 actually run
+    // and persist to their caches (the source we dump below).
+    process.env.INGREDIENT_LLM_FALLBACK = "1";
+    const { parseIngredientLine } = await import("@/lib/ingredients");
+    const { analyzeRecipeProfileAction } = await import("@/actions/analyzeRecipe");
+    const { generateRecipeFingerprint } = await import("@/lib/recipe-fingerprint");
+    const { prisma } = await import("@/lib/prisma");
+
+    const realRecipes = goldenRecipes.filter((r) => r.tier === "real");
+
+    // Run the live pipeline once per recipe. Beyond returning a result, this
+    // PERSISTS all three LLM outputs to their caches (IngredientNameCache,
+    // IngredientEstimateCache, RecipeAnalysisCache) — which we dump as the
+    // deterministic replay fixture. No title is passed, matching the real runner.
+    for (const recipe of realRecipes) {
+      await analyzeRecipeProfileAction({
+        ingredients: recipe.ingredients,
+        servings: recipe.servings,
+      });
+    }
+
+    // Stage 1 canonical — filter the name cache to the real recipes' raw names.
+    const rawKeys = new Set<string>();
+    for (const recipe of realRecipes)
+      for (const line of recipe.ingredients)
+        rawKeys.add(normalizeKey(parseIngredientLine(line).name));
+    const canonicalRows = await prisma.ingredientNameCache.findMany({
+      where: { key: { in: [...rawKeys] } },
+    });
+    const canonical: Record<string, string | null> = {};
+    for (const r of canonicalRows) canonical[r.key] = r.canonical;
+
+    // Stage 1 estimates — filter the estimate cache to the canonical names used.
+    const canonKeys = new Set<string>();
+    for (const c of Object.values(canonical)) if (c) canonKeys.add(normalizeKey(c));
+    const estimateRows = await prisma.ingredientEstimateCache.findMany({
+      where: { name: { in: [...canonKeys] } },
+    });
+    const estimates: Record<string, MacroEstimate | null> = {};
+    for (const r of estimateRows)
+      estimates[r.name] = {
+        kcal: r.kcal,
+        protein: r.protein,
+        fat: r.fat,
+        carbs: r.carbs,
+        fiber: r.fiber,
+      };
+
+    // Stage 2 — read the analysis cache by fingerprint, key by recipe id so the
+    // replay runner can look it up without re-deriving the fingerprint.
+    const stage2: Record<string, RecipeAnalysis> = {};
+    for (const recipe of realRecipes) {
+      const fingerprint = generateRecipeFingerprint({
+        title: "",
+        ingr: recipe.ingredients,
+      });
+      const row = await prisma.recipeAnalysisCache.findUnique({
+        where: { fingerprint },
+      });
+      if (row) stage2[recipe.id] = row.stage2Json as unknown as RecipeAnalysis;
+    }
+
+    const llmStore: LlmFixtureStore = { canonical, estimates, stage2 };
+    mkdirSync(path.dirname(LLM_OUT), { recursive: true });
+    // Pretty-printed: small, human-reviewable (canonical/estimate sanity check).
+    writeFileSync(LLM_OUT, JSON.stringify(llmStore, null, 2) + "\n");
+
+    expect(Object.keys(canonical).length).toBeGreaterThan(0);
   }, 240_000);
 });
