@@ -291,6 +291,20 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Nutrition LLM rollout (Phase G)](./SOP/nutrition-llm-rollout.md)
+**Purpose:** Turning on the LLM-primary + RAG nutrition engine in production — the live switch for the work built behind `INGREDIENT_LLM_FALLBACK` ([ADR 0003](../docs/adr/0003-llm-primary-nutrition-canonicalization.md) / [ADR 0004](../docs/adr/0004-llm-assisted-food-resolution.md))
+
+**Contains:**
+- Pre-flight: prod Prisma migrations, **Vertex auth on the Dokploy VPS via inline `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON`** (not a file mount), and an auth probe before flipping
+- The flag flip + prod smoke test, and `IngredientNameCache` backfill/warming
+- Monitoring + the one-line rollback (`INGREDIENT_LLM_FALLBACK` → not `1`, redeploy)
+
+**When to read:**
+- Enabling the LLM nutrition engine in production
+- Debugging Vertex auth / `UNRECOGNIZED` spikes after the flip
+
+---
+
 ## =� Quick Start for New Developers
 
 ### 1. Read These First (in order):
