@@ -2,7 +2,7 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2026-06-03
+Last Updated: 2026-06-24
 
 ---
 
@@ -35,12 +35,11 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Core features detailed explanation:
   - Recipe management (create, import, analyze)
   - Meal planning system (drag-and-drop, macro tracking)
-  - Nutritional analysis (Edamam API integration)
+  - Nutritional analysis (USDA FoodData Central — FDC-only)
   - User onboarding flow
   - Recipe import system (URL + photo/PDF via Supadata + Gemma)
 - External integrations:
-  - Edamam API (nutrition analysis)
-  - USDA FoodData Central (ingredient matching)
+  - USDA FoodData Central (the nutrition engine — ingredient matching + nutrient data)
   - Supadata (URL recipe extraction)
   - Google Gemini / Gemma (photo/PDF recipe extraction)
   - Browser-Use Cloud (AI web automation — shopping only)
@@ -172,9 +171,11 @@ Best practices, workflows, and step-by-step guides for common development tasks.
   - UserFavorite
 - Nutrition & caching models:
   - RecipeIngredient
-  - FdcCache (USDA cache)
-  - EdamamRecipeCache (ETag-based)
-  - EdamamUserMacroCache (policy-compliant)
+  - FdcCache (USDA food-detail cache)
+  - FdcSearchCache (USDA search-step cache)
+  - IngredientNameCache (LLM canonical-name cache)
+  - IngredientEstimateCache (LLM per-100g estimates for foods USDA lacks)
+  - RecipeAnalysisCache (cached LLM-primary 22-nutrient analysis)
 - Meal planning system:
   - MealPlan
   - MealPlanDay
@@ -359,9 +360,8 @@ bun dev
 - Nutrition analysis � [Project Architecture - Nutritional Analysis](./System/project_architecture.md#3-nutritional-analysis)
 
 **External APIs**
-- Edamam integration � [Project Architecture - External Integrations](./System/project_architecture.md#1-edamam-api)
-- Browser-Use � [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#3-browser-use-cloud-api)
-- USDA FoodData Central � [Project Architecture - USDA FoodData Central](./System/project_architecture.md#2-usda-fooddata-central-api)
+- USDA FoodData Central (nutrition engine) � [Project Architecture - USDA FoodData Central](./System/project_architecture.md#1-usda-fooddata-central-api)
+- Browser-Use � [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#2-browser-use-cloud-api)
 
 **Database Questions**
 - Table structure � [Database Schema - Core Entities](./System/database_schema.md#core-entities)
@@ -465,7 +465,7 @@ If you can't find information in this documentation:
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 - [ShadCN UI Components](https://ui.shadcn.com/)
-- [Edamam API Documentation](https://developer.edamam.com/)
+- [USDA FoodData Central API](https://fdc.nal.usda.gov/api-guide.html)
 - [next-intl Documentation](https://next-intl-docs.vercel.app/)
 
 ### Project Files:
@@ -476,6 +476,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2025-11-09
+**Last Updated:** 2026-06-24
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes

@@ -1,6 +1,6 @@
 # DietAI - Database Schema Documentation
 
-**Last Updated:** 2025-10-25
+**Last Updated:** 2026-06-24
 
 ## Related Documentation
 - [Project Architecture](./project_architecture.md)
@@ -159,18 +159,23 @@
 │  └─────────────────────────┘
 │
 │  ┌─────────────────────────┐
-│  │ EdamamUserMacroCache    │
+│  │ IngredientNameCache     │
 │  │─────────────────────────│
-│  │ id (PK)                 │
-│  │ userId (FK)             │
-│  │ recipeId (FK)           │
-│  │ calories                │
+│  │ key (PK)                │
+│  │ canonical               │
+│  │ lastFetchedAt           │
+│  └─────────────────────────┘
+│
+│  ┌─────────────────────────┐
+│  │ IngredientEstimateCache │
+│  │─────────────────────────│
+│  │ name (PK)               │
+│  │ kcal                    │
 │  │ protein                 │
 │  │ fat                     │
-│  │ netCarbs                │
-│  │ servings                │
-│  │ createdAt               │
-│  │ updatedAt               │
+│  │ carbs                   │
+│  │ fiber                   │
+│  │ lastFetchedAt           │
 │  └─────────────────────────┘
 │
 └──────────────────────────────┐
@@ -245,15 +250,14 @@
 ┌──────────────────────────────────┘
 │
 │  ┌──────────────────────────┐
-└──│  EdamamRecipeCache       │
+└──│  RecipeAnalysisCache     │
    │──────────────────────────│
-   │ id (PK)                  │
-   │ fingerprint (unique)     │
-   │ etag                     │
-   │ recipeData               │  (JSON)
-   │ fullResponse             │  (JSON)
-   │ lastAnalyzed             │
-   │ analysisCount            │
+   │ fingerprint (PK)         │
+   │ servings                 │
+   │ profileJson              │  (JSON)
+   │ stage2Json               │  (JSON)
+   │ coverageJson             │  (JSON)
+   │ lastAnalyzedAt           │
    └──────────────────────────┘
 ```
 
@@ -276,7 +280,6 @@ model User {
   profile          UserProfile?
   recipes          Recipe[]
   favorites        UserFavorite[]
-  edamamMacroCache EdamamUserMacroCache[]
   mealPlans        MealPlan[]
 }
 ```
@@ -407,7 +410,6 @@ model Recipe {
   categories        RecipeCategory[]
   favoritedBy       UserFavorite[]
   recipeIngredients RecipeIngredient[]
-  edamamMacroCache  EdamamUserMacroCache[]
   mealPlanMeals     MealPlanMeal[]
 }
 ```
@@ -610,93 +612,99 @@ on USDA error when a row exists (rate-limit resilience).
 
 ---
 
-### EdamamRecipeCache
-**Purpose:** Cache Edamam API recipe analysis responses (ETag-based)
+### IngredientNameCache
+**Purpose:** Cache the LLM canonicalization of a raw ingredient name → an English
+canonical name (ADR 0003 / ADR 0004). Keyed by the normalized raw name so the
+same spelling is canonicalized once; a `null` `canonical` records "not a food".
 
 ```prisma
-model EdamamRecipeCache {
-  id            String   @id @default(uuid())
-  fingerprint   String   @unique  // Hash of recipe content
-  etag          String             // ETag from Edamam API
-  recipeData    Json               // Original request
-  fullResponse  Json               // Complete API response
-  lastAnalyzed  DateTime @default(now())
-  analysisCount Int      @default(1)
+model IngredientNameCache {
+  key           String   @id // normalized raw name (lowercased, whitespace-collapsed)
+  canonical     String?  // English canonical name, or null = not a food
+  lastFetchedAt DateTime @default(now())
 
-  @@index([fingerprint])
-  @@index([lastAnalyzed])
+  @@index([lastFetchedAt])
 }
 ```
 
 **Key Constraints:**
-- `fingerprint` is unique (deterministic hash)
-- Indexes for cache lookups and expiration
-- JSON fields for full API response storage
+- `key` (normalized raw name) is the primary key — repeated spellings collapse onto one row
+- `canonical` is nullable: `null` means the LLM judged the term not to be a food
+- Index on `lastFetchedAt` for stale-entry maintenance
 
-**Fingerprint Generation:**
-```typescript
-// Title + sorted ingredient list
-const fingerprint = createHash('sha256')
-  .update(title + ingredients.sort().join(','))
-  .digest('hex');
-```
-
-**ETag Flow:**
-1. First analysis: Store response + ETag
-2. Subsequent analysis: Send ETag in `If-None-Match` header
-3. 304 Not Modified: Reuse cached data (no API quota usage)
-4. 200 OK: Update cache with new data + ETag
+**Managed by:** `src/lib/ingredient-name-repo.ts`.
 
 **Use Cases:**
-- Reduce Edamam API costs
-- Fast nutrition re-analysis
-- Support for recipe modifications
+- Avoid re-calling the LLM for an ingredient name already canonicalized
+- Map locale/spelling variants onto one canonical English name before FDC search
 
 ---
 
-### EdamamUserMacroCache
-**Purpose:** User-specific cacheable macros (Edamam policy compliance)
+### IngredientEstimateCache
+**Purpose:** Cache LLM per-100g macro estimates for foods USDA FoodData Central
+does not carry (the ADR 0003 coverage chain: FDC → LLM-estimate → honest gap).
+Keyed by the normalized **canonical** name, so one estimate serves every raw
+spelling that canonicalizes to it. Only successful (non-null) estimates are
+cached; a transient/declined estimate is left to retry.
 
 ```prisma
-model EdamamUserMacroCache {
-  id       String @id @default(uuid())
-  userId   String
-  recipeId String
+model IngredientEstimateCache {
+  name          String   @id // normalized canonical English name
+  kcal          Float
+  protein       Float
+  fat           Float
+  carbs         Float
+  fiber         Float
+  lastFetchedAt DateTime @default(now())
 
-  // Only 4 macros allowed per Edamam policy
-  calories Float  // kcal
-  protein  Float  // grams
-  fat      Float  // grams
-  netCarbs Float  // grams (total carbs - fiber)
-
-  servings  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, recipeId])
-  @@index([userId])
-  @@index([recipeId])
+  @@index([lastFetchedAt])
 }
 ```
 
 **Key Constraints:**
-- Unique constraint on `userId + recipeId` (one cache per user per recipe)
-- Only 4 macros stored (Edamam policy: no persistent storage of full nutrients)
-- Cascade delete on user or recipe deletion
-
-**Edamam Policy Compliance:**
-- Full nutritional data (28 nutrients) can only be displayed, not stored
-- User-specific macro caching allowed for 4 core macros
-- Must re-fetch full nutrients from Edamam API or cache for display
+- `name` (normalized canonical name) is the primary key
+- Stores the 5 core macros per 100g (kcal / protein / fat / carbs / fiber)
+- Index on `lastFetchedAt` for stale-entry maintenance
 
 **Use Cases:**
-- Meal plan macro calculations
-- User-specific nutrition tracking
-- Quick macro lookups without API calls
+- Fill the coverage gap for foods missing from USDA without re-prompting the LLM
+- Shared across every raw spelling that canonicalizes to the same name
+
+---
+
+### RecipeAnalysisCache
+**Purpose:** Cache the LLM-primary recipe analysis (ADR 0003 Stage 2 + the
+cacheable USDA asset). Keyed by the recipe fingerprint (title + ingredient lines).
+USDA FoodData Central is public domain, so — unlike the retired Edamam — the full
+22-nutrient per-serving profile may be persisted. Only successful analyses are
+cached; gated end-to-end by `INGREDIENT_LLM_FALLBACK` at the repo layer.
+
+```prisma
+model RecipeAnalysisCache {
+  fingerprint    String   @id // generateRecipeFingerprint(title + ingredients)
+  servings       Int
+  profileJson    Json     // cached 22-nutrient per-serving Profile
+  stage2Json     Json     // per-ingredient cookedState/retention + diet/health labels
+  coverageJson   Json     // CoverageSummary at analysis time
+  lastAnalyzedAt DateTime @default(now())
+
+  @@index([lastAnalyzedAt])
+}
+```
+
+**Key Constraints:**
+- `fingerprint` is the primary key (deterministic hash of title + ingredient lines)
+- JSON fields store the per-serving profile, Stage 2 retention/labels, and coverage
+- Index on `lastAnalyzedAt` for stale-entry maintenance
+
+**Fingerprint generation:** `generateRecipeFingerprint(title + ingredients)` in
+`src/lib/recipe-fingerprint.ts` (extracted from the retired Edamam client into a
+neutral helper). Managed by `src/lib/recipe-analysis-repo.ts`.
+
+**Use Cases:**
+- Skip re-running the LLM-primary analysis for an unchanged recipe
+- Persist the public-domain USDA-derived 22-nutrient profile (Edamam's licence
+  forbade caching micronutrients — see ADR 0003)
 
 ---
 
@@ -861,11 +869,15 @@ When a `User` is deleted:
 2. `FamilyMember[]` deleted (via profile)
 3. `Recipe[]` deleted
 4. `RecipeIngredient[]` deleted (via recipes)
-5. `EdamamUserMacroCache[]` deleted (via recipes)
-6. `UserFavorite[]` deleted
-7. `MealPlan[]` deleted
-8. `MealPlanDay[]` deleted (via plans)
-9. `MealPlanMeal[]` deleted (via days)
+5. `UserFavorite[]` deleted
+6. `MealPlan[]` deleted
+7. `MealPlanDay[]` deleted (via plans)
+8. `MealPlanMeal[]` deleted (via days)
+
+> The nutrition caches (`FdcCache`, `FdcSearchCache`, `IngredientNameCache`,
+> `IngredientEstimateCache`, `RecipeAnalysisCache`) are global, keyed by FDC id /
+> normalized name / recipe fingerprint — they are **not** scoped to a user and are
+> not part of the cascade.
 
 ---
 
@@ -883,17 +895,21 @@ Foreign keys are automatically indexed by Prisma for performance.
 - `@@index([dataType])` - Filter by food type
 - `@@index([description])` - Search by ingredient name
 
-**EdamamRecipeCache:**
-- `@@index([fingerprint])` - Cache lookups
-- `@@index([lastAnalyzed])` - Cache expiration
+**FdcSearchCache:**
+- `@@index([lastFetchedAt])` - Stale-entry maintenance
+
+**IngredientNameCache:**
+- `@@index([lastFetchedAt])` - Stale-entry maintenance
+
+**IngredientEstimateCache:**
+- `@@index([lastFetchedAt])` - Stale-entry maintenance
+
+**RecipeAnalysisCache:**
+- `@@index([lastAnalyzedAt])` - Stale-entry maintenance
 
 **RecipeIngredient:**
 - `@@index([recipeId])` - Recipe lookups
 - `@@index([nameNorm])` - Ingredient searches
-
-**EdamamUserMacroCache:**
-- `@@index([userId])` - User nutrition history
-- `@@index([recipeId])` - Recipe macro lookups
 
 **MealPlan:**
 - `@@index([userId])` - User's meal plans
