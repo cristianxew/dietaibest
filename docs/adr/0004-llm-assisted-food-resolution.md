@@ -116,3 +116,53 @@ emit a free-form id and keeping a deterministic flag-off path.
 matches the weight basis (dry grains → raw entry), fixing the dry/cooked trap.
 Follow-up: USDA farmed-salmon data gap + meal-plan labels whose fat is inconsistent
 with their own ingredient lists are external limits, not pipeline bugs.
+
+## Addendum (2026-06-26): the staple backstop on a *failed* Stage-2 abstention
+
+**Status:** Accepted · **Deciders:** Cristian (owner)
+
+This ADR says "a null selection falls through to the existing flagged
+macro-estimate" and, separately, that the staple map + guard "become **backstops**
+rather than the primary selector." A review flagged the tension: in code, when
+Stage 2 *runs* and returns `chosenFdcId: null`, the verified staple pin in
+`batch.food` is **discarded**, not fallen back to — so a curated, energy-bearing
+staple can be replaced by an LLM macro estimate.
+
+The naive fix `finalFood = chosen ?? batch.food` was **rejected**: for dry,
+weight-measured grains (rice/pasta/quinoa) the deterministic `batch.food` can be a
+*cooked* USDA entry, reintroducing the exact dry/cooked trap this ADR fixed. It
+also overrides the LLM even when the LLM made a deliberate, confident call.
+
+### Decision
+
+A `chosenFdcId: null` is **two different signals**, distinguished by the
+`flagged` field already on the Stage-2 record:
+
+1. **Confident abstention** (`flagged: false`): the model saw the candidates
+   (the staple pin among them) and judged that *none is a reasonable match*
+   (Stage-2 prompt: "Return null ONLY when no candidate is a reasonable match").
+   This is **sovereign** — it falls through to the flagged estimate, exactly as
+   the ADR's safety path intends. We do **not** second-guess it with the same
+   staple the model just rejected.
+
+2. **Failed / low-confidence abstention** (`flagged: true`): a missing model row
+   or a sub-threshold confidence clamp — *not* a real "none is reasonable"
+   judgment. Here the staple backstop engages, but **only when `batch.food` is the
+   curated staple pin** (`stapleFdcId(name) === batch.food.fdcId`). The staple map
+   is already curated to be cooked/raw-safe — dry grains are deliberately excluded
+   and legumes are pinned cooked-consistent — so a staple-pin recovery cannot land
+   on the cooked/dry ambiguity. A non-staple deterministic pick is **never**
+   trusted as a backstop (it has no cooked/raw vetting), so it falls to estimate.
+
+Recovered selections record `selectedVia: "staple-backstop"` in the resolution
+trace so the provenance stays honest — the LLM did not pick that food, the
+deterministic staple did.
+
+### Why this is safe
+
+- The dry/cooked trap cannot reopen: the only deterministic pick we trust is the
+  staple pin, and the staple map excludes the ambiguous dry grains by construction.
+- The LLM stays the primary resolver: a *confident* null is never overridden; the
+  backstop only fills a hole the LLM left by failing, not by deciding.
+- Flag-off / whole-call-failure behaviour is unchanged (Stage-2 record absent →
+  deterministic `batch.food`, as before).

@@ -208,7 +208,13 @@ per-100g macros) and returns, **per ingredient (matched by index)**:
 - **`chosenFdcId`** — the candidate that best fits what the recipe means
   (variety-aware: "fresh salmon" → farmed Atlantic; **dry staples given by weight
   → the raw/uncooked entry**, since the entered grams are dry). Validated against
-  the offered ids — the model can never invent one; null → flagged macro estimate.
+  the offered ids — the model can never invent one. A **null** selection splits on
+  `flagged` (ADR 0004 addendum): a *confident* null (`flagged: false`) is the LLM's
+  sovereign "no candidate is reasonable" → flagged macro estimate; a *failed /
+  low-confidence* null (`flagged: true`) recovers the curated **staple pin** when
+  the deterministic resolve landed on one (`stapleFdcId(name) === batch.food.fdcId`,
+  traced `selectedVia: "staple-backstop"`) — never a plain search match, so the
+  cooked/raw weight-basis safety the staple map encodes can't reopen.
 - **`grams`** — the LLM's portion estimate, used for count/household units the
   deterministic ladder can't weigh (a bread roll ≈ 57 g, a clove ≈ 3 g); explicit
   weights keep the ladder.

@@ -62,7 +62,13 @@ export type CanonicalOutcome =
  */
 export interface ResolutionTrace {
   /** How the final outcome was chosen. */
-  selectedVia: "not-food" | "stage2-llm" | "deterministic" | "estimate" | "none";
+  selectedVia:
+    | "not-food"
+    | "stage2-llm"
+    | "staple-backstop"
+    | "deterministic"
+    | "estimate"
+    | "none";
   /** Number of plausible USDA candidates fetched for this ingredient. */
   candidateCount: number;
 }

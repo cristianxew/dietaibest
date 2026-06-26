@@ -198,9 +198,10 @@ export async function resolveIngredients(
     })),
   });
 
-  // Food selection: flag-on → the LLM's chosen candidate (or null → estimate);
-  // flag-off / Stage-2 failure → the deterministic pick from resolveBatch.
-  // Stage-2 results align with `items` BY INDEX (one per input, in order).
+  // Food selection: flag-on → the LLM's chosen candidate (or null → estimate /
+  // staple backstop); flag-off / whole-Stage-2 failure → the deterministic pick
+  // from resolveBatch. Stage-2 results align with `items` BY INDEX (one per
+  // input, in order).
   items.forEach((it, i) => {
     const s2 = stage2.perIngredient[i];
     it.s2 = s2;
@@ -209,10 +210,22 @@ export async function resolveIngredients(
       return;
     }
     if (s2) {
-      it.finalFood =
-        s2.chosenFdcId != null
-          ? it.batch.candidates.find((f) => f.fdcId === s2.chosenFdcId) ?? null
-          : null;
+      if (s2.chosenFdcId != null) {
+        it.finalFood =
+          it.batch.candidates.find((f) => f.fdcId === s2.chosenFdcId) ?? null;
+        return;
+      }
+      // Stage 2 selected no food. A CONFIDENT null is the LLM's sovereign "no
+      // candidate is a reasonable match" — honored → estimate. A FAILED /
+      // low-confidence null (flagged) is not that judgment, so recover the
+      // curated staple pin when the deterministic resolve landed on one (ADR
+      // 0004 addendum). A non-staple deterministic pick is never trusted here —
+      // it has no cooked/raw vetting, so it stays a flagged estimate.
+      const staplePinRecoverable =
+        s2.flagged &&
+        it.batch.food != null &&
+        stapleFdcId(it.parsed.name) === it.batch.food.fdcId;
+      it.finalFood = staplePinRecoverable ? it.batch.food : null;
       return;
     }
     it.finalFood = it.batch.food;
@@ -292,8 +305,17 @@ function finalize(it: ResolvingIngredient): IngredientResolution {
       cookedState: s2?.cookedState,
       cookedFlagged: s2?.flagged,
       canonical,
-      // `s2` present → the LLM selected the candidate; absent → deterministic pick.
-      trace: { selectedVia: s2 ? "stage2-llm" : "deterministic", candidateCount },
+      // Provenance: no Stage-2 record → deterministic pick; Stage-2 chose this id
+      // → the LLM selected it; Stage-2 present but selected nothing yet a food
+      // landed → the curated staple backstop recovered it (ADR 0004 addendum).
+      trace: {
+        selectedVia: !s2
+          ? "deterministic"
+          : s2.chosenFdcId != null
+            ? "stage2-llm"
+            : "staple-backstop",
+        candidateCount,
+      },
     };
   }
 

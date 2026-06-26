@@ -36,6 +36,13 @@ portion estimation). System doc: [.agent/System/nutrition_units.md](.agent/Syste
   a **source** provenance: `fdc | llm_estimate | none`.
 - **Staple pin.** A hand-verified `fdcId` for a common food, pinned ahead of
   search to dodge free-text mis-ranking. Trusted: bypasses the match guard.
+- **Staple backstop.** When Stage-2 abstains from selecting a food *by failure*
+  (a missing or low-confidence answer, not a confident "none is a reasonable
+  match"), the curated **staple pin** is recovered instead of dropping to an LLM
+  estimate. Engages only for staple pins — never a plain search match — so it
+  cannot reopen the cooked/raw weight-basis ambiguity. A *confident* abstention is
+  left sovereign. See [ADR 0004](docs/adr/0004-llm-assisted-food-resolution.md)
+  addendum.
 
 ### Architecture vocabulary (being introduced — refactor in progress)
 
