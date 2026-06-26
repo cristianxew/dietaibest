@@ -58,8 +58,17 @@ export async function canonicalizeCached(
     }
   }
 
+  // Three-state contract (ADR 0003, corrected). A name maps to:
+  //   - its canonical string,
+  //   - `null` ONLY when the LLM confirmed it is not a food, or
+  //   - (absent) when unresolved — a cache miss / transient LLM failure.
+  // The caller reads an absent entry as "use the raw name" (exactly like
+  // flag-off), so a Vertex outage degrades to raw-name matching instead of
+  // masquerading as a confident "not a food", which would zero the ingredient
+  // as UNRECOGNIZED. Collapsing miss → null here was the null-collapse bug.
   for (const raw of rawNames) {
-    out.set(raw, byKey.get(keyOf.get(raw)!) ?? null);
+    const key = keyOf.get(raw)!;
+    if (byKey.has(key)) out.set(raw, byKey.get(key)!);
   }
   return out;
 }

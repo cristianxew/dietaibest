@@ -60,12 +60,28 @@ describe("canonicalizeCached", () => {
     expect(canon.canonicalize).not.toHaveBeenCalled();
   });
 
-  it("does NOT cache a name the LLM failed to return (no poisoning on transient failure)", async () => {
+  it("leaves a name the LLM failed to return UNRESOLVED (undefined), never cached", async () => {
     vi.mocked(prisma.ingredientNameCache.findMany).mockResolvedValue([] as never);
     setIngredientCanonicalizerForTest(fakeCanon({})); // empty map = LLM failure
     const out = await canonicalizeCached(["komosa ryżowa"]);
-    expect(out.get("komosa ryżowa")).toBeNull(); // unresolved this run
-    expect(prisma.ingredientNameCache.upsert).not.toHaveBeenCalled(); // but NOT cached
+    // Bug #1 fix: a transient miss is `undefined` (absent), NOT `null`. `null`
+    // means "confirmed not a food" → the caller would zero it as UNRECOGNIZED;
+    // `undefined` means "use the raw name", so a Vertex blip degrades to raw
+    // matching like flag-off does.
+    expect(out.has("komosa ryżowa")).toBe(false);
+    expect(out.get("komosa ryżowa")).toBeUndefined();
+    expect(prisma.ingredientNameCache.upsert).not.toHaveBeenCalled(); // and NOT cached
+  });
+
+  it("distinguishes a confirmed not-food (null) from an unresolved miss (undefined)", async () => {
+    vi.mocked(prisma.ingredientNameCache.findMany).mockResolvedValue([] as never);
+    // "posiłek 1" is an explicit non-food (LLM returns null); "obscurefood" is
+    // absent from the LLM response → a transient miss.
+    setIngredientCanonicalizerForTest(fakeCanon({ "posiłek 1": null }));
+
+    const out = await canonicalizeCached(["posiłek 1", "obscurefood"]);
+    expect(out.get("posiłek 1")).toBeNull(); // confirmed not-a-food
+    expect(out.get("obscurefood")).toBeUndefined(); // unresolved → match the raw name
   });
 
   it("calls the LLM for a miss and upserts the result", async () => {

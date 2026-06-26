@@ -104,13 +104,30 @@ Step 5 (`COUNT_UNIT_DEFAULT_GRAMS`) exists so unresolved count units
 (`1 can chickpeas`) get a sensible weight instead of the old "1 unit = 1 g"
 that silently zeroed canned/packaged ingredients.
 
-## Orchestration — `src/actions/analyzeRecipe.ts`
+## Orchestration — the Resolve / Compute seam
+
+The pipeline is split into two pure modules behind the thin server action
+([`analyzeRecipe.ts`](../../src/actions/analyzeRecipe.ts), now ~220 lines:
+validate → analysis cache → resolve → compute → persist). See
+[`CONTEXT.md`](../../CONTEXT.md) → "Resolve / Compute seam".
+
+- **Resolve** ([`src/lib/nutrition/resolve-ingredients.ts`](../../src/lib/nutrition/resolve-ingredients.ts)):
+  parse → canonicalize → FDC search (cached) → **rank** → staple/guard → fetch
+  (cached) → Stage-2 RAG select → grams → honest status. Returns one
+  **`IngredientResolution`** (a discriminated union on `status`,
+  [`src/lib/nutrition/types.ts`](../../src/lib/nutrition/types.ts)) per ingredient
+  — one record replaced the prior index-aligned parallel arrays. Its returned
+  records are the test surface
+  ([`tests/unit/resolve-ingredients.test.ts`](../../tests/unit/resolve-ingredients.test.ts)).
+- **Compute** ([`src/lib/nutrition/compute.ts`](../../src/lib/nutrition/compute.ts)):
+  `computeProfile` (22 nutrients, retention on micros) / `computeMacros` (5 macros,
+  conserved) → scale per-100g → aggregate → coverage. The two paths keep separate
+  leaf extraction (`extractProfileFromFood` unit-validates, `extractMacrosFromFood`
+  does not — not interchangeable).
 
 `analyzeRecipeProfileAction` (full 22-nutrient profile) and `analyzeRecipeAction`
-(5 macros) run: parse → FDC search (cached) → **rank candidates** → fetch foods
-(cached) → pick first candidate that resolves → `resolveGramWeight` → scale
-per-100g → aggregate → divide by servings. Backs recipe persistence, the
-`/nutrition` calculator, and the chat `getNutrition` tool.
+(5 macros) back recipe persistence, the `/nutrition` calculator, and the chat
+`getNutrition` tool.
 
 **Match selection** runs three layers, best-first:
 1. **Curated staple map** ([`src/lib/fdc-staples.ts`](../../src/lib/fdc-staples.ts)):
@@ -226,9 +243,14 @@ the LLM instead selects the form matching the entered weight basis.
   [`UnitCombobox`](../../src/components/recipes/UnitCombobox.tsx) — a datalist
   seeded with `SELECTABLE_UNITS`. Predefined values to prevent typos, free text
   still allowed (normalized server-side).
-- **`/nutrition` calculator** (`NutritionResults.tsx`): shows macros + a
-  per-ingredient table. **No confidence score** is displayed; only a plain
-  "some ingredients could not be matched" notice when a match truly fails.
+- **`/nutrition` calculator** (`NutritionCalculator.tsx` → `NutritionResults.tsx`):
+  calls `analyzeRecipeProfileAction`, so it covers the **full 22-nutrient profile** —
+  the macro summary, the per-ingredient breakdown (per-item macros come from
+  `IngredientProfileResult.macros`, projected from each item's profile), and the
+  collapsible **micronutrient panel** (`RecipeMicronutrients`, fed the per-serving
+  `Profile`). **No confidence score** is displayed; only a plain "some ingredients
+  could not be matched" notice when a match truly fails. Estimated ingredients
+  still contribute macros only (micros stay 0, honest gap — ADR 0003 unchanged).
 
 ## Reliability harness (Capa 0) — `tests/eval/nutrition/`
 

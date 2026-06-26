@@ -4,6 +4,9 @@ import { vi } from "vitest";
 // Mock server-only module to allow testing server-side code
 vi.mock("server-only", () => ({}));
 
+// Keep the nutrition pipeline's structured logs out of test output.
+process.env.NUTRITION_LOG_LEVEL = "silent";
+
 // Global test utilities
 global.ResizeObserver = class ResizeObserver {
   observe() {}

@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Calculator, Info, Plus, Trash2, List } from "lucide-react";
 import { toast } from "sonner";
 import {
-  analyzeRecipeAction,
-  type AnalyzeResult,
+  analyzeRecipeProfileAction,
+  type AnalyzeProfileResult,
 } from "@/actions/analyzeRecipe";
 import { NutritionResults } from "./NutritionResults";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -46,7 +46,7 @@ export function NutritionCalculator() {
   >([{ id: "1", amount: "", unit: "", name: "" }]);
   const [servings, setServings] = useState(2);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [results, setResults] = useState<AnalyzeResult | null>(null);
+  const [results, setResults] = useState<AnalyzeProfileResult | null>(null);
 
   const addIngredient = () => {
     const newId = (structuredIngredients.length + 1).toString();
@@ -117,7 +117,7 @@ export function NutritionCalculator() {
     setResults(null);
 
     try {
-      const result = await analyzeRecipeAction({
+      const result = await analyzeRecipeProfileAction({
         ingredients: ingredientLines,
         servings,
       });

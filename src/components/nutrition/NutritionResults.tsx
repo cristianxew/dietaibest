@@ -12,13 +12,31 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { XCircle, Sparkles } from "lucide-react";
-import type { AnalyzeResult, IngredientResult } from "@/actions/analyzeRecipe";
+import type {
+  AnalyzeProfileResult,
+  IngredientProfileResult,
+} from "@/actions/analyzeRecipe";
+import type { Macro, Profile } from "@/lib/fdc";
 import { MacrosSummary } from "./MacrosSummary";
+import { RecipeMicronutrients } from "@/components/recipes/RecipeMicronutrients";
 
 interface NutritionResultsProps {
-  results: AnalyzeResult;
+  results: AnalyzeProfileResult;
   servings: number;
 }
+
+/** Project the 5 macros out of a full profile (client-safe; no server import). */
+function profileMacros(p: Profile): Macro {
+  return {
+    kcal: p.calories,
+    protein: p.protein,
+    fat: p.fat,
+    carbs: p.carbs,
+    fiber: p.fiber,
+  };
+}
+
+const ZERO_MACRO: Macro = { kcal: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 };
 
 function DataTypeBadge({ dataType }: { dataType: string | null }) {
   if (!dataType) return null;
@@ -49,7 +67,7 @@ function DataTypeBadge({ dataType }: { dataType: string | null }) {
  * Honest per-ingredient provenance (ADR 0003): a USDA match shows its data-type
  * badge; an LLM estimate is flagged amber; an unrecognized item is flagged red.
  */
-function SourceCell({ item }: { item: IngredientResult }) {
+function SourceCell({ item }: { item: IngredientProfileResult }) {
   if (item.status === "ESTIMATED") {
     return (
       <Badge
@@ -89,8 +107,8 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
           </AlertTitle>
           <AlertDescription>
             These weren&apos;t in the USDA database, so their macros are AI
-            estimates and less precise. They are counted in the totals and
-            flagged below.
+            estimates and less precise (micronutrients are not estimated). They
+            are counted in the totals and flagged below.
           </AlertDescription>
         </Alert>
       )}
@@ -117,10 +135,13 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
 
       {/* Macros Summary */}
       <MacrosSummary
-        total={results.total}
-        perServing={results.perServing}
+        total={profileMacros(results.total)}
+        perServing={profileMacros(results.perServing)}
         servings={servings}
       />
+
+      {/* Full micronutrient panel (per serving) — vitamins, minerals, etc. */}
+      <RecipeMicronutrients nutrition={results.perServing} />
 
       {/* Per-Ingredient Breakdown */}
       <Card>
@@ -143,47 +164,44 @@ export function NutritionResults({ results, servings }: NutritionResultsProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {results.items.map((item, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{item.original}</div>
-                        {item.description && (
-                          <div className="text-xs text-muted-foreground">
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <SourceCell item={item} />
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.gramsTotal > 0 ? item.gramsTotal.toFixed(1) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.macros.kcal > 0 ? item.macros.kcal.toFixed(0) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.macros.protein > 0
-                        ? item.macros.protein.toFixed(1)
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.macros.fat > 0 ? item.macros.fat.toFixed(1) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.macros.carbs > 0
-                        ? item.macros.carbs.toFixed(1)
-                        : "-"}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {item.macros.fiber > 0
-                        ? item.macros.fiber.toFixed(1)
-                        : "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {results.items.map((item, idx) => {
+                  const m = item.macros ?? ZERO_MACRO;
+                  return (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">{item.original}</div>
+                          {item.description && (
+                            <div className="text-xs text-muted-foreground">
+                              {item.description}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <SourceCell item={item} />
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {item.gramsTotal > 0 ? item.gramsTotal.toFixed(1) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.kcal > 0 ? m.kcal.toFixed(0) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.protein > 0 ? m.protein.toFixed(1) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.fat > 0 ? m.fat.toFixed(1) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.carbs > 0 ? m.carbs.toFixed(1) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {m.fiber > 0 ? m.fiber.toFixed(1) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

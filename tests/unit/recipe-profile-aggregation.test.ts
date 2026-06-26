@@ -81,6 +81,10 @@ describe("analyzeRecipeProfileAction — full-profile aggregation", () => {
     expect(sp.qty).toBe(200);
     expect(sp.unit).toBe("g");
     expect(sp.confidence).toBeGreaterThan(0);
+    // Per-item macros (projected from this ingredient's profile contribution),
+    // so the calculator breakdown shows per-ingredient macros without a 2nd pass.
+    expect(sp.macros?.kcal).toBeCloseTo(46, 5); // 23/100g × 200g
+    expect(sp.macros?.protein).toBeCloseTo(5.72, 5); // 2.86/100g × 200g
   });
 
   it("lets an unmatched ingredient contribute zeros without breaking", async () => {
