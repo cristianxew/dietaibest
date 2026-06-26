@@ -150,9 +150,10 @@ function collectGroundedValues(
 async function analyzeFresh(
   ingredients: string[],
   servings: number,
-  persistToRecipeId?: string
+  persistToRecipeId?: string,
+  title?: string
 ): Promise<ToolResult<NutritionData>> {
-  const analysis = await analyzeRecipeProfileAction({ ingredients, servings });
+  const analysis = await analyzeRecipeProfileAction({ ingredients, servings, title });
   if (!analysis.success) {
     return {
       ok: false,
@@ -231,11 +232,14 @@ export const getNutrition: Tool<typeof inputSchema, NutritionData> = {
 
       // Un-analyzed recipe → analyze fresh via FDC and backfill the full
       // profile when the user owns the recipe, so the macros AND micros land on
-      // the detail page without the model having to copy them back.
+      // the detail page without the model having to copy them back. The recipe
+      // `title` is threaded through so chat and the recipe form share one cache
+      // key (same fingerprint) and Stage-2 gets the same cooked/raw signal.
       return analyzeFresh(
         formatIngredientsForNutrition(r.ingredients),
         r.servings,
-        r.viewerIsOwner ? r.id : undefined
+        r.viewerIsOwner ? r.id : undefined,
+        r.title
       );
     }
 

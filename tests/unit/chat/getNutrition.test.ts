@@ -172,6 +172,27 @@ describe("getNutrition — fresh FDC analysis", () => {
     expect(saveRecipeNutritionProfile).toHaveBeenCalledWith("r1", PROFILE);
   });
 
+  it("forwards the recipe title to fresh analysis (cache key + Stage-2 cooked/raw judgment match the recipe form)", async () => {
+    vi.mocked(getRecipe).mockResolvedValue({
+      data: storedRecipe({ calories: null, title: "Arroz con pollo" }),
+      error: null,
+    } as never);
+    vi.mocked(analyzeRecipeProfileAction).mockResolvedValue({
+      success: true,
+      total: { ...PROFILE, calories: 500 },
+      perServing: PROFILE,
+      items: [],
+    } as never);
+
+    await getNutrition.execute({ recipeId: "r1", servings: 1 }, ctx);
+
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledWith({
+      ingredients: ["formatted line"],
+      servings: 2,
+      title: "Arroz con pollo",
+    });
+  });
+
   it("does NOT backfill a recipe the user does not own", async () => {
     vi.mocked(getRecipe).mockResolvedValue({
       data: storedRecipe({ calories: null, viewerIsOwner: false }),
