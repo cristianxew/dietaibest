@@ -965,3 +965,30 @@ export function formatIngredientsForNutrition(ingredients: unknown): string[] {
   }
   return lines;
 }
+
+/**
+ * Decide whether two ingredient lists would feed the nutrition engine
+ * different inputs — i.e. whether a stored nutrition profile is now stale.
+ *
+ * Compares the canonical analyzer lines (`formatIngredientsForNutrition`), not
+ * the raw objects, so the answer tracks exactly what the FDC engine sees. The
+ * comparison is:
+ * - **order-independent** — nutrition is a sum, so reordering changes nothing;
+ * - **case/whitespace-insensitive** — a cosmetic edit ("Flour" → "flour") must
+ *   NOT force a recompute that would overwrite manually-tuned macros.
+ *
+ * `null`/`undefined`/empty all normalize to "no lines", so a recipe with no
+ * ingredients compares equal to another with none.
+ */
+export function ingredientsChanged(before: unknown, after: unknown): boolean {
+  const normalize = (input: unknown): string[] =>
+    formatIngredientsForNutrition(input)
+      .map((line) => line.toLowerCase().replace(/\s+/g, " ").trim())
+      .sort();
+
+  const a = normalize(before);
+  const b = normalize(after);
+
+  if (a.length !== b.length) return true;
+  return a.some((line, i) => line !== b[i]);
+}

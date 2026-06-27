@@ -307,6 +307,12 @@ the chat `createRecipe` tool — computes the full **22-nutrient profile** (5
 macros + 17 micronutrients) per serving and persists all fields on the Recipe
 row. No Edamam call is made on the creation path.
 
+**Editing** re-runs the same analysis, but **only when the ingredient lines
+changed** (`updateRecipe` → `ingredientsChanged` → the shared
+`reanalyzeRecipeNutrition`). A title/macro/order-only edit keeps the stored
+profile so manual macro overrides survive. See the "Stale data" note in
+[Nutrition Unit Handling](./nutrition_units.md).
+
 **Location (creation path):** `src/lib/fdc.ts` (extraction/scaling/aggregation
 helpers + nutrient-number map + `resolveGramWeightFromPortions`),
 `src/lib/gram-resolution.ts` (the pure ingredient→grams `resolveGramWeight`

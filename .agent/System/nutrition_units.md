@@ -164,6 +164,18 @@ Foundation matches — the biggest source of wrong recipe nutrition.
 > Stale data: stored `Recipe.calories` etc. are written at persist time. Fixes
 > to extraction/matching only affect **new** analyses; existing recipes keep
 > their old values until re-analyzed.
+>
+> Re-analysis triggers: (1) creating a recipe on any path (`persistRecipe`,
+> default-on), and (2) **editing a recipe whose ingredient lines changed**
+> (`updateRecipe` → `ingredientsChanged` → `reanalyzeRecipeNutrition`). An edit
+> that leaves the ingredients untouched (a title tweak, a reorder, or a manual
+> macro override) deliberately keeps the stored profile, so hand-tuned numbers
+> survive. Both paths share `reanalyzeRecipeNutrition` in
+> [`src/actions/recipe.ts`](../../src/actions/recipe.ts) (best-effort: a
+> nutrition failure never fails the create/edit). Change detection compares the
+> canonical analyzer lines (`ingredientsChanged` in
+> [`src/lib/ingredients.ts`](../../src/lib/ingredients.ts)) — order- and
+> case-insensitive, so only a real input change forces a recompute.
 
 ## LLM-primary canonicalization & honest output (ADR 0003)
 

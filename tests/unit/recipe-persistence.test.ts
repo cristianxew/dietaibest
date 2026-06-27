@@ -4,7 +4,7 @@ vi.mock("next-auth", () => ({ getServerSession: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({
   default: {
     user: { findUnique: vi.fn() },
-    recipe: { create: vi.fn(), update: vi.fn() },
+    recipe: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
     recipeIngredient: { deleteMany: vi.fn(), createMany: vi.fn() },
   },
 }));
@@ -24,7 +24,7 @@ import {
   assertCanImportRecipe,
 } from "@/lib/entitlements";
 import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
-import { persistRecipe } from "@/actions/recipe";
+import { persistRecipe, updateRecipe } from "@/actions/recipe";
 import type { RecipeFormData } from "@/types/recipe";
 
 const baseUser = { id: "user-1", email: "u@dietai.test" };
@@ -331,5 +331,93 @@ describe("persistRecipe — FDC nutrition orchestration (all paths)", () => {
     expect(result.data).toBeTruthy();
     expect(prisma.recipe.update).not.toHaveBeenCalled();
     expect(prisma.recipeIngredient.createMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateRecipe — recompute nutrition only on ingredient change", () => {
+  const existing = (ingredients: unknown) =>
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue({
+      userId: baseUser.id,
+      ingredients,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+  it("re-analyzes via FDC when the ingredients changed", async () => {
+    existing([{ name: "flour", amount: 2, unit: "cups" }]);
+
+    await updateRecipe(
+      "recipe-1",
+      baseData({ ingredients: [{ name: "flour", amount: 3, unit: "cups" }] })
+    );
+
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("does NOT re-analyze when the ingredients are unchanged", async () => {
+    existing([{ name: "flour", amount: 2, unit: "cups" }]);
+
+    const result = await updateRecipe(
+      "recipe-1",
+      baseData({
+        title: "Renamed",
+        calories: 999, // a hand-tuned macro the user edited
+        ingredients: [{ name: "flour", amount: 2, unit: "cups" }],
+      })
+    );
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    // Only the main update runs — no second profile-write that would clobber
+    // the manually-edited macros.
+    expect(prisma.recipe.update).toHaveBeenCalledOnce();
+    expect(result.error).toBeNull();
+  });
+
+  it("writes the full profile and refreshes ingredient rows on change", async () => {
+    existing([{ name: "flour", amount: 2, unit: "cups" }]);
+
+    await updateRecipe(
+      "recipe-1",
+      baseData({ ingredients: [{ name: "flour", amount: 3, unit: "cups" }] })
+    );
+
+    // calls[0] = main row update; calls[1] = the profile write-back.
+    expect(prisma.recipe.update).toHaveBeenCalledTimes(2);
+    const profileWrite = vi.mocked(prisma.recipe.update).mock
+      .calls[1][0] as unknown as { data: Record<string, number> };
+    expect(profileWrite.data).toMatchObject(FULL_PROFILE);
+    expect(prisma.recipeIngredient.deleteMany).toHaveBeenCalledWith({
+      where: { recipeId: "recipe-1" },
+    });
+  });
+
+  it("threads the recipe title to the analyzer for cache consistency", async () => {
+    existing([{ name: "flour", amount: 2, unit: "cups" }]);
+
+    await updateRecipe(
+      "recipe-1",
+      baseData({
+        title: "Grandma's Bread",
+        ingredients: [{ name: "flour", amount: 3, unit: "cups" }],
+      })
+    );
+
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Grandma's Bread" })
+    );
+  });
+
+  it("a nutrition failure does not fail the edit", async () => {
+    existing([{ name: "flour", amount: 2, unit: "cups" }]);
+    vi.mocked(analyzeRecipeProfileAction).mockRejectedValueOnce(
+      new Error("FDC down")
+    );
+
+    const result = await updateRecipe(
+      "recipe-1",
+      baseData({ ingredients: [{ name: "flour", amount: 3, unit: "cups" }] })
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data).toBeTruthy();
   });
 });

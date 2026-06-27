@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import {
+  formatIngredientsForNutrition,
+  ingredientsChanged,
+} from "@/lib/ingredients";
 
 describe("formatIngredientsForNutrition", () => {
   it("returns an empty array for null or undefined", () => {
@@ -71,5 +74,63 @@ describe("formatIngredientsForNutrition", () => {
     expect(
       formatIngredientsForNutrition({ name: "milk", amount: 1, unit: "cup" })
     ).toEqual(["1 cup milk"]);
+  });
+});
+
+describe("ingredientsChanged", () => {
+  it("returns true when an ingredient amount changes", () => {
+    const before = [{ name: "flour", amount: 2, unit: "cups" }];
+    const after = [{ name: "flour", amount: 3, unit: "cups" }];
+    expect(ingredientsChanged(before, after)).toBe(true);
+  });
+
+  it("returns false when the ingredients are identical", () => {
+    const list = [
+      { name: "flour", amount: 2, unit: "cups" },
+      { name: "salt", amount: 1, unit: "tsp" },
+    ];
+    expect(ingredientsChanged(list, structuredClone(list))).toBe(false);
+  });
+
+  it("is order-independent (reordering is not a change)", () => {
+    const before = [
+      { name: "flour", amount: 2, unit: "cups" },
+      { name: "salt", amount: 1, unit: "tsp" },
+    ];
+    const after = [
+      { name: "salt", amount: 1, unit: "tsp" },
+      { name: "flour", amount: 2, unit: "cups" },
+    ];
+    expect(ingredientsChanged(before, after)).toBe(false);
+  });
+
+  it("ignores cosmetic case/whitespace edits, preserving manual macros", () => {
+    const before = [{ name: "Flour", amount: 2, unit: "Cups" }];
+    const after = [{ name: "flour", amount: 2, unit: "cups" }];
+    expect(ingredientsChanged(before, after)).toBe(false);
+  });
+
+  it("returns true when an ingredient is added or removed", () => {
+    const before = [{ name: "flour", amount: 2, unit: "cups" }];
+    const after = [
+      { name: "flour", amount: 2, unit: "cups" },
+      { name: "sugar", amount: 1, unit: "cup" },
+    ];
+    expect(ingredientsChanged(before, after)).toBe(true);
+    expect(ingredientsChanged(after, before)).toBe(true);
+  });
+
+  it("treats null/undefined/empty as no ingredients", () => {
+    expect(ingredientsChanged(null, undefined)).toBe(false);
+    expect(ingredientsChanged(null, [])).toBe(false);
+    expect(
+      ingredientsChanged(null, [{ name: "flour", amount: 2, unit: "cups" }])
+    ).toBe(true);
+  });
+
+  it("compares the analyzer lines, so amount '2' equals number 2", () => {
+    const before = [{ name: "flour", amount: "2", unit: "cups" }];
+    const after = [{ name: "flour", amount: 2, unit: "cups" }];
+    expect(ingredientsChanged(before, after)).toBe(false);
   });
 });

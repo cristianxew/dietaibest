@@ -22,7 +22,10 @@ import {
 import type { AgentContext } from "@/lib/chat/context";
 import { generateRecipeImage } from "@/lib/chat/tools/generateRecipeImage";
 import { serverAction } from "@/lib/server-action";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import {
+  formatIngredientsForNutrition,
+  ingredientsChanged,
+} from "@/lib/ingredients";
 import { getAuthorName } from "@/lib/author-name";
 import type { Profile } from "@/lib/fdc";
 
@@ -43,6 +46,69 @@ async function getAuthenticatedUser() {
   }
 
   return user;
+}
+
+/**
+ * FDC nutrition orchestration for an already-persisted recipe row: analyze the
+ * given ingredient lines, write the full 22-nutrient per-serving profile back,
+ * and refresh the per-ingredient FDC matches (delete-then-insert).
+ *
+ * Shared by the create path (`persistRecipe`) and the edit path
+ * (`updateRecipe`). Best-effort by contract: it never throws and never rolls the
+ * recipe back — a nutrition failure must not fail the create/edit. Returns the
+ * written per-serving `Profile` on success (so callers can echo fresh numbers),
+ * or `null` when there was nothing to analyze or the analysis failed.
+ */
+async function reanalyzeRecipeNutrition(
+  recipeId: string,
+  ingredientLines: string[],
+  servings: number,
+  title: string
+): Promise<Profile | null> {
+  if (ingredientLines.length === 0) return null;
+
+  try {
+    const analysis = await analyzeRecipeProfileAction({
+      ingredients: ingredientLines,
+      servings,
+      title,
+    });
+
+    if (!analysis.success) {
+      console.warn(
+        `[Recipe] FDC analysis failed: ${analysis.error ?? "unknown"}`
+      );
+      return null;
+    }
+
+    await prisma.recipe.update({
+      where: { id: recipeId },
+      data: { ...analysis.perServing },
+    });
+
+    // Per-ingredient FDC matches. Delete-then-insert keeps re-saves idempotent.
+    await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
+    if (analysis.items.length > 0) {
+      await prisma.recipeIngredient.createMany({
+        data: analysis.items.map((item) => ({
+          recipeId,
+          originalText: item.original,
+          nameNorm: item.nameNorm,
+          qty: item.qty,
+          unit: item.unit,
+          fdcId: item.fdcId,
+          gramWeight: item.gramsTotal,
+          confidence: item.confidence,
+        })),
+      });
+    }
+
+    console.info(`[Recipe] FDC-analyzed nutrition for recipe: ${recipeId}`);
+    return analysis.perServing;
+  } catch (nutritionError) {
+    console.error("[Recipe] Nutrition analysis failed:", nutritionError);
+    return null;
+  }
 }
 
 export interface PersistRecipeOptions {
@@ -115,61 +181,17 @@ export async function persistRecipe(
         },
       });
 
-      // Side-effect: FDC nutrition orchestration. Kept body-side because a
-      // failure must not roll the recipe back. Persists the full 22-nutrient
-      // per-serving profile plus the per-ingredient FDC matches.
+      // Side-effect: FDC nutrition orchestration. Best-effort by contract — a
+      // failure must not roll the recipe back (see reanalyzeRecipeNutrition).
+      // Persists the full 22-nutrient per-serving profile plus the
+      // per-ingredient FDC matches.
       if (shouldAnalyze) {
-        try {
-          const ingredientLines = formatIngredientsForNutrition(
-            recipe.ingredients
-          );
-
-          if (ingredientLines.length > 0) {
-            const analysis = await analyzeRecipeProfileAction({
-              ingredients: ingredientLines,
-              servings: recipe.servings,
-              title: recipe.title,
-            });
-
-            if (analysis.success) {
-              await prisma.recipe.update({
-                where: { id: recipe.id },
-                data: { ...analysis.perServing },
-              });
-
-              // Per-ingredient FDC matches. Delete-then-insert keeps re-saves
-              // idempotent (a recipe is only ever re-created here, but the
-              // pattern guards future re-analysis paths).
-              await prisma.recipeIngredient.deleteMany({
-                where: { recipeId: recipe.id },
-              });
-              if (analysis.items.length > 0) {
-                await prisma.recipeIngredient.createMany({
-                  data: analysis.items.map((item) => ({
-                    recipeId: recipe.id,
-                    originalText: item.original,
-                    nameNorm: item.nameNorm,
-                    qty: item.qty,
-                    unit: item.unit,
-                    fdcId: item.fdcId,
-                    gramWeight: item.gramsTotal,
-                    confidence: item.confidence,
-                  })),
-                });
-              }
-
-              console.info(
-                `[Recipe] FDC-analyzed nutrition for recipe: ${recipe.id}`
-              );
-            } else {
-              console.warn(
-                `[Recipe] FDC analysis failed: ${analysis.error ?? "unknown"}`
-              );
-            }
-          }
-        } catch (nutritionError) {
-          console.error("[Recipe] Nutrition analysis failed:", nutritionError);
-        }
+        await reanalyzeRecipeNutrition(
+          recipe.id,
+          formatIngredientsForNutrition(recipe.ingredients),
+          recipe.servings,
+          recipe.title
+        );
       }
 
       return recipe;
@@ -183,10 +205,11 @@ export async function updateRecipe(id: string, data: RecipeFormData) {
     const user = await getAuthenticatedUser();
     const validatedData = recipeFormSchema.parse(data);
 
-    // Check if user owns the recipe
+    // Check ownership and capture the prior ingredients so we can tell whether
+    // the nutrition profile is now stale.
     const existingRecipe = await prisma.recipe.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, ingredients: true },
     });
 
     if (!existingRecipe) {
@@ -216,9 +239,26 @@ export async function updateRecipe(id: string, data: RecipeFormData) {
       },
     });
 
+    // Re-run FDC analysis ONLY when the ingredient inputs changed. A no-change
+    // save (title tweak, manual macro edit, reorder) keeps the stored profile —
+    // overwriting it would silently wipe macros the user tuned by hand. Same
+    // best-effort contract as persistRecipe: a nutrition failure never fails the
+    // edit. The analyzer reads `validatedData` (what we just saved), not the
+    // update return, so it's independent of Prisma's echo shape.
+    let saved = recipe;
+    if (ingredientsChanged(existingRecipe.ingredients, validatedData.ingredients)) {
+      const reanalyzed = await reanalyzeRecipeNutrition(
+        recipe.id,
+        formatIngredientsForNutrition(validatedData.ingredients),
+        validatedData.servings,
+        validatedData.title
+      );
+      if (reanalyzed) saved = { ...recipe, ...reanalyzed };
+    }
+
     revalidatePath("/recipes");
     revalidatePath(`/recipes/${id}`);
-    return { data: recipe, error: null };
+    return { data: saved, error: null };
   } catch (error) {
     console.error("Update recipe error:", error);
     return {
