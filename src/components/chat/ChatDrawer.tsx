@@ -9,7 +9,6 @@ import { ChatMessage } from "./ChatMessage";
 import { EmptyChat } from "./EmptyChat";
 import { HistoryPanel } from "./HistoryPanel";
 import { CapabilityMenu } from "./CapabilityMenu";
-import { SuggestionChips } from "./SuggestionChips";
 import { useChatStream, type PendingAttachment } from "./useChatStream";
 
 interface ChatDrawerProps {
@@ -97,7 +96,6 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
     deleteLastTurn,
     switchSession,
     createSession,
-    followUps,
   } = useChatStream({ locale, translate });
 
   // When parent passes a seed prompt (e.g. from the meal-planner AI button),
@@ -197,12 +195,6 @@ export function ChatDrawer({ onClose, isOpen, seedPrompt, onSeedConsumed }: Chat
                 onDelete={handleDeleteLastTurn}
               />
             ))}
-            {!isStreaming && followUps.length > 0 && (
-              <SuggestionChips
-                capabilities={followUps}
-                onPick={handleSuggestionClick}
-              />
-            )}
           </>
         )}
       </div>

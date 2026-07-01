@@ -25,6 +25,7 @@ vi.mock("@/lib/fdc", async (importActual) => {
 import {
   searchFoodsCached,
   normalizeSearchQuery,
+  searchCacheKey,
 } from "@/lib/fdcRepo";
 import { fdcSearch, type FdcSearchFood } from "@/lib/fdc";
 
@@ -77,12 +78,60 @@ describe("searchFoodsCached — caches FDC ingredient search by normalized query
     const foods = await searchFoodsCached("onion");
 
     expect(foods).toEqual([ONION, ONION_SR]);
-    expect(mockedFdcSearch).toHaveBeenCalledOnce();
+    // Two whole-food searches (Foundation+SR Legacy, then Survey) are merged.
+    expect(mockedFdcSearch).toHaveBeenCalledTimes(2);
     expect(fdcSearchCache.upsert).toHaveBeenCalledOnce();
     const upsertArg = fdcSearchCache.upsert.mock.calls[0][0];
-    expect(upsertArg.where).toEqual({ query: "onion" });
-    expect(upsertArg.create.query).toBe("onion");
+    // The DB key is versioned so old cascade-era rows are bypassed (self-healing).
+    expect(upsertArg.where).toEqual({ query: searchCacheKey("onion") });
+    expect(upsertArg.create.query).toBe(searchCacheKey("onion"));
     expect(upsertArg.create.results).toEqual([ONION, ONION_SR]);
+  });
+
+  it("merges whole-food tiers so an FNDDS-only match isn't hidden by a non-empty primary tier (beef stew meat regression)", async () => {
+    fdcSearchCache.findUnique.mockResolvedValue(null);
+    fdcSearchCache.upsert.mockResolvedValue({});
+    const CHICKEN: FdcSearchFood = {
+      fdcId: 172405,
+      description: "Chicken, stewing, dark meat, meat only, cooked, stewed",
+      dataType: "SR Legacy",
+    };
+    const BEEF_FNDDS: FdcSearchFood = {
+      fdcId: 2705849,
+      description: "Beef, stew meat",
+      dataType: "Survey (FNDDS)",
+    };
+    // Primary tier is wrong-but-NON-empty (chicken); the real match lives only in
+    // the FNDDS tier. The old short-circuit cascade returned chicken and never
+    // queried FNDDS — the merge must surface the beef match.
+    mockedFdcSearch
+      .mockResolvedValueOnce({ foods: [CHICKEN] }) // [Foundation, SR Legacy]
+      .mockResolvedValueOnce({ foods: [BEEF_FNDDS] }); // [Survey (FNDDS)]
+
+    const foods = await searchFoodsCached("beef stew meat");
+
+    expect(foods.map((f) => f.fdcId)).toContain(2705849);
+    // Both whole-food tiers are queried (merged); Branded is NOT (pool non-empty).
+    expect(mockedFdcSearch).toHaveBeenCalledTimes(2);
+    expect(mockedFdcSearch).toHaveBeenNthCalledWith(1, "beef stew meat", [
+      "Foundation",
+      "SR Legacy",
+    ]);
+    expect(mockedFdcSearch).toHaveBeenNthCalledWith(2, "beef stew meat", [
+      "Survey (FNDDS)",
+    ]);
+  });
+
+  it("de-dupes a food returned by more than one tier", async () => {
+    fdcSearchCache.findUnique.mockResolvedValue(null);
+    fdcSearchCache.upsert.mockResolvedValue({});
+    mockedFdcSearch
+      .mockResolvedValueOnce({ foods: [ONION] }) // primary
+      .mockResolvedValueOnce({ foods: [ONION, ONION_SR] }); // survey (ONION repeats)
+
+    const foods = await searchFoodsCached("onion");
+
+    expect(foods).toEqual([ONION, ONION_SR]);
   });
 
   it("fresh hit → serves the cache and NEVER calls USDA", async () => {
@@ -107,7 +156,7 @@ describe("searchFoodsCached — caches FDC ingredient search by normalized query
     const foods = await searchFoodsCached("onion");
 
     expect(foods).toEqual([ONION_SR]);
-    expect(mockedFdcSearch).toHaveBeenCalledOnce();
+    expect(mockedFdcSearch).toHaveBeenCalledTimes(2);
     expect(fdcSearchCache.upsert).toHaveBeenCalledOnce();
   });
 
@@ -120,16 +169,19 @@ describe("searchFoodsCached — caches FDC ingredient search by normalized query
 
     await searchFoodsCached("  Yellow  Onion ");
 
+    // The DB key is the versioned, normalized query…
     expect(fdcSearchCache.findUnique).toHaveBeenCalledWith({
-      where: { query: "yellow onion" },
+      where: { query: searchCacheKey("yellow onion") },
     });
-    // The live search is issued with the normalized term too (keeps key↔term in
-    // sync), preferring pure single-ingredient data types first (ADR 0004).
+    // …but the live USDA search uses the CLEAN normalized term (never the
+    // versioned key), preferring pure single-ingredient data types first.
     expect(mockedFdcSearch).toHaveBeenCalledWith("yellow onion", [
       "Foundation",
       "SR Legacy",
     ]);
-    expect(fdcSearchCache.upsert.mock.calls[0][0].create.query).toBe("yellow onion");
+    expect(fdcSearchCache.upsert.mock.calls[0][0].create.query).toBe(
+      searchCacheKey("yellow onion")
+    );
   });
 
   it("no Foundation/SR or Survey hits → falls back to a Branded search (ADR 0004)", async () => {

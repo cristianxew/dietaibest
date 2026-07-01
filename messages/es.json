@@ -1277,9 +1277,6 @@
       "title": "Qué puedo hacer",
       "open": "Ver qué puede hacer el asistente"
     },
-    "followUps": {
-      "title": "Prueba ahora"
-    },
     "entry": {
       "recipeDetail": {
         "ask": "Pregunta a DietAI"
@@ -1315,6 +1312,7 @@
         "extracting": "Extrayendo la receta…",
         "analyzing": "Analizando los macros…",
         "saving": "Guardando la receta…",
+        "savingNutrition": "Guardando y calculando la nutrición… puede tardar unos segundos",
         "fallback": "Reintentando con otro método…"
       },
       "media": {

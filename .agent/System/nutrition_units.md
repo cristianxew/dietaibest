@@ -142,10 +142,15 @@ validate → analysis cache → resolve → compute → persist). See
    couscous), and bare `red pepper` (collides with red bell pepper — only the
    unambiguous *flake* forms map to cayenne).
 2. **Ranking** ([`src/lib/fdc-match.ts`](../../src/lib/fdc-match.ts)):
-   `rankMatches` orders search hits by USDA data-type priority
+   `rankMatches` sorts hits by, in order: a **composite-dish demotion**
+   (`isCompositeDish` — a candidate naming a prepared dish the query didn't ask
+   for, e.g. `Rice pilaf`, `Beef stew, canned entree`, sinks below every basic
+   candidate **across data types**), then USDA data-type priority
    (Foundation > Survey > SR Legacy > Branded), then a name-relevance score that
    penalizes narrowing qualifiers the query didn't ask for (`white`, `yolk`,
-   `benedict`, `casserole`…).
+   `benedict`, `casserole`…). The dish demotion runs **before** data-type because
+   the merged search pool (below) mixes tiers: without it an FNDDS dish would
+   outrank an SR Legacy basic purely on data-type and crowd it out of the top-5.
 3. **Fetch fallback**: keep the top 5 candidates and use the first whose detail
    fetch succeeds — USDA's `/foods` endpoint answers `{}` for some ids that
    search returns (e.g. 747997), so the top hit can be unfetchable; falling
@@ -241,10 +246,18 @@ Reached through the flag-gated wrapper
 which **early-returns before any LLM/Prisma call when `INGREDIENT_LLM_FALLBACK` is
 off** — flag-off falls back to the deterministic pick (staple → rank →
 `matchPlausible` → energy guard → gram ladder), keeping the anchor eval network-free.
-Search itself prefers pure data types (`searchPreferringWholeFoods`: Foundation/SR
-Legacy first, Survey then Branded only as fallback) so clean single-ingredient
-varieties surface as candidates. Raw↔cooked gram *conversion* is still not done —
-the LLM instead selects the form matching the entered weight basis.
+Search (`searchWholeFoods`) **merges** the whole-food tiers — Foundation/SR Legacy
+**and** Survey (FNDDS), queried separately so neither starves the other on
+pageSize, de-duped — and only falls back to Branded when that merged pool is
+empty. This replaced an earlier short-circuit cascade that returned the first
+non-empty tier and so hid cross-tier matches (`beef stew meat` → only
+`Chicken, stewing…` in SR Legacy, never reaching the FNDDS `Beef, stew meat`);
+the composite-dish demotion in `rankMatches` keeps merged FNDDS dishes from
+crowding out basics. The search cache is **versioned** (`searchCacheKey`,
+`SEARCH_CACHE_VERSION`) so a strategy change bypasses stale blobs without a DB
+migration — bump the version when the search strategy changes. Raw↔cooked gram
+*conversion* is still not done — the LLM instead selects the form matching the
+entered weight basis.
 
 - **Analysis cache (`RecipeAnalysisCache`):** keyed by
   [`generateRecipeFingerprint`](../../src/lib/recipe-fingerprint.ts) (title +

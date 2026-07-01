@@ -1272,9 +1272,6 @@
       "title": "Co potrafię",
       "open": "Zobacz, co potrafi asystent"
     },
-    "followUps": {
-      "title": "Wypróbuj teraz"
-    },
     "entry": {
       "recipeDetail": {
         "ask": "Zapytaj DietAI"
@@ -1310,6 +1307,7 @@
         "extracting": "Wyciągam przepis…",
         "analyzing": "Analizuję wartości odżywcze…",
         "saving": "Zapisuję przepis…",
+        "savingNutrition": "Zapisuję i obliczam wartości odżywcze… to może chwilę potrwać",
         "fallback": "Próbuję inną metodą…"
       },
       "media": {

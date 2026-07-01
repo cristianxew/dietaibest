@@ -38,6 +38,32 @@ describe("rankMatches", () => {
     expect(ranked[0].fdcId).toBe(2); // query asked for white → not penalized
   });
 
+  it("demotes an FNDDS composite dish below a basic ingredient ACROSS data types", () => {
+    // After the whole-food tier merge, FNDDS dishes share the candidate pool with
+    // SR Legacy basics. FNDDS outranks SR Legacy by data-type priority, so without
+    // a cross-type dish demotion "Rice pilaf" would crowd out raw rice. It must not.
+    const ranked = rankMatches(
+      [
+        f(2, "Rice pilaf", "Survey (FNDDS)"),
+        f(1, "Rice, white, long-grain, regular, raw", "SR Legacy"),
+      ],
+      "rice"
+    );
+    expect(ranked[0].fdcId).toBe(1); // basic raw rice, not the pilaf dish
+  });
+
+  it("does NOT demote a dish word the query explicitly contains (beef stew meat)", () => {
+    // The exact-match FNDDS entry must win; the canned-entree dish is demoted.
+    const ranked = rankMatches(
+      [
+        f(2, "Beef stew, canned entree", "SR Legacy"),
+        f(1, "Beef, stew meat", "Survey (FNDDS)"),
+      ],
+      "beef stew meat"
+    );
+    expect(ranked[0].fdcId).toBe(1);
+  });
+
   it("returns an empty array for no candidates", () => {
     expect(rankMatches([], "anything")).toEqual([]);
   });

@@ -1278,9 +1278,6 @@
       "title": "What I can do",
       "open": "Show what the assistant can do"
     },
-    "followUps": {
-      "title": "Try next"
-    },
     "entry": {
       "recipeDetail": {
         "ask": "Ask DietAI"
@@ -1316,6 +1313,7 @@
         "extracting": "Extracting the recipe…",
         "analyzing": "Analyzing nutrition…",
         "saving": "Saving the recipe…",
+        "savingNutrition": "Saving and calculating nutrition… this can take a few seconds",
         "fallback": "Retrying with another method…"
       },
       "media": {

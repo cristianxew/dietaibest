@@ -7,7 +7,6 @@ import type { LinkType } from "./ToolResultLink";
 import type { ChatMessageProps, MessageContent } from "./ChatMessage";
 import type { StatusState } from "./ChatStatus";
 import type { RecipePreview } from "./RecipePreviewCard";
-import { computeFollowUps, type Capability } from "@/lib/chat/capabilities";
 
 /**
  * AgentEvent shape — must match src/lib/chat/events.ts. Duplicated here to
@@ -103,8 +102,6 @@ interface UseChatStreamResult {
   deleteLastTurn: () => Promise<string | null>;
   switchSession: (sessionId: string) => Promise<void>;
   createSession: () => Promise<void>;
-  /** Deterministic follow-up suggestions for the just-finished turn. */
-  followUps: Capability[];
 }
 
 let messageIdCounter = 0;
@@ -194,10 +191,6 @@ function hydrateMessages(
 export function useChatStream({ locale, translate }: UseChatStreamProps): UseChatStreamResult {
   const [messages, setMessages] = useState<ChatMessageProps[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
-  // Tool names completed during the in-flight turn; mapped through the
-  // capability catalog on `finish` to surface follow-up chips.
-  const completedToolsThisTurnRef = useRef<string[]>([]);
-  const [followUps, setFollowUps] = useState<Capability[]>([]);
   const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
   const streamingTextIdRef = useRef<string | null>(null);
   // handleEvent is a stable callback with no deps — read locale and translate
@@ -306,7 +299,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
         break;
       }
       case "tool.completed": {
-        completedToolsThisTurnRef.current.push(event.toolName);
         const id = callIdToMessageIdRef.current.get(event.callId);
         if (!id) break;
         const link = event.link;
@@ -402,7 +394,7 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
                     content: {
                       status: {
                         state: "pending" as StatusState,
-                        message: translateRef.current.status(statusKeyToI18n("import.saving")),
+                        message: translateRef.current.status(statusKeyToI18n("import.savingNutrition")),
                       },
                     },
                   }));
@@ -511,8 +503,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
       }
       case "finish": {
         streamingTextIdRef.current = null;
-        setFollowUps(computeFollowUps(completedToolsThisTurnRef.current));
-        completedToolsThisTurnRef.current = [];
         const href = pendingNavHrefRef.current;
         pendingNavHrefRef.current = null;
         if (href) routerRef.current.push(href);
@@ -539,8 +529,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   const send = useCallback(
     async (text: string, attachment?: PendingAttachment) => {
       pendingNavHrefRef.current = null;
-      completedToolsThisTurnRef.current = [];
-      setFollowUps([]);
       messagesBeforeLastSendRef.current = messages.length;
       lastUserInputRef.current = { text, attachment };
       setHasLastInput(true);
@@ -626,8 +614,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
   const resolveConfirm = useCallback(
     async (callId: string, toolName: string, accepted: boolean, payload: unknown) => {
       pendingNavHrefRef.current = null;
-      completedToolsThisTurnRef.current = [];
-      setFollowUps([]);
       setIsStreaming(true);
       try {
         const res = await fetch("/api/chat", {
@@ -671,7 +657,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     // writing to, while the live stream keeps painting into the emptied view.
     if (isStreaming) return;
     setMessages([]);
-    setFollowUps([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
@@ -718,7 +703,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     if (!res.ok) return null;
 
     setMessages((prev) => prev.slice(0, targetLength));
-    setFollowUps([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
@@ -733,7 +717,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     if (isStreaming) return;
     // Clear local state
     setMessages([]);
-    setFollowUps([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
@@ -751,7 +734,6 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     // turn is streaming into it strands the turn in the archived session.
     if (isStreaming) return;
     setMessages([]);
-    setFollowUps([]);
     callIdToMessageIdRef.current.clear();
     streamingTextIdRef.current = null;
     lastUserInputRef.current = null;
@@ -777,6 +759,5 @@ export function useChatStream({ locale, translate }: UseChatStreamProps): UseCha
     deleteLastTurn,
     switchSession,
     createSession,
-    followUps,
   };
 }
