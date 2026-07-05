@@ -398,7 +398,9 @@ async function resolveBatch(
   const fdcIds = [
     ...new Set(ranked.flatMap((m) => m.candidates.map((c) => c.fdcId))),
   ];
-  const foodsDetailed = await getFoodsCached(fdcIds);
+  // Request the extended profile: recipe nutrition persists all 22 fields, so a
+  // legacy "core" cache row must be refetched with the full nutrient registry.
+  const foodsDetailed = await getFoodsCached(fdcIds, { profile: "extended" });
   const foodsById = new Map<number, FdcFood>();
   for (const food of foodsDetailed) {
     foodsById.set(food.fdcId, food);

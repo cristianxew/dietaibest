@@ -113,7 +113,7 @@
     "dashboard": "Panel",
     "recipes": "Przepisy",
     "mealPlans": "Plany posiłków",
-    "nutrition": "Odżywianie",
+    "nutrition": "Centrum Żywienia",
     "shopping": "Zakupy",
     "onboarding": "Kreator",
     "settings": "Ustawienia",
@@ -989,6 +989,380 @@
     "title": "DietAI - Planowanie posiłków z AI",
     "description": "Spersonalizowane planowanie posiłków i śledzenie odżywiania z pomocą AI"
   },
+  "nutritionHub": {
+    "myWeek": {
+      "kicker": "Twój Tydzień",
+      "title": "Napraw Mój Tydzień",
+      "description": "Twój zaplanowany tydzień zmierzony względem Twoich osobistych celów — i to, co warto zmienić najpierw.",
+      "hero": {
+        "eyebrow": "W tym tygodniu",
+        "ok": "Twój zaplanowany tydzień wygląda na zbilansowany",
+        "findings": "{count, plural, one {# rzecz} few {# rzeczy} many {# rzeczy} other {# rzeczy}} do poprawy w tym tygodniu",
+        "cta": "Otwórz Mój Tydzień"
+      },
+      "empty": {
+        "title": "Brak aktywnego planu posiłków",
+        "body": "Zaplanuj posiłki, a przeanalizujemy Twój tydzień względem Twoich osobistych celów żywieniowych.",
+        "cta": "Przejdź do planów posiłków"
+      },
+      "strip": { "unplanned": "Brak planu", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "Co naprawić najpierw",
+        "deficitTitle": "Za mało: {nutrient}",
+        "excessTitle": "Za dużo: {nutrient}",
+        "deficitMeta": "Poniżej celu przez {days} z {plannedDays, plural, one {# zaplanowanego dnia} few {# zaplanowanych dni} many {# zaplanowanych dni} other {# zaplanowanych dni}}",
+        "excessMeta": "Powyżej limitu przez {days} z {plannedDays, plural, one {# zaplanowanego dnia} few {# zaplanowanych dni} many {# zaplanowanych dni} other {# zaplanowanych dni}}",
+        "weekGapDeficit": "Brakuje {amount} w skali tygodnia",
+        "weekGapExcess": "{amount} za dużo w skali tygodnia",
+        "sourcesExcess": "Największe źródła",
+        "sourcesDeficit": "Najlepsze okazje do poprawy",
+        "contributorShare": "{share}% tygodnia",
+        "none": "Twój zaplanowany tydzień wygląda na zbilansowany. Dobra robota!"
+      },
+      "swaps": {
+        "show": "Pokaż rozwiązania",
+        "loading": "Szukanie rozwiązań…",
+        "closes": "zamyka {pct}% luki",
+        "tradeoffs": "Uwaga: {nutrients}",
+        "apply": "Zastosuj",
+        "applying": "Stosowanie…",
+        "applied": "Zmieniono na {to}",
+        "undo": "Cofnij",
+        "none": "Brak dobrego kandydata w Twoich przepisach.",
+        "generate": "Wygeneruj przepis, który to naprawi",
+        "generating": "Gotowanie przepisu…",
+        "generated": "Utworzono \"{title}\" — wartości odżywcze zweryfikowane danymi USDA",
+        "generateFailed": "Nie udało się wygenerować przepisu. Spróbuj ponownie."
+      },
+      "improveData": {
+        "title": "Popraw swoje dane",
+        "body": "{count, plural, one {# przepis w Twoim tygodniu ma} few {# przepisy w Twoim tygodniu mają} many {# przepisów w Twoim tygodniu ma} other {# przepisów w Twoim tygodniu ma}} niekompletne dane składników, więc analiza mikroelementów jest ograniczona.",
+        "analyze": "Analizuj składniki",
+        "analyzing": "Analizowanie…",
+        "done": "Dopasowano {matched} z {total} składników"
+      },
+      "detail": {
+        "show": "Pokaż pełne szczegóły tygodnia",
+        "hide": "Ukryj pełne szczegóły",
+        "nutrient": "Składnik"
+      },
+      "basis": { "personalized": "Cele spersonalizowane", "generic": "Ogólne wartości dzienne" }
+    },
+    "hub": {
+      "kicker": "Centrum Nauki",
+      "title": "Wiedz, co masz na talerzu",
+      "description": "Porównuj produkty, mierz posiłki względem swojego dnia i poznawaj rolę każdego składnika — aby każdy kęs był świadomym wyborem.",
+      "faceoff": {
+        "kicker": "Dzisiejszy Pojedynek",
+        "vs": "vs",
+        "cta": "Zobacz pełne porównanie"
+      },
+      "modules": {
+        "myWeek": {
+          "kicker": "Działaj",
+          "title": "Napraw Mój Tydzień",
+          "blurb": "Zobacz, jak naprawdę wygląda Twój zaplanowany tydzień, i napraw go jednym dotknięciem."
+        },
+        "compare": {
+          "kicker": "Porównaj",
+          "title": "Pojedynek Produktów",
+          "blurb": "Zestaw dowolne dwa produkty lub przepisy obok siebie i poznaj ich pełną historię odżywczą."
+        },
+        "vsDay": {
+          "kicker": "Twój Dzień",
+          "title": "Posiłek vs Twój Dzień",
+          "blurb": "Zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa posiłek."
+        },
+        "nutrients": {
+          "kicker": "Ucz się",
+          "title": "Encyklopedia Składników",
+          "blurb": "Co robi każdy składnik odżywczy, dlaczego ma znaczenie i z jakich produktów najlepiej go czerpać."
+        },
+        "swaps": {
+          "kicker": "Ulepszaj",
+          "title": "Mądre Zamiany",
+          "blurb": "Proste zamiany z realną korzyścią odżywczą, oparte na danych USDA."
+        },
+        "calculator": {
+          "kicker": "Narzędzia",
+          "title": "Kalkulator Żywieniowy",
+          "blurb": "Przeanalizuj dowolną listę składników i uzyskaj dokładne wartości odżywcze."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Kalorie" },
+      "protein": { "name": "Białko" },
+      "fat": { "name": "Tłuszcz" },
+      "carbs": { "name": "Węglowodany" },
+      "fiber": { "name": "Błonnik" },
+      "sugar": { "name": "Cukier" },
+      "satFat": { "name": "Tłuszcze Nasycone" },
+      "cholesterol": { "name": "Cholesterol" },
+      "sodium": { "name": "Sód" },
+      "potassium": { "name": "Potas" },
+      "calcium": { "name": "Wapń" },
+      "iron": { "name": "Żelazo" },
+      "magnesium": { "name": "Magnez" },
+      "zinc": { "name": "Cynk" },
+      "vitaminA": { "name": "Witamina A" },
+      "vitaminC": { "name": "Witamina C" },
+      "vitaminD": { "name": "Witamina D" },
+      "vitaminE": { "name": "Witamina E" },
+      "vitaminK": { "name": "Witamina K" },
+      "vitaminB6": { "name": "Witamina B6" },
+      "vitaminB12": { "name": "Witamina B12" },
+      "folate": { "name": "Foliany" }
+    },
+    "common": {
+      "askDietai": "Zapytaj Dietai",
+      "disclaimer": "Informacje edukacyjne — nie stanowią porady medycznej."
+    },
+    "insights": {
+      "timesMore": "{winner} ma {times}× więcej: {nutrient}",
+      "moreBy": "{winner} ma o {diff} {unit} więcej: {nutrient}",
+      "onlyOneHas": "Tylko {winner} zawiera: {nutrient}"
+    },
+    "vsDay": {
+      "kicker": "Twój Dzień",
+      "title": "Posiłek vs Twój Dzień",
+      "description": "Wybierz produkt lub własny przepis i zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa.",
+      "pickPrompt": "Co jesz?",
+      "headline": "To pokrywa <highlight>{pct}%</highlight> dziennego zapotrzebowania: {nutrient}",
+      "loadError": "Nie udało się wczytać danych. Spróbuj ponownie.",
+      "clear": "Usuń",
+      "decrease": "Mniej porcji",
+      "increase": "Więcej porcji",
+      "noData": "Brak danych USDA dla tego składnika",
+      "basisPer100g": "na 100 g",
+      "basisPerServing": "na porcję",
+      "basisPersonalized": "Spersonalizowany cel z Twojego profilu",
+      "basisGeneric": "Ogólna Wartość Dzienna FDA",
+      "groups": {
+        "energyMacros": "Energia i Makro",
+        "watch": "Warto Obserwować",
+        "vitaminsMinerals": "Witaminy i Minerały"
+      },
+      "nudge": {
+        "message": "Używamy ogólnych wartości FDA — uzupełnij profil, aby otrzymać cele dopasowane do Ciebie.",
+        "cta": "Uzupełnij profil"
+      }
+    },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Ucz się",
+        "title": "Encyklopedia Składników",
+        "description": "Każdy składnik odżywczy ma swoje zadanie. Dowiedz się, co robi, dlaczego ma znaczenie i gdzie go znaleźć.",
+        "dailyTarget": "cel dzienny",
+        "dailyLimit": "dzienny limit",
+        "topSources": "Najlepsze źródła w żywności",
+        "whatItDoes": "Co robi",
+        "whyYouCare": "Dlaczego to ważne",
+        "deficiencySigns": "Gdy go brakuje",
+        "per100g": "Wartości na 100 g · USDA FoodData Central",
+        "compareCta": "Porównaj",
+        "backToIndex": "Wszystkie składniki",
+        "limitBadge": "Mniej znaczy lepiej",
+        "goalBadge": "Celuj w swój cel"
+      },
+      "protein": {
+        "tagline": "Materiał budulcowy organizmu.",
+        "whatItDoes": "Buduje i naprawia mięśnie, skórę i tkanki oraz dostarcza surowiec dla enzymów i hormonów.",
+        "whyYouCare": "Syci na dłużej i pomaga utrzymać mięśnie, zwłaszcza gdy jesteś aktywny lub jesz mniej kalorii.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z utratą mięśni, osłabieniem i wolną regeneracją.",
+        "funFact": "Soczewica z ryżem razem dostarczają wszystkich aminokwasów egzogennych — klasyczne połączenia kulinarne odkryły to wieki przed nauką."
+      },
+      "fiber": {
+        "tagline": "Najlepszy przyjaciel trawienia.",
+        "whatItDoes": "Karmi pożyteczne bakterie jelitowe i utrzymuje trawienie w zdrowym tempie.",
+        "whyYouCare": "Posiłki bogate w błonnik sycą bardziej i pomagają utrzymać stabilny poziom cukru i cholesterolu.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z nieregularnym trawieniem i szybkim powrotem głodu po posiłku.",
+        "funFact": "Błonnik produkują wyłącznie rośliny — nie znajdziesz go w mięsie, jajkach ani serze, choćby były najbardziej naturalne."
+      },
+      "sugar": {
+        "tagline": "Słodka, szybka energia — łatwo przesadzić.",
+        "whatItDoes": "Dostarcza komórkom szybkiej energii — i niewiele poza tym.",
+        "whyYouCare": "Słodkie produkty i napoje szybko dodają kalorii, nie sycąc — przez co łatwo zjeść za dużo.",
+        "deficiencySigns": "",
+        "funFact": "Banan i łyżka cukru mają podobną ilość cukru w gramach — ale banan opakowuje go w błonnik, potas i witaminy."
+      },
+      "saturated-fat": {
+        "tagline": "Tłuszcz, na który warto mieć oko.",
+        "whatItDoes": "Dostarcza energii i budulca dla komórek; organizm potrafi też wytworzyć go samodzielnie.",
+        "whyYouCare": "Zalecenia żywieniowe mówią o utrzymaniu go poniżej około 10% dziennych kalorii — zamiana części na tłuszcze nienasycone to łatwa wygrana.",
+        "deficiencySigns": "",
+        "funFact": "Nie każdy tłuszcz nasycony działa tak samo: ten z gorzkiej czekolady (kwas stearynowy) jest dużo bardziej neutralny niż te z przetworzonego mięsa."
+      },
+      "sodium": {
+        "tagline": "Niezbędny minerał o zbyt dużej obecności.",
+        "whatItDoes": "Pomaga utrzymać równowagę płynów i umożliwia pracę nerwów oraz mięśni.",
+        "whyYouCare": "Większość z nas je go znacznie więcej niż zalecany limit — głównie przez żywność przetworzoną, nie solniczkę.",
+        "deficiencySigns": "",
+        "funFact": "Około 70% sodu w diecie pochodzi z żywności przetworzonej i restauracji — gotowanie w domu to najprostszy sposób na jego ograniczenie."
+      },
+      "potassium": {
+        "tagline": "Przeciwwaga dla sodu.",
+        "whatItDoes": "Działa przeciwnie do sodu, równoważąc płyny, i wspiera miarowe bicie serca oraz skurcze mięśni.",
+        "whyYouCare": "Większość ludzi spożywa go znacznie mniej niż trzeba, a dieta bogata w potas sprzyja zdrowemu ciśnieniu krwi.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze skurczami mięśni, zmęczeniem i osłabieniem.",
+        "funFact": "Batat i szpinak wygrywają z bananem w jego własnej, potasowej konkurencji."
+      },
+      "calcium": {
+        "tagline": "Więcej niż mocne kości.",
+        "whatItDoes": "Buduje kości i zęby oraz umożliwia skurcze mięśni, sygnały nerwowe i krzepnięcie krwi.",
+        "whyYouCare": "Gdy spożycie jest niskie, organizm pożycza wapń z kości — a poczujesz to dopiero znacznie później.",
+        "deficiencySigns": "Przewlekle niskie spożycie wiąże się z czasem z niższą gęstością kości.",
+        "funFact": "Szpinak na papierze wygląda na bogaty w wapń, ale szczawiany blokują większość wchłaniania — nabiał i produkty wzbogacane dostarczają więcej przyswajalnego wapnia."
+      },
+      "iron": {
+        "tagline": "Kurier tlenu.",
+        "whatItDoes": "Tworzy rdzeń hemoglobiny, która niesie tlen z płuc do każdej komórki.",
+        "whyYouCare": "Niedobór żelaza to najczęstsza luka żywieniowa świata, zwłaszcza u kobiet — od niego zależy codzienna energia.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem, bladą skórą i szybką zadyszką.",
+        "funFact": "Witamina C potrafi zwielokrotnić żelazo wchłaniane z roślin — skrop soczewicę cytryną."
+      },
+      "magnesium": {
+        "tagline": "Minerał trzystu zadań.",
+        "whatItDoes": "Uczestniczy w ponad 300 reakcjach enzymatycznych — produkcji energii, rozluźnianiu mięśni i pracy nerwów.",
+        "whyYouCare": "Wpływa na jakość snu i regenerację mięśni, a większość diet nie osiąga celu.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z drganiem mięśni, skurczami i niespokojnym snem.",
+        "funFact": "Gorzka czekolada to pełnoprawne źródło magnezu — im ciemniejsza, tym lepiej."
+      },
+      "zinc": {
+        "tagline": "Kwatermistrz odporności.",
+        "whatItDoes": "Wspiera produkcję komórek odpornościowych, gojenie ran oraz zmysły smaku i węchu.",
+        "whyYouCare": "Nawet niewielkie niedobory mogą osłabić odpowiedź immunologiczną — spożycie liczy się najbardziej w stresie i przy ciężkich treningach.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z częstymi przeziębieniami, wolnym gojeniem i przytępionym smakiem.",
+        "funFact": "Ostrygi mają około dziesięć razy więcej cynku niż stek — marynarski instynkt był na tropie."
+      },
+      "vitamin-a": {
+        "tagline": "Widzenie nocne i odnowa skóry.",
+        "whatItDoes": "Utrzymuje wzrok (zwłaszcza przy słabym świetle), odnowę skóry i obronę immunologiczną.",
+        "whyYouCare": "Twoje oczy i skóra odnawiają się nieustannie i potrzebują do tego stałych dostaw.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze słabym widzeniem nocnym i suchą skórą.",
+        "funFact": "Beta-karoten z batatów zamienia się w witaminę A na żądanie — organizm bierze tylko tyle, ile potrzebuje."
+      },
+      "vitamin-c": {
+        "tagline": "Iskra zapłonowa kolagenu.",
+        "whatItDoes": "Napędza produkcję kolagenu dla skóry i stawów, poprawia wchłanianie żelaza i działa jako przeciwutleniacz.",
+        "whyYouCare": "Ludzie należą do nielicznych zwierząt, które nie potrafią jej wytwarzać — musi pochodzić z jedzenia, regularnie.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z szorstką skórą, łatwym siniaczeniem i wolnym gojeniem ran.",
+        "funFact": "Surowy brokuł ma więcej witaminy C na 100 g niż pomarańcza."
+      },
+      "vitamin-d": {
+        "tagline": "Witamina słońca.",
+        "whatItDoes": "Pomaga wchłaniać wapń i wspiera pracę mięśni oraz odporności — zachowuje się bardziej jak hormon niż witamina.",
+        "whyYouCare": "Źródła w żywności są skąpe, a ekspozycja na słońce bardzo różna — to jeden z najczęstszych niedoborów w północnym klimacie.",
+        "deficiencySigns": "Niskie poziomy często wiążą się z małą energią i słabszymi kośćmi.",
+        "funFact": "Twoja skóra produkuje witaminę D ze światła słonecznego — 15 minut na przedramionach może dać więcej niż większość posiłków."
+      },
+      "vitamin-e": {
+        "tagline": "Ochroniarz błon komórkowych.",
+        "whatItDoes": "Chroni błony komórkowe przed uszkodzeniem oksydacyjnym jako główny przeciwutleniacz rozpuszczalny w tłuszczach.",
+        "whyYouCare": "Strzeże tłuszczów w całym ciele — także tych, z których zbudowany jest mózg.",
+        "deficiencySigns": "Prawdziwy niedobór jest rzadki, ale niskie spożycie zostawia błony komórkowe z mniejszą ochroną antyoksydacyjną.",
+        "funFact": "Migdały to arystokracja witaminy E — garść pokrywa prawie połowę dnia."
+      },
+      "vitamin-k": {
+        "tagline": "Dyrygentka krzepnięcia.",
+        "whatItDoes": "Aktywuje białka umożliwiające krzepnięcie krwi i pomaga kierować wapń do kości.",
+        "whyYouCare": "Po cichu wpływa na to, czy wapń trafia do kości — dokładnie tam, gdzie chcesz.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z łatwym siniaczeniem.",
+        "funFact": "Litera 'K' pochodzi od niemieckiego słowa 'Koagulation' — duński naukowiec publikował w niemieckim czasopiśmie."
+      },
+      "vitamin-b6": {
+        "tagline": "Tłumaczka metabolizmu.",
+        "whatItDoes": "Pomaga zamieniać jedzenie w energię i budować przekaźniki takie jak serotonina i dopamina.",
+        "whyYouCare": "Diety bogate w białko zwiększają zapotrzebowanie na B6 — działają w parze.",
+        "deficiencySigns": "Niskie spożycie często wiąże się z rozdrażnieniem i niską energią.",
+        "funFact": "Banany to jedne z niewielu owoców z istotną ilością B6 — kolejny powód ich statusu klasyka torby na siłownię."
+      },
+      "vitamin-b12": {
+        "tagline": "Okablowanie nerwów i czerwone krwinki.",
+        "whatItDoes": "Utrzymuje osłonki nerwów, syntezę DNA i produkcję czerwonych krwinek.",
+        "whyYouCare": "Pochodzi niemal wyłącznie z produktów zwierzęcych — osoby na diecie roślinnej potrzebują żywności wzbogacanej lub suplementów.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem, mrowieniem i mgłą mózgową.",
+        "funFact": "Wątroba potrafi zmagazynować zapas B12 na kilka lat — bufor, jakiego nie ma żadna inna witamina rozpuszczalna w wodzie."
+      },
+      "folate": {
+        "tagline": "Paliwo podziałów komórkowych.",
+        "whatItDoes": "Napędza syntezę DNA i podział komórek — wszędzie tam, gdzie organizm rośnie lub się naprawia, foliany są na służbie.",
+        "whyYouCare": "Najbardziej liczą się w ciąży i okresach wzrostu; soczewica i zielone liście to bogate, tanie źródła.",
+        "deficiencySigns": "Niskie spożycie często wiąże się ze zmęczeniem i anemią.",
+        "funFact": "Nazwa pochodzi od łacińskiego 'folium' (liść) — pierwotnym źródłem były warzywa liściaste."
+      }
+    },
+    "swaps": {
+      "kicker": "Ulepszaj",
+      "title": "Mądre Zamiany",
+      "description": "Proste zamiany z realną, zweryfikowaną w danych USDA korzyścią odżywczą. Małe zmiany, duży skumulowany efekt.",
+      "insteadOf": "Zamiast",
+      "try": "Wypróbuj",
+      "faceoffCta": "Zobacz pełny pojedynek",
+      "categories": {
+        "grains": "Zboża i Dodatki",
+        "greens": "Zielone Warzywa",
+        "protein": "Białko",
+        "fruit": "Owoce",
+        "fats": "Tłuszcze i Smarowidła"
+      },
+      "chips": {
+        "timesMore": "{times}× więcej: {nutrient}",
+        "timesLess": "{times}× mniej: {nutrient}",
+        "onlyHas": "jedyny z: {nutrient}",
+        "moreBy": "+{diff} {unit} {nutrient}",
+        "lessBy": "−{diff} {unit} {nutrient}"
+      }
+    },
+    "compare": {
+      "kicker": "Porównaj",
+      "title": "Pojedynek Produktów",
+      "description": "Wybierz dwóch zawodników — dowolny produkt USDA lub własny przepis — i poznaj pełną historię odżywczą, obok siebie.",
+      "slotA": "Zawodnik A",
+      "slotB": "Zawodnik B",
+      "clear": "Usuń",
+      "swapSides": "Zamień strony",
+      "loadError": "Nie udało się wczytać danych. Spróbuj ponownie.",
+      "recipeBadge": "Mój przepis",
+      "noData": "Brak danych USDA dla tego składnika",
+      "basis": {
+        "per100g": "na 100 g",
+        "perServing": "na porcję"
+      },
+      "groups": {
+        "energy": "Energia",
+        "macro": "Makroskładniki",
+        "fatProfile": "Tłuszcze i Cholesterol",
+        "mineral": "Minerały",
+        "vitamin": "Witaminy"
+      },
+      "coverage": {
+        "macrosOnly": "Tylko makro",
+        "partial": "Dane częściowe ({matched}/{total} składników)",
+        "tooltip": "Niektóre składniki nie są jeszcze powiązane z produktami USDA, więc mikroskładniki mogą być niekompletne. Przeanalizuj przepis ponownie, aby uzyskać pełne dane."
+      },
+      "search": {
+        "placeholder": "Szukaj produktów lub swoich przepisów…",
+        "foodsTab": "Produkty",
+        "recipesTab": "Moje przepisy",
+        "searching": "Wyszukiwanie…",
+        "minChars": "Wpisz co najmniej 2 znaki, aby wyszukać",
+        "noResults": "Nic nie znaleziono",
+        "foodsHeading": "USDA FoodData Central",
+        "recipesHeading": "Twoje przepisy",
+        "servings": "{count} porcji"
+      },
+      "empty": {
+        "title": "Wybierz zawodników",
+        "description": "Wyszukaj dowolny produkt lub przepis powyżej — albo zacznij od klasycznego pojedynku.",
+        "suggestions": {
+          "bananaApple": "Banan vs Jabłko",
+          "spinachBroccoli": "Szpinak vs Brokuł",
+          "avocadoBanana": "Awokado vs Banan"
+        }
+      }
+    }
+  },
   "nutrition": {
     "title": "Wartości Odżywcze",
     "confidence": "Pewność",
@@ -1006,6 +1380,36 @@
       "noResults": "Nie znaleziono składników",
       "minCharacters": "Wpisz co najmniej 2 znaki, aby wyszukać",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Odżywianie",
+        "title": "Kalkulator Żywieniowy",
+        "description": "Analizuj składniki przepisu i obliczaj dokładne wartości odżywcze dzięki USDA FoodData Central."
+      },
+      "cardTitle": "Składniki Przepisu",
+      "structuredTab": "Wprowadzanie Strukturalne",
+      "textTab": "Wprowadzanie Tekstowe",
+      "structuredHint": "Dodawaj składniki z autouzupełnianiem z bazy USDA FoodData Central.",
+      "textHint": "Wpisz jeden składnik w wierszu z ilością i jednostką (np. \"1 szklanka ryżu\", \"150 g kurczaka\", \"2 łyżki oliwy\").",
+      "ingredientsLabel": "Składniki",
+      "loadExample": "Wczytaj Przykład",
+      "searchPlaceholder": "Szukaj składnika...",
+      "addIngredient": "Dodaj Składnik",
+      "servingsLabel": "Liczba Porcji",
+      "analyzing": "Analizowanie...",
+      "calculate": "Oblicz Wartości Odżywcze",
+      "exampleLoaded": "Wczytano przykładowy przepis",
+      "errors": {
+        "enterIngredient": "Wpisz co najmniej jeden składnik",
+        "addIngredient": "Dodaj co najmniej jeden składnik",
+        "servingsPositive": "Liczba porcji musi być dodatnia",
+        "analysisFailed": "Analiza nie powiodła się",
+        "unexpected": "Wystąpił nieoczekiwany błąd podczas analizy"
+      },
+      "success": {
+        "analysisComplete": "Analiza zakończona! Przetworzono {count} składników."
+      }
     }
   },
   "placeholders": {
@@ -1210,6 +1614,13 @@
     }
   },
   "chat": {
+    "seeds": {
+      "nutritionHub": {
+        "compare": "Porównałem {a} i {b} w Centrum Żywienia. Czy możesz mi prosto wyjaśnić, co oznaczają dla mnie największe różnice odżywcze?",
+        "vsDay": "Sprawdziłem {item} względem moich dziennych celów w Centrum Żywienia — pokrywa około {pct}% mojego zapotrzebowania ({nutrient}). Jak powinna wyglądać reszta mojego dnia, aby zachować równowagę?",
+        "nutrient": "Opowiedz mi o: {nutrient} — dlaczego mój organizm tego potrzebuje i jak dostarczyć odpowiednią ilość z codziennego jedzenia?"
+      }
+    },
     "title": "Asystent DietAI",
     "online": "Online",
     "clearConversation": "Wyczyść rozmowę",

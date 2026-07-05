@@ -8,6 +8,7 @@
 import "server-only";
 
 import { normalizeUnit } from "./ingredients";
+import { EXTENDED_NUTRIENT_NUMBERS } from "@/lib/nutrients/registry";
 
 const API_BASE = "https://api.nal.usda.gov/fdc/v1";
 
@@ -279,8 +280,9 @@ export async function fdcSearch(
 
 /**
  * Fetch detailed food information for multiple FDC IDs.
- * Uses abridged format requesting the full 22-nutrient profile (5 macros + 17
- * micronutrients) so the complete profile can be extracted and persisted.
+ * Uses abridged format requesting the UNION of the Nutrition Hub's extended
+ * nutrient registry and the 22-field recipe profile (plus Atwater energy), so
+ * both surfaces can extract and persist a complete profile.
  *
  * @param fdcIds - Array of FDC food IDs to fetch
  * @returns Array of food objects with nutritional data
@@ -288,10 +290,18 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  // Request the 22 profile nutrients PLUS the Atwater energy numbers (957
-  // General, 958 Specific). Foundation foods report energy there instead of
-  // 208, so omitting them left Foundation calories at 0 after extraction.
-  const fetchNutrients = [...PROFILE_NUTRIENT_NUMBERS, "957", "958"];
+  // Request the UNION of: the Hub's extended registry, our 22-field profile, and
+  // the Atwater energy numbers (957 General, 958 Specific). Atwater matters
+  // because Foundation foods report energy there instead of 208 — omitting them
+  // left Foundation calories at 0. Deduped; stays within USDA's ~25-nutrient cap.
+  const fetchNutrients = [
+    ...new Set([
+      ...EXTENDED_NUTRIENT_NUMBERS,
+      ...PROFILE_NUTRIENT_NUMBERS,
+      "957",
+      "958",
+    ]),
+  ];
   const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${fetchNutrients.join(
     ","
   )}`;

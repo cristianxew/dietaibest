@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { MealPlanner } from "@/components/meal-plans/MealPlanner";
 import { getUserProfile } from "@/actions/profile";
 import { getReferenceIntakes } from "@/lib/nutrition-rda";
+import { PlannerNutritionBanner } from "@/components/nutrition-hub/my-week/PlannerNutritionBanner";
 
 export async function generateMetadata({
   params,
@@ -35,6 +36,7 @@ export default async function MealPlansPage({
 
   return (
     <Suspense>
+      <PlannerNutritionBanner />
       <MealPlanner reference={reference} />
     </Suspense>
   );
