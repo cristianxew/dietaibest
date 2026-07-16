@@ -6,8 +6,28 @@
  * key matches a nullable `Float` column on the Prisma `Recipe` model and a
  * field on `recipeFormSchema`.
  */
+/** Every micronutrient column persisted on the Prisma `Recipe` model. */
+export type MicronutrientKey =
+  | "vitaminA"
+  | "vitaminC"
+  | "vitaminD"
+  | "vitaminE"
+  | "vitaminK"
+  | "vitaminB12"
+  | "folate"
+  | "iron"
+  | "calcium"
+  | "magnesium"
+  | "potassium"
+  | "zinc"
+  | "sodium"
+  | "sugar"
+  | "cholesterol"
+  | "saturatedFat"
+  | "transFat";
+
 export interface NutritionField {
-  key: string;
+  key: MicronutrientKey;
   label: string;
   unit: string;
 }
@@ -59,6 +79,6 @@ export const MICRONUTRIENT_GROUPS: NutritionGroup[] = [
 ];
 
 /** Flat list of every micronutrient key. */
-export const MICRONUTRIENT_KEYS: string[] = MICRONUTRIENT_GROUPS.flatMap((g) =>
-  g.fields.map((f) => f.key)
+export const MICRONUTRIENT_KEYS: MicronutrientKey[] = MICRONUTRIENT_GROUPS.flatMap(
+  (g) => g.fields.map((f) => f.key)
 );

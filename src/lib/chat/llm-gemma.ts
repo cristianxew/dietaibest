@@ -6,6 +6,7 @@ import {
   type ImportedRecipeData,
 } from "@/lib/ingest/imported-recipe-schema";
 import { buildGenAIVertexOptions } from "./tools/genai-options";
+import { createIngestLogger } from "@/lib/ingest/log";
 
 // DIE-41 — Recipe extraction provider using @google/genai (official Google Gen AI SDK).
 // Uses Vertex AI backend (vertexai: true), authenticated like generateRecipeImage
@@ -190,6 +191,13 @@ export class GemmaProvider {
         throw new GemmaExtractionError("transient", "Gemma returned an empty response");
       }
       rawText = text;
+      // Ground truth of what the model returned — covers the image path too,
+      // which doesn't go through extract-recipe.ts. Debug-only (opt-in via
+      // INGEST_LOG_LEVEL=debug) since the raw JSON can be large.
+      createIngestLogger("gemma").debug("raw-response", {
+        chars: rawText.length,
+        preview: rawText.length > 4000 ? `${rawText.slice(0, 4000)}…` : rawText,
+      });
     } catch (err) {
       if (err instanceof GemmaExtractionError) throw err;
       const message = err instanceof Error ? err.message : String(err);

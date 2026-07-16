@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";
 import {
@@ -11,17 +12,22 @@ import {
 } from "@/types/recipe";
 import { Prisma } from "@/generated/prisma";
 import { revalidatePath } from "next/cache";
-import {
-  analyzeRecipeNutrition,
-  type RecipeNutritionInput,
-} from "@/lib/edamam-service";
+import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
 import {
   assertCanCreateRecipe,
   assertCanImportRecipe,
+  assertCanUseAiChat,
+  getEntitlements,
 } from "@/lib/entitlements";
+import type { AgentContext } from "@/lib/chat/context";
+import { generateRecipeImage } from "@/lib/chat/tools/generateRecipeImage";
 import { serverAction } from "@/lib/server-action";
-import { formatIngredientsForNutrition } from "@/lib/ingredients";
+import {
+  formatIngredientsForNutrition,
+  ingredientsChanged,
+} from "@/lib/ingredients";
 import { getAuthorName } from "@/lib/author-name";
+import type { Profile } from "@/lib/fdc";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -40,6 +46,69 @@ async function getAuthenticatedUser() {
   }
 
   return user;
+}
+
+/**
+ * FDC nutrition orchestration for an already-persisted recipe row: analyze the
+ * given ingredient lines, write the full 22-nutrient per-serving profile back,
+ * and refresh the per-ingredient FDC matches (delete-then-insert).
+ *
+ * Shared by the create path (`persistRecipe`) and the edit path
+ * (`updateRecipe`). Best-effort by contract: it never throws and never rolls the
+ * recipe back — a nutrition failure must not fail the create/edit. Returns the
+ * written per-serving `Profile` on success (so callers can echo fresh numbers),
+ * or `null` when there was nothing to analyze or the analysis failed.
+ */
+async function reanalyzeRecipeNutrition(
+  recipeId: string,
+  ingredientLines: string[],
+  servings: number,
+  title: string
+): Promise<Profile | null> {
+  if (ingredientLines.length === 0) return null;
+
+  try {
+    const analysis = await analyzeRecipeProfileAction({
+      ingredients: ingredientLines,
+      servings,
+      title,
+    });
+
+    if (!analysis.success) {
+      console.warn(
+        `[Recipe] FDC analysis failed: ${analysis.error ?? "unknown"}`
+      );
+      return null;
+    }
+
+    await prisma.recipe.update({
+      where: { id: recipeId },
+      data: { ...analysis.perServing },
+    });
+
+    // Per-ingredient FDC matches. Delete-then-insert keeps re-saves idempotent.
+    await prisma.recipeIngredient.deleteMany({ where: { recipeId } });
+    if (analysis.items.length > 0) {
+      await prisma.recipeIngredient.createMany({
+        data: analysis.items.map((item) => ({
+          recipeId,
+          originalText: item.original,
+          nameNorm: item.nameNorm,
+          qty: item.qty,
+          unit: item.unit,
+          fdcId: item.fdcId,
+          gramWeight: item.gramsTotal,
+          confidence: item.confidence,
+        })),
+      });
+    }
+
+    console.info(`[Recipe] FDC-analyzed nutrition for recipe: ${recipeId}`);
+    return analysis.perServing;
+  } catch (nutritionError) {
+    console.error("[Recipe] Nutrition analysis failed:", nutritionError);
+    return null;
+  }
 }
 
 export interface PersistRecipeOptions {
@@ -63,7 +132,9 @@ export async function persistRecipe(
 ) {
   const source: RecipeSource = options.source ?? "manual";
   const isImport = isImportSource(source);
-  const shouldAnalyze = options.analyzeNutrition ?? isImport;
+  // FDC is now the single nutrition engine: every creation path computes the
+  // full profile by default. Callers can still opt out explicitly.
+  const shouldAnalyze = options.analyzeNutrition ?? true;
 
   return serverAction(
     {
@@ -110,51 +181,17 @@ export async function persistRecipe(
         },
       });
 
-      // Side-effect: nutrition orchestration. Kept body-side because a
-      // failure must not roll the recipe back.
+      // Side-effect: FDC nutrition orchestration. Best-effort by contract — a
+      // failure must not roll the recipe back (see reanalyzeRecipeNutrition).
+      // Persists the full 22-nutrient per-serving profile plus the
+      // per-ingredient FDC matches.
       if (shouldAnalyze) {
-        try {
-          const ingredientLines = formatIngredientsForNutrition(
-            recipe.ingredients
-          );
-
-          if (ingredientLines.length > 0) {
-            const nutritionInput: RecipeNutritionInput = {
-              title: recipe.title,
-              ingredients: ingredientLines,
-              servings: recipe.servings,
-              url: recipe.sourceUrl || undefined,
-              instructions: recipe.instructions,
-            };
-
-            const nutritionResult = await analyzeRecipeNutrition(
-              nutritionInput,
-              ctx.user.id,
-              { locale: options.locale }
-            );
-
-            if (!("error" in nutritionResult)) {
-              await prisma.recipe.update({
-                where: { id: recipe.id },
-                data: {
-                  calories: nutritionResult.macros.calories,
-                  protein: nutritionResult.macros.protein,
-                  carbs: nutritionResult.macros.netCarbs,
-                  fat: nutritionResult.macros.fat,
-                },
-              });
-              console.info(
-                `[Recipe] Auto-analyzed nutrition for recipe: ${recipe.id}`
-              );
-            } else {
-              console.warn(
-                `[Recipe] Failed to auto-analyze nutrition: ${nutritionResult.error}`
-              );
-            }
-          }
-        } catch (nutritionError) {
-          console.error("[Recipe] Nutrition analysis failed:", nutritionError);
-        }
+        await reanalyzeRecipeNutrition(
+          recipe.id,
+          formatIngredientsForNutrition(recipe.ingredients),
+          recipe.servings,
+          recipe.title
+        );
       }
 
       return recipe;
@@ -168,10 +205,11 @@ export async function updateRecipe(id: string, data: RecipeFormData) {
     const user = await getAuthenticatedUser();
     const validatedData = recipeFormSchema.parse(data);
 
-    // Check if user owns the recipe
+    // Check ownership and capture the prior ingredients so we can tell whether
+    // the nutrition profile is now stale.
     const existingRecipe = await prisma.recipe.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, ingredients: true },
     });
 
     if (!existingRecipe) {
@@ -201,14 +239,78 @@ export async function updateRecipe(id: string, data: RecipeFormData) {
       },
     });
 
+    // Re-run FDC analysis ONLY when the ingredient inputs changed. A no-change
+    // save (title tweak, manual macro edit, reorder) keeps the stored profile —
+    // overwriting it would silently wipe macros the user tuned by hand. Same
+    // best-effort contract as persistRecipe: a nutrition failure never fails the
+    // edit. The analyzer reads `validatedData` (what we just saved), not the
+    // update return, so it's independent of Prisma's echo shape.
+    let saved = recipe;
+    if (ingredientsChanged(existingRecipe.ingredients, validatedData.ingredients)) {
+      const reanalyzed = await reanalyzeRecipeNutrition(
+        recipe.id,
+        formatIngredientsForNutrition(validatedData.ingredients),
+        validatedData.servings,
+        validatedData.title
+      );
+      if (reanalyzed) saved = { ...recipe, ...reanalyzed };
+    }
+
     revalidatePath("/recipes");
     revalidatePath(`/recipes/${id}`);
-    return { data: recipe, error: null };
+    return { data: saved, error: null };
   } catch (error) {
     console.error("Update recipe error:", error);
     return {
       data: null,
       error: error instanceof Error ? error.message : "Failed to update recipe",
+    };
+  }
+}
+
+/**
+ * Persist a freshly-computed per-serving nutrition profile (the full
+ * 22-nutrient set — macros + micros) onto an existing recipe the user owns.
+ *
+ * Used by the chat `getNutrition` tool to backfill recipes that had no stored
+ * profile, so the recipe detail page (and the next lookup) shows the same
+ * numbers — including micronutrients — exactly as analyzed. This replaces the
+ * old "LLM copies the 5 macros back via editRecipe" dance, which dropped every
+ * micronutrient and risked transcription drift.
+ */
+export async function saveRecipeNutritionProfile(
+  recipeId: string,
+  profile: Profile
+) {
+  try {
+    const user = await getAuthenticatedUser();
+
+    const existing = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      select: { userId: true },
+    });
+
+    if (!existing) {
+      return { data: null, error: "Recipe not found" };
+    }
+    if (existing.userId !== user.id) {
+      return { data: null, error: "Unauthorized" };
+    }
+
+    const recipe = await prisma.recipe.update({
+      where: { id: recipeId },
+      data: { ...profile },
+    });
+
+    revalidatePath("/recipes");
+    revalidatePath(`/recipes/${recipeId}`);
+    return { data: { id: recipe.id }, error: null };
+  } catch (error) {
+    console.error("Save recipe nutrition profile error:", error);
+    return {
+      data: null,
+      error:
+        error instanceof Error ? error.message : "Failed to save nutrition",
     };
   }
 }
@@ -808,4 +910,50 @@ export async function createDefaultCategories() {
         error instanceof Error ? error.message : "Failed to create categories",
     };
   }
+}
+
+// Generate recipe image using AI
+export async function generateRecipeImageWithAI(recipeId: string) {
+  return serverAction(
+    {
+      input: z.string().min(1),
+      requires: async (_, ctx) => {
+        await assertCanUseAiChat(ctx.user);
+      },
+      revalidates: () => ["/recipes", `/recipes/${recipeId}`],
+    },
+    async (ctx, id) => {
+      const recipe = await prisma.recipe.findUnique({
+        where: { id: id },
+        select: { userId: true },
+      });
+
+      if (!recipe) {
+        throw new Error("Recipe not found");
+      }
+
+      if (recipe.userId !== ctx.user.id) {
+        throw new Error("Only the owner can update the recipe image");
+      }
+
+      const entitlements = getEntitlements(ctx.user);
+      const agentCtx: AgentContext = {
+        userId: ctx.user.id,
+        locale: "en",
+        entitlements,
+        conversationId: "server-action-direct",
+      };
+
+      const result = await generateRecipeImage.execute(
+        { recipeId: id, confirmed: true },
+        agentCtx
+      );
+
+      if (!result.ok) {
+        throw new Error(result.message || "Failed to generate image");
+      }
+
+      return result.data;
+    }
+  )(recipeId);
 }

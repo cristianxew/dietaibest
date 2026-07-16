@@ -1,6 +1,6 @@
 # DietAI - Project Architecture
 
-**Last Updated:** 2026-05-20
+**Last Updated:** 2026-06-24
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
@@ -28,14 +28,14 @@
 
 ### Project Goals
 - Automate meal planning with AI-powered weekly plans balanced to user macro goals
-- Provide professional-grade nutritional analysis via Edamam API (28-nutrient analysis)
+- Provide accurate nutritional analysis via USDA FoodData Central (22-nutrient per-serving profile)
 - Enable one-click grocery shopping via Browser-Use AI agents
 - Support multi-language users (English, Polish, Spanish)
 - Deliver mobile-first, accessible user experience
 
 ### Key Value Propositions
 1. **Smart Recipe Management**: Store recipes via manual entry, URL import, or AI-powered OCR
-2. **Professional Nutrition Analysis**: Accurate macro tracking powered by Edamam's API
+2. **Professional Nutrition Analysis**: Accurate macro tracking powered by USDA FoodData Central
 3. **AI Meal Plan Generation**: Automated weekly meal plans with macro balancing
 4. **One-Click Shopping**: AI agents fill grocery carts automatically
 5. **Family-Friendly**: Support for family members with different dietary needs
@@ -84,8 +84,7 @@
 - **@hookform/resolvers** - Bridge between RHF and Zod
 
 ### External API Clients
-- **Edamam API** - Recipe analysis and nutrition data
-- **USDA FoodData Central** - Ingredient matching
+- **USDA FoodData Central** - The nutrition engine: ingredient matching + nutrient data
 - **Browser-Use Cloud** - AI web automation for grocery shopping
 - **Supadata** - URL recipe extraction (video `/extract`, article `/web/scrape`)
 - **Google Gemini / Gemma** - photo/PDF recipe extraction (vision + native PDF)
@@ -175,10 +174,10 @@ dietaibest/
 │   ├── lib/                   # Utilities & external clients
 │   │   ├── prisma.ts          # Prisma client singleton
 │   │   ├── supabase.ts        # Supabase client
-│   │   ├── edamam.ts          # Edamam API client
-│   │   ├── edamam-service.ts  # Edamam business logic
 │   │   ├── browser-use.ts     # Browser-Use client (shopping automation)
-│   │   ├── fdc.ts             # FoodData Central client
+│   │   ├── fdc.ts             # FoodData Central client (pure)
+│   │   ├── fdcRepo.ts         # FDC cache-aware repository
+│   │   ├── recipe-analysis-repo.ts # LLM-primary analysis cache (ADR 0003/0004)
 │   │   └── utils.ts           # General utilities
 │   │
 │   ├── providers/             # React Context providers
@@ -217,7 +216,7 @@ dietaibest/
 **Capabilities:**
 - Create recipes manually with form validation
 - Import recipes from a URL or a photo/PDF — from the AI chat or the "Add Recipe" modal (URL → Supadata, image/PDF → Gemma)
-- Automatic nutritional analysis via Edamam API
+- Automatic nutritional analysis via USDA FoodData Central (full 22-nutrient profile)
 - Categorization and tagging
 - Favorites system
 - Search and filtering with pagination
@@ -262,6 +261,7 @@ dietaibest/
 - `planner.tsx` - Exports `PlanSwitcher`, `RecipeLibrary`, `MealCell`, `DayMacros`, and the 3 editor layouts (`GridLayout` / `StackLayout` / `SplitLayout`)
 - `ScheduleCalendar.tsx` - Month-grid calendar for scheduling templates on specific dates
 - `WeeklyMacroStrip.tsx` - Weekly macro summary strip
+- `MicronutrientPanel.tsx` - Collapsible micronutrient totals (`variant="aggregate"` daily-average panel + `variant="day"` per-day panel) with %DV bars (DIE-44)
 - `shared.tsx` - Shared primitives: `RecipeThumb`, `MacroBar`, `Chip`
 - `icons.tsx` - Lucide-react icon wrapper
 - `MealPlanForm.tsx` - Create/edit meal plan dialog (unchanged)
@@ -269,7 +269,8 @@ dietaibest/
 **Shared Libraries:**
 - `src/lib/meal-plan-adapter.ts` - `toTemplateDisplay()`: converts a Prisma `MealPlanTemplate` payload to the `MealPlanTemplateDisplay` display type
 - `src/lib/meal-slot-meta.ts` - `MEAL_SLOT_META`: per-`MealType` icon / color / i18n-key metadata map (7 entries)
-- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()` (unchanged)
+- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()`; plus `calculateMealMicros()` / `sumMicros()` / `emptyMicros()` for daily micronutrient aggregation (DIE-44)
+- `src/lib/nutrition-rda.ts` - `getReferenceIntakes(profile?)` (DRI RDA by age+sex, FDA Daily Value fallback) + `percentOfReference()` for the micronutrient %DV display (DIE-44)
 
 **Server Actions (`src/actions/meal-plan.ts` — unchanged from pre-migration):**
 - `createMealPlan()` - Create new plan
@@ -287,32 +288,87 @@ dietaibest/
 - Daily totals: `sumMacros()`
 - Weekly averages: Calculated in `getMealPlan()`
 
+**Micronutrient totals (DIE-44):** `toTemplateDisplay()` also aggregates the 17
+micronutrients per meal (`calculateMealMicros`), per day (`sumMicros`), and as a
+template `averageMicros` — no DB/Prisma change (the adapter already loads the full
+recipe). The planner shows them via `MicronutrientPanel` with a **%DV** figure
+resolved by `getReferenceIntakes()` (personalized by `UserProfile` age+sex, FDA
+Daily Value fallback). Design recorded in `docs/adr/0002-meal-plan-micronutrient-totals-ui.md`.
+
 **Styling & i18n:**
 - All styling uses Tailwind/shadcn tokens — no custom CSS-variable system
 - Full `next-intl` i18n across `en` / `es` / `pl` under the existing `mealPlans.*` namespace
 
 ### 3. Nutritional Analysis
-**Location:** `src/lib/edamam-service.ts`, `src/components/nutrition/`
 
-**Capabilities:**
-- 28-nutrient analysis via Edamam API
-- ETag-based caching for cost control
-- Ingredient synonym translation (en/es/pl)
-- Diet label detection (vegan, vegetarian, keto, etc.)
-- Health label detection (gluten-free, dairy-free, etc.)
-- Allergen warnings
-- User-specific macro caching (Edamam policy compliance)
+**USDA FoodData Central (FDC) is the single nutrition engine for recipe
+creation** (DIE-42). Every creation path — manual form, URL/image import, and
+the chat `createRecipe` tool — computes the full **22-nutrient profile** (5
+macros + 17 micronutrients) per serving and persists all fields on the Recipe
+row. No Edamam call is made on the creation path.
 
-**Key Functions:**
-- `analyzeRecipeNutrition()` - Full nutrition analysis
-- `getCachedRecipeNutrition()` - Retrieve cached data
-- `saveUserMacroCache()` - Store user-specific macros
-- `getRecipeNutritionSummary()` - Aggregate multiple recipes
+**Editing** re-runs the same analysis, but **only when the ingredient lines
+changed** (`updateRecipe` → `ingredientsChanged` → the shared
+`reanalyzeRecipeNutrition`). A title/macro/order-only edit keeps the stored
+profile so manual macro overrides survive. See the "Stale data" note in
+[Nutrition Unit Handling](./nutrition_units.md).
 
-**Caching Strategy:**
-1. **Recipe-level cache:** `EdamamRecipeCache` table stores full API responses with ETag
-2. **User-level cache:** `EdamamUserMacroCache` stores only 4 macros (calories, protein, fat, net carbs) per Edamam policy
-3. **Cache invalidation:** 304 Not Modified responses reuse cached data
+**Location (creation path):** `src/lib/fdc.ts` (extraction/scaling/aggregation
+helpers + nutrient-number map + `resolveGramWeightFromPortions`),
+`src/lib/gram-resolution.ts` (the pure ingredient→grams `resolveGramWeight`
+ladder), `src/lib/fdcRepo.ts` (FdcCache food-detail TTL + legacy core-only
+refresh + `searchFoodsCached` ingredient-search cache),
+`src/actions/analyzeRecipe.ts` (`analyzeRecipeProfileAction` + shared
+`resolveIngredientMatches`), `src/actions/recipe.ts` `persistRecipe()` (writes
+the 22 fields + `RecipeIngredient` rows), `src/actions/nutrition.ts`
+`analyzeRecipeProfileForFormAction` (form preview button).
+
+**Pipeline:** parse ingredient line → `searchFoodsCached` → `chooseBestMatch`
+(`DATATYPE_PRIORITY`) → `getFoodsCached` → `resolveGramWeight` (6-tier ladder in
+`gram-resolution.ts`) → `extractProfileFromFood` (per 100g, unit-guarded) →
+`scaleProfilePer100g` → `addProfile` across ingredients → `divideProfile` by
+servings.
+
+**Search caching (DIE-46):** both USDA round-trips are now DB-cached. The
+food-*detail* fetch was already cached (`getFoodsCached` → `FdcCache`); the
+ingredient *search* step is cached by `searchFoodsCached` (`fdcRepo.ts`) into the
+`FdcSearchCache` table, keyed by the normalized query (lowercased,
+whitespace-collapsed). TTL is **90 days** — the same value `FdcCache`'s `isStale`
+falls back to for entries without a known dataType, since a search result spans
+multiple dataTypes. On a USDA error with a stale row present it serves stale
+(rate-limit resilience); with nothing cached it rethrows so callers' existing
+handling applies. Both callers use it — `resolveIngredientMatches`
+(`analyzeRecipe.ts`) and the `/api/fdc/search` autocomplete route. `fdcSearch`
+stays pure (network only). Covered by `tests/unit/fdc-search-cache.test.ts`.
+
+**Gram-resolution accuracy (DIE-45):** the ingredient→grams step is the FDC
+engine's weak point, so it is resolved by a confidence-scored ladder
+(`gram-resolution.ts`), most-accurate first: direct grams (1.0) → USDA food
+portions (0.9) → branded serving (0.85) → density table exact/whole-word
+(0.7/0.6) → generic water-density conversion (0.5) → assume grams (0.3). Two
+accuracy fixes: `resolveGramWeightFromPortions` now matches USDA's structured
+`measureUnit` (with plural/synonym normalization via `normalizeUnit`) and
+divides `gramWeight` by the portion `amount` (a "2 tbsp = 30g" portion yields
+15g/tbsp, not 30); and `DENSITY_FALLBACK_G_PER_UNIT` (`ingredients.ts`) was
+expanded to ~85 common ingredients so volume/count units rarely fall through to
+the coarse water-density fallback. The per-ingredient `confidence` is persisted
+on `RecipeIngredient.confidence` (internal/debug — no user-facing flagging by
+product decision). Covered by `tests/unit/gram-resolution.test.ts` and
+`tests/unit/fdc-portions.test.ts`.
+
+**Nutrient mapping:** `PROFILE_NUTRIENT_MAP` in `fdc.ts` (canonical USDA numbers;
+µg/mg-native, never IU). `carbs` stores FDC total carbs (nutrient 205); fiber is
+stored separately.
+
+**Edamam — fully retired (Phase E, [ADR 0003](../../docs/adr/0003-llm-primary-nutrition-canonicalization.md)).**
+The `src/lib/edamam*.ts` clients, the `/api/nutrition/analyze` route, the
+`EdamamRecipeCache` / `EdamamUserMacroCache` tables, and the
+`edamamAnalysesPerMonth` entitlement have all been deleted. Nutrition analysis is
+now USDA FDC only — free and ungated. `nutrition.ts` retains a single FDC action,
+`analyzeRecipeProfileForFormAction` (the recipe-form preview button). The
+LLM-assisted RAG layer ([ADR 0004](../../docs/adr/0004-llm-assisted-food-resolution.md))
+caches its results in `IngredientNameCache` / `IngredientEstimateCache` /
+`RecipeAnalysisCache` — see [Nutrition Unit Handling](./nutrition_units.md).
 
 ### 4. User Onboarding
 **Location:** `src/components/onboarding/`, `src/actions/onboarding.ts`
@@ -353,7 +409,7 @@ See [Recipe Import System](./recipe_import_system.md).
 **Chat import flow:**
 1. User pastes a URL or uploads a photo in the chat
 2. The model calls `importRecipeFromUrl` / `importRecipeFromImage`
-3. The tool extracts structured recipe data, runs Edamam nutrition analysis, and `persistRecipe`s it
+3. The tool extracts structured recipe data, runs FDC nutrition analysis (full 22-nutrient profile), and `persistRecipe`s it
 4. The chat returns a link to the saved recipe
 
 ### 6. Shopping List Generation (Planned)
@@ -369,44 +425,25 @@ See [Recipe Import System](./recipe_import_system.md).
 
 ## External Integrations
 
-### 1. Edamam API
-**Purpose:** Recipe nutritional analysis and meal planning
-
-**API Endpoints Used:**
-- `/api/nutrition-data` - Recipe analysis with 28 nutrients
-- `/api/meal-planner` - AI-generated meal plans (future)
-
-**Authentication:** App ID + App Key (environment variables)
-
-**Features:**
-- Full nutritional breakdown (28 nutrients)
-- Diet and health label detection
-- Allergen warnings
-- ETag-based caching for cost optimization
-
-**Cost Control:**
-- ETags: Store `etag` header, send `If-None-Match` on subsequent requests
-- 304 Not Modified: Reuse cached data without counting against quota
-- User macro cache: Only store 4 macros persistently per Edamam policy
-
-**Implementation:** `src/lib/edamam.ts`, `src/lib/edamam-service.ts`
-
-### 2. USDA FoodData Central API
-**Purpose:** Ingredient matching and nutritional data
+### 1. USDA FoodData Central API
+**Purpose:** The nutrition engine — ingredient matching and nutritional data
+(FDC-only since Phase E; see [ADR 0003](../../docs/adr/0003-llm-primary-nutrition-canonicalization.md)).
 
 **API Endpoints Used:**
 - `/fdc/v1/foods/search` - Search for foods by name
+- `/fdc/v1/foods` - Fetch full nutrient detail for matched foods
 
 **Authentication:** API Key (environment variable)
 
 **Features:**
-- Ingredient name matching
-- Portion size information
-- Nutritional data for individual ingredients
+- Ingredient name matching → full per-100g nutrient profile (22 nutrients)
+- Portion size information for gram resolution
+- Public-domain data, so the full profile is cacheable (`FdcCache`, `FdcSearchCache`,
+  `RecipeAnalysisCache`) — unlike the retired Edamam
 
-**Implementation:** `src/lib/fdc.ts`, `src/lib/fdcRepo.ts`
+**Implementation:** `src/lib/fdc.ts` (pure client), `src/lib/fdcRepo.ts` (cache-aware repo)
 
-### 3. Browser-Use Cloud API
+### 2. Browser-Use Cloud API
 **Purpose:** AI-powered web automation for **grocery shopping** (cart filling at
 supported Polish stores). Recipe URL extraction via Browser-Use was
 discontinued 2026-06-14.
@@ -429,7 +466,7 @@ discontinued 2026-06-14.
 **Implementation:** `src/lib/browser-use.ts`, `src/actions/shopping-automation.ts`,
 `src/app/api/shopping/automate/*`
 
-### 4. Google Gemini (Gemma) — multimodal recipe import
+### 3. Google Gemini (Gemma) — multimodal recipe import
 **Purpose:** Extract structured recipe data from an uploaded photo (the chat's
 `importRecipeFromImage` tool). Replaced the previous Google Document AI OCR path.
 
@@ -444,7 +481,7 @@ discontinued 2026-06-14.
 
 **Implementation:** `src/lib/chat/llm-gemma.ts`, `src/lib/chat/tools/importRecipeFromImage.ts`
 
-### 5. Supabase
+### 4. Supabase
 **Purpose:** PostgreSQL database and authentication backend
 
 **Services Used:**
@@ -504,13 +541,9 @@ React Hook Form + Zod Validation
   ↓
 Server Action: createRecipe()
   ↓
-Prisma: Insert recipe
+analyzeRecipeProfileAction() — USDA FDC (cached search + detail)
   ↓
-Optional: analyzeRecipeNutrition()
-  ↓
-Edamam API (with caching)
-  ↓
-Update recipe with nutrition data
+Prisma: Insert recipe + RecipeIngredient rows (22-nutrient profile)
   ↓
 Revalidate /recipes path
   ↓
@@ -543,7 +576,7 @@ Model calls importRecipeFromUrl (Supadata) or importRecipeFromImage (Gemma)
   ↓
 Tool extracts structured recipe data
   ↓
-Edamam nutrition analysis
+USDA FDC nutrition analysis (22-nutrient profile)
   ↓
 persistRecipe() saves the recipe
   ↓
@@ -584,19 +617,18 @@ export async function createRecipe(data: RecipeFormData) {
 See pattern 8 below for the full Server Action Runtime that wraps every gated action.
 
 ### 2. Repository Pattern for External APIs
-**Each external API has a dedicated client class**
+**Each external API has a pure client + a cache-aware repository**
 
 **Example:**
 ```typescript
-// src/lib/edamam.ts
-export class EdamamClient {
-  async analyzeRecipe(recipe: EdamamRecipeInput): Promise<EdamamAnalyzedRecipe> {
-    // API logic here
-  }
+// src/lib/fdc.ts — pure USDA FoodData Central client (network only)
+export async function fdcSearch(query: string): Promise<FdcSearchFood[]> {
+  // USDA /foods/search call
 }
 
-export function getEdamamClient(): EdamamClient {
-  // Singleton pattern
+// src/lib/fdcRepo.ts — cache-aware repository over the client
+export async function searchFoodsCached(query: string): Promise<FdcSearchFood[]> {
+  // serve from FdcSearchCache, else call fdcSearch and persist
 }
 ```
 
@@ -605,16 +637,14 @@ export function getEdamamClient(): EdamamClient {
 
 **Example:**
 ```typescript
-// src/lib/edamam-service.ts
-export async function analyzeRecipeNutrition(
-  recipe: RecipeNutritionInput,
-  userId: string
-): Promise<NutritionAnalysisResult> {
-  // 1. Check cache
-  // 2. Process ingredients
-  // 3. Call Edamam API
-  // 4. Store in cache
-  // 5. Return formatted result
+// src/actions/analyzeRecipe.ts
+export async function analyzeRecipeProfileAction(
+  input: AnalyzeRecipeInput
+): Promise<RecipeProfileResult> {
+  // 1. Parse ingredient lines
+  // 2. resolveIngredientMatches() — cached USDA search + detail
+  // 3. resolveGramWeight() ladder → per-100g profile → scale → aggregate
+  // 4. Divide by servings → 22-nutrient per-serving profile
 }
 ```
 
@@ -672,8 +702,8 @@ export async function createRecipe(data: RecipeFormData) {
 ### 7. Caching Strategy
 **Multi-level caching for API optimization**
 
-1. **ETag Caching:** Recipe-level full nutrition data
-2. **User Macro Cache:** User-specific 4-macro storage (Edamam policy)
+1. **FDC caches:** `FdcCache` (food detail) + `FdcSearchCache` (search step), 90-day TTL, avoid repeat USDA round-trips
+2. **LLM/analysis caches:** `IngredientNameCache`, `IngredientEstimateCache`, `RecipeAnalysisCache` reuse canonicalization + estimates + the full per-serving analysis (ADR 0003/0004)
 3. **Next.js Caching:** Page-level caching with revalidation
 
 ### 8. Server Action Runtime (Pattern + Module)
@@ -714,7 +744,7 @@ serverAction(
 
 **Pending migration (non-gated, lower priority):** `dashboard.ts`, `profile.ts`, `subscription.ts`, `onboarding.ts`, `shopping-list.ts`, `analyzeRecipe.ts`, plus the read/update functions in already-migrated files (`getRecipes`, `updateRecipe`, etc.). Migrate as touched.
 
-**Known divergence:** `nutrition.ts` actions use `{ success, data?, error?, code?, retryable? }` shape instead of the standard `{ data, error }` tuple. Migration would require updating consumer hooks (`use-recipe-modal.ts`, `use-recipe-nutrition.ts`). `analyzeAndUpdateRecipe` is currently NOT gated and bypasses `assertCanUseEdamamAnalysis` despite calling Edamam — should be addressed in a follow-up.
+**Known divergence:** `nutrition.ts`'s remaining action (`analyzeRecipeProfileForFormAction`) uses the `{ success, data?, error?, code?, retryable? }` shape instead of the standard `{ data, error }` tuple. Migration would require updating consumer hooks (`use-recipe-modal.ts`, `use-recipe-nutrition.ts`). The old Edamam-gated `analyzeAndUpdateRecipe` and `assertCanUseEdamamAnalysis` were removed in Phase E — nutrition analysis is now free and ungated.
 
 ---
 
@@ -727,9 +757,9 @@ serverAction(
 - Prisma query optimization
 
 ### API Cost Control
-- ETag-based caching (Edamam)
+- DB-backed FDC caches (`FdcCache` / `FdcSearchCache`) cut USDA round-trips
+- LLM result caches (`IngredientNameCache` / `IngredientEstimateCache` / `RecipeAnalysisCache`)
 - Request deduplication
-- Background processing for non-critical analysis
 - Rate limiting on import endpoints
 
 ### Frontend Performance
@@ -779,7 +809,7 @@ serverAction(
 
 ### Planned Features
 1. **Shopping List Automation:** Browser-Use AI for cart filling
-2. **Meal Plan AI Generation:** Edamam Meal Planner API integration
+2. **Meal Plan AI Generation:** automated weekly plans via the in-app chat agent
 3. **Real-time Collaboration:** Supabase real-time subscriptions
 4. **Mobile App:** React Native with shared business logic
 5. **Payment System:** Stripe integration for premium features

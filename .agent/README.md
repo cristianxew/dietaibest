@@ -2,7 +2,7 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2026-06-03
+Last Updated: 2026-06-24
 
 ---
 
@@ -35,12 +35,11 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Core features detailed explanation:
   - Recipe management (create, import, analyze)
   - Meal planning system (drag-and-drop, macro tracking)
-  - Nutritional analysis (Edamam API integration)
+  - Nutritional analysis (USDA FoodData Central — FDC-only)
   - User onboarding flow
   - Recipe import system (URL + photo/PDF via Supadata + Gemma)
 - External integrations:
-  - Edamam API (nutrition analysis)
-  - USDA FoodData Central (ingredient matching)
+  - USDA FoodData Central (the nutrition engine — ingredient matching + nutrient data)
   - Supadata (URL recipe extraction)
   - Google Gemini / Gemma (photo/PDF recipe extraction)
   - Browser-Use Cloud (AI web automation — shopping only)
@@ -70,6 +69,26 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Working on recipe import features
 - Debugging extraction issues in the chat
 - Understanding the Supadata / Gemma import pipeline
+
+---
+
+#### [Nutrition Unit Handling (FDC pipeline)](./System/nutrition_units.md)
+**Purpose:** How ingredient lines become grams and then a nutrition profile via USDA FDC — the source of truth for ingredient **units**
+
+**Contains:**
+- The `unit-registry.ts` single source of truth (canonical units, en/es/pl aliases, kind, base conversion, dropdown list)
+- Parser behavior: attached units (`200ml`), multi-word units (`fl oz`)
+- The gram-resolution ladder (7 strategies incl. count-unit defaults) and that confidence is **internal-only**
+- FDC-only calculation (Edamam off the hot path)
+- The recipe-form `UnitCombobox` and the no-confidence `/nutrition` results UI
+- The reliability harness (Capa 0): golden-recipe eval in `tests/eval/nutrition/`, deterministic + in CI, with an opt-in live recorder
+- Rules for adding new units / where ingredient density lives
+
+**When to read:**
+- Touching ingredient units, parsing, gram resolution, or the unit dropdown
+- Adding a new unit or locale spelling
+- Working on nutrition analysis or the shopping-list quantity transform
+- Adding a golden recipe or changing nutrition-calc behavior (run/extend the harness)
 
 ---
 
@@ -152,9 +171,11 @@ Best practices, workflows, and step-by-step guides for common development tasks.
   - UserFavorite
 - Nutrition & caching models:
   - RecipeIngredient
-  - FdcCache (USDA cache)
-  - EdamamRecipeCache (ETag-based)
-  - EdamamUserMacroCache (policy-compliant)
+  - FdcCache (USDA food-detail cache)
+  - FdcSearchCache (USDA search-step cache)
+  - IngredientNameCache (LLM canonical-name cache)
+  - IngredientEstimateCache (LLM per-100g estimates for foods USDA lacks)
+  - RecipeAnalysisCache (cached LLM-primary 22-nutrient analysis)
 - Meal planning system:
   - MealPlan
   - MealPlanDay
@@ -211,6 +232,36 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Nutrition engine: LLM-primary canonicalization](./Tasks/ingredient-llm-canonicalizer.md)
+**Purpose:** Redesign making LLM canonicalization (Gemini 2.5 Flash) the **primary** normalizer, owning the engine on USDA FDC, retiring Edamam and the `SYNONYMS` table, with an honest per-ingredient output contract. Supersedes the prior fallback design — see [ADR 0003](../docs/adr/0003-llm-primary-nutrition-canonicalization.md).
+
+**Contains:**
+- Why: the synonym table over-collapses multi-word names and pre-empts the fallback; the total silently zeroes no-matches; Edamam's licence forbids caching micronutrients (USDA FDC is public-domain → cacheable)
+- Single-pass pipeline + two cached LLM stages (name-scoped Stage 1; recipe-fingerprint Stage 2 for cooked-weight + diet/health labels)
+- Honest output contract (`status`/`source`/coverage), coverage chain (FDC → LLM-estimate → honest gap), and the 5 open implementation decisions
+
+**When to read:**
+- Implementing the LLM-primary nutrition pipeline or retiring Edamam
+- Touching `resolveIngredientMatches`, `IngredientNameCache`, `SYNONYMS`, or the canonicalizer
+
+---
+
+#### [Nutrition Learning Hub](./Tasks/nutrition_learning_hub.md)
+**Purpose:** Architecture and gotchas for the `/nutrition` Learning Hub (compare, vs-day, encyclopedia, swaps)
+
+**Contains:**
+- Route map and module breakdown
+- Pure-logic layer (`src/lib/nutrients/`) and data-flow (USDA-only, extended FdcCache profiles)
+- Insight engine and personalized RDA design
+- Gotchas: message-catalog caching, prisma migrate drift, fdcId verification
+
+**When to read:**
+- Adding nutrients, swaps, or encyclopedia entries
+- Touching the FDC cache or nutrition comparison logic
+- Working on hub UI modules
+
+---
+
 **Future documents:**
 - `meal_planning_feature.md` - Meal planning system PRD
 - `recipe_import_feature.md` - Recipe import system PRD
@@ -254,6 +305,20 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Before adding a new gated server action
 - When migrating an old action to the runtime
 - When debugging an entitlement payload not opening the paywall
+
+---
+
+#### [Nutrition LLM rollout (Phase G)](./SOP/nutrition-llm-rollout.md)
+**Purpose:** Turning on the LLM-primary + RAG nutrition engine in production — the live switch for the work built behind `INGREDIENT_LLM_FALLBACK` ([ADR 0003](../docs/adr/0003-llm-primary-nutrition-canonicalization.md) / [ADR 0004](../docs/adr/0004-llm-assisted-food-resolution.md))
+
+**Contains:**
+- Pre-flight: prod Prisma migrations, **Vertex auth on the Dokploy VPS via inline `GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON`** (not a file mount), and an auth probe before flipping
+- The flag flip + prod smoke test, and `IngredientNameCache` backfill/warming
+- Monitoring + the one-line rollback (`INGREDIENT_LLM_FALLBACK` → not `1`, redeploy)
+
+**When to read:**
+- Enabling the LLM nutrition engine in production
+- Debugging Vertex auth / `UNRECOGNIZED` spikes after the flip
 
 ---
 
@@ -311,9 +376,8 @@ bun dev
 - Nutrition analysis � [Project Architecture - Nutritional Analysis](./System/project_architecture.md#3-nutritional-analysis)
 
 **External APIs**
-- Edamam integration � [Project Architecture - External Integrations](./System/project_architecture.md#1-edamam-api)
-- Browser-Use � [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#3-browser-use-cloud-api)
-- USDA FoodData Central � [Project Architecture - USDA FoodData Central](./System/project_architecture.md#2-usda-fooddata-central-api)
+- USDA FoodData Central (nutrition engine) � [Project Architecture - USDA FoodData Central](./System/project_architecture.md#1-usda-fooddata-central-api)
+- Browser-Use � [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#2-browser-use-cloud-api)
 
 **Database Questions**
 - Table structure � [Database Schema - Core Entities](./System/database_schema.md#core-entities)
@@ -417,7 +481,7 @@ If you can't find information in this documentation:
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 - [ShadCN UI Components](https://ui.shadcn.com/)
-- [Edamam API Documentation](https://developer.edamam.com/)
+- [USDA FoodData Central API](https://fdc.nal.usda.gov/api-guide.html)
 - [next-intl Documentation](https://next-intl-docs.vercel.app/)
 
 ### Project Files:
@@ -428,6 +492,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2025-11-09
+**Last Updated:** 2026-06-24
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes

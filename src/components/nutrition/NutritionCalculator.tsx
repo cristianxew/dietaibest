@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,8 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Calculator, Info, Plus, Trash2, List } from "lucide-react";
 import { toast } from "sonner";
 import {
-  analyzeRecipeAction,
-  type AnalyzeResult,
+  analyzeRecipeProfileAction,
+  type AnalyzeProfileResult,
 } from "@/actions/analyzeRecipe";
 import { NutritionResults } from "./NutritionResults";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -37,6 +38,7 @@ interface StructuredIngredient {
 }
 
 export function NutritionCalculator() {
+  const t = useTranslations("nutrition.calculator");
   const [inputMode, setInputMode] = useState<"text" | "structured">(
     "structured"
   );
@@ -46,7 +48,7 @@ export function NutritionCalculator() {
   >([{ id: "1", amount: "", unit: "", name: "" }]);
   const [servings, setServings] = useState(2);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [results, setResults] = useState<AnalyzeResult | null>(null);
+  const [results, setResults] = useState<AnalyzeProfileResult | null>(null);
 
   const addIngredient = () => {
     const newId = (structuredIngredients.length + 1).toString();
@@ -81,7 +83,7 @@ export function NutritionCalculator() {
     // Get ingredients based on input mode
     if (inputMode === "text") {
       if (!ingredientsText.trim()) {
-        toast.error("Please enter at least one ingredient");
+        toast.error(t("errors.enterIngredient"));
         return;
       }
       ingredientLines = ingredientsText
@@ -95,7 +97,7 @@ export function NutritionCalculator() {
       );
 
       if (validIngredients.length === 0) {
-        toast.error("Please add at least one ingredient");
+        toast.error(t("errors.addIngredient"));
         return;
       }
 
@@ -109,7 +111,7 @@ export function NutritionCalculator() {
     }
 
     if (servings <= 0) {
-      toast.error("Servings must be a positive number");
+      toast.error(t("errors.servingsPositive"));
       return;
     }
 
@@ -117,22 +119,20 @@ export function NutritionCalculator() {
     setResults(null);
 
     try {
-      const result = await analyzeRecipeAction({
+      const result = await analyzeRecipeProfileAction({
         ingredients: ingredientLines,
         servings,
       });
 
       if (result.success) {
         setResults(result);
-        toast.success(
-          `Analysis complete! Processed ${result.items.length} ingredients.`
-        );
+        toast.success(t("success.analysisComplete", { count: result.items.length }));
       } else {
-        toast.error(result.error || "Analysis failed");
+        toast.error(result.error || t("errors.analysisFailed"));
       }
     } catch (error) {
       console.error("Analysis error:", error);
-      toast.error("An unexpected error occurred during analysis");
+      toast.error(t("errors.unexpected"));
     } finally {
       setIsAnalyzing(false);
     }
@@ -141,14 +141,14 @@ export function NutritionCalculator() {
   const handleLoadExample = () => {
     setIngredientsText(EXAMPLE_RECIPE);
     setServings(2);
-    toast.info("Example recipe loaded");
+    toast.info(t("exampleLoaded"));
   };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Recipe Ingredients</CardTitle>
+          <CardTitle>{t("cardTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs
@@ -160,21 +160,18 @@ export function NutritionCalculator() {
             <TabsList className="mb-4">
               <TabsTrigger value="structured">
                 <List className="mr-2 h-4 w-4" />
-                Structured Input
+                {t("structuredTab")}
               </TabsTrigger>
               <TabsTrigger value="text">
                 <Info className="mr-2 h-4 w-4" />
-                Text Input
+                {t("textTab")}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="structured" className="space-y-4 mt-4">
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Add ingredients with autocomplete from USDA FoodData Central
-                  database.
-                </AlertDescription>
+                <AlertDescription>{t("structuredHint")}</AlertDescription>
               </Alert>
 
               <div className="space-y-3">
@@ -207,7 +204,7 @@ export function NutritionCalculator() {
                       onChange={(value) =>
                         updateIngredient(ingredient.id, "name", value)
                       }
-                      placeholder="Search ingredient..."
+                      placeholder={t("searchPlaceholder")}
                       className="flex-1"
                     />
                     <Button
@@ -228,7 +225,7 @@ export function NutritionCalculator() {
                   className="w-full"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Ingredient
+                  {t("addIngredient")}
                 </Button>
               </div>
             </TabsContent>
@@ -236,23 +233,19 @@ export function NutritionCalculator() {
             <TabsContent value="text" className="space-y-4 mt-4">
               <Alert>
                 <Info className="h-4 w-4" />
-                <AlertDescription>
-                  Enter one ingredient per line with quantity and unit (e.g.,
-                  &quot;1 cup rice&quot;, &quot;150 g chicken&quot;, &quot;2
-                  tbsp olive oil&quot;).
-                </AlertDescription>
+                <AlertDescription>{t("textHint")}</AlertDescription>
               </Alert>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="ingredients">Ingredients</Label>
+                  <Label htmlFor="ingredients">{t("ingredientsLabel")}</Label>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleLoadExample}
                   >
-                    Load Example
+                    {t("loadExample")}
                   </Button>
                 </div>
                 <Textarea
@@ -268,7 +261,7 @@ export function NutritionCalculator() {
           </Tabs>
 
           <div className="space-y-2">
-            <Label htmlFor="servings">Number of Servings</Label>
+            <Label htmlFor="servings">{t("servingsLabel")}</Label>
             <Input
               id="servings"
               type="number"
@@ -288,12 +281,12 @@ export function NutritionCalculator() {
             {isAnalyzing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Analyzing...
+                {t("analyzing")}
               </>
             ) : (
               <>
                 <Calculator className="mr-2 h-4 w-4" />
-                Calculate Nutrition
+                {t("calculate")}
               </>
             )}
           </Button>

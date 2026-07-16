@@ -29,7 +29,6 @@ model User {
   profile             UserProfile?
   recipes             Recipe[]
   favorites           UserFavorite[]
-  edamamMacroCache    EdamamUserMacroCache[] // Cached macros per Edamam policy
   mealPlanTemplates   MealPlanTemplate[] // User's meal plan templates
   mealPlanSchedules   MealPlanSchedule[] // User's scheduled meal plans
   shoppingPreferences ShoppingPreferences? // User's shopping automation preferences
@@ -129,7 +128,6 @@ model Recipe {
   categories        RecipeCategory[]
   favoritedBy       UserFavorite[]
   recipeIngredients RecipeIngredient[] // Parsed ingredients with USDA FDC matches
-  edamamMacroCache  EdamamUserMacroCache[] // Per-user cached macros from Edamam
   mealPlanMeals     MealPlanMeal[] // Usage in meal plans
   multimodalImports MultimodalImportEvent[] // DIE-41 image-based imports that produced this recipe
 
@@ -168,17 +166,72 @@ model UserFavorite {
 // ============================================================================
 
 model FdcCache {
-  fdcId          Int      @id
-  description    String
-  dataType       String
-  brandOwner     String?  @db.VarChar(255)
-  foodPortions   Json? // from FDC foodPortions array
-  foodNutrients  Json? // from FDC foodNutrients (abridged or full)
-  labelNutrients Json? // Branded foods per serving info if present
-  lastFetchedAt  DateTime @default(now())
+  fdcId           Int      @id
+  description     String
+  dataType        String
+  brandOwner      String?  @db.VarChar(255)
+  foodPortions    Json? // from FDC foodPortions array
+  foodNutrients   Json? // from FDC foodNutrients (abridged or full)
+  labelNutrients  Json? // Branded foods per serving info if present
+  // Which nutrient set this cached row holds: "core" (5 macros, legacy) or
+  // "extended" (full registry). Migration 20260610000000; the column exists on
+  // the shared DB (kept in schema to stay consistent with migrations↔DB).
+  nutrientProfile String   @default("core")
+  lastFetchedAt   DateTime @default(now())
 
   @@index([dataType])
   @@index([description])
+}
+
+// Caches the USDA FDC ingredient *search* step (food detail is cached above in
+// FdcCache). Keyed by the normalized query so repeated analyses of recipes that
+// share ingredients reuse cached results instead of re-hitting USDA search.
+model FdcSearchCache {
+  query         String   @id // normalized query (lowercased, whitespace-collapsed)
+  results       Json // cached FdcSearchFood[] from the USDA search endpoint
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+
+model IngredientNameCache {
+  key           String   @id // normalized raw name (lowercased, whitespace-collapsed)
+  canonical     String? // English canonical name, or null = not a food
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+
+// LLM per-100g macro estimates for foods USDA does not carry (ADR 0003 coverage
+// chain). Keyed by the normalized CANONICAL name, so one estimate serves every
+// raw spelling that canonicalizes to it. Only successful (non-null) estimates
+// are cached; a transient/declined estimate is left to retry.
+model IngredientEstimateCache {
+  name          String   @id // normalized canonical English name
+  kcal          Float
+  protein       Float
+  fat           Float
+  carbs         Float
+  fiber         Float
+  lastFetchedAt DateTime @default(now())
+
+  @@index([lastFetchedAt])
+}
+
+// Cached LLM-primary recipe analysis (ADR 0003, Stage 2 + the cacheable USDA
+// asset). Keyed by the recipe fingerprint (title + ingredient lines). USDA
+// FoodData Central is public domain, so — unlike Edamam — we may persist the
+// full 22-nutrient per-serving Profile. Only successful analyses are cached;
+// gated end-to-end by INGREDIENT_LLM_FALLBACK at the repo layer.
+model RecipeAnalysisCache {
+  fingerprint    String   @id // generateRecipeFingerprint(title + ingredients)
+  servings       Int
+  profileJson    Json // cached 22-nutrient per-serving Profile
+  stage2Json     Json // per-ingredient cookedState/retention + diet/health labels
+  coverageJson   Json // CoverageSummary at analysis time
+  lastAnalyzedAt DateTime @default(now())
+
+  @@index([lastAnalyzedAt])
 }
 
 model RecipeIngredient {
@@ -197,46 +250,6 @@ model RecipeIngredient {
 
   @@index([recipeId])
   @@index([nameNorm])
-}
-
-// ============================================================================
-// Edamam Nutrition Analysis Integration Models
-// ============================================================================
-
-model EdamamRecipeCache {
-  id            String   @id @default(uuid())
-  fingerprint   String   @unique // Deterministic hash of recipe content (title + ingredients)
-  etag          String // ETag from Edamam API for cost control
-  recipeData    Json // Original recipe data sent to Edamam
-  fullResponse  Json // Complete Edamam API response (all nutrients, labels, etc.)
-  lastAnalyzed  DateTime @default(now())
-  analysisCount Int      @default(1) // Track how many times this recipe was analyzed
-
-  @@index([fingerprint])
-  @@index([lastAnalyzed])
-}
-
-model EdamamUserMacroCache {
-  id       String @id @default(uuid())
-  userId   String
-  recipeId String // Link to recipe for context
-
-  // Only 4 macros allowed for persistent storage per Edamam policy
-  calories Float // kcal
-  protein  Float // grams
-  fat      Float // grams
-  netCarbs Float // grams (total carbs - fiber)
-
-  servings  Int      @default(1) // Number of servings for the recipe
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, recipeId])
-  @@index([userId])
-  @@index([recipeId])
 }
 
 // ============================================================================

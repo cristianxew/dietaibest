@@ -6,21 +6,13 @@ interface UseRecipeFormHandlersProps {
   form: any; // Using any to avoid complex type matching with react-hook-form
   watchedIngredients: Ingredient[];
   watchedServings: number;
-  watchedInstructions: string[];
-  analyzeNutrition: (
-    title: string,
-    ingredients: Ingredient[],
-    servings: number,
-    url: string | undefined,
-    instructions: string[]
-  ) => void;
+  analyzeNutrition: (ingredients: Ingredient[], servings: number) => void;
 }
 
 export function useRecipeFormHandlers({
   form,
   watchedIngredients,
   watchedServings,
-  watchedInstructions,
   analyzeNutrition,
 }: UseRecipeFormHandlersProps) {
   const handleAddTag = (tag: string) => {
@@ -46,15 +38,7 @@ export function useRecipeFormHandlers({
       );
 
       if (validIngredients.length > 0) {
-        const title = form.getValues("title") || "Untitled Recipe";
-        const url = form.getValues("sourceUrl");
-        analyzeNutrition(
-          title,
-          validIngredients,
-          watchedServings || 1,
-          url,
-          watchedInstructions || []
-        );
+        analyzeNutrition(validIngredients, watchedServings || 1);
       } else {
         toast.error("Please add some ingredients before analyzing nutrition");
       }

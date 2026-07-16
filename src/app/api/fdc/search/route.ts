@@ -8,7 +8,7 @@
 
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
-import { fdcSearch } from "@/lib/fdc";
+import { searchFoodsCached } from "@/lib/fdcRepo";
 
 export const runtime = "nodejs";
 
@@ -75,11 +75,10 @@ export async function POST(request: NextRequest) {
 
     console.log(`[FDC Search API] Searching for: "${query}"`);
 
-    // Call FDC search
-    const result = await fdcSearch(query.trim());
+    // Call FDC search (DB-cached by normalized query)
+    const foods = await searchFoodsCached(query.trim());
 
     // Return first 8 results with simplified structure
-    const foods = result.foods || [];
     const simplified: SearchResponseItem[] = foods.slice(0, 8).map((food) => ({
       fdcId: food.fdcId,
       description: food.description,

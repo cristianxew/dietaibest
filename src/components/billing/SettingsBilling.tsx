@@ -90,8 +90,7 @@ export async function SettingsBilling() {
             {!isPro && (
               <p className="text-xs text-muted-foreground">
                 {FREE_LIMITS.savedRecipes} saved recipes ·{" "}
-                {FREE_LIMITS.recipesCreatedPerMonth} recipes/month ·{" "}
-                {FREE_LIMITS.edamamAnalysesPerMonth} nutrition analyses/month
+                {FREE_LIMITS.recipesCreatedPerMonth} recipes/month
               </p>
             )}
           </div>

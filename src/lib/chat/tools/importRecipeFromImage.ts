@@ -19,7 +19,7 @@ import type { Tool } from "./types";
  * Tool: importRecipeFromImage (DIE-41).
  *
  * Image-based recipe import. Mirrors importRecipeFromUrl's contract — same
- * tool.completed { link } shape, same downstream pipeline (Edamam analysis +
+ * tool.completed { link } shape, same downstream pipeline (FDC analysis +
  * persistRecipe) — but the extraction front-end is Gemma 4 31B via the Gemini
  * API instead of Supadata.
  *
@@ -279,7 +279,7 @@ export const importRecipeFromImage: Tool<
     }
 
     // Step 4: Persist. Mirror URL importer flow — persistRecipe enforces
-    // recipeImport entitlement, tags "imported", and runs Edamam analysis.
+    // recipeImport entitlement, tags "imported", and runs FDC analysis.
     emit?.({ statusKey: "import.analyzing" });
     emit?.({ statusKey: "import.saving" });
 

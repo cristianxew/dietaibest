@@ -113,7 +113,7 @@
     "dashboard": "Dashboard",
     "recipes": "Recipes",
     "mealPlans": "Meal Plans",
-    "nutrition": "Nutrition",
+    "nutrition": "Nutrition Hub",
     "shopping": "Shopping",
     "onboarding": "Setup Wizard",
     "settings": "Settings",
@@ -357,6 +357,8 @@
     },
     "servings": "servings",
     "ingredients": "Ingredients",
+    "moreIngredients": "+ {count} more",
+    "viewFullRecipe": "View full recipe",
     "nutrition": "Nutrition Facts",
     "nutritionPerServing": "Nutrition per serving",
     "fullNutritionTitle": "Full nutrition",
@@ -413,6 +415,9 @@
     "editImage": "Edit Image",
     "deleteImage": "Delete Image",
     "uploadingImage": "Uploading image...",
+    "generateImageWithAI": "Generate with AI",
+    "generatingImageWithAI": "Generating image...",
+    "generateImageError": "Failed to generate image",
     "imageUpdated": "Image updated successfully!",
     "imageDeleted": "Image deleted successfully!",
     "imageUpdateError": "Failed to update image",
@@ -709,6 +714,21 @@
       "carbs": "Carbs",
       "fat": "Fat"
     },
+    "micronutrients": {
+      "title": "Micronutrients",
+      "dailyAverage": "daily average",
+      "perDay": "this day",
+      "ofTarget": "{pct}% DV",
+      "ofLimit": "{pct}% of limit",
+      "sourcePersonalized": "Based on your age & sex",
+      "sourceStandard": "Based on standard daily values (%DV)",
+      "empty": "No micronutrient data for these recipes yet.",
+      "group": {
+        "vitamins": "Vitamins",
+        "minerals": "Minerals",
+        "other": "Other"
+      }
+    },
     "layout": {
       "grid": "Grid",
       "stack": "Stack",
@@ -723,7 +743,8 @@
       "dragToMove": "Drag to move meal",
       "removeMeal": "Remove meal",
       "decreaseServings": "Decrease servings",
-      "increaseServings": "Increase servings"
+      "increaseServings": "Increase servings",
+      "viewRecipe": "View recipe details"
     },
     "picker": {
       "selectRecipe": "Select Recipe",
@@ -974,6 +995,380 @@
     "title": "DietAI - AI-Powered Meal Planning",
     "description": "Personalized meal planning and nutrition tracking with AI assistance"
   },
+  "nutritionHub": {
+    "myWeek": {
+      "kicker": "Your Week",
+      "title": "Fix My Week",
+      "description": "Your planned week, measured against your personal targets — and the one thing to change first.",
+      "hero": {
+        "eyebrow": "This week",
+        "ok": "Your planned week looks balanced",
+        "findings": "{count, plural, one {# thing} other {# things}} worth fixing this week",
+        "cta": "Open My Week"
+      },
+      "empty": {
+        "title": "No active meal plan",
+        "body": "Schedule a meal plan and we'll analyze your week against your personal nutrient targets.",
+        "cta": "Go to meal plans"
+      },
+      "strip": { "unplanned": "No plan", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "What to fix first",
+        "deficitTitle": "Low on {nutrient}",
+        "excessTitle": "Excess {nutrient}",
+        "deficitMeta": "Short on {days} of {plannedDays, plural, one {# planned day} other {# planned days}}",
+        "excessMeta": "Over your limit on {days} of {plannedDays, plural, one {# planned day} other {# planned days}}",
+        "weekGapDeficit": "{amount} short across the week",
+        "weekGapExcess": "{amount} over across the week",
+        "sourcesExcess": "Biggest sources",
+        "sourcesDeficit": "Best places to improve",
+        "contributorShare": "{share}% of the week",
+        "none": "Your planned week looks balanced. Nicely done."
+      },
+      "swaps": {
+        "show": "Show fixes",
+        "loading": "Finding fixes…",
+        "closes": "closes {pct}% of the gap",
+        "tradeoffs": "Watch: {nutrients}",
+        "apply": "Apply",
+        "applying": "Applying…",
+        "applied": "Swapped to {to}",
+        "undo": "Undo",
+        "none": "No good fit in your recipe library for this one.",
+        "generate": "Generate a recipe that fixes this",
+        "generating": "Cooking up a recipe…",
+        "generated": "Created \"{title}\" — nutrition verified with USDA data",
+        "generateFailed": "Couldn't generate a recipe this time. Try again."
+      },
+      "improveData": {
+        "title": "Improve your data",
+        "body": "{count, plural, one {# recipe in your week has} other {# recipes in your week have}} incomplete ingredient data, so micronutrient analysis is limited.",
+        "analyze": "Analyze ingredients",
+        "analyzing": "Analyzing…",
+        "done": "Matched {matched} of {total} ingredients"
+      },
+      "detail": {
+        "show": "Show full week detail",
+        "hide": "Hide full week detail",
+        "nutrient": "Nutrient"
+      },
+      "basis": { "personalized": "Personalized targets", "generic": "Generic daily values" }
+    },
+    "hub": {
+      "kicker": "Learning Hub",
+      "title": "Know what's on your plate",
+      "description": "Compare foods, measure meals against your day, and learn what every nutrient does — so every bite is a conscious choice.",
+      "faceoff": {
+        "kicker": "Today's Face-Off",
+        "vs": "vs",
+        "cta": "See the full comparison"
+      },
+      "modules": {
+        "myWeek": {
+          "kicker": "Act",
+          "title": "Fix My Week",
+          "blurb": "See how your planned week really measures up, and fix it in one tap."
+        },
+        "compare": {
+          "kicker": "Compare",
+          "title": "Food Face-Off",
+          "blurb": "Put any two foods or recipes side by side and see the full nutritional story."
+        },
+        "vsDay": {
+          "kicker": "Your Day",
+          "title": "Meal vs Your Day",
+          "blurb": "See how much of your daily nutrient needs a meal really covers."
+        },
+        "nutrients": {
+          "kicker": "Learn",
+          "title": "Nutrient Encyclopedia",
+          "blurb": "What each nutrient does, why you care, and the best foods to get it from."
+        },
+        "swaps": {
+          "kicker": "Improve",
+          "title": "Smart Swaps",
+          "blurb": "Simple trades with a real nutritional win, backed by USDA data."
+        },
+        "calculator": {
+          "kicker": "Tools",
+          "title": "Nutrition Calculator",
+          "blurb": "Analyze any ingredient list and get accurate nutrition facts."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Calories" },
+      "protein": { "name": "Protein" },
+      "fat": { "name": "Fat" },
+      "carbs": { "name": "Carbs" },
+      "fiber": { "name": "Fiber" },
+      "sugar": { "name": "Sugar" },
+      "satFat": { "name": "Saturated Fat" },
+      "cholesterol": { "name": "Cholesterol" },
+      "sodium": { "name": "Sodium" },
+      "potassium": { "name": "Potassium" },
+      "calcium": { "name": "Calcium" },
+      "iron": { "name": "Iron" },
+      "magnesium": { "name": "Magnesium" },
+      "zinc": { "name": "Zinc" },
+      "vitaminA": { "name": "Vitamin A" },
+      "vitaminC": { "name": "Vitamin C" },
+      "vitaminD": { "name": "Vitamin D" },
+      "vitaminE": { "name": "Vitamin E" },
+      "vitaminK": { "name": "Vitamin K" },
+      "vitaminB6": { "name": "Vitamin B6" },
+      "vitaminB12": { "name": "Vitamin B12" },
+      "folate": { "name": "Folate" }
+    },
+    "common": {
+      "askDietai": "Ask Dietai",
+      "disclaimer": "Educational information — not medical advice."
+    },
+    "insights": {
+      "timesMore": "{winner} has {times}× more {nutrient}",
+      "moreBy": "{winner} has {diff} {unit} more {nutrient}",
+      "onlyOneHas": "Only {winner} has {nutrient}"
+    },
+    "vsDay": {
+      "kicker": "Your Day",
+      "title": "Meal vs Your Day",
+      "description": "Pick a food or one of your recipes and see how much of your daily nutrient needs it really covers.",
+      "pickPrompt": "What are you eating?",
+      "headline": "This fills <highlight>{pct}%</highlight> of your day's {nutrient}",
+      "loadError": "Couldn't load nutrition data. Try again.",
+      "clear": "Clear",
+      "decrease": "Fewer servings",
+      "increase": "More servings",
+      "noData": "No data from USDA for this nutrient",
+      "basisPer100g": "per 100 g",
+      "basisPerServing": "per serving",
+      "basisPersonalized": "Personalized target from your profile",
+      "basisGeneric": "Generic FDA Daily Value",
+      "groups": {
+        "energyMacros": "Energy & Macros",
+        "watch": "Worth Watching",
+        "vitaminsMinerals": "Vitamins & Minerals"
+      },
+      "nudge": {
+        "message": "Using general FDA values — complete your profile for targets tailored to you.",
+        "cta": "Complete profile"
+      }
+    },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Learn",
+        "title": "Nutrient Encyclopedia",
+        "description": "Every nutrient has a job. Learn what it does, why it matters, and where to find it.",
+        "dailyTarget": "daily target",
+        "dailyLimit": "daily limit",
+        "topSources": "Top food sources",
+        "whatItDoes": "What it does",
+        "whyYouCare": "Why you care",
+        "deficiencySigns": "When you're running low",
+        "per100g": "Values per 100 g · USDA FoodData Central",
+        "compareCta": "Compare",
+        "backToIndex": "All nutrients",
+        "limitBadge": "Less is more",
+        "goalBadge": "Aim for your target"
+      },
+      "protein": {
+        "tagline": "The body's building material.",
+        "whatItDoes": "Builds and repairs muscle, skin, and tissues, and supplies the raw material for enzymes and hormones.",
+        "whyYouCare": "It keeps you full longer and helps maintain muscle, especially when you're active or eating fewer calories.",
+        "deficiencySigns": "Low intake is commonly associated with muscle loss, weakness, and slow recovery.",
+        "funFact": "Lentils and rice together provide all essential amino acids — classic food pairings figured this out centuries before science did."
+      },
+      "fiber": {
+        "tagline": "Your digestion's best friend.",
+        "whatItDoes": "Feeds beneficial gut bacteria and keeps digestion moving at a healthy pace.",
+        "whyYouCare": "Fiber-rich meals are more filling and help keep blood sugar and cholesterol levels steady.",
+        "deficiencySigns": "Low intake is commonly associated with irregular digestion and getting hungry again soon after meals.",
+        "funFact": "Only plants make fiber — there's none in meat, eggs, or cheese, no matter how natural they are."
+      },
+      "sugar": {
+        "tagline": "Sweet, fast energy — easy to overdo.",
+        "whatItDoes": "Delivers quick energy to your cells, with little else along for the ride.",
+        "whyYouCare": "Sugary foods and drinks add calories fast without filling you up, which makes overeating easy.",
+        "deficiencySigns": "",
+        "funFact": "A banana and a tablespoon of table sugar carry similar sugar grams — but the banana wraps it in fiber, potassium, and vitamins."
+      },
+      "saturated-fat": {
+        "tagline": "The fat worth keeping an eye on.",
+        "whatItDoes": "Provides energy and structure for cells; your body can also make what it needs on its own.",
+        "whyYouCare": "Dietary guidelines recommend keeping it under about 10% of daily calories — swapping some for unsaturated fats is an easy win.",
+        "deficiencySigns": "",
+        "funFact": "Not all saturated fats behave alike: the one in dark chocolate (stearic acid) is far more neutral than the ones in processed meats."
+      },
+      "sodium": {
+        "tagline": "Essential mineral, oversized presence.",
+        "whatItDoes": "Helps balance fluids and lets nerves and muscles fire properly.",
+        "whyYouCare": "Most people eat far more than the recommended ceiling — mostly from packaged foods, not the salt shaker.",
+        "deficiencySigns": "",
+        "funFact": "About 70% of dietary sodium comes from processed and restaurant food — cooking at home is the easiest sodium cut there is."
+      },
+      "potassium": {
+        "tagline": "Sodium's balancing act.",
+        "whatItDoes": "Works opposite sodium to balance fluids, and supports a steady heartbeat and muscle contractions.",
+        "whyYouCare": "Most people get far less than the target, and a potassium-rich diet supports healthy blood pressure.",
+        "deficiencySigns": "Low intake is commonly associated with muscle cramps, fatigue, and weakness.",
+        "funFact": "Sweet potatoes and spinach beat bananas at their own potassium game."
+      },
+      "calcium": {
+        "tagline": "More than strong bones.",
+        "whatItDoes": "Builds bone and teeth, and enables muscle contractions, nerve signals, and blood clotting.",
+        "whyYouCare": "When intake is low your body borrows calcium from your bones — and you won't feel it until much later.",
+        "deficiencySigns": "Chronically low intake is commonly associated with reduced bone density over time.",
+        "funFact": "Spinach looks calcium-rich on paper, but oxalates block most of its absorption — dairy and fortified foods deliver more usable calcium."
+      },
+      "iron": {
+        "tagline": "The oxygen courier.",
+        "whatItDoes": "Forms the core of hemoglobin, which carries oxygen from your lungs to every cell.",
+        "whyYouCare": "Iron is the world's most common nutrient gap, especially for women — daily energy depends on it.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue, pale skin, and getting winded easily.",
+        "funFact": "Vitamin C can multiply the iron you absorb from plants — squeeze lemon on your lentils."
+      },
+      "magnesium": {
+        "tagline": "The 300-job mineral.",
+        "whatItDoes": "Assists over 300 enzyme reactions — energy production, muscle relaxation, and nerve function.",
+        "whyYouCare": "It plays a role in sleep quality and muscle recovery, and most diets fall short of the target.",
+        "deficiencySigns": "Low intake is commonly associated with muscle twitches, cramps, and restless sleep.",
+        "funFact": "Dark chocolate is a legitimate magnesium source — the darker, the better."
+      },
+      "zinc": {
+        "tagline": "The immune system's quartermaster.",
+        "whatItDoes": "Supports immune cell production, wound healing, and your senses of taste and smell.",
+        "whyYouCare": "Even mild shortfalls can blunt your immune response — intake matters most when you're stressed or training hard.",
+        "deficiencySigns": "Low intake is commonly associated with frequent colds, slow healing, and dulled taste.",
+        "funFact": "Oysters carry roughly ten times more zinc than steak — sailors' instincts were onto something."
+      },
+      "vitamin-a": {
+        "tagline": "Night vision and skin renewal.",
+        "whatItDoes": "Maintains vision (especially in low light), skin renewal, and immune defenses.",
+        "whyYouCare": "Your eyes and skin renew themselves constantly and need a steady supply to do it.",
+        "deficiencySigns": "Low intake is commonly associated with poor night vision and dry skin.",
+        "funFact": "The beta-carotene in sweet potatoes converts to vitamin A on demand — your body takes only what it needs."
+      },
+      "vitamin-c": {
+        "tagline": "Collagen's spark plug.",
+        "whatItDoes": "Drives collagen production for skin and joints, improves iron absorption, and works as an antioxidant.",
+        "whyYouCare": "Humans are among the few animals that can't make their own — it has to come from food, regularly.",
+        "deficiencySigns": "Low intake is commonly associated with rough skin, easy bruising, and slow wound healing.",
+        "funFact": "Raw broccoli has more vitamin C per 100 g than an orange."
+      },
+      "vitamin-d": {
+        "tagline": "The sunshine vitamin.",
+        "whatItDoes": "Helps absorb calcium and supports muscle and immune function — it behaves more like a hormone than a vitamin.",
+        "whyYouCare": "Food sources are scarce and sun exposure varies wildly — it's one of the most common shortfalls in northern climates.",
+        "deficiencySigns": "Low levels are commonly associated with low energy and weaker bones.",
+        "funFact": "Your skin manufactures vitamin D from sunlight — 15 minutes on your forearms can out-deliver most meals."
+      },
+      "vitamin-e": {
+        "tagline": "The cell-membrane bodyguard.",
+        "whatItDoes": "Protects cell membranes from oxidative damage as your main fat-soluble antioxidant.",
+        "whyYouCare": "It guards the fats throughout your body — including the ones your brain is built from.",
+        "deficiencySigns": "True deficiency is rare, but low intake leaves cell membranes with less antioxidant protection.",
+        "funFact": "Almonds are vitamin E royalty — one handful covers nearly half your day."
+      },
+      "vitamin-k": {
+        "tagline": "The clotting conductor.",
+        "whatItDoes": "Activates the proteins that let blood clot and helps direct calcium toward bones.",
+        "whyYouCare": "It quietly influences whether calcium ends up in bones — exactly where you want it.",
+        "deficiencySigns": "Low intake is commonly associated with easy bruising.",
+        "funFact": "The 'K' comes from the German word 'Koagulation' — a Danish scientist published in a German journal."
+      },
+      "vitamin-b6": {
+        "tagline": "The metabolism translator.",
+        "whatItDoes": "Helps convert food into energy and build messengers like serotonin and dopamine.",
+        "whyYouCare": "Protein-heavy diets raise your B6 needs — the two work as a pair.",
+        "deficiencySigns": "Low intake is commonly associated with irritability and low energy.",
+        "funFact": "Bananas are one of the few fruits with meaningful B6 — one more reason they're the gym bag classic."
+      },
+      "vitamin-b12": {
+        "tagline": "Nerve wiring and red blood cells.",
+        "whatItDoes": "Maintains nerve insulation, DNA synthesis, and red blood cell production.",
+        "whyYouCare": "It comes almost exclusively from animal foods — plant-based eaters need fortified foods or supplements.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue, tingling, and brain fog.",
+        "funFact": "Your liver can stockpile several years' worth of B12 — a buffer no other water-soluble vitamin gets."
+      },
+      "folate": {
+        "tagline": "The cell-division fuel.",
+        "whatItDoes": "Powers DNA synthesis and cell division — anywhere your body grows or repairs, folate is on duty.",
+        "whyYouCare": "It matters most during pregnancy and growth, and lentils and leafy greens are rich, inexpensive sources.",
+        "deficiencySigns": "Low intake is commonly associated with fatigue and anemia.",
+        "funFact": "The name comes from the Latin 'folium' (leaf) — the original sources were leafy greens."
+      }
+    },
+    "swaps": {
+      "kicker": "Improve",
+      "title": "Smart Swaps",
+      "description": "Simple trades with a real, USDA-verified nutritional win. Small changes, big compounding payoff.",
+      "insteadOf": "Instead of",
+      "try": "Try",
+      "faceoffCta": "See full face-off",
+      "categories": {
+        "grains": "Grains & Sides",
+        "greens": "Greens",
+        "protein": "Protein",
+        "fruit": "Fruit",
+        "fats": "Fats & Spreads"
+      },
+      "chips": {
+        "timesMore": "{times}× more {nutrient}",
+        "timesLess": "{times}× less {nutrient}",
+        "onlyHas": "only one with {nutrient}",
+        "moreBy": "+{diff} {unit} {nutrient}",
+        "lessBy": "−{diff} {unit} {nutrient}"
+      }
+    },
+    "compare": {
+      "kicker": "Compare",
+      "title": "Food Face-Off",
+      "description": "Pick two contenders — any USDA food or one of your own recipes — and see the full nutritional story, side by side.",
+      "slotA": "Contender A",
+      "slotB": "Contender B",
+      "clear": "Clear",
+      "swapSides": "Swap sides",
+      "loadError": "Couldn't load nutrition data. Try again.",
+      "recipeBadge": "My recipe",
+      "noData": "No data from USDA for this nutrient",
+      "basis": {
+        "per100g": "per 100 g",
+        "perServing": "per serving"
+      },
+      "groups": {
+        "energy": "Energy",
+        "macro": "Macros",
+        "fatProfile": "Fats & Cholesterol",
+        "mineral": "Minerals",
+        "vitamin": "Vitamins"
+      },
+      "coverage": {
+        "macrosOnly": "Macros only",
+        "partial": "Partial data ({matched}/{total} ingredients)",
+        "tooltip": "Some ingredients aren't matched to USDA foods yet, so micronutrients may be incomplete. Re-analyze the recipe for full detail."
+      },
+      "search": {
+        "placeholder": "Search foods or your recipes…",
+        "foodsTab": "Foods",
+        "recipesTab": "My recipes",
+        "searching": "Searching…",
+        "minChars": "Type at least 2 characters to search",
+        "noResults": "Nothing found",
+        "foodsHeading": "USDA FoodData Central",
+        "recipesHeading": "Your recipes",
+        "servings": "{count} servings"
+      },
+      "empty": {
+        "title": "Pick your contenders",
+        "description": "Search any food or recipe above — or start with a classic matchup.",
+        "suggestions": {
+          "bananaApple": "Banana vs Apple",
+          "spinachBroccoli": "Spinach vs Broccoli",
+          "avocadoBanana": "Avocado vs Banana"
+        }
+      }
+    }
+  },
   "nutrition": {
     "title": "Nutrition Facts",
     "confidence": "Confidence",
@@ -991,6 +1386,36 @@
       "noResults": "No ingredients found",
       "minCharacters": "Type at least 2 characters to search",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Nutrition",
+        "title": "Nutrition Calculator",
+        "description": "Analyze recipe ingredients and calculate accurate nutrition information powered by USDA FoodData Central."
+      },
+      "cardTitle": "Recipe Ingredients",
+      "structuredTab": "Structured Input",
+      "textTab": "Text Input",
+      "structuredHint": "Add ingredients with autocomplete from USDA FoodData Central database.",
+      "textHint": "Enter one ingredient per line with quantity and unit (e.g., \"1 cup rice\", \"150 g chicken\", \"2 tbsp olive oil\").",
+      "ingredientsLabel": "Ingredients",
+      "loadExample": "Load Example",
+      "searchPlaceholder": "Search ingredient...",
+      "addIngredient": "Add Ingredient",
+      "servingsLabel": "Number of Servings",
+      "analyzing": "Analyzing...",
+      "calculate": "Calculate Nutrition",
+      "exampleLoaded": "Example recipe loaded",
+      "errors": {
+        "enterIngredient": "Please enter at least one ingredient",
+        "addIngredient": "Please add at least one ingredient",
+        "servingsPositive": "Servings must be a positive number",
+        "analysisFailed": "Analysis failed",
+        "unexpected": "An unexpected error occurred during analysis"
+      },
+      "success": {
+        "analysisComplete": "Analysis complete! Processed {count} ingredients."
+      }
     }
   },
   "placeholders": {
@@ -1172,8 +1597,7 @@
       "savedRecipes": "saved recipes",
       "recipesCreatedPerMonth": "recipes per month",
       "mealPlanTemplates": "meal plan templates",
-      "mealPlanDurationDays": "meal plan duration",
-      "edamamAnalysesPerMonth": "nutrition analyses per month"
+      "mealPlanDurationDays": "meal plan duration"
     },
     "pricing": {
       "title": "Upgrade to DietAI Pro",
@@ -1196,6 +1620,13 @@
     }
   },
   "chat": {
+    "seeds": {
+      "nutritionHub": {
+        "compare": "I compared {a} and {b} in the Nutrition Hub. Can you explain in simple terms what the biggest nutritional differences mean for me?",
+        "vsDay": "I checked {item} against my daily targets in the Nutrition Hub — it covers about {pct}% of my {nutrient}. What should the rest of my day look like to stay balanced?",
+        "nutrient": "Teach me about {nutrient} — why does my body need it, and how do I get enough from everyday food?"
+      }
+    },
     "title": "DietAI Assistant",
     "online": "Online",
     "clearConversation": "Clear conversation",
@@ -1258,9 +1689,6 @@
       "title": "What I can do",
       "open": "Show what the assistant can do"
     },
-    "followUps": {
-      "title": "Try next"
-    },
     "entry": {
       "recipeDetail": {
         "ask": "Ask DietAI"
@@ -1296,6 +1724,7 @@
         "extracting": "Extracting the recipe…",
         "analyzing": "Analyzing nutrition…",
         "saving": "Saving the recipe…",
+        "savingNutrition": "Saving and calculating nutrition… this can take a few seconds",
         "fallback": "Retrying with another method…"
       },
       "media": {

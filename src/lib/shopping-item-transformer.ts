@@ -6,6 +6,8 @@
  * and rounds to sensible shopping amounts.
  */
 
+import { normalizeUnit, toBaseAmount } from "./unit-registry";
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -28,74 +30,8 @@ export interface TransformedShoppingItem {
 }
 
 // ============================================================================
-// Unit Conversion Maps
+// Ingredient classification
 // ============================================================================
-
-/**
- * Volume units to ml conversion
- */
-const VOLUME_TO_ML: Record<string, number> = {
-  ml: 1,
-  l: 1000,
-  liter: 1000,
-  litre: 1000,
-  cup: 240,
-  cups: 240,
-  tbs: 15,
-  tbsp: 15,
-  tablespoon: 15,
-  tablespoons: 15,
-  tsp: 5,
-  teaspoon: 5,
-  teaspoons: 5,
-  "fl oz": 30,
-  "fluid ounce": 30,
-};
-
-/**
- * Weight units to grams conversion
- */
-const WEIGHT_TO_GRAMS: Record<string, number> = {
-  g: 1,
-  gram: 1,
-  grams: 1,
-  kg: 1000,
-  kilogram: 1000,
-  oz: 28,
-  ounce: 28,
-  ounces: 28,
-  lb: 454,
-  lbs: 454,
-  pound: 454,
-  pounds: 454,
-};
-
-/**
- * Count/piece units - these don't get converted
- */
-const COUNT_UNITS = new Set([
-  "piece",
-  "pieces",
-  "pcs",
-  "whole",
-  "clove",
-  "cloves",
-  "slice",
-  "slices",
-  "bunch",
-  "bunches",
-  "head",
-  "heads",
-  "leaf",
-  "leaves",
-  "sprig",
-  "sprigs",
-  "stalk",
-  "stalks",
-  "unit",
-  "units",
-  "",
-]);
 
 /**
  * Units that should be treated as solids (convert tbs/tsp to grams)
@@ -123,13 +59,6 @@ const LIQUID_INGREDIENTS = new Set([
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Normalize unit string for comparison
- */
-function normalizeUnit(unit: string): string {
-  return unit.toLowerCase().trim();
-}
 
 /**
  * Check if ingredient is likely a liquid
@@ -205,81 +134,37 @@ function formatQuantity(amount: number, unit: "g" | "ml" | "count"): string {
  * // Output: { name: "chicken breast", displayQuantity: "100g", ... }
  */
 export function transformShoppingItem(item: RecipeItem): TransformedShoppingItem {
-  const normalizedUnit = normalizeUnit(item.unit);
-  const isLiquid = isLiquidIngredient(item.name);
+  const base = toBaseAmount(item.amount, normalizeUnit(item.unit));
 
-  let displayQuantity: string;
-
-  // Handle count/piece units - no conversion needed
-  if (COUNT_UNITS.has(normalizedUnit)) {
-    const roundedCount = Math.ceil(item.amount);
-    displayQuantity = roundedCount === 1 ? "1" : `${roundedCount}`;
-
-    return {
-      name: item.name,
-      displayQuantity,
-      originalAmount: item.amount,
-      originalUnit: item.unit,
-      category: item.category,
-      notes: item.notes,
-    };
-  }
-
-  // Handle weight units
-  if (WEIGHT_TO_GRAMS[normalizedUnit] !== undefined) {
-    const grams = item.amount * WEIGHT_TO_GRAMS[normalizedUnit];
-    const rounded = roundToShoppingAmount(grams);
-    displayQuantity = formatQuantity(rounded, "g");
-
-    return {
-      name: item.name,
-      displayQuantity,
-      originalAmount: item.amount,
-      originalUnit: item.unit,
-      category: item.category,
-      notes: item.notes,
-    };
-  }
-
-  // Handle volume units
-  if (VOLUME_TO_ML[normalizedUnit] !== undefined) {
-    const ml = item.amount * VOLUME_TO_ML[normalizedUnit];
-
-    if (isLiquid) {
-      // Keep as ml/L for liquids
-      const rounded = roundToShoppingAmount(ml);
-      displayQuantity = formatQuantity(rounded, "ml");
-    } else {
-      // Convert to grams for solids (approximate: 1ml ≈ 1g for most dry goods)
-      // This is a rough approximation - adjust factor based on ingredient if needed
-      const grams = ml * 0.8; // Most dry ingredients are lighter than water
-      const rounded = roundToShoppingAmount(grams);
-      displayQuantity = formatQuantity(rounded, "g");
-    }
-
-    return {
-      name: item.name,
-      displayQuantity,
-      originalAmount: item.amount,
-      originalUnit: item.unit,
-      category: item.category,
-      notes: item.notes,
-    };
-  }
-
-  // Unknown unit - try to make a sensible default
-  // Assume it's a count unit
-  const roundedCount = Math.ceil(item.amount);
-  displayQuantity = roundedCount === 1 ? "1" : `${roundedCount}`;
-
-  return {
+  const common = {
     name: item.name,
-    displayQuantity,
     originalAmount: item.amount,
     originalUnit: item.unit,
     category: item.category,
     notes: item.notes,
   };
+
+  // Count units (and anything the registry doesn't recognize) have no base
+  // conversion — show a plain count.
+  if (!base) {
+    const roundedCount = Math.ceil(item.amount);
+    return { ...common, displayQuantity: `${roundedCount}` };
+  }
+
+  // Weight → grams.
+  if (base.base === "g") {
+    const rounded = roundToShoppingAmount(base.amount);
+    return { ...common, displayQuantity: formatQuantity(rounded, "g") };
+  }
+
+  // Volume → ml for liquids; for solids approximate to grams (dry goods are
+  // lighter than water, ~0.8 g/ml).
+  if (isLiquidIngredient(item.name)) {
+    const rounded = roundToShoppingAmount(base.amount);
+    return { ...common, displayQuantity: formatQuantity(rounded, "ml") };
+  }
+  const rounded = roundToShoppingAmount(base.amount * 0.8);
+  return { ...common, displayQuantity: formatQuantity(rounded, "g") };
 }
 
 /**

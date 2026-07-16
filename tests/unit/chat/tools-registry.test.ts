@@ -11,7 +11,6 @@ const FREE: Entitlements = {
     recipesCreatedPerMonth: 3,
     mealPlanTemplates: 1,
     mealPlanDurationDays: 3,
-    edamamAnalysesPerMonth: 5,
   },
   features: {
     aiMealPlan: false,
@@ -28,7 +27,6 @@ const PRO: Entitlements = {
     recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
     mealPlanTemplates: Number.POSITIVE_INFINITY,
     mealPlanDurationDays: Number.POSITIVE_INFINITY,
-    edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,
   },
   features: {
     aiMealPlan: true,

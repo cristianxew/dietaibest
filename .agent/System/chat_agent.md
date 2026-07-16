@@ -129,8 +129,9 @@ split three ways:
 2. **Single-tool guidance** (Category 2) — each tool's `guidance`, folded into a
    composed `TOOL NOTES.` section. Owned by the tool, not the prompt.
 3. **Cross-tool workflows** (Category 3) — rules that sequence multiple tools
-   (id-resolution, `searchMealPlans → getMealPlan → addMealToDay`,
-   `getNutrition → editRecipe` macro save). Stay in `COMMON`.
+   (id-resolution, `searchMealPlans → getMealPlan → addMealToDay`). Stay in
+   `COMMON`. Note: `getNutrition` is self-persisting (see below), so there is no
+   longer a `getNutrition → editRecipe` save step in the prompt.
 
 **Why composition matters — desync elimination:** because the prompt is built
 from the registered/filtered tool set, it can only describe tools the user can
@@ -155,6 +156,31 @@ enumerations and ordinals are list markers, not macro values. Known limitation
 (pre-existing): a number emitted in a window *before* its keyword arrives
 (">450" flushed, "kcal" next chunk) can still slip through; fixing it would
 delay all streaming output by the proximity window.
+
+## getNutrition: stored-profile consistency & grounding (DIE-43)
+
+`getNutrition` (`tools/getNutrition.ts`) is the single authoritative source of
+nutrition numbers in chat. For a saved recipe that already carries a per-serving
+profile (`recipe.calories != null`, persisted by DIE-42) it returns the stored
+columns **verbatim** (`source: "stored"`) — the chat figure equals the recipe
+detail page at zero FDC cost. With no stored profile, or an ad-hoc ingredient
+list, it analyzes fresh through `analyzeRecipeProfileAction` (`source: "fdc"`).
+
+**Self-persisting (backfill):** when it freshly analyzes a recipe the user
+*owns*, `getNutrition` writes the full 22-nutrient profile back via
+`saveRecipeNutritionProfile` (`actions/recipe.ts`, ownership-checked,
+best-effort). This is why the prompt no longer tells the model to call
+`editRecipe` to save macros — that path only persisted the 5 macros and dropped
+every micronutrient, so the detail page showed macros but no micros. Ad-hoc
+ingredient lists and non-owned (public) recipes are never written.
+
+The result carries the full 22-nutrient picture: `perServing` + `total` macros
+plus a per-serving `micros` map (legacy rows without micros report `null`, never
+`0`). `groundedValues` feeds the Layer-2 redactor (`runtime.ts` →
+`StreamingGuardrail.addGroundedValues`) and now includes **both macros and
+micros** — the redactor's keyword set only policies macro terms, so grounding the
+micros keeps a legit micro figure (e.g. "80 mg calcium") from being collaterally
+redacted when it lands within the proximity window of a macro keyword.
 
 ## Safety: medical-refusal classifier — see ADR-0001
 

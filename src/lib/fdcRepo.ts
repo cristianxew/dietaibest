@@ -12,9 +12,25 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { fdcFoodsByIds, type FdcFood } from "@/lib/fdc";
+import {
+  fdcFoodsByIds,
+  fdcSearch,
+  type FdcFood,
+  type FdcSearchFood,
+} from "@/lib/fdc";
 
 const MS_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * TTL for cached ingredient SEARCH results.
+ *
+ * A search result spans multiple data types (Foundation, SR Legacy, Branded…),
+ * so it has no single dataType to key a TTL on. We use 90 days — the same value
+ * `isStale` falls back to for entries without a known dataType — keeping the
+ * search cache consistent with the food-detail cache. Ingredient→food mappings
+ * are extremely stable, so the savings are large and the staleness risk is low.
+ */
+const SEARCH_TTL_MS = 90 * MS_DAY;
 
 /**
  * Time-to-live (TTL) for different data types in milliseconds
@@ -25,6 +41,13 @@ const TTL_BY_DATATYPE: Record<string, number> = {
   "SR Legacy": 180 * MS_DAY,
   Branded: 30 * MS_DAY,
 };
+
+/**
+ * Nutrient profile stored in a cache row:
+ * - "core": legacy rows holding only the 5 macro nutrients
+ * - "extended": rows holding the full nutrient registry (macros + micros)
+ */
+export type NutrientProfile = "core" | "extended";
 
 /**
  * Check if a cached entry is stale based on its data type and last fetch time
@@ -55,10 +78,18 @@ function isStale(
  * 6. Return combined cached + fresh data in requested order
  *
  * @param fdcIds - Array of FDC food IDs to fetch
+ * @param opts.profile - "core" (default) accepts any cached row; "extended"
+ *   treats legacy macro-only rows as stale so they get refetched once with
+ *   the full nutrient registry
  * @returns Array of food objects with nutritional data, in same order as input
  */
-export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
+export async function getFoodsCached(
+  fdcIds: number[],
+  opts?: { profile?: NutrientProfile }
+): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
+
+  const requiredProfile = opts?.profile ?? "core";
 
   // 1. Query existing cache entries
   const cached = await prisma.fdcCache.findMany({
@@ -68,9 +99,14 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
   const missingOrStale = new Set<number>();
   const byId = new Map<number, FdcFood>();
 
-  // 2. Check which entries are still fresh
+  // 2. Check which entries are still fresh. When the caller requires the
+  // extended profile, a legacy "core" row (5 macros only) is treated as stale so
+  // it is refetched once with the full nutrient registry (self-healing).
   for (const row of cached) {
-    if (isStale(row.dataType, row.lastFetchedAt)) {
+    const profileTooNarrow =
+      requiredProfile === "extended" && row.nutrientProfile === "core";
+
+    if (profileTooNarrow || isStale(row.dataType, row.lastFetchedAt)) {
       missingOrStale.add(row.fdcId);
     } else {
       // Entry is fresh, reconstruct food object from cache
@@ -103,8 +139,21 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
     try {
       const fetched = await fdcFoodsByIds([...missingOrStale]);
 
+      // Defense in depth: `fdcFoodsByIds` is hardened to always return an
+      // array, but a non-array slipping through here would throw "not
+      // iterable" and the catch below would swallow it — silently dropping
+      // the entire batch. Guard explicitly so the batch can't vanish without
+      // a trace; the unresolved-id warning after this block reports the gap.
+      const foods = Array.isArray(fetched) ? fetched : [];
+      if (!Array.isArray(fetched)) {
+        console.warn(
+          `[FDC Cache] fdcFoodsByIds returned a non-array (${typeof fetched}); ` +
+            `${missingOrStale.size} id(s) left unresolved`
+        );
+      }
+
       // 5. Upsert fetched data into cache
-      for (const food of fetched) {
+      for (const food of foods) {
         await prisma.fdcCache.upsert({
           where: { fdcId: food.fdcId },
           update: {
@@ -116,6 +165,7 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
               food.foodNutrients as unknown as Prisma.InputJsonValue,
             labelNutrients:
               food.labelNutrients as unknown as Prisma.InputJsonValue,
+            nutrientProfile: "extended",
             lastFetchedAt: new Date(),
           },
           create: {
@@ -128,17 +178,30 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
               food.foodNutrients as unknown as Prisma.InputJsonValue,
             labelNutrients:
               food.labelNutrients as unknown as Prisma.InputJsonValue,
+            nutrientProfile: "extended",
           },
         });
 
         byId.set(food.fdcId, food);
       }
 
-      console.log(`[FDC Cache] Successfully cached ${fetched.length} entries`);
+      console.log(`[FDC Cache] Successfully cached ${foods.length} entries`);
     } catch (error) {
       console.error("[FDC Cache] Error fetching from USDA API:", error);
       // Don't throw - return whatever we have cached even if stale
       // This provides graceful degradation when API is unavailable
+    }
+
+    // Surface the count of ids we could not resolve (non-array response,
+    // network error, or the API simply omitting some ids). Callers consuming
+    // the returned foods then know the profile is incomplete rather than
+    // trusting a silently-truncated batch.
+    const unresolvedIds = [...missingOrStale].filter((id) => !byId.has(id));
+    if (unresolvedIds.length > 0) {
+      console.warn(
+        `[FDC Cache] ${unresolvedIds.length} of ${missingOrStale.size} requested ` +
+          `id(s) unresolved (incomplete profile): ${unresolvedIds.join(", ")}`
+      );
     }
   } else {
     console.log(
@@ -150,6 +213,148 @@ export async function getFoodsCached(fdcIds: number[]): Promise<FdcFood[]> {
   return fdcIds
     .map((id) => byId.get(id))
     .filter((food): food is FdcFood => food !== undefined);
+}
+
+/**
+ * Normalize a search query into a stable cache key: lowercased, with internal
+ * whitespace collapsed to single spaces and the ends trimmed. Both callers
+ * (recipe analysis and the autocomplete route) feed user/parsed text, so this
+ * collapses trivial variants ("Yellow  Onion " ≡ "yellow onion") onto one key.
+ */
+export function normalizeSearchQuery(query: string): string {
+  return query.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Cache schema version for the SEARCH cache. Bump whenever the search STRATEGY
+ * changes so blobs produced by the old logic are bypassed without a DB migration:
+ * old rows keep their unversioned key and are simply never read again
+ * (self-healing, mirroring `lacksFullProfile` for food detail). `v2` is the
+ * merged whole-food tiers (Foundation + SR Legacy + Survey/FNDDS) that replaced
+ * the short-circuit cascade which hid cross-tier FNDDS matches.
+ */
+export const SEARCH_CACHE_VERSION = "v2";
+
+/**
+ * The DB cache key for a search query: version prefix + normalized query. Kept
+ * separate from `normalizeSearchQuery` because that normalized value is ALSO the
+ * live USDA search term — only the DB key carries the version, never the term
+ * sent to the API (prefixing the term would search USDA for "v2|onion").
+ */
+export function searchCacheKey(query: string): string {
+  return `${SEARCH_CACHE_VERSION}|${normalizeSearchQuery(query)}`;
+}
+
+/** Search results older than the TTL must be refreshed. */
+function isSearchStale(lastFetchedAt: Date | null | undefined): boolean {
+  if (!lastFetchedAt) return true;
+  return Date.now() - lastFetchedAt.getTime() > SEARCH_TTL_MS;
+}
+
+/**
+ * Pure single-ingredient data types — Foundation + SR Legacy carry the raw/cooked
+ * and variety entries (e.g. "Rice, white, … raw", "Salmon, Atlantic, farmed,
+ * raw") an ingredient query should match. Tried first.
+ */
+const PRIMARY_DATATYPES = ["Foundation", "SR Legacy"];
+
+/** De-dupe foods by `fdcId`, preserving first-seen order. */
+function dedupeById(foods: FdcSearchFood[]): FdcSearchFood[] {
+  const byId = new Map<number, FdcSearchFood>();
+  for (const f of foods) if (!byId.has(f.fdcId)) byId.set(f.fdcId, f);
+  return [...byId.values()];
+}
+
+/**
+ * Live USDA search across the whole-food tiers (ADR 0004), MERGED — not a
+ * short-circuit cascade. Foundation/SR Legacy and Survey (FNDDS) are searched
+ * separately (each gets its own full page, so pageSize truncation in one tier
+ * can't starve the other) and unioned. The old cascade returned the first
+ * non-empty tier, so a non-empty-but-wrong Foundation/SR Legacy result (e.g.
+ * "beef stew meat" → only "Chicken, stewing…" + a canned entree) short-circuited
+ * and never reached the FNDDS tier where the real match ("Beef, stew meat")
+ * lives. Ranking (`rankMatches`: DATATYPE_PRIORITY + composite-dish demotion)
+ * orders the merged pool, so FNDDS "as consumed" dishes ("Rice pilaf") can't
+ * crowd out a basic ingredient. Branded (user-submitted, often energy-less or
+ * mislabelled) is the last resort, fired only when no whole food matched.
+ */
+async function searchWholeFoods(query: string): Promise<FdcSearchFood[]> {
+  const primary = (await fdcSearch(query, PRIMARY_DATATYPES)).foods ?? [];
+  const survey = (await fdcSearch(query, ["Survey (FNDDS)"])).foods ?? [];
+  const whole = dedupeById([...primary, ...survey]);
+  if (whole.length > 0) return whole;
+  return (await fdcSearch(query, ["Branded"])).foods ?? [];
+}
+
+/**
+ * Search USDA FDC for foods matching a query, with DB caching.
+ *
+ * Mirrors `getFoodsCached` for the search step: the food-detail fetch was
+ * already cached, but each analysis still fired one live USDA *search* per
+ * ingredient. Caching by normalized query lets recipes that share ingredients
+ * reuse results instead of re-hitting the search endpoint.
+ *
+ * Logic Flow:
+ * 1. Normalize the query into the cache key (empty key → no work, return []).
+ * 2. Look up the cached row; serve it when still fresh (within TTL).
+ * 3. On miss/stale, fetch live via `fdcSearch` and upsert the result.
+ * 4. On USDA error, serve a stale-but-present row (rate-limit resilience);
+ *    rethrow only when there's nothing cached, so callers' existing error
+ *    handling is preserved.
+ *
+ * @param query - Ingredient search term (e.g. "chicken breast", "onion")
+ * @returns The search foods (USDA's default data-type set), possibly stale
+ */
+export async function searchFoodsCached(
+  query: string
+): Promise<FdcSearchFood[]> {
+  const key = normalizeSearchQuery(query);
+  if (!key) return [];
+  // The DB key carries the cache-schema version; the live search term is the
+  // clean normalized `key` (never the versioned key — see `searchCacheKey`).
+  const cacheKey = searchCacheKey(query);
+
+  // 1. Look up the cached row.
+  const cached = await prisma.fdcSearchCache.findUnique({
+    where: { query: cacheKey },
+  });
+
+  // 2. Fresh? Serve it without touching USDA.
+  if (cached && !isSearchStale(cached.lastFetchedAt)) {
+    console.log(`[FDC Search Cache] Hit for "${cacheKey}"`);
+    return (cached.results as unknown as FdcSearchFood[]) ?? [];
+  }
+
+  // 3. Miss or stale → fetch live and refresh the cache.
+  try {
+    console.log(`[FDC Search Cache] ${cached ? "Stale" : "Miss"} for "${cacheKey}" — querying USDA`);
+    const foods = await searchWholeFoods(key);
+
+    await prisma.fdcSearchCache.upsert({
+      where: { query: cacheKey },
+      update: {
+        results: foods as unknown as Prisma.InputJsonValue,
+        lastFetchedAt: new Date(),
+      },
+      create: {
+        query: cacheKey,
+        results: foods as unknown as Prisma.InputJsonValue,
+      },
+    });
+
+    return foods;
+  } catch (error) {
+    // 4. Graceful degradation: a stale row beats nothing when USDA is down or
+    // rate-limiting. Only rethrow when we have no cached fallback.
+    if (cached) {
+      console.warn(
+        `[FDC Search Cache] USDA search failed for "${key}"; serving stale cache:`,
+        error
+      );
+      return (cached.results as unknown as FdcSearchFood[]) ?? [];
+    }
+    throw error;
+  }
 }
 
 /**

@@ -1,0 +1,385 @@
+{
+  "canonical": {
+    "mięso z piersi kurczaka": "chicken breast",
+    "bułka grahamka": "bread roll",
+    "miks sałat": "mixed greens",
+    "pomidor": "tomato",
+    "ogórek świeży": "cucumber",
+    "oliwa z oliwek": "olive oil",
+    "papryka słodka": "bell pepper",
+    "czosnek granulowany": "garlic",
+    "sól": "salt",
+    "pieprz czarny": "black pepper",
+    "ryż basmati": "white rice",
+    "łosoś świeży": "salmon",
+    "pasta miso": "miso paste",
+    "miód": "honey",
+    "sos sojowy": "soy sauce",
+    "olej sezamowy": "sesame oil",
+    "plastra imbir": "ginger",
+    "ząbku czosnek świeży": "garlic",
+    "kapusta pak choi": "bok choy",
+    "sezam nasiona": "sesame seeds",
+    "papryka ostra suszona": "chili pepper",
+    "komosa ryżowa": "quinoa",
+    "imbir mielony": "ginger",
+    "czosnek świeży": "garlic",
+    "brokuł": "broccoli",
+    "papryka czerwona": "red bell pepper"
+  },
+  "estimates": {
+    "mixed greens": {
+      "kcal": 20,
+      "protein": 1.5,
+      "fat": 0.2,
+      "carbs": 3,
+      "fiber": 1.5
+    },
+    "bell pepper": {
+      "kcal": 26,
+      "protein": 1,
+      "fat": 0.3,
+      "carbs": 6,
+      "fiber": 1.7
+    },
+    "garlic": {
+      "kcal": 149,
+      "protein": 6.4,
+      "fat": 0.5,
+      "carbs": 33.1,
+      "fiber": 2.1
+    }
+  },
+  "stage2": {
+    "pl-d1-grahamka-kurczak": {
+      "dietLabels": [],
+      "healthLabels": [],
+      "perIngredient": [
+        {
+          "name": "chicken breast",
+          "grams": 200,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 171077,
+          "cookedState": "cooked",
+          "retentionFactor": 0.8
+        },
+        {
+          "name": "bread roll",
+          "grams": 114,
+          "flagged": false,
+          "confidence": 0.7,
+          "chosenFdcId": 168126,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "mixed greens",
+          "grams": null,
+          "flagged": true,
+          "confidence": 0.3,
+          "chosenFdcId": null,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "tomato",
+          "grams": 123,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 170457,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "cucumber",
+          "grams": 200,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 168409,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "olive oil",
+          "grams": 27,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 171413,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "bell pepper",
+          "grams": null,
+          "flagged": true,
+          "confidence": 0.3,
+          "chosenFdcId": null,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "garlic",
+          "grams": null,
+          "flagged": true,
+          "confidence": 0.3,
+          "chosenFdcId": null,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "salt",
+          "grams": 0.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 173468,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "black pepper",
+          "grams": 0.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 170931,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        }
+      ]
+    },
+    "pl-d1-losos-miso": {
+      "dietLabels": [
+        "High-Protein"
+      ],
+      "healthLabels": [
+        "Dairy-Free",
+        "Nut-Free",
+        "Pescatarian"
+      ],
+      "perIngredient": [
+        {
+          "name": "white rice",
+          "grams": 75,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 2512381,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "salmon",
+          "grams": 200,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 173686,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "miso paste",
+          "grams": 7.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 172442,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "honey",
+          "grams": 7,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 169640,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "soy sauce",
+          "grams": 22.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 174277,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "sesame oil",
+          "grams": 4.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 171016,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "ginger",
+          "grams": 2.5,
+          "flagged": false,
+          "confidence": 0.7,
+          "chosenFdcId": 169231,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "garlic",
+          "grams": 1.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 2709786,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "bok choy",
+          "grams": 200,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 2685572,
+          "cookedState": "cooked",
+          "retentionFactor": 0.9
+        },
+        {
+          "name": "olive oil",
+          "grams": 4.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 171413,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "sesame seeds",
+          "grams": 3.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 170150,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "salt",
+          "grams": 0.5,
+          "flagged": false,
+          "confidence": 0.8,
+          "chosenFdcId": 173468,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "black pepper",
+          "grams": 0.3,
+          "flagged": false,
+          "confidence": 0.8,
+          "chosenFdcId": 170931,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        },
+        {
+          "name": "chili pepper",
+          "grams": 1,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 170932,
+          "cookedState": "cooked",
+          "retentionFactor": 1
+        }
+      ]
+    },
+    "pl-d1-kurczak-teriyaki": {
+      "dietLabels": [],
+      "healthLabels": [],
+      "perIngredient": [
+        {
+          "name": "quinoa",
+          "grams": 100,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 168874,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "chicken breast",
+          "grams": 150,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 2646170,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "soy sauce",
+          "grams": 15,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 174277,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "honey",
+          "grams": 10.5,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 169640,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "sesame oil",
+          "grams": 18,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 171016,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "ginger",
+          "grams": 1,
+          "flagged": false,
+          "confidence": 0.8,
+          "chosenFdcId": 170926,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "garlic",
+          "grams": 3,
+          "flagged": false,
+          "confidence": 0.9,
+          "chosenFdcId": 1104647,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "broccoli",
+          "grams": 175,
+          "flagged": false,
+          "confidence": 1,
+          "chosenFdcId": 170379,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "red bell pepper",
+          "grams": 150,
+          "flagged": false,
+          "confidence": 0.8,
+          "chosenFdcId": 2258590,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        },
+        {
+          "name": "sesame seeds",
+          "grams": 3,
+          "flagged": false,
+          "confidence": 0.8,
+          "chosenFdcId": 170150,
+          "cookedState": "raw",
+          "retentionFactor": 1
+        }
+      ]
+    }
+  }
+}

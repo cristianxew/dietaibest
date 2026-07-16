@@ -113,7 +113,7 @@
     "dashboard": "Panel",
     "recipes": "Recetas",
     "mealPlans": "Planes de comidas",
-    "nutrition": "Nutrición",
+    "nutrition": "Centro de Nutrición",
     "shopping": "Compras",
     "onboarding": "Asistente",
     "settings": "Configuración",
@@ -357,6 +357,8 @@
     },
     "servings": "porciones",
     "ingredients": "Ingredientes",
+    "moreIngredients": "+ {count} más",
+    "viewFullRecipe": "Ver receta completa",
     "nutrition": "Datos Nutricionales",
     "nutritionPerServing": "Nutrición por porción",
     "fullNutritionTitle": "Nutrición completa",
@@ -413,6 +415,9 @@
     "editImage": "Editar imagen",
     "deleteImage": "Eliminar imagen",
     "uploadingImage": "Subiendo imagen...",
+    "generateImageWithAI": "Generar con IA",
+    "generatingImageWithAI": "Generando imagen...",
+    "generateImageError": "Error al generar la imagen",
     "imageUpdated": "¡Imagen actualizada con éxito!",
     "imageDeleted": "¡Imagen eliminada con éxito!",
     "imageUpdateError": "Error al actualizar la imagen",
@@ -709,6 +714,21 @@
       "carbs": "Carbos",
       "fat": "Grasas"
     },
+    "micronutrients": {
+      "title": "Micronutrientes",
+      "dailyAverage": "promedio diario",
+      "perDay": "este día",
+      "ofTarget": "{pct}% VD",
+      "ofLimit": "{pct}% del límite",
+      "sourcePersonalized": "Según tu edad y sexo",
+      "sourceStandard": "Según los valores diarios estándar (%VD)",
+      "empty": "Todavía no hay datos de micronutrientes para estas recetas.",
+      "group": {
+        "vitamins": "Vitaminas",
+        "minerals": "Minerales",
+        "other": "Otros"
+      }
+    },
     "layout": {
       "grid": "Grilla",
       "stack": "Apilado",
@@ -723,7 +743,8 @@
       "dragToMove": "Arrastra para mover comida",
       "removeMeal": "Eliminar comida",
       "decreaseServings": "Reducir porciones",
-      "increaseServings": "Aumentar porciones"
+      "increaseServings": "Aumentar porciones",
+      "viewRecipe": "Ver detalles de la receta"
     },
     "picker": {
       "selectRecipe": "Seleccionar Receta",
@@ -973,6 +994,380 @@
     "title": "DietAI - Planificación de comidas con IA",
     "description": "Planificación personalizada de comidas y seguimiento nutricional con asistencia de IA"
   },
+  "nutritionHub": {
+    "myWeek": {
+      "kicker": "Tu Semana",
+      "title": "Arregla Mi Semana",
+      "description": "Tu semana planificada, medida contra tus objetivos personales — y lo primero que conviene cambiar.",
+      "hero": {
+        "eyebrow": "Esta semana",
+        "ok": "Tu semana planificada se ve equilibrada",
+        "findings": "{count, plural, one {# cosa} other {# cosas}} por mejorar esta semana",
+        "cta": "Abrir Mi Semana"
+      },
+      "empty": {
+        "title": "Sin plan de comidas activo",
+        "body": "Programa un plan de comidas y analizaremos tu semana contra tus objetivos nutricionales personales.",
+        "cta": "Ir a planes de comida"
+      },
+      "strip": { "unplanned": "Sin plan", "kcalShort": "{kcal} kcal" },
+      "findings": {
+        "heading": "Qué arreglar primero",
+        "deficitTitle": "Bajo en {nutrient}",
+        "excessTitle": "Exceso de {nutrient}",
+        "deficitMeta": "Por debajo en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
+        "excessMeta": "Sobre tu límite en {days} de {plannedDays, plural, one {# día planificado} other {# días planificados}}",
+        "weekGapDeficit": "Faltan {amount} en la semana",
+        "weekGapExcess": "{amount} de más en la semana",
+        "sourcesExcess": "Mayores fuentes",
+        "sourcesDeficit": "Mejores oportunidades de mejora",
+        "contributorShare": "{share}% de la semana",
+        "none": "Tu semana planificada se ve equilibrada. ¡Bien hecho!"
+      },
+      "swaps": {
+        "show": "Ver soluciones",
+        "loading": "Buscando soluciones…",
+        "closes": "cierra el {pct}% de la brecha",
+        "tradeoffs": "Ojo: {nutrients}",
+        "apply": "Aplicar",
+        "applying": "Aplicando…",
+        "applied": "Cambiado a {to}",
+        "undo": "Deshacer",
+        "none": "No hay buen candidato en tus recetas para esto.",
+        "generate": "Generar una receta que lo arregle",
+        "generating": "Cocinando una receta…",
+        "generated": "Creada \"{title}\" — nutrición verificada con datos USDA",
+        "generateFailed": "No se pudo generar una receta esta vez. Intenta de nuevo."
+      },
+      "improveData": {
+        "title": "Mejora tus datos",
+        "body": "{count, plural, one {# receta de tu semana tiene} other {# recetas de tu semana tienen}} datos de ingredientes incompletos, así que el análisis de micronutrientes es limitado.",
+        "analyze": "Analizar ingredientes",
+        "analyzing": "Analizando…",
+        "done": "Coincidieron {matched} de {total} ingredientes"
+      },
+      "detail": {
+        "show": "Ver detalle completo de la semana",
+        "hide": "Ocultar detalle completo",
+        "nutrient": "Nutriente"
+      },
+      "basis": { "personalized": "Objetivos personalizados", "generic": "Valores diarios genéricos" }
+    },
+    "hub": {
+      "kicker": "Centro de Aprendizaje",
+      "title": "Conoce lo que hay en tu plato",
+      "description": "Compara alimentos, mide tus comidas frente a tu día y aprende qué hace cada nutriente — para que cada bocado sea una decisión consciente.",
+      "faceoff": {
+        "kicker": "Duelo del Día",
+        "vs": "vs",
+        "cta": "Ver la comparación completa"
+      },
+      "modules": {
+        "myWeek": {
+          "kicker": "Actúa",
+          "title": "Arregla Mi Semana",
+          "blurb": "Mira cómo va de verdad tu semana planificada y arréglala con un toque."
+        },
+        "compare": {
+          "kicker": "Comparar",
+          "title": "Duelo de Alimentos",
+          "blurb": "Pon dos alimentos o recetas frente a frente y descubre su historia nutricional completa."
+        },
+        "vsDay": {
+          "kicker": "Tu Día",
+          "title": "Comida vs Tu Día",
+          "blurb": "Descubre cuánto de tus necesidades diarias cubre realmente una comida."
+        },
+        "nutrients": {
+          "kicker": "Aprender",
+          "title": "Enciclopedia de Nutrientes",
+          "blurb": "Qué hace cada nutriente, por qué importa y los mejores alimentos para obtenerlo."
+        },
+        "swaps": {
+          "kicker": "Mejorar",
+          "title": "Cambios Inteligentes",
+          "blurb": "Cambios simples con una ganancia nutricional real, respaldados por datos del USDA."
+        },
+        "calculator": {
+          "kicker": "Herramientas",
+          "title": "Calculadora Nutricional",
+          "blurb": "Analiza cualquier lista de ingredientes y obtén datos nutricionales precisos."
+        }
+      }
+    },
+    "nutrients": {
+      "kcal": { "name": "Calorías" },
+      "protein": { "name": "Proteína" },
+      "fat": { "name": "Grasa" },
+      "carbs": { "name": "Carbohidratos" },
+      "fiber": { "name": "Fibra" },
+      "sugar": { "name": "Azúcar" },
+      "satFat": { "name": "Grasa Saturada" },
+      "cholesterol": { "name": "Colesterol" },
+      "sodium": { "name": "Sodio" },
+      "potassium": { "name": "Potasio" },
+      "calcium": { "name": "Calcio" },
+      "iron": { "name": "Hierro" },
+      "magnesium": { "name": "Magnesio" },
+      "zinc": { "name": "Zinc" },
+      "vitaminA": { "name": "Vitamina A" },
+      "vitaminC": { "name": "Vitamina C" },
+      "vitaminD": { "name": "Vitamina D" },
+      "vitaminE": { "name": "Vitamina E" },
+      "vitaminK": { "name": "Vitamina K" },
+      "vitaminB6": { "name": "Vitamina B6" },
+      "vitaminB12": { "name": "Vitamina B12" },
+      "folate": { "name": "Folato" }
+    },
+    "common": {
+      "askDietai": "Preguntar a Dietai",
+      "disclaimer": "Información educativa — no es consejo médico."
+    },
+    "insights": {
+      "timesMore": "{winner} tiene {times}× más {nutrient}",
+      "moreBy": "{winner} tiene {diff} {unit} más de {nutrient}",
+      "onlyOneHas": "Solo {winner} aporta {nutrient}"
+    },
+    "vsDay": {
+      "kicker": "Tu Día",
+      "title": "Comida vs Tu Día",
+      "description": "Elige un alimento o una de tus recetas y descubre cuánto de tus necesidades diarias cubre realmente.",
+      "pickPrompt": "¿Qué vas a comer?",
+      "headline": "Esto cubre el <highlight>{pct}%</highlight> de lo que necesitas hoy de {nutrient}",
+      "loadError": "No se pudieron cargar los datos. Intenta de nuevo.",
+      "clear": "Quitar",
+      "decrease": "Menos porciones",
+      "increase": "Más porciones",
+      "noData": "Sin datos del USDA para este nutriente",
+      "basisPer100g": "por 100 g",
+      "basisPerServing": "por porción",
+      "basisPersonalized": "Objetivo personalizado según tu perfil",
+      "basisGeneric": "Valor Diario genérico de la FDA",
+      "groups": {
+        "energyMacros": "Energía y Macros",
+        "watch": "A Vigilar",
+        "vitaminsMinerals": "Vitaminas y Minerales"
+      },
+      "nudge": {
+        "message": "Usando valores generales de la FDA — completa tu perfil para objetivos a tu medida.",
+        "cta": "Completar perfil"
+      }
+    },
+    "encyclopedia": {
+      "meta": {
+        "kicker": "Aprender",
+        "title": "Enciclopedia de Nutrientes",
+        "description": "Cada nutriente tiene un trabajo. Aprende qué hace, por qué importa y dónde encontrarlo.",
+        "dailyTarget": "objetivo diario",
+        "dailyLimit": "límite diario",
+        "topSources": "Mejores fuentes alimentarias",
+        "whatItDoes": "Qué hace",
+        "whyYouCare": "Por qué te importa",
+        "deficiencySigns": "Cuando te falta",
+        "per100g": "Valores por 100 g · USDA FoodData Central",
+        "compareCta": "Comparar",
+        "backToIndex": "Todos los nutrientes",
+        "limitBadge": "Menos es más",
+        "goalBadge": "Apunta a tu objetivo"
+      },
+      "protein": {
+        "tagline": "El material de construcción del cuerpo.",
+        "whatItDoes": "Construye y repara músculo, piel y tejidos, y aporta la materia prima de enzimas y hormonas.",
+        "whyYouCare": "Te mantiene saciado por más tiempo y ayuda a conservar músculo, sobre todo si estás activo o comiendo menos calorías.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con pérdida de músculo, debilidad y recuperación lenta.",
+        "funFact": "Las lentejas y el arroz juntos aportan todos los aminoácidos esenciales — las combinaciones clásicas lo descubrieron siglos antes que la ciencia."
+      },
+      "fiber": {
+        "tagline": "La mejor amiga de tu digestión.",
+        "whatItDoes": "Alimenta a las bacterias buenas del intestino y mantiene la digestión a un ritmo saludable.",
+        "whyYouCare": "Las comidas ricas en fibra llenan más y ayudan a mantener estables el azúcar y el colesterol en sangre.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con digestión irregular y volver a tener hambre poco después de comer.",
+        "funFact": "Solo las plantas producen fibra — no hay nada en la carne, los huevos o el queso, por muy naturales que sean."
+      },
+      "sugar": {
+        "tagline": "Energía dulce y rápida — fácil de exceder.",
+        "whatItDoes": "Entrega energía rápida a tus células, sin mucho más en el paquete.",
+        "whyYouCare": "Los alimentos y bebidas azucarados suman calorías rápido sin llenarte, lo que facilita comer de más.",
+        "deficiencySigns": "",
+        "funFact": "Un plátano y una cucharada de azúcar tienen gramos de azúcar similares — pero el plátano los envuelve en fibra, potasio y vitaminas."
+      },
+      "saturated-fat": {
+        "tagline": "La grasa que conviene vigilar.",
+        "whatItDoes": "Aporta energía y estructura a las células; tu cuerpo también puede fabricar la que necesita.",
+        "whyYouCare": "Las guías alimentarias recomiendan mantenerla por debajo del 10% de las calorías diarias — cambiar una parte por grasas insaturadas es una victoria fácil.",
+        "deficiencySigns": "",
+        "funFact": "No todas las grasas saturadas se comportan igual: la del chocolate negro (ácido esteárico) es mucho más neutra que las de las carnes procesadas."
+      },
+      "sodium": {
+        "tagline": "Mineral esencial, presencia desmedida.",
+        "whatItDoes": "Ayuda a equilibrar los líquidos y permite que nervios y músculos funcionen correctamente.",
+        "whyYouCare": "La mayoría comemos mucho más del límite recomendado — sobre todo por los alimentos envasados, no por el salero.",
+        "deficiencySigns": "",
+        "funFact": "Cerca del 70% del sodio dietario viene de alimentos procesados y restaurantes — cocinar en casa es el recorte de sodio más fácil que existe."
+      },
+      "potassium": {
+        "tagline": "El contrapeso del sodio.",
+        "whatItDoes": "Trabaja en sentido opuesto al sodio para equilibrar líquidos, y sostiene un latido estable y las contracciones musculares.",
+        "whyYouCare": "La mayoría obtiene mucho menos del objetivo, y una dieta rica en potasio favorece una presión arterial saludable.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con calambres, fatiga y debilidad.",
+        "funFact": "El camote y la espinaca le ganan al plátano en su propio juego del potasio."
+      },
+      "calcium": {
+        "tagline": "Mucho más que huesos fuertes.",
+        "whatItDoes": "Construye huesos y dientes, y hace posibles las contracciones musculares, las señales nerviosas y la coagulación.",
+        "whyYouCare": "Cuando la ingesta es baja, tu cuerpo toma calcio prestado de tus huesos — y no lo sentirás hasta mucho después.",
+        "deficiencySigns": "Una ingesta crónicamente baja se asocia con menor densidad ósea con el tiempo.",
+        "funFact": "La espinaca parece rica en calcio en el papel, pero los oxalatos bloquean gran parte de su absorción — los lácteos y los alimentos fortificados entregan más calcio aprovechable."
+      },
+      "iron": {
+        "tagline": "El mensajero del oxígeno.",
+        "whatItDoes": "Forma el núcleo de la hemoglobina, que lleva oxígeno de tus pulmones a cada célula.",
+        "whyYouCare": "El hierro es la carencia nutricional más común del mundo, sobre todo en mujeres — tu energía diaria depende de él.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga, piel pálida y agitarse con facilidad.",
+        "funFact": "La vitamina C puede multiplicar el hierro que absorbes de las plantas — exprime limón sobre tus lentejas."
+      },
+      "magnesium": {
+        "tagline": "El mineral de los 300 trabajos.",
+        "whatItDoes": "Participa en más de 300 reacciones enzimáticas — producción de energía, relajación muscular y función nerviosa.",
+        "whyYouCare": "Influye en la calidad del sueño y la recuperación muscular, y la mayoría de las dietas no llegan al objetivo.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con espasmos, calambres y sueño inquieto.",
+        "funFact": "El chocolate negro es una fuente legítima de magnesio — cuanto más oscuro, mejor."
+      },
+      "zinc": {
+        "tagline": "El intendente del sistema inmune.",
+        "whatItDoes": "Apoya la producción de células inmunes, la cicatrización y tus sentidos del gusto y el olfato.",
+        "whyYouCare": "Incluso un déficit leve puede debilitar tu respuesta inmune — importa más cuando estás estresado o entrenando duro.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con resfriados frecuentes, cicatrización lenta y gusto apagado.",
+        "funFact": "Las ostras llevan unas diez veces más zinc que un bistec — el instinto de los marineros iba bien encaminado."
+      },
+      "vitamin-a": {
+        "tagline": "Visión nocturna y piel renovada.",
+        "whatItDoes": "Mantiene la visión (sobre todo con poca luz), la renovación de la piel y las defensas inmunes.",
+        "whyYouCare": "Tus ojos y tu piel se renuevan constantemente y necesitan un suministro estable para lograrlo.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con mala visión nocturna y piel seca.",
+        "funFact": "El betacaroteno del camote se convierte en vitamina A bajo demanda — tu cuerpo toma solo lo que necesita."
+      },
+      "vitamin-c": {
+        "tagline": "La chispa del colágeno.",
+        "whatItDoes": "Impulsa la producción de colágeno para piel y articulaciones, mejora la absorción de hierro y actúa como antioxidante.",
+        "whyYouCare": "Los humanos somos de los pocos animales que no pueden fabricarla — tiene que venir de la comida, con regularidad.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con piel áspera, moretones fáciles y cicatrización lenta.",
+        "funFact": "El brócoli crudo tiene más vitamina C por 100 g que una naranja."
+      },
+      "vitamin-d": {
+        "tagline": "La vitamina del sol.",
+        "whatItDoes": "Ayuda a absorber calcio y apoya la función muscular e inmune — se comporta más como una hormona que como una vitamina.",
+        "whyYouCare": "Las fuentes alimentarias son escasas y la exposición al sol varía muchísimo — es una de las carencias más comunes en climas del norte.",
+        "deficiencySigns": "Niveles bajos se asocian comúnmente con poca energía y huesos más débiles.",
+        "funFact": "Tu piel fabrica vitamina D a partir del sol — 15 minutos en los antebrazos pueden rendir más que la mayoría de las comidas."
+      },
+      "vitamin-e": {
+        "tagline": "La guardaespaldas de tus células.",
+        "whatItDoes": "Protege las membranas celulares del daño oxidativo como tu principal antioxidante liposoluble.",
+        "whyYouCare": "Cuida las grasas de todo tu cuerpo — incluidas las que construyen tu cerebro.",
+        "deficiencySigns": "La deficiencia real es rara, pero una ingesta baja deja a las membranas con menos protección antioxidante.",
+        "funFact": "Las almendras son la realeza de la vitamina E — un puñado cubre casi la mitad de tu día."
+      },
+      "vitamin-k": {
+        "tagline": "La directora de la coagulación.",
+        "whatItDoes": "Activa las proteínas que permiten coagular la sangre y ayuda a dirigir el calcio hacia los huesos.",
+        "whyYouCare": "Influye silenciosamente en que el calcio termine en los huesos — justo donde lo quieres.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con moretones fáciles.",
+        "funFact": "La 'K' viene del alemán 'Koagulation' — un científico danés publicando en una revista alemana."
+      },
+      "vitamin-b6": {
+        "tagline": "La traductora del metabolismo.",
+        "whatItDoes": "Ayuda a convertir la comida en energía y a fabricar mensajeros como la serotonina y la dopamina.",
+        "whyYouCare": "Las dietas altas en proteína aumentan tus necesidades de B6 — trabajan en pareja.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con irritabilidad y poca energía.",
+        "funFact": "El plátano es de las pocas frutas con B6 relevante — una razón más de su estatus de clásico deportivo."
+      },
+      "vitamin-b12": {
+        "tagline": "Cableado nervioso y glóbulos rojos.",
+        "whatItDoes": "Mantiene el aislamiento de los nervios, la síntesis de ADN y la producción de glóbulos rojos.",
+        "whyYouCare": "Viene casi exclusivamente de alimentos animales — quienes comen a base de plantas necesitan alimentos fortificados o suplementos.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga, hormigueo y niebla mental.",
+        "funFact": "Tu hígado puede almacenar B12 para varios años — un colchón que ninguna otra vitamina hidrosoluble tiene."
+      },
+      "folate": {
+        "tagline": "El combustible de la división celular.",
+        "whatItDoes": "Impulsa la síntesis de ADN y la división celular — donde tu cuerpo crece o se repara, el folato está de turno.",
+        "whyYouCare": "Importa especialmente durante el embarazo y el crecimiento; las lentejas y las hojas verdes son fuentes ricas y económicas.",
+        "deficiencySigns": "Una ingesta baja se asocia comúnmente con fatiga y anemia.",
+        "funFact": "El nombre viene del latín 'folium' (hoja) — las fuentes originales eran las verduras de hoja."
+      }
+    },
+    "swaps": {
+      "kicker": "Mejorar",
+      "title": "Cambios Inteligentes",
+      "description": "Cambios simples con una ganancia nutricional real verificada con datos del USDA. Pequeños cambios, gran recompensa acumulada.",
+      "insteadOf": "En lugar de",
+      "try": "Prueba",
+      "faceoffCta": "Ver duelo completo",
+      "categories": {
+        "grains": "Granos y Guarniciones",
+        "greens": "Verduras de Hoja",
+        "protein": "Proteína",
+        "fruit": "Fruta",
+        "fats": "Grasas y Untables"
+      },
+      "chips": {
+        "timesMore": "{times}× más {nutrient}",
+        "timesLess": "{times}× menos {nutrient}",
+        "onlyHas": "el único con {nutrient}",
+        "moreBy": "+{diff} {unit} de {nutrient}",
+        "lessBy": "−{diff} {unit} de {nutrient}"
+      }
+    },
+    "compare": {
+      "kicker": "Comparar",
+      "title": "Duelo de Alimentos",
+      "description": "Elige dos contendientes — cualquier alimento del USDA o una de tus recetas — y descubre su historia nutricional completa, lado a lado.",
+      "slotA": "Contendiente A",
+      "slotB": "Contendiente B",
+      "clear": "Quitar",
+      "swapSides": "Intercambiar lados",
+      "loadError": "No se pudieron cargar los datos. Intenta de nuevo.",
+      "recipeBadge": "Mi receta",
+      "noData": "Sin datos del USDA para este nutriente",
+      "basis": {
+        "per100g": "por 100 g",
+        "perServing": "por porción"
+      },
+      "groups": {
+        "energy": "Energía",
+        "macro": "Macros",
+        "fatProfile": "Grasas y Colesterol",
+        "mineral": "Minerales",
+        "vitamin": "Vitaminas"
+      },
+      "coverage": {
+        "macrosOnly": "Solo macros",
+        "partial": "Datos parciales ({matched}/{total} ingredientes)",
+        "tooltip": "Algunos ingredientes aún no están vinculados a alimentos del USDA, por lo que los micronutrientes pueden estar incompletos. Vuelve a analizar la receta para el detalle completo."
+      },
+      "search": {
+        "placeholder": "Busca alimentos o tus recetas…",
+        "foodsTab": "Alimentos",
+        "recipesTab": "Mis recetas",
+        "searching": "Buscando…",
+        "minChars": "Escribe al menos 2 caracteres para buscar",
+        "noResults": "No se encontró nada",
+        "foodsHeading": "USDA FoodData Central",
+        "recipesHeading": "Tus recetas",
+        "servings": "{count} porciones"
+      },
+      "empty": {
+        "title": "Elige tus contendientes",
+        "description": "Busca cualquier alimento o receta arriba — o empieza con un duelo clásico.",
+        "suggestions": {
+          "bananaApple": "Plátano vs Manzana",
+          "spinachBroccoli": "Espinaca vs Brócoli",
+          "avocadoBanana": "Aguacate vs Plátano"
+        }
+      }
+    }
+  },
   "nutrition": {
     "title": "Información Nutricional",
     "confidence": "Confianza",
@@ -990,6 +1385,36 @@
       "noResults": "No se encontraron ingredientes",
       "minCharacters": "Escribe al menos 2 caracteres para buscar",
       "heading": "USDA FoodData Central"
+    },
+    "calculator": {
+      "page": {
+        "kicker": "Nutrición",
+        "title": "Calculadora Nutricional",
+        "description": "Analiza los ingredientes de una receta y calcula información nutricional precisa con USDA FoodData Central."
+      },
+      "cardTitle": "Ingredientes de la Receta",
+      "structuredTab": "Entrada Estructurada",
+      "textTab": "Entrada de Texto",
+      "structuredHint": "Agrega ingredientes con autocompletado de la base de datos USDA FoodData Central.",
+      "textHint": "Escribe un ingrediente por línea con cantidad y unidad (p. ej., \"1 taza de arroz\", \"150 g de pollo\", \"2 cdas de aceite de oliva\").",
+      "ingredientsLabel": "Ingredientes",
+      "loadExample": "Cargar Ejemplo",
+      "searchPlaceholder": "Buscar ingrediente...",
+      "addIngredient": "Agregar Ingrediente",
+      "servingsLabel": "Número de Porciones",
+      "analyzing": "Analizando...",
+      "calculate": "Calcular Nutrición",
+      "exampleLoaded": "Receta de ejemplo cargada",
+      "errors": {
+        "enterIngredient": "Ingresa al menos un ingrediente",
+        "addIngredient": "Agrega al menos un ingrediente",
+        "servingsPositive": "Las porciones deben ser un número positivo",
+        "analysisFailed": "El análisis falló",
+        "unexpected": "Ocurrió un error inesperado durante el análisis"
+      },
+      "success": {
+        "analysisComplete": "¡Análisis completo! Se procesaron {count} ingredientes."
+      }
     }
   },
   "placeholders": {
@@ -1171,8 +1596,7 @@
       "savedRecipes": "recetas guardadas",
       "recipesCreatedPerMonth": "recetas por mes",
       "mealPlanTemplates": "plantillas de plan de comida",
-      "mealPlanDurationDays": "duración del plan de comida",
-      "edamamAnalysesPerMonth": "análisis nutricionales por mes"
+      "mealPlanDurationDays": "duración del plan de comida"
     },
     "pricing": {
       "title": "Pasate a DietAI Pro",
@@ -1195,6 +1619,13 @@
     }
   },
   "chat": {
+    "seeds": {
+      "nutritionHub": {
+        "compare": "Comparé {a} y {b} en el Centro de Nutrición. ¿Puedes explicarme en términos simples qué significan para mí las mayores diferencias nutricionales?",
+        "vsDay": "Revisé {item} frente a mis objetivos diarios en el Centro de Nutrición — cubre cerca del {pct}% de mi {nutrient}. ¿Cómo debería ser el resto de mi día para mantener el equilibrio?",
+        "nutrient": "Enséñame sobre {nutrient}: ¿por qué mi cuerpo lo necesita y cómo obtengo suficiente con comida de todos los días?"
+      }
+    },
     "title": "Asistente DietAI",
     "online": "En línea",
     "clearConversation": "Limpiar conversación",
@@ -1257,9 +1688,6 @@
       "title": "Qué puedo hacer",
       "open": "Ver qué puede hacer el asistente"
     },
-    "followUps": {
-      "title": "Prueba ahora"
-    },
     "entry": {
       "recipeDetail": {
         "ask": "Pregunta a DietAI"
@@ -1295,6 +1723,7 @@
         "extracting": "Extrayendo la receta…",
         "analyzing": "Analizando los macros…",
         "saving": "Guardando la receta…",
+        "savingNutrition": "Guardando y calculando la nutrición… puede tardar unos segundos",
         "fallback": "Reintentando con otro método…"
       },
       "media": {

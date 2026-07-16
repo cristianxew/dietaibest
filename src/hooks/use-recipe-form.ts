@@ -14,7 +14,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { recipeFormSchema, type RecipeFormData } from "@/types/recipe";
 import { persistRecipe, updateRecipe, getCategories } from "@/actions/recipe";
-import { analyzeRecipeNutritionAction, type NutritionAnalysisResult } from "@/actions/nutrition";
+import { analyzeRecipeProfileForFormAction } from "@/actions/nutrition";
+import type { Profile } from "@/lib/fdc";
 import { ingredientsToNutritionLines } from "@/lib/recipe-utils";
 import { toast } from "sonner";
 
@@ -34,7 +35,7 @@ export interface RecipeFormCtx {
   };
   categories: RecipeCategory[];
   nutritionLoading: boolean;
-  nutritionResult: NutritionAnalysisResult | null;
+  nutritionResult: Profile | null;
   isSubmitting: boolean;
   savedRecipeId: string | null;
   analyzeNutrition: () => Promise<void>;
@@ -69,12 +70,19 @@ export function useRecipeFormState(opts: {
   recipeId: string | null;
   isOpen: boolean;
   onSubmitSuccess: () => void;
+  /**
+   * Called when a save attempt fails schema validation, with the names of the
+   * errored fields. Lets the flow layer jump to the step holding the first
+   * invalid field — the Save button lives on the Nutrition step, but invalid
+   * fields usually live on earlier steps the user can't currently see.
+   */
+  onValidationError?: (errorFields: string[]) => void;
 }): RecipeFormCtx {
-  const { mode, recipeId, isOpen, onSubmitSuccess } = opts;
+  const { mode, recipeId, isOpen, onSubmitSuccess, onValidationError } = opts;
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [nutritionLoading, setNutritionLoading] = useState(false);
-  const [nutritionResult, setNutritionResult] = useState<NutritionAnalysisResult | null>(null);
+  const [nutritionResult, setNutritionResult] = useState<Profile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null);
 
@@ -119,7 +127,7 @@ export function useRecipeFormState(opts: {
   }, [form]);
 
   const analyzeNutrition = useCallback(async () => {
-    const { title, ingredients, servings } = form.getValues();
+    const { ingredients, servings } = form.getValues();
     const lines = ingredientsToNutritionLines(ingredients);
     if (!lines.length) {
       toast.error("Add ingredients before analyzing nutrition");
@@ -127,14 +135,40 @@ export function useRecipeFormState(opts: {
     }
     setNutritionLoading(true);
     try {
-      const result = await analyzeRecipeNutritionAction({ title, ingredients: lines, servings });
+      const result = await analyzeRecipeProfileForFormAction({
+        ingredients: lines,
+        servings,
+      });
       if (result.success && result.data) {
-        setNutritionResult(result.data);
-        const { macros } = result.data;
-        form.setValue("calories", Math.round(macros.calories));
-        form.setValue("protein", Math.round(macros.protein));
-        form.setValue("carbs", Math.round(macros.netCarbs));
-        form.setValue("fat", Math.round(macros.fat));
+        const profile = result.data;
+        // The analysis reports success even when NO ingredient resolved against
+        // USDA FDC — every unmatched ingredient contributes a zero profile, so
+        // `perServing` comes back all-zeros. Overwriting in that case wipes the
+        // recipe's existing nutrition to 0. Treat an all-zero result as a failure
+        // and leave the current values untouched.
+        const resolvedSomething = [
+          profile.calories,
+          profile.protein,
+          profile.carbs,
+          profile.fat,
+        ].some((v) => Number.isFinite(v) && v > 0);
+
+        if (!resolvedSomething) {
+          toast.error(
+            "Couldn't resolve nutrition for these ingredients — values left unchanged"
+          );
+          return;
+        }
+
+        setNutritionResult(profile);
+        // FDC returns the full per-serving profile; pre-fill every macro/micro.
+        (Object.keys(profile) as Array<keyof typeof profile>).forEach((key) => {
+          const value = profile[key];
+          // Never write a non-finite value into a `z.number()` field — it would
+          // silently fail validation and break the Save button afterwards.
+          if (!Number.isFinite(value)) return;
+          form.setValue(key, Math.round(value * 10) / 10);
+        });
       } else {
         toast.error(result.error || "Failed to analyze nutrition");
       }
@@ -147,7 +181,16 @@ export function useRecipeFormState(opts: {
 
   const handleSubmit = useCallback(async () => {
     const valid = await form.trigger();
-    if (!valid) return;
+    if (!valid) {
+      // Don't fail silently — the Save button sits on the Nutrition step while
+      // the invalid field (title, ingredients, instructions…) usually lives on
+      // an earlier step the user can't see. Surface it and let the flow jump to
+      // the offending step so the inline error becomes visible.
+      const errorFields = Object.keys(form.formState.errors);
+      toast.error("Please fix the highlighted fields before saving");
+      onValidationError?.(errorFields);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -177,7 +220,7 @@ export function useRecipeFormState(opts: {
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, mode, recipeId, onSubmitSuccess]);
+  }, [form, mode, recipeId, onSubmitSuccess, onValidationError]);
 
   return {
     form,

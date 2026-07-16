@@ -13,9 +13,6 @@ vi.mock("@/lib/entitlements", () => ({
   assertCanCreateRecipe: vi.fn(),
   assertCanImportRecipe: vi.fn(),
 }));
-vi.mock("@/lib/edamam-service", () => ({
-  analyzeRecipeNutrition: vi.fn(),
-}));
 
 import { getServerSession } from "next-auth";
 import prisma from "@/lib/prisma";

@@ -2,9 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   capabilities,
-  followUpMap,
   selectCapabilitiesForPath,
-  computeFollowUps,
   getCapability,
 } from "@/lib/chat/capabilities";
 import type { PageArea } from "@/lib/chat/page-context";
@@ -68,16 +66,6 @@ describe("capability catalog", () => {
     }
   });
 
-  it("followUpMap keys are registry tools and values are capability ids", () => {
-    const ids = new Set(capabilities.map((c) => c.id));
-    for (const [toolName, followUps] of Object.entries(followUpMap)) {
-      expect(knownToolNames.has(toolName), toolName).toBe(true);
-      for (const id of followUps ?? []) {
-        expect(ids.has(id), id).toBe(true);
-      }
-    }
-  });
-
   it("has en.json label + prompt for every capability, entityPrompt iff entityAware", () => {
     for (const cap of capabilities) {
       const copy = enCapabilities[cap.id];
@@ -135,35 +123,5 @@ describe("selectCapabilitiesForPath", () => {
     );
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.length).toBeLessThanOrEqual(5);
-  });
-});
-
-describe("computeFollowUps", () => {
-  it("maps createRecipe to its follow-up capabilities in order", () => {
-    expect(computeFollowUps(["createRecipe"]).map((c) => c.id)).toEqual([
-      "analyzeNutrition",
-      "generateRecipeImage",
-      "addRecipeToPlan",
-    ]);
-  });
-
-  it("puts the last-completed tool's follow-ups first, dedupes and caps at 3", () => {
-    const ids = computeFollowUps(["createRecipe", "getNutrition"]).map(
-      (c) => c.id
-    );
-    expect(ids).toEqual([
-      "addRecipeToPlan",
-      "generateMealPlan",
-      "analyzeNutrition",
-    ]);
-  });
-
-  it("returns nothing for unmapped tools or empty turns", () => {
-    expect(computeFollowUps(["searchRecipes"])).toEqual([]);
-    expect(computeFollowUps([])).toEqual([]);
-  });
-
-  it("respects a custom max", () => {
-    expect(computeFollowUps(["createRecipe"], 2)).toHaveLength(2);
   });
 });

@@ -94,14 +94,14 @@ export function MainNav({
         requiresAuth: true,
         shortcut: "Alt+3",
       },
-      {
-        id: "nutrition",
-        label: t("nutrition"),
-        href: "/nutrition",
-        icon: "Calculator",
-        requiresAuth: true,
-        shortcut: "Alt+4",
-      },
+      // {
+      //   id: "nutrition",
+      //   label: t("nutrition"),
+      //   href: "/nutrition",
+      //   icon: "Calculator",
+      //   requiresAuth: true,
+      //   shortcut: "Alt+4",
+      // },
       {
         id: "shopping",
         label: t("shopping"),
@@ -232,7 +232,7 @@ export function MainNav({
         className={cn(
           "gap-2",
           orientation === "vertical" &&
-            "flex-col items-start space-x-0 space-y-1"
+          "flex-col items-start space-x-0 space-y-1"
         )}
         role="menubar"
         aria-orientation={orientation}
@@ -268,13 +268,11 @@ export function MainNav({
                 )}
                 data-active={isActive}
                 aria-current={isActive ? "page" : undefined}
-                aria-label={`Navigate to ${item.label}${
-                  item.shortcut ? ` (${item.shortcut})` : ""
-                }${isActive ? ` - ${tA11y("currentPage")}` : ""}`}
+                aria-label={`Navigate to ${item.label}${item.shortcut ? ` (${item.shortcut})` : ""
+                  }${isActive ? ` - ${tA11y("currentPage")}` : ""}`}
                 aria-describedby={`nav-item-${item.id}-description`}
-                title={`${item.label}${
-                  item.shortcut ? ` - ${item.shortcut}` : ""
-                }${isActive ? ` (${tA11y("currentPage")})` : ""}`}
+                title={`${item.label}${item.shortcut ? ` - ${item.shortcut}` : ""
+                  }${isActive ? ` (${tA11y("currentPage")})` : ""}`}
                 tabIndex={0}
               >
                 <Link
@@ -282,9 +280,8 @@ export function MainNav({
                   role="menuitem"
                   aria-posinset={index + 1}
                   aria-setsize={navigationItems.length}
-                  aria-label={`${item.label}${
-                    isActive ? ` (${tA11y("currentPage").toLowerCase()})` : ""
-                  }`}
+                  aria-label={`${item.label}${isActive ? ` (${tA11y("currentPage").toLowerCase()})` : ""
+                    }`}
                 >
                   {showIcons && IconComponent && (
                     <IconComponent
@@ -338,9 +335,9 @@ export function MainNav({
       >
         {navigationItems.length > 0
           ? `Navigation shortcuts: ${navigationItems
-              .filter((item) => item.shortcut)
-              .map((item) => `${item.shortcut} for ${item.label}`)
-              .join(", ")}`
+            .filter((item) => item.shortcut)
+            .map((item) => `${item.shortcut} for ${item.label}`)
+            .join(", ")}`
           : "No navigation shortcuts available"}
       </div>
 

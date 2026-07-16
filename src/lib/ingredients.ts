@@ -5,6 +5,10 @@
  * @module lib/ingredients
  */
 
+import { normalizeUnit, getUnitDefinition } from "./unit-registry";
+
+export { normalizeUnit };
+
 /**
  * Structured ingredient as stored in `Recipe.ingredients` (Json?).
  * Persisted by the recipe form; consumed by nutrition orchestration.
@@ -48,194 +52,6 @@ export const FRACTIONS: Record<string, number> = {
   "⅘": 0.8,
   "⅙": 0.167,
   "⅚": 0.833,
-};
-
-/**
- * Unit aliases and variations mapped to normalized forms
- */
-export const UNIT_ALIASES: Record<string, string> = {
-  // English - Weight
-  gram: "g",
-  grams: "g",
-  gr: "g",
-  kilogram: "kg",
-  kilograms: "kg",
-  kilo: "kg",
-  kilos: "kg",
-  pound: "lb",
-  pounds: "lb",
-  lbs: "lb",
-  ounce: "oz",
-  ounces: "oz",
-
-  // English - Volume
-  cup: "cup",
-  cups: "cup",
-  c: "cup",
-  tablespoon: "tbsp",
-  tablespoons: "tbsp",
-  tbsp: "tbsp",
-  tbs: "tbsp",
-  tbl: "tbsp",
-  teaspoon: "tsp",
-  teaspoons: "tsp",
-  tsp: "tsp",
-  milliliter: "ml",
-  milliliters: "ml",
-  millilitre: "ml",
-  millilitres: "ml",
-  liter: "l",
-  liters: "l",
-  litre: "l",
-  litres: "l",
-  pint: "pint",
-  pints: "pint",
-  quart: "quart",
-  quarts: "quart",
-  gallon: "gallon",
-  gallons: "gallon",
-  "fluid ounce": "fl oz",
-  "fluid ounces": "fl oz",
-  "fl oz": "fl oz",
-  "fl. oz": "fl oz",
-
-  // English - Count/pieces
-  piece: "piece",
-  pieces: "piece",
-  pc: "piece",
-  pcs: "piece",
-  whole: "piece",
-  item: "piece",
-  items: "piece",
-  unit: "piece",
-  units: "piece",
-
-  // English - Special
-  can: "can",
-  cans: "can",
-  package: "package",
-  packages: "package",
-  pkg: "package",
-  box: "box",
-  boxes: "box",
-  bunch: "bunch",
-  bunches: "bunch",
-  clove: "clove",
-  cloves: "clove",
-  slice: "slice",
-  slices: "slice",
-  pinch: "pinch",
-  pinches: "pinch",
-  dash: "dash",
-  dashes: "dash",
-
-  // Spanish - Weight
-  gramo: "g",
-  gramos: "g",
-  kilogramo: "kg",
-  kilogramos: "kg",
-  libra: "lb",
-  libras: "lb",
-  onza: "oz",
-  onzas: "oz",
-
-  // Spanish - Volume
-  taza: "cup",
-  tazas: "cup",
-  cucharada: "tbsp",
-  cucharadas: "tbsp",
-  cucharadita: "tsp",
-  cucharaditas: "tsp",
-  mililitro: "ml",
-  mililitros: "ml",
-  litro: "l",
-  litros: "l",
-
-  // Spanish - Count/pieces
-  pieza: "piece",
-  piezas: "piece",
-  unidad: "piece",
-  unidades: "piece",
-  entero: "piece",
-  enteros: "piece",
-
-  // Spanish - Special
-  lata: "can",
-  latas: "can",
-  paquete: "package",
-  paquetes: "package",
-  caja: "box",
-  cajas: "box",
-  manojo: "bunch",
-  manojos: "bunch",
-  diente: "clove",
-  dientes: "clove",
-  rebanada: "slice",
-  rebanadas: "slice",
-  pizca: "pinch",
-  pizcas: "pinch",
-
-  // Polish - Weight
-  gramy: "g",
-  gramów: "g",
-  kilogramy: "kg",
-  kilogramów: "kg",
-  funt: "lb",
-  funty: "lb",
-  funtów: "lb",
-  uncja: "oz",
-  uncje: "oz",
-  uncji: "oz",
-
-  // Polish - Volume
-  szklanka: "cup",
-  szklanki: "cup",
-  szklanek: "cup",
-  łyżka: "tbsp",
-  łyżki: "tbsp",
-  łyżek: "tbsp",
-  łyżeczka: "tsp",
-  łyżeczki: "tsp",
-  łyżeczek: "tsp",
-  mililitr: "ml",
-  mililitry: "ml",
-  mililitrów: "ml",
-  litr: "l",
-  litry: "l",
-  litrów: "l",
-
-  // Polish - Count/pieces
-  sztuka: "piece",
-  sztuki: "piece",
-  sztuk: "piece",
-  kawałek: "piece",
-  kawałki: "piece",
-  kawałków: "piece",
-  całość: "piece",
-
-  // Polish - Special
-  puszka: "can",
-  puszki: "can",
-  puszek: "can",
-  opakowanie: "package",
-  opakowania: "package",
-  opakowań: "package",
-  pudełko: "box",
-  pudełka: "box",
-  pudełek: "box",
-  pęczek: "bunch",
-  pęczki: "bunch",
-  pęczków: "bunch",
-  ząbek: "clove",
-  ząbki: "clove",
-  ząbków: "clove",
-  plaster: "slice",
-  plastry: "slice",
-  plastrów: "slice",
-  szczypta: "pinch",
-  szczyptę: "pinch",
-  szczypty: "pinch",
-  szczypt: "pinch",
 };
 
 /**
@@ -784,6 +600,112 @@ export const DENSITY_FALLBACK_G_PER_UNIT: Record<
     tsp: 2.3,
     pinch: 0.14,
   },
+
+  // --- Sweeteners & syrups ---
+  honey: { cup: 340, tbsp: 21, tsp: 7 },
+  "maple syrup": { cup: 322, tbsp: 20, tsp: 6.7 },
+  "corn syrup": { cup: 328, tbsp: 20.5, tsp: 6.8 },
+  molasses: { cup: 337, tbsp: 21, tsp: 7 },
+  "powdered sugar": { cup: 120, tbsp: 7.5, tsp: 2.5 },
+
+  // --- Dairy ---
+  yogurt: { cup: 245, tbsp: 15.3, tsp: 5.1 },
+  "greek yogurt": { cup: 245, tbsp: 15.3 },
+  "sour cream": { cup: 230, tbsp: 14, tsp: 4.8 },
+  cream: { cup: 240, tbsp: 15, tsp: 5 },
+  "heavy cream": { cup: 238, tbsp: 14.9, tsp: 5 },
+  "cream cheese": { cup: 232, tbsp: 14.5, tsp: 4.8 },
+  cheese: { cup: 113, tbsp: 7, oz: 28.35, slice: 28 },
+  cheddar: { cup: 113, tbsp: 7, oz: 28.35, slice: 28 },
+  mozzarella: { cup: 112, oz: 28.35, slice: 28 },
+  parmesan: { cup: 100, tbsp: 5, tsp: 1.7, oz: 28.35 },
+  feta: { cup: 150, oz: 28.35 },
+
+  // --- Baking & dry goods ---
+  oats: { cup: 90, tbsp: 5.6 },
+  "rolled oats": { cup: 90, tbsp: 5.6 },
+  cornmeal: { cup: 122, tbsp: 7.6 },
+  cornstarch: { cup: 128, tbsp: 8, tsp: 2.7 },
+  "cocoa powder": { cup: 86, tbsp: 5.4, tsp: 1.8 },
+  cocoa: { cup: 86, tbsp: 5.4, tsp: 1.8 },
+  "almond flour": { cup: 96, tbsp: 6 },
+  "whole wheat flour": { cup: 120, tbsp: 7.5 },
+  breadcrumbs: { cup: 108, tbsp: 6.75 },
+  "bread crumbs": { cup: 108, tbsp: 6.75 },
+  "baking powder": { tbsp: 13.8, tsp: 4.6 },
+  "baking soda": { tbsp: 13.8, tsp: 4.6 },
+  yeast: { tbsp: 9, tsp: 3 },
+  vanilla: { tbsp: 13, tsp: 4.2 },
+  "vanilla extract": { tbsp: 13, tsp: 4.2 },
+
+  // --- Nuts, seeds & nut butters ---
+  almond: { cup: 143, oz: 28.35, tbsp: 9 },
+  walnut: { cup: 117, oz: 28.35, tbsp: 7.3 },
+  pecan: { cup: 99, oz: 28.35 },
+  cashew: { cup: 137, oz: 28.35 },
+  peanut: { cup: 146, oz: 28.35 },
+  "peanut butter": { cup: 258, tbsp: 16, tsp: 5.3 },
+  "almond butter": { cup: 256, tbsp: 16 },
+  chia: { tbsp: 12, tsp: 4 },
+  "chia seeds": { tbsp: 12, tsp: 4 },
+  "sesame seeds": { tbsp: 9, tsp: 3 },
+  "sunflower seeds": { cup: 140, tbsp: 9 },
+
+  // --- Legumes & grains (cooked unless noted) ---
+  chickpea: { cup: 164, oz: 28.35 },
+  bean: { cup: 177, oz: 28.35 },
+  "black beans": { cup: 172 },
+  "kidney beans": { cup: 177 },
+  lentil: { cup: 198 },
+  quinoa: { cup: 185 },
+  couscous: { cup: 157 },
+  corn: { cup: 145 },
+  peas: { cup: 145 },
+
+  // --- Condiments & cooking liquids ---
+  "soy sauce": { cup: 255, tbsp: 16, tsp: 5.3 },
+  vinegar: { cup: 238, tbsp: 15, tsp: 5 },
+  "apple cider vinegar": { cup: 238, tbsp: 15, tsp: 5 },
+  "lemon juice": { cup: 244, tbsp: 15, tsp: 5 },
+  "lime juice": { cup: 244, tbsp: 15, tsp: 5 },
+  "orange juice": { cup: 248, tbsp: 15.5 },
+  broth: { cup: 240, tbsp: 15 },
+  stock: { cup: 240, tbsp: 15 },
+  "chicken broth": { cup: 240, tbsp: 15 },
+  wine: { cup: 235, tbsp: 14.7 },
+  beer: { cup: 237 },
+  mayonnaise: { cup: 220, tbsp: 13.8, tsp: 4.6 },
+  ketchup: { cup: 240, tbsp: 15, tsp: 5 },
+  mustard: { cup: 249, tbsp: 15.6, tsp: 5.2 },
+  "tomato sauce": { cup: 245, tbsp: 15.3 },
+  "tomato paste": { cup: 262, tbsp: 16.4, tsp: 5.5 },
+  "coconut milk": { cup: 240, tbsp: 15 },
+  "coconut oil": { cup: 218, tbsp: 13.6, tsp: 4.5 },
+  "vegetable oil": { cup: 218, tbsp: 13.6, tsp: 4.5 },
+  "canola oil": { cup: 218, tbsp: 13.6, tsp: 4.5 },
+
+  // --- Produce (USDA medium-size piece weights) ---
+  egg: { piece: 50, tbsp: 15 },
+  apple: { cup: 125, piece: 182 },
+  banana: { cup: 150, piece: 118 },
+  lemon: { piece: 58 },
+  lime: { piece: 67 },
+  orange: { piece: 131 },
+  avocado: { cup: 150, piece: 150 },
+  mushroom: { cup: 70, piece: 18 },
+  spinach: { cup: 30 },
+  broccoli: { cup: 91, piece: 148 },
+  "green beans": { cup: 100 },
+  celery: { cup: 101, piece: 40 },
+  zucchini: { cup: 124, piece: 196 },
+  eggplant: { cup: 82, piece: 458 },
+  "sweet potato": { cup: 133, piece: 130 },
+  lettuce: { cup: 36 },
+  cabbage: { cup: 89 },
+  strawberry: { cup: 152, piece: 12 },
+  blueberry: { cup: 148 },
+  bread: { slice: 28 },
+  bacon: { slice: 12 },
 };
 
 /**
@@ -829,17 +751,6 @@ export function toNumber(str: string): number {
 }
 
 /**
- * Normalize unit variations to standard forms
- *
- * @param unit - Unit string to normalize
- * @returns Normalized unit
- */
-export function normalizeUnit(unit: string): string {
-  const cleaned = unit.toLowerCase().trim().replace(/\.$/, ""); // remove trailing period
-  return UNIT_ALIASES[cleaned] ?? cleaned;
-}
-
-/**
  * Strip state/preparation words from ingredient name
  *
  * @param name - Ingredient name
@@ -863,12 +774,29 @@ export function stripStateWords(name: string): string {
  */
 export function applySynonyms(name: string): string {
   const lower = name.toLowerCase();
-  for (const [synonym, standard] of Object.entries(SYNONYMS)) {
-    if (lower.includes(synonym)) {
+  // Try the most specific (longest) synonym first so multi-word phrases win
+  // over their substrings ("aceite de oliva" → "olive oil", not "oil"), and
+  // require Unicode letter boundaries so a short key can't be swallowed by a
+  // larger word: the old `includes("sal")` turned salmon/salsa/salad into
+  // "salt", silently zeroing a very common protein's nutrition.
+  const entries = Object.entries(SYNONYMS).sort(
+    (a, b) => b[0].length - a[0].length
+  );
+  for (const [synonym, standard] of entries) {
+    const re = new RegExp(
+      `(^|[^\\p{L}])${escapeRegExp(synonym)}([^\\p{L}]|$)`,
+      "iu"
+    );
+    if (re.test(lower)) {
       return standard;
     }
   }
   return name;
+}
+
+/** Escape a string for safe interpolation into a RegExp. */
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -898,25 +826,56 @@ export function parseIngredientLine(line: string): ParsedIngredient {
     cleaned = cleaned.split(" - ")[0].trim();
   }
 
+  // Split an attached quantity+unit so the patterns below see them separately:
+  // "200ml milk" -> "200 ml milk", "1tbsp oil" -> "1 tbsp oil". Guarded by the
+  // unit registry so ingredient-looking tokens ("7up") and percentages
+  // ("100% juice", no leading letters) are left untouched.
+  const attached = cleaned.match(/^(\d+(?:\.\d+)?)([a-zA-Z]+)\b(.*)$/);
+  if (attached && getUnitDefinition(attached[2])) {
+    cleaned = `${attached[1]} ${attached[2]}${attached[3]}`;
+  }
+
   // Pattern 1: "<qty> <unit> <name...>"
   // Matches: "2 cups onions", "1.5 tbsp oil", "3 g salt"
-  const pattern1 = /^([\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚\s/.]+)\s+([a-zA-Z]+\.?)\s+(.+)$/;
+  // Unit slot uses \p{L} (any Unicode letter), not [a-zA-Z], so units with
+  // diacritics parse — e.g. Polish "łyżka" (tbsp), "łyżeczka" (tsp), "ząbki"
+  // (cloves). With [a-zA-Z] these collapsed to a no-unit "piece".
+  const pattern1 = /^([\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚\s/.]+)\s+(\p{L}+\.?)\s+(.+)$/u;
   const match1 = cleaned.match(pattern1);
 
   if (match1) {
     const qty = toNumber(match1[1]);
-    const unit = normalizeUnit(match1[2]);
-    let name = match1[3].toLowerCase();
-    name = stripStateWords(name);
-    name = applySynonyms(name);
-    name = name.trim();
+    let unitRaw = match1[2];
+    let rest = match1[3];
 
-    return { original, name, qty, unit };
+    // Multi-word unit support (e.g. "fl oz"): if the single token isn't a known
+    // unit but token + the next word is, consume that next word into the unit.
+    if (!getUnitDefinition(unitRaw)) {
+      const m = rest.match(/^(\p{L}+)\s*(.*)$/u);
+      if (m && getUnitDefinition(`${unitRaw} ${m[1]}`)) {
+        unitRaw = `${unitRaw} ${m[1]}`;
+        rest = m[2];
+      }
+    }
+
+    // Only treat the word after the quantity as a unit when it is a KNOWN unit.
+    // Otherwise the line is "<qty> <name…>" — "1 chicken breast", "1 bell
+    // pepper", "3 large eggs" — and falls through to pattern 3 below. The old
+    // code took ANY word here as the unit, so "chicken"/"bell"/"large" became
+    // the unit and the gram ladder collapsed the food to ~1 g.
+    if (getUnitDefinition(unitRaw)) {
+      const unit = normalizeUnit(unitRaw);
+      let name = rest.toLowerCase();
+      name = stripStateWords(name);
+      name = name.trim();
+
+      return { original, name, qty, unit };
+    }
   }
 
   // Pattern 2: "<name...> <qty> <unit>"
   // Matches: "onions 2 cups", "olive oil 50ml"
-  const pattern2 = /^(.+?)\s+([\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚\s/.]+)\s*([a-zA-Z]+\.?)$/;
+  const pattern2 = /^(.+?)\s+([\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚\s/.]+)\s*(\p{L}+\.?)$/u;
   const match2 = cleaned.match(pattern2);
 
   if (match2) {
@@ -924,7 +883,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
     const unit = normalizeUnit(match2[3]);
     let name = match2[1].toLowerCase();
     name = stripStateWords(name);
-    name = applySynonyms(name);
     name = name.trim();
 
     return { original, name, qty, unit };
@@ -939,7 +897,6 @@ export function parseIngredientLine(line: string): ParsedIngredient {
     const qty = toNumber(match3[1]);
     let name = match3[2].toLowerCase();
     name = stripStateWords(name);
-    name = applySynonyms(name);
     name = name.trim();
 
     return { original, name, qty, unit: "piece" };
@@ -948,203 +905,9 @@ export function parseIngredientLine(line: string): ParsedIngredient {
   // Fallback: No quantity found, treat as single piece
   let name = cleaned.toLowerCase();
   name = stripStateWords(name);
-  name = applySynonyms(name);
   name = name.trim();
 
   return { original, name, qty: 1, unit: "piece" };
-}
-
-// ============================================================================
-// Unit Conversion System
-// ============================================================================
-
-/**
- * Unit type classification for consolidation
- */
-export type UnitType = "volume" | "weight" | "count" | "other";
-
-/**
- * Volume units converted to milliliters (ml)
- */
-export const VOLUME_TO_ML: Record<string, number> = {
-  ml: 1,
-  l: 1000,
-  cup: 236.588,
-  tbsp: 14.787,
-  tsp: 4.929,
-  "fl oz": 29.574,
-  pint: 473.176,
-  quart: 946.353,
-  gallon: 3785.41,
-};
-
-/**
- * Weight units converted to grams (g)
- */
-export const WEIGHT_TO_G: Record<string, number> = {
-  g: 1,
-  kg: 1000,
-  oz: 28.3495,
-  lb: 453.592,
-};
-
-/**
- * Units that represent countable items (not convertible to volume/weight)
- */
-export const COUNT_UNITS: string[] = [
-  "piece",
-  "clove",
-  "slice",
-  "can",
-  "package",
-  "bunch",
-  "box",
-  "pinch",
-  "dash",
-];
-
-/**
- * Determine the type of a unit for consolidation purposes
- *
- * @param unit - Normalized unit string
- * @returns The unit type classification
- */
-export function getUnitType(unit: string): UnitType {
-  const normalizedUnit = normalizeUnit(unit);
-
-  if (VOLUME_TO_ML[normalizedUnit] !== undefined) {
-    return "volume";
-  }
-  if (WEIGHT_TO_G[normalizedUnit] !== undefined) {
-    return "weight";
-  }
-  if (COUNT_UNITS.includes(normalizedUnit)) {
-    return "count";
-  }
-  return "other";
-}
-
-/**
- * Convert an amount to base units (ml for volume, g for weight)
- *
- * @param amount - The amount to convert
- * @param unit - The unit of the amount
- * @returns The amount in base units, or null if conversion not possible
- */
-export function convertToBaseUnit(
-  amount: number,
-  unit: string
-): { amount: number; baseUnit: "ml" | "g" } | null {
-  const normalizedUnit = normalizeUnit(unit);
-  const unitType = getUnitType(normalizedUnit);
-
-  if (unitType === "volume") {
-    const factor = VOLUME_TO_ML[normalizedUnit];
-    if (factor !== undefined) {
-      return { amount: amount * factor, baseUnit: "ml" };
-    }
-  }
-
-  if (unitType === "weight") {
-    const factor = WEIGHT_TO_G[normalizedUnit];
-    if (factor !== undefined) {
-      return { amount: amount * factor, baseUnit: "g" };
-    }
-  }
-
-  return null;
-}
-
-/**
- * Convert an amount from base units to a target unit
- *
- * @param amount - The amount in base units (ml or g)
- * @param baseUnit - The base unit ('ml' or 'g')
- * @param targetUnit - The target unit to convert to
- * @returns The converted amount, or null if conversion not possible
- */
-export function convertFromBaseUnit(
-  amount: number,
-  baseUnit: "ml" | "g",
-  targetUnit: string
-): number | null {
-  const normalizedTarget = normalizeUnit(targetUnit);
-
-  if (baseUnit === "ml") {
-    const factor = VOLUME_TO_ML[normalizedTarget];
-    if (factor !== undefined) {
-      return amount / factor;
-    }
-  }
-
-  if (baseUnit === "g") {
-    const factor = WEIGHT_TO_G[normalizedTarget];
-    if (factor !== undefined) {
-      return amount / factor;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Select the best display unit based on the amount
- * Chooses user-friendly units (e.g., cups instead of ml for cooking)
- *
- * @param baseAmount - The amount in base units (ml or g)
- * @param unitType - The unit type ('volume' or 'weight')
- * @returns The best display unit and converted amount
- */
-export function getBestDisplayUnit(
-  baseAmount: number,
-  unitType: "volume" | "weight"
-): { amount: number; unit: string } {
-  if (unitType === "volume") {
-    // For very small amounts, use tsp
-    if (baseAmount < 15) {
-      return {
-        amount: Math.round((baseAmount / VOLUME_TO_ML.tsp) * 100) / 100,
-        unit: "tsp",
-      };
-    }
-    // For small amounts, use tbsp
-    if (baseAmount < 60) {
-      return {
-        amount: Math.round((baseAmount / VOLUME_TO_ML.tbsp) * 100) / 100,
-        unit: "tbsp",
-      };
-    }
-    // For medium amounts, use cups
-    if (baseAmount < 1500) {
-      return {
-        amount: Math.round((baseAmount / VOLUME_TO_ML.cup) * 100) / 100,
-        unit: "cup",
-      };
-    }
-    // For large amounts, use liters
-    return {
-      amount: Math.round((baseAmount / VOLUME_TO_ML.l) * 100) / 100,
-      unit: "l",
-    };
-  }
-
-  if (unitType === "weight") {
-    // For amounts under 1kg, use grams
-    if (baseAmount < 1000) {
-      return {
-        amount: Math.round(baseAmount * 100) / 100,
-        unit: "g",
-      };
-    }
-    // For larger amounts, use kg
-    return {
-      amount: Math.round((baseAmount / WEIGHT_TO_G.kg) * 100) / 100,
-      unit: "kg",
-    };
-  }
-
-  // Fallback (shouldn't reach here)
-  return { amount: baseAmount, unit: "g" };
 }
 
 // ============================================================================
@@ -1201,4 +964,31 @@ export function formatIngredientsForNutrition(ingredients: unknown): string[] {
     if (line !== null) lines.push(line);
   }
   return lines;
+}
+
+/**
+ * Decide whether two ingredient lists would feed the nutrition engine
+ * different inputs — i.e. whether a stored nutrition profile is now stale.
+ *
+ * Compares the canonical analyzer lines (`formatIngredientsForNutrition`), not
+ * the raw objects, so the answer tracks exactly what the FDC engine sees. The
+ * comparison is:
+ * - **order-independent** — nutrition is a sum, so reordering changes nothing;
+ * - **case/whitespace-insensitive** — a cosmetic edit ("Flour" → "flour") must
+ *   NOT force a recompute that would overwrite manually-tuned macros.
+ *
+ * `null`/`undefined`/empty all normalize to "no lines", so a recipe with no
+ * ingredients compares equal to another with none.
+ */
+export function ingredientsChanged(before: unknown, after: unknown): boolean {
+  const normalize = (input: unknown): string[] =>
+    formatIngredientsForNutrition(input)
+      .map((line) => line.toLowerCase().replace(/\s+/g, " ").trim())
+      .sort();
+
+  const a = normalize(before);
+  const b = normalize(after);
+
+  if (a.length !== b.length) return true;
+  return a.some((line, i) => line !== b[i]);
 }

@@ -1,0 +1,107 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock only the cache/network seam in fdcRepo (search + food-detail). The pure
+// extract/scale/add/divide helpers in @/lib/fdc stay real so the math is tested.
+vi.mock("@/lib/fdcRepo", () => ({
+  getFoodsCached: vi.fn(),
+  searchFoodsCached: vi.fn(),
+}));
+
+import { type FdcFood } from "@/lib/fdc";
+import { getFoodsCached, searchFoodsCached } from "@/lib/fdcRepo";
+import { analyzeRecipeProfileAction } from "@/actions/analyzeRecipe";
+
+const spinachFood: FdcFood = {
+  fdcId: 168462,
+  description: "Spinach, raw",
+  dataType: "SR Legacy",
+  foodNutrients: [
+    { nutrientNumber: "208", amount: 23, unitName: "KCAL" },
+    { nutrientNumber: "203", amount: 2.86, unitName: "G" },
+    { nutrientNumber: "307", amount: 79, unitName: "MG" },
+  ],
+};
+
+const chickenFood: FdcFood = {
+  fdcId: 171077,
+  description: "Chicken breast, raw",
+  dataType: "SR Legacy",
+  foodNutrients: [
+    { nutrientNumber: "208", amount: 165, unitName: "KCAL" },
+    { nutrientNumber: "203", amount: 31, unitName: "G" },
+    { nutrientNumber: "307", amount: 74, unitName: "MG" },
+  ],
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(searchFoodsCached).mockImplementation(async (q: string) => {
+    if (q.includes("spinach"))
+      return [{ fdcId: 168462, description: "Spinach, raw", dataType: "SR Legacy" }];
+    if (q.includes("chicken"))
+      return [{ fdcId: 171077, description: "Chicken breast, raw", dataType: "SR Legacy" }];
+    return [];
+  });
+  vi.mocked(getFoodsCached).mockImplementation(async (ids: number[]) =>
+    [spinachFood, chickenFood].filter((f) => ids.includes(f.fdcId))
+  );
+});
+
+describe("analyzeRecipeProfileAction — full-profile aggregation", () => {
+  it("scales each ingredient by grams, sums them, and divides per serving", async () => {
+    const r = await analyzeRecipeProfileAction({
+      ingredients: ["200 g spinach", "100 g chicken breast"],
+      servings: 2,
+    });
+
+    expect(r.success).toBe(true);
+
+    // total = spinach(×2.0) + chicken(×1.0)
+    expect(r.total.calories).toBeCloseTo(23 * 2 + 165, 5); // 211
+    expect(r.total.protein).toBeCloseTo(2.86 * 2 + 31, 5); // 36.72
+    expect(r.total.sodium).toBeCloseTo(79 * 2 + 74, 5); // 232
+
+    // perServing = total / 2
+    expect(r.perServing.calories).toBeCloseTo(105.5, 5);
+    expect(r.perServing.protein).toBeCloseTo(18.36, 5);
+    expect(r.perServing.sodium).toBeCloseTo(116, 5);
+  });
+
+  it("returns per-ingredient items carrying the RecipeIngredient fields", async () => {
+    const r = await analyzeRecipeProfileAction({
+      ingredients: ["200 g spinach"],
+      servings: 1,
+    });
+
+    expect(r.items).toHaveLength(1);
+    const sp = r.items[0];
+    expect(sp.fdcId).toBe(168462);
+    expect(sp.gramsTotal).toBe(200);
+    expect(sp.nameNorm).toContain("spinach");
+    expect(sp.qty).toBe(200);
+    expect(sp.unit).toBe("g");
+    expect(sp.confidence).toBeGreaterThan(0);
+    // Per-item macros (projected from this ingredient's profile contribution),
+    // so the calculator breakdown shows per-ingredient macros without a 2nd pass.
+    expect(sp.macros?.kcal).toBeCloseTo(46, 5); // 23/100g × 200g
+    expect(sp.macros?.protein).toBeCloseTo(5.72, 5); // 2.86/100g × 200g
+  });
+
+  it("lets an unmatched ingredient contribute zeros without breaking", async () => {
+    vi.mocked(searchFoodsCached).mockResolvedValue([]);
+    const r = await analyzeRecipeProfileAction({
+      ingredients: ["1 cup zzzznotafood"],
+      servings: 1,
+    });
+
+    expect(r.success).toBe(true);
+    expect(r.total.calories).toBe(0);
+    expect(r.items[0].fdcId).toBeNull();
+  });
+
+  it("fails gracefully when no ingredients are provided", async () => {
+    const r = await analyzeRecipeProfileAction({ ingredients: [], servings: 2 });
+    expect(r.success).toBe(false);
+    expect(r.perServing.calories).toBe(0);
+  });
+});

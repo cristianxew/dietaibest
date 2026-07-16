@@ -11,15 +11,14 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, Calculator, AlertCircle, Info, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { NutritionAnalysisResult } from "@/lib/edamam-service";
+import type { Profile } from "@/lib/fdc";
 
 interface RecipeFormNutritionProps {
   form: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   nutritionLoading: boolean;
-  nutritionData: NutritionAnalysisResult | null;
+  nutritionData: Profile | null;
   onAnalyzeNutrition: () => void;
 }
 
@@ -190,14 +189,9 @@ export function RecipeFormNutrition({
                 Automatic Nutrition Analysis
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Powered by Edamam Nutrition Analysis API
+                Powered by USDA FoodData Central
               </p>
             </div>
-            {nutritionData && nutritionData.fromCache && (
-              <Badge variant="secondary" className="text-xs">
-                Cached
-              </Badge>
-            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -205,9 +199,8 @@ export function RecipeFormNutrition({
             <Info className="h-4 w-4" />
             <AlertTitle>How it works</AlertTitle>
             <AlertDescription>
-              Our advanced nutrition calculator uses AI to analyze your
-              ingredients and provide accurate nutritional information including
-              diet labels, health labels, and allergen warnings. Results
+              We match each ingredient to USDA FoodData Central and compute the
+              full per-serving profile — macros plus 17 micronutrients. Results
               automatically populate the fields above.
             </AlertDescription>
           </Alert>
@@ -227,7 +220,7 @@ export function RecipeFormNutrition({
             ) : (
               <>
                 <Calculator className="mr-2 h-4 w-4" />
-                Analyze Nutrition with AI
+                Analyze Nutrition
               </>
             )}
           </Button>
@@ -250,104 +243,54 @@ export function RecipeFormNutrition({
                 <h3 className="font-semibold mb-3">
                   Nutritional Information (per serving)
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="bg-muted/50 p-3 rounded-lg">
                     <p className="text-xs text-muted-foreground">Calories</p>
                     <p className="text-2xl font-bold">
-                      {Math.round(nutritionData.macros.calories)}
+                      {Math.round(nutritionData.calories)}
                     </p>
                     <p className="text-xs text-muted-foreground">kcal</p>
                   </div>
                   <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Protein</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRecipes("protein")}
+                    </p>
                     <p className="text-2xl font-bold">
-                      {Math.round(nutritionData.macros.protein * 10) / 10}
+                      {Math.round(nutritionData.protein * 10) / 10}
                     </p>
                     <p className="text-xs text-muted-foreground">g</p>
                   </div>
                   <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Net Carbs</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRecipes("carbs")}
+                    </p>
                     <p className="text-2xl font-bold">
-                      {Math.round(nutritionData.macros.netCarbs * 10) / 10}
+                      {Math.round(nutritionData.carbs * 10) / 10}
                     </p>
                     <p className="text-xs text-muted-foreground">g</p>
                   </div>
                   <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Fat</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tRecipes("fat")}
+                    </p>
                     <p className="text-2xl font-bold">
-                      {Math.round(nutritionData.macros.fat * 10) / 10}
+                      {Math.round(nutritionData.fat * 10) / 10}
+                    </p>
+                    <p className="text-xs text-muted-foreground">g</p>
+                  </div>
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-xs text-muted-foreground">Fiber</p>
+                    <p className="text-2xl font-bold">
+                      {Math.round(nutritionData.fiber * 10) / 10}
                     </p>
                     <p className="text-xs text-muted-foreground">g</p>
                   </div>
                 </div>
               </div>
 
-              {/* Diet Labels */}
-              {nutritionData.dietLabels &&
-                nutritionData.dietLabels.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-sm">Diet Labels</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {nutritionData.dietLabels.map((label) => (
-                        <Badge key={label} variant="secondary">
-                          {label}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* Health Labels */}
-              {nutritionData.healthLabels &&
-                nutritionData.healthLabels.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2 text-sm">
-                      Health Labels
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {nutritionData.healthLabels.slice(0, 8).map((label) => (
-                        <Badge key={label} variant="outline">
-                          {label}
-                        </Badge>
-                      ))}
-                      {nutritionData.healthLabels.length > 8 && (
-                        <Badge variant="outline">
-                          +{nutritionData.healthLabels.length - 8} more
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-              {/* Cautions */}
-              {nutritionData.cautions && nutritionData.cautions.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Allergen Warnings</AlertTitle>
-                  <AlertDescription>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {nutritionData.cautions.map((caution) => (
-                        <Badge key={caution} variant="destructive">
-                          {caution}
-                        </Badge>
-                      ))}
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Additional Info */}
-              <div className="text-xs text-muted-foreground">
-                <p>Servings: {nutritionData.servings}</p>
-                {nutritionData.totalWeight && (
-                  <p>Total Weight: {Math.round(nutritionData.totalWeight)}g</p>
-                )}
-                <p className="mt-1">
-                  {nutritionData.fromCache
-                    ? "✓ Results loaded from cache"
-                    : "✓ Freshly analyzed"}
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                ✓ Full macro + micronutrient profile saved with the recipe.
+              </p>
             </div>
           )}
         </CardContent>

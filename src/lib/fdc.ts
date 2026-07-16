@@ -7,6 +7,9 @@
 
 import "server-only";
 
+import { normalizeUnit } from "./ingredients";
+import { EXTENDED_NUTRIENT_NUMBERS } from "@/lib/nutrients/registry";
+
 const API_BASE = "https://api.nal.usda.gov/fdc/v1";
 
 /**
@@ -43,6 +46,115 @@ export type Macro = {
 };
 
 /**
+ * Full nutrient profile (5 macros + 17 micronutrients) keyed by the column
+ * names on the Prisma `Recipe` model, so persistence is a direct spread.
+ */
+export type Profile = {
+  // Macros
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  // Micronutrients
+  sugar: number;
+  sodium: number;
+  cholesterol: number;
+  saturatedFat: number;
+  transFat: number;
+  vitaminA: number;
+  vitaminC: number;
+  vitaminD: number;
+  vitaminE: number;
+  vitaminK: number;
+  vitaminB12: number;
+  folate: number;
+  iron: number;
+  calcium: number;
+  magnesium: number;
+  potassium: number;
+  zinc: number;
+};
+
+/**
+ * Maps each `Profile` field to its canonical USDA FDC nutrient number.
+ *
+ * ⚠️ Mineral numbers are easy to get wrong — the canonical values are
+ * calcium=301, iron=303, magnesium=304, potassium=306 (305 is Phosphorus).
+ * Vitamins use the µg/mg-native numbers, NOT the IU variants:
+ * vitaminA=320 (RAE, not 318 IU), vitaminD=328 (µg, not 324 IU),
+ * folate=417 (total µg, not 435 DFE).
+ */
+export const PROFILE_NUTRIENT_MAP: Record<keyof Profile, string> = {
+  calories: "208",
+  protein: "203",
+  fat: "204",
+  carbs: "205",
+  fiber: "291",
+  sugar: "269",
+  sodium: "307",
+  cholesterol: "601",
+  saturatedFat: "606",
+  transFat: "605",
+  vitaminA: "320",
+  vitaminC: "401",
+  vitaminD: "328",
+  vitaminE: "323",
+  vitaminK: "430",
+  vitaminB12: "418",
+  folate: "417",
+  iron: "303",
+  calcium: "301",
+  magnesium: "304",
+  potassium: "306",
+  zinc: "309",
+};
+
+/**
+ * Expected unit per `Profile` field — matches the units declared in
+ * `nutrition-fields.ts`. Used to reject wrong-magnitude values (e.g. an IU
+ * reading where we expect µg) instead of silently persisting them.
+ */
+export const PROFILE_EXPECTED_UNITS: Record<keyof Profile, string> = {
+  calories: "kcal",
+  protein: "g",
+  fat: "g",
+  carbs: "g",
+  fiber: "g",
+  sugar: "g",
+  sodium: "mg",
+  cholesterol: "mg",
+  saturatedFat: "g",
+  transFat: "g",
+  vitaminA: "µg",
+  vitaminC: "mg",
+  vitaminD: "µg",
+  vitaminE: "mg",
+  vitaminK: "µg",
+  vitaminB12: "µg",
+  folate: "µg",
+  iron: "mg",
+  calcium: "mg",
+  magnesium: "mg",
+  potassium: "mg",
+  zinc: "mg",
+};
+
+/** All FDC nutrient numbers we request and extract (the 22 profile fields). */
+export const PROFILE_NUTRIENT_NUMBERS: string[] = Object.values(
+  PROFILE_NUTRIENT_MAP
+);
+
+/**
+ * The 17 micronutrient numbers (profile minus the 5 core macros). A cached
+ * food carrying at least one of these was fetched under the full-profile
+ * schema — used to detect and refresh legacy core-only cache rows.
+ */
+export const MICRO_NUTRIENT_NUMBERS: string[] = PROFILE_NUTRIENT_NUMBERS.filter(
+  (n) => !(CORE_NUTRIENTS as readonly string[]).includes(n)
+);
+
+/**
  * Priority order for choosing food data types
  * Foundation > Survey (FNDDS) > SR Legacy > Branded
  */
@@ -75,6 +187,12 @@ export interface FdcFoodNutrient {
  */
 export interface FdcFoodPortion {
   id?: number;
+  /**
+   * How many measure units this portion's `gramWeight` covers (e.g. `2` for a
+   * "2 tbsp = 30g" portion). Defaults to 1 when absent. Dividing by it yields
+   * the per-unit gram weight — omitting this silently doubled/tripled weights.
+   */
+  amount?: number;
   portionDescription?: string;
   modifier?: string;
   gramWeight: number;
@@ -161,8 +279,10 @@ export async function fdcSearch(
 }
 
 /**
- * Fetch detailed food information for multiple FDC IDs
- * Uses abridged format with only core nutrients for efficiency
+ * Fetch detailed food information for multiple FDC IDs.
+ * Uses abridged format requesting the UNION of the Nutrition Hub's extended
+ * nutrient registry and the 22-field recipe profile (plus Atwater energy), so
+ * both surfaces can extract and persist a complete profile.
  *
  * @param fdcIds - Array of FDC food IDs to fetch
  * @returns Array of food objects with nutritional data
@@ -170,7 +290,19 @@ export async function fdcSearch(
 export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
   if (!fdcIds.length) return [];
 
-  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${CORE_NUTRIENTS.join(
+  // Request the UNION of: the Hub's extended registry, our 22-field profile, and
+  // the Atwater energy numbers (957 General, 958 Specific). Atwater matters
+  // because Foundation foods report energy there instead of 208 — omitting them
+  // left Foundation calories at 0. Deduped; stays within USDA's ~25-nutrient cap.
+  const fetchNutrients = [
+    ...new Set([
+      ...EXTENDED_NUTRIENT_NUMBERS,
+      ...PROFILE_NUTRIENT_NUMBERS,
+      "957",
+      "958",
+    ]),
+  ];
+  const url = `${API_BASE}/foods?api_key=${getApiKey()}&format=abridged&nutrients=${fetchNutrients.join(
     ","
   )}`;
 
@@ -185,7 +317,20 @@ export async function fdcFoodsByIds(fdcIds: number[]): Promise<FdcFood[]> {
     throw new Error(`FDC foods fetch failed: ${res.status} ${res.statusText}`);
   }
 
-  return (await res.json()) as FdcFood[];
+  // The endpoint normally returns a JSON array, but USDA has been observed
+  // replying `200` with a non-array body (e.g. `{}`) under rate-limit/error.
+  // The old `as FdcFood[]` cast lied to the compiler and let `{}` reach a
+  // `for...of` downstream, throwing "not iterable" and silently dropping the
+  // whole batch. Always hand callers a real array.
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    console.warn(
+      `[fdc] foods endpoint returned a non-array response (${typeof data}) for ${fdcIds.length} id(s); treating as empty`
+    );
+    return [];
+  }
+
+  return data as FdcFood[];
 }
 
 // --- Macros extraction & scaling helpers ---
@@ -209,12 +354,26 @@ export function extractMacrosFromFood(food: FdcFood): Macro {
   }
 
   return {
-    kcal: byNum.get("208") ?? 0,
+    // Energy: Foundation foods report Atwater factors (957 General, 958
+    // Specific) and usually OMIT 208; Survey/SR Legacy/Branded use 208. Prefer
+    // 208, then Atwater General, then Atwater Specific — all in kcal.
+    kcal: byNum.get("208") ?? byNum.get("957") ?? byNum.get("958") ?? 0,
     protein: byNum.get("203") ?? 0,
     fat: byNum.get("204") ?? 0,
     carbs: byNum.get("205") ?? 0,
     fiber: byNum.get("291") ?? 0,
   };
+}
+
+/**
+ * Whether a food carries a usable energy value (kcal > 0). Some branded entries
+ * list macros but omit every energy nutrient (208/957/958), so they would
+ * silently contribute 0 kcal if matched. Match selection prefers foods that pass
+ * this check (see `resolveBatch`); genuinely calorie-free foods (salt, water)
+ * correctly return false and are only used when no energy-bearing match exists.
+ */
+export function foodHasEnergy(food: FdcFood): boolean {
+  return extractMacrosFromFood(food).kcal > 0;
 }
 
 /**
@@ -235,27 +394,198 @@ export function scalePer100g(mac: Macro, grams: number): Macro {
   };
 }
 
+// --- Full profile extraction, scaling & aggregation helpers ---
+
+/** Canonicalize an FDC unit string for comparison (µg/ug/mcg → "ug"). */
+function canonUnit(u: string): string {
+  const x = u.toLowerCase().trim();
+  if (x === "µg" || x === "ug" || x === "mcg") return "ug";
+  return x;
+}
+
 /**
- * Try to find a portion matching the unit in foodPortions array
- * Returns gram weight for ONE unit (not multiplied by quantity)
+ * Extract the full 22-nutrient profile from an FDC food object (per 100g).
+ *
+ * A field is left at 0 when the nutrient is absent OR reported in an
+ * unexpected unit (e.g. an IU value where we expect µg) — we never persist a
+ * wrong-magnitude number.
+ */
+export function extractProfileFromFood(food: FdcFood): Profile {
+  const byNum = new Map<string, { amount: number; unit: string }>();
+  for (const fn of food.foodNutrients ?? []) {
+    const num = fn.nutrient?.number ?? fn.nutrientNumber;
+    const unit = fn.unitName ?? fn.nutrient?.unitName ?? "";
+    if (num && typeof fn.amount === "number") {
+      byNum.set(String(num), { amount: fn.amount, unit });
+    }
+  }
+
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    // Energy: Foundation foods report Atwater factors (957 General, 958
+    // Specific) and usually omit 208. Prefer 208, then Atwater General, then
+    // Atwater Specific — all kcal — so Foundation calories aren't zeroed.
+    const hit =
+      key === "calories"
+        ? byNum.get("208") ?? byNum.get("957") ?? byNum.get("958")
+        : byNum.get(PROFILE_NUTRIENT_MAP[key]);
+    if (!hit) {
+      out[key] = 0;
+      continue;
+    }
+    if (canonUnit(hit.unit) !== canonUnit(PROFILE_EXPECTED_UNITS[key])) {
+      console.warn(
+        `[fdc] ${key} (#${PROFILE_NUTRIENT_MAP[key]}) unexpected unit "${hit.unit}", expected "${PROFILE_EXPECTED_UNITS[key]}" — skipping`
+      );
+      out[key] = 0;
+      continue;
+    }
+    out[key] = hit.amount;
+  }
+  return out;
+}
+
+/** A profile with every field at 0 — additive identity for aggregation. */
+export function zeroProfile(): Profile {
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = 0;
+  }
+  return out;
+}
+
+/**
+ * Build a per-100g `Profile` from an LLM macro estimate (ADR 0003 coverage
+ * chain). Only the five macros are known; every micronutrient stays 0 — the
+ * value is flagged `ESTIMATED` upstream so the gap is honest, not hidden.
+ */
+export function profileFromMacroEstimate(est: {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  fiber: number;
+}): Profile {
+  return {
+    ...zeroProfile(),
+    calories: est.kcal,
+    protein: est.protein,
+    fat: est.fat,
+    carbs: est.carbs,
+    fiber: est.fiber,
+  };
+}
+
+/** Scale a per-100g profile to a given gram amount. */
+export function scaleProfilePer100g(p: Profile, grams: number): Profile {
+  const f = grams / 100;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = p[key] * f;
+  }
+  return out;
+}
+
+/**
+ * Energy + macronutrient fields. These are CONSERVED by cooking — a retention
+ * factor never scales them (heat doesn't destroy calories or protein). Only the
+ * remaining micronutrients (vitamins/minerals) are subject to retention loss.
+ */
+const CONSERVED_MACRO_KEYS: ReadonlySet<keyof Profile> = new Set([
+  "calories",
+  "protein",
+  "fat",
+  "carbs",
+  "fiber",
+]);
+
+/**
+ * Scale a per-100g profile to grams, then apply a cooking nutrient-retention
+ * factor to the MICRONUTRIENT fields only (ADR 0003 Stage 2). Retention models
+ * vitamin/mineral loss from heat + leaching; energy and the five macros are
+ * conserved, so they are never cut by retention. `retentionFactor === 1` is a
+ * plain gram scale.
+ */
+export function scaleProfileWithRetention(
+  p: Profile,
+  grams: number,
+  retentionFactor: number
+): Profile {
+  const f = grams / 100;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    const scaled = p[key] * f;
+    out[key] = CONSERVED_MACRO_KEYS.has(key)
+      ? scaled
+      : scaled * retentionFactor;
+  }
+  return out;
+}
+
+/** Field-wise sum of two profiles. */
+export function addProfile(a: Profile, b: Profile): Profile {
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = a[key] + b[key];
+  }
+  return out;
+}
+
+/** Field-wise division of a profile by a divisor (e.g. servings). */
+export function divideProfile(p: Profile, divisor: number): Profile {
+  const d = divisor || 1;
+  const out = {} as Profile;
+  for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+    out[key] = p[key] / d;
+  }
+  return out;
+}
+
+/** Does this portion's free-text description/modifier name the target unit? */
+function portionTextMatchesUnit(p: FdcFoodPortion, target: string): boolean {
+  const text = `${p.portionDescription ?? ""} ${p.modifier ?? ""}`;
+  // Tokenize on non-letters and normalize each word so "tablespoons"→"tbsp",
+  // "cups"→"cup". Word-level matching (not substring) avoids false hits like
+  // unit "g" matching the "g" inside "large egg".
+  return text
+    .split(/[^a-zà-ÿ]+/i)
+    .filter(Boolean)
+    .some((w) => normalizeUnit(w) === target);
+}
+
+/**
+ * Resolve the per-unit gram weight for `unit` from a food's `foodPortions`.
+ *
+ * Prefers USDA's structured `measureUnit` (the reliable signal), falling back to
+ * word-level matching of the free-text description/modifier. The matched
+ * portion's `gramWeight` is divided by its `amount`, so a "2 tbsp = 30g" portion
+ * yields 15g per tbsp. Units are normalized (plurals/synonyms) before comparing.
  *
  * @param food - FDC food object with foodPortions
- * @param unit - Unit to match (e.g., "cup", "tbsp")
- * @returns Gram weight per unit, or null if no match found
+ * @param unit - Unit to match (e.g., "cup", "tbsp", "cloves")
+ * @returns Gram weight for ONE unit, or null if no portion matches
  */
 export function resolveGramWeightFromPortions(
   food: FdcFood,
   unit: string
 ): number | null {
   const portions = food.foodPortions ?? [];
-  const u = unit.toLowerCase();
+  const target = normalizeUnit(unit);
 
-  const hit = portions.find((p) => {
-    const d = `${p.portionDescription ?? ""} ${p.modifier ?? ""}`.toLowerCase();
-    return d.includes(u) || d.replace(/s\b/, "") === u; // crude plural handling
-  });
+  // 1. Structured measureUnit match — the most reliable signal. USDA uses the
+  //    sentinel "undetermined" when there is no real measure unit; skip it.
+  const structuredHit = portions.find((p) =>
+    [p.measureUnit?.abbreviation, p.measureUnit?.name].some(
+      (c) => c && c.toLowerCase() !== "undetermined" && normalizeUnit(c) === target
+    )
+  );
 
-  return hit?.gramWeight ?? null;
+  // 2. Fall back to the free-text description/modifier.
+  const hit = structuredHit ?? portions.find((p) => portionTextMatchesUnit(p, target));
+
+  if (!hit) return null;
+  const amount = hit.amount && hit.amount > 0 ? hit.amount : 1;
+  return hit.gramWeight / amount;
 }
 
 /**

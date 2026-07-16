@@ -17,7 +17,7 @@ const inputSchema = z.object({
 export const createRecipe: Tool<typeof inputSchema, { id: string; title: string }> = {
   name: "createRecipe",
   description:
-    "Create and save a recipe described in natural language. Provide title, servings, ingredients (with quantities + units), and step-by-step instructions. Nutrition is calculated separately via getNutrition; do NOT emit macro numbers.",
+    "Create and save a recipe described in natural language. Provide title, servings, ingredients (with quantities + units), and step-by-step instructions. Nutrition is computed and persisted automatically from USDA FDC; do NOT emit macro numbers.",
   guidance:
     "createRecipe — be coarse-grained: one createRecipe call with the full recipe, not a sequence of granular calls.",
   inputSchema,
@@ -31,7 +31,7 @@ export const createRecipe: Tool<typeof inputSchema, { id: string; title: string 
         categoryIds: [],
         isPublic: false,
       },
-      { source: "generated", analyzeNutrition: false, locale: ctx.locale }
+      { source: "generated", locale: ctx.locale }
     );
 
     if (result.error || !result.data) {

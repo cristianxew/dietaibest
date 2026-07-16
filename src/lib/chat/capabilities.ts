@@ -140,30 +140,6 @@ export const capabilities: ReadonlyArray<Capability> = [
   },
 ];
 
-/**
- * Deterministic follow-ups: tool name → capability ids suggested after that
- * tool completes. Pure-read tools (searchRecipes, getRecipe, getMealPlan…)
- * are deliberately unmapped — finishing a lookup is not a moment to upsell.
- */
-export const followUpMap: Readonly<
-  Partial<Record<string, ReadonlyArray<CapabilityId>>>
-> = {
-  createRecipe: ["analyzeNutrition", "generateRecipeImage", "addRecipeToPlan"],
-  importRecipeFromUrl: [
-    "analyzeNutrition",
-    "generateRecipeImage",
-    "addRecipeToPlan",
-  ],
-  importRecipeFromImage: [
-    "analyzeNutrition",
-    "generateRecipeImage",
-    "addRecipeToPlan",
-  ],
-  getNutrition: ["addRecipeToPlan", "generateMealPlan"],
-  generateMealPlan: ["adjustMealPlan"],
-  addMealToDay: ["generateMealPlan", "analyzeNutrition"],
-};
-
 const byPriority = (a: Capability, b: Capability) => a.priority - b.priority;
 
 /**
@@ -185,23 +161,6 @@ export function selectCapabilitiesForPath(
     .sort(byPriority);
 
   return [...inContext, ...globals].slice(0, max);
-}
-
-/**
- * Deterministic follow-up chips for a finished turn: the last-completed
- * tool's follow-ups first, deduped, capped at `max`.
- */
-export function computeFollowUps(
-  completedToolNames: ReadonlyArray<string>,
-  max = 3
-): Capability[] {
-  const ids: CapabilityId[] = [];
-  for (const toolName of [...completedToolNames].reverse()) {
-    for (const id of followUpMap[toolName] ?? []) {
-      if (!ids.includes(id)) ids.push(id);
-    }
-  }
-  return ids.slice(0, max).map(getCapability);
 }
 
 export function getCapability(id: CapabilityId): Capability {

@@ -33,8 +33,7 @@ export type QuotaKey =
   | "savedRecipes"
   | "recipesCreatedPerMonth"
   | "mealPlanTemplates"
-  | "mealPlanDurationDays"
-  | "edamamAnalysesPerMonth";
+  | "mealPlanDurationDays";
 
 export interface Entitlements {
   isPro: boolean;
@@ -58,7 +57,6 @@ export const FREE_LIMITS: Record<QuotaKey, number> = {
   recipesCreatedPerMonth: 3,
   mealPlanTemplates: 1,
   mealPlanDurationDays: 3,
-  edamamAnalysesPerMonth: 5,
 };
 
 const PRO_LIMITS: Record<QuotaKey, number> = {
@@ -66,7 +64,6 @@ const PRO_LIMITS: Record<QuotaKey, number> = {
   recipesCreatedPerMonth: Number.POSITIVE_INFINITY,
   mealPlanTemplates: Number.POSITIVE_INFINITY,
   mealPlanDurationDays: Number.POSITIVE_INFINITY,
-  edamamAnalysesPerMonth: Number.POSITIVE_INFINITY,
 };
 
 const PRO_FEATURES: Record<FeatureKey, boolean> = {
@@ -195,23 +192,6 @@ export function checkCanCreateMealPlanTemplate(
   return null;
 }
 
-export function checkCanUseEdamamAnalysis(
-  user: UserLike,
-  usage: Usage
-): EntitlementViolation | null {
-  const ent = getEntitlements(user);
-  if (ent.isPro) return null;
-
-  if (usage.edamamAnalysesPerMonth >= ent.limits.edamamAnalysesPerMonth) {
-    return new QuotaExceededError(
-      "edamamAnalysesPerMonth",
-      ent.limits.edamamAnalysesPerMonth,
-      usage.edamamAnalysesPerMonth
-    );
-  }
-  return null;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // enforce — the single throw-or-log gate (shadow-mode kill switch)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,21 +230,14 @@ function startOfCurrentMonth(now: Date = new Date()): Date {
 export async function getUsage(userId: string): Promise<Usage> {
   const monthStart = startOfCurrentMonth();
 
-  const [
-    savedRecipes,
-    recipesCreatedPerMonth,
-    mealPlanTemplates,
-    edamamAnalysesPerMonth,
-  ] = await Promise.all([
-    prisma.recipe.count({ where: { userId } }),
-    prisma.recipe.count({
-      where: { userId, createdAt: { gte: monthStart } },
-    }),
-    prisma.mealPlanTemplate.count({ where: { userId } }),
-    prisma.edamamUserMacroCache.count({
-      where: { userId, createdAt: { gte: monthStart } },
-    }),
-  ]);
+  const [savedRecipes, recipesCreatedPerMonth, mealPlanTemplates] =
+    await Promise.all([
+      prisma.recipe.count({ where: { userId } }),
+      prisma.recipe.count({
+        where: { userId, createdAt: { gte: monthStart } },
+      }),
+      prisma.mealPlanTemplate.count({ where: { userId } }),
+    ]);
 
   return {
     savedRecipes,
@@ -273,7 +246,6 @@ export async function getUsage(userId: string): Promise<Usage> {
     // mealPlanDurationDays is per-template and validated at template-create time,
     // not a running counter. Report 0 here; the assert takes duration as an arg.
     mealPlanDurationDays: 0,
-    edamamAnalysesPerMonth,
   };
 }
 
@@ -326,13 +298,6 @@ export async function assertCanCreateMealPlanTemplate(
       )
     );
   }
-}
-
-export async function assertCanUseEdamamAnalysis(
-  user: UserLike & { id: string }
-): Promise<void> {
-  const usage = await getUsage(user.id);
-  enforce(checkCanUseEdamamAnalysis(user, usage));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
