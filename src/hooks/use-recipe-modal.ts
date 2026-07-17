@@ -23,7 +23,7 @@ import {
   type RecipeFlowCtx,
 } from "./use-recipe-flow";
 import { useRecipeFormState, type RecipeFormCtx } from "./use-recipe-form";
-import type { RecipeFormData } from "@/types/recipe";
+import type { ImportedRecipe, RecipeFormData } from "@/types/recipe";
 
 // RecipeModalCtx is an alias kept for backward compatibility
 export type RecipeModalCtx = RecipeFlowCtx;
@@ -36,6 +36,7 @@ export function useRecipeModalState(): { modal: RecipeFlowCtx; form: RecipeFormC
   const validateScreenRef = useRef<(screen: ModalScreen) => Promise<boolean>>(
     async () => true
   );
+  const importedPreviewRef = useRef<ImportedRecipe | null>(null);
 
   const flow = useRecipeFlowState({
     onResetForm: useCallback(() => resetFormRef.current(), []),
@@ -47,6 +48,10 @@ export function useRecipeModalState(): { modal: RecipeFlowCtx; form: RecipeFormC
     mode: flow.mode,
     recipeId: flow.recipeId,
     isOpen: flow.isOpen,
+    getDedupSourceRecipeId: useCallback(
+      () => importedPreviewRef.current?.dedupSourceRecipeId,
+      []
+    ),
     onSubmitSuccess: useCallback(() => flow.goToScreen("success"), [flow.goToScreen]),
     onValidationError: useCallback((errorFields: string[]) => {
       const step = firstStepWithError(errorFields);
@@ -55,6 +60,7 @@ export function useRecipeModalState(): { modal: RecipeFlowCtx; form: RecipeFormC
   });
 
   // Wire refs to the latest form methods (synchronous during render — safe)
+  importedPreviewRef.current = flow.importedPreview;
   resetFormRef.current = form.resetForm;
   resetFormWithDataRef.current = form.form.reset;
   validateScreenRef.current = (screen: ModalScreen) => {

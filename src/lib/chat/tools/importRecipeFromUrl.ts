@@ -8,6 +8,11 @@ import {
 import { SupadataError } from "@/lib/supadata";
 import { GemmaExtractionError } from "@/lib/chat/llm-gemma";
 import { extractRecipe } from "@/lib/ingest/extract-recipe";
+import { canonicalizeRecipeUrl } from "@/lib/ingest/canonicalize-url";
+import {
+  findExistingImport,
+  recipeRowToImported,
+} from "@/lib/ingest/recipe-dedup";
 import { importedRecipeSchema } from "@/lib/ingest/imported-recipe-schema";
 import type { ImportedRecipe } from "@/types/recipe";
 import type { AgentContext } from "../context";
@@ -30,6 +35,9 @@ const inputSchema = z.object({
   hint: z.string().max(200).optional(),
   confirmed: z.boolean().optional(),
   recipe: importedRecipeSchema.optional(),
+  // Rides the confirmation payload when the preview was cloned from an
+  // existing import of the same canonical URL (see recipe-dedup).
+  dedupSourceRecipeId: z.string().optional(),
 });
 
 type Input = z.infer<typeof inputSchema>;
@@ -69,11 +77,13 @@ function safeHost(url: string): string | null {
 
 export const importRecipeFromUrl: Tool<
   typeof inputSchema,
-  { id: string; title: string; hasImage: boolean }
+  { id: string; title: string; hasImage: boolean; alreadyImported?: boolean }
 > = {
   name: "importRecipeFromUrl",
   description:
     "Import a recipe from a URL (YouTube, TikTok, Instagram, Facebook, X, or a recipe website) and save it to the user's library. The user is shown a preview to confirm before it is saved. Returns a link to the saved recipe.",
+  guidance:
+    "If the result contains `alreadyImported: true`, the user had already imported this exact URL — tell them so in their language and point them to the linked recipe; do NOT retry the import or create a duplicate.",
   inputSchema,
   statusKey: "import.fetching",
   requiresFeature: "aiChat",
@@ -99,6 +109,30 @@ export const importRecipeFromUrl: Tool<
         createdAt: new Date().toISOString(),
       });
       throw new ToolFailure("generic", "ingest-failed: invalid-url");
+    }
+
+    // Import dedup — a canonical-URL hit answers without touching Supadata.
+    // Own import → no preview at all: execute() short-circuits with
+    // alreadyImported (the null return means "no confirmation needed", same
+    // contract as generateRecipeImage's auto-offer guard). Someone else's →
+    // serve its content as the preview; persistRecipe may copy its nutrition.
+    const canonicalUrl = canonicalizeRecipeUrl(url);
+    if (canonicalUrl) {
+      const match = await findExistingImport(canonicalUrl, ctx.userId);
+      if (match?.kind === "own") return null;
+      if (match?.kind === "other") {
+        const imported = recipeRowToImported(match.recipe, url);
+        return {
+          message: imported.title,
+          payload: {
+            url,
+            hint: input.hint,
+            confirmed: true,
+            recipe: imported,
+            dedupSourceRecipeId: match.recipe.id,
+          },
+        };
+      }
     }
 
     let imported: ImportedRecipe;
@@ -161,6 +195,32 @@ export const importRecipeFromUrl: Tool<
     const host = safeHost(url);
     const imported = input.recipe;
 
+    // Mirror of the requiresConfirmation own-import guard: when the user
+    // already imported this exact URL, requiresConfirmation returned null (no
+    // preview) and this call arrives without a recipe — answer with the
+    // existing one instead of failing or duplicating. Also catches a re-import
+    // that landed between preview and confirm.
+    const canonicalUrl = canonicalizeRecipeUrl(url);
+    if (canonicalUrl) {
+      const own = await findExistingImport(canonicalUrl, ctx.userId);
+      if (own?.kind === "own") {
+        return {
+          ok: true,
+          data: {
+            id: own.recipe.id,
+            title: own.recipe.title,
+            hasImage: Boolean(own.recipe.imageUrl),
+            alreadyImported: true,
+          },
+          link: {
+            type: "recipe",
+            href: `/recipes/${own.recipe.id}`,
+            label: own.recipe.title,
+          },
+        };
+      }
+    }
+
     if (!imported) {
       // Defensive: execute runs only after requiresConfirmation supplies a recipe.
       logImportFailure({
@@ -202,7 +262,12 @@ export const importRecipeFromUrl: Tool<
         sourceUrl: imported.sourceUrl ?? url,
         imageUrl: imported.imageUrl,
       },
-      { source: "url", sourceUrl: url, locale: ctx.locale }
+      {
+        source: "url",
+        sourceUrl: url,
+        locale: ctx.locale,
+        dedupSourceRecipeId: input.dedupSourceRecipeId,
+      }
     );
 
     if (persisted.error || !persisted.data) {

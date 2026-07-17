@@ -77,8 +77,21 @@ export function useRecipeFormState(opts: {
    * fields usually live on earlier steps the user can't currently see.
    */
   onValidationError?: (errorFields: string[]) => void;
+  /**
+   * Returns the dedup source recipe id when the current form was prefilled
+   * from an existing import of the same URL (see EntryScreen / import route).
+   * Read lazily at submit time — the preview lives in the flow layer.
+   */
+  getDedupSourceRecipeId?: () => string | undefined;
 }): RecipeFormCtx {
-  const { mode, recipeId, isOpen, onSubmitSuccess, onValidationError } = opts;
+  const {
+    mode,
+    recipeId,
+    isOpen,
+    onSubmitSuccess,
+    onValidationError,
+    getDedupSourceRecipeId,
+  } = opts;
 
   const [categories, setCategories] = useState<RecipeCategory[]>([]);
   const [nutritionLoading, setNutritionLoading] = useState(false);
@@ -199,7 +212,9 @@ export function useRecipeFormState(opts: {
         const source = data.sourceUrl
           ? (data.sourceUrl.startsWith("http") ? "url" : "imported")
           : "manual";
-        const result = await persistRecipe(data, { source });
+        const dedupSourceRecipeId =
+          source === "url" ? getDedupSourceRecipeId?.() : undefined;
+        const result = await persistRecipe(data, { source, dedupSourceRecipeId });
         if (result.error || !result.data) {
           toast.error((result.error as string) || "Failed to save recipe");
           return;
@@ -220,7 +235,7 @@ export function useRecipeFormState(opts: {
     } finally {
       setIsSubmitting(false);
     }
-  }, [form, mode, recipeId, onSubmitSuccess, onValidationError]);
+  }, [form, mode, recipeId, onSubmitSuccess, onValidationError, getDedupSourceRecipeId]);
 
   return {
     form,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useRecipeModal } from "@/hooks/use-recipe-modal";
 import { useRecipeForm } from "@/hooks/use-recipe-form";
@@ -26,6 +27,7 @@ type ApiError = { code?: string; message?: string } | undefined;
 export function EntryScreen() {
   const t = useTranslations("recipeModal");
   const locale = useLocale();
+  const router = useRouter();
   const { goToScreen, setImportedPreview, close } = useRecipeModal();
   const { form } = useRecipeForm();
   const [view, setView] = useState<EntryView>("chooser");
@@ -77,6 +79,7 @@ export function EntryScreen() {
         sodium: recipe.sodium,
         imageUrl: recipe.imageUrl,
         sourceUrl,
+        dedupSourceRecipeId: recipe.dedupSourceRecipeId,
       };
       setImportedPreview(preview);
       form.reset(importedToFormData(preview));
@@ -101,12 +104,23 @@ export function EntryScreen() {
         setIsLoading(false);
         return;
       }
-      applyImported(data.recipe ?? {}, trimmed);
+      // Dedup: this user already imported the exact same link — nothing to
+      // extract or create, just take them to their existing recipe.
+      if (data.alreadyImported?.id) {
+        toast.info(t("import.alreadyImported"));
+        close();
+        router.push(`/${locale}/recipes/${data.alreadyImported.id}`);
+        return;
+      }
+      applyImported(
+        { ...(data.recipe ?? {}), dedupSourceRecipeId: data.dedupSourceRecipeId },
+        trimmed
+      );
     } catch {
       toast.error(t("import.errors.generic"));
       setIsLoading(false);
     }
-  }, [url, locale, applyImported, toErrorMessage, t]);
+  }, [url, locale, applyImported, toErrorMessage, t, close, router]);
 
   const handleFileUpload = useCallback(
     async (file: File) => {

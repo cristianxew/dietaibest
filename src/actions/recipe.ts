@@ -27,7 +27,8 @@ import {
   ingredientsChanged,
 } from "@/lib/ingredients";
 import { getAuthorName } from "@/lib/author-name";
-import type { Profile } from "@/lib/fdc";
+import { PROFILE_NUTRIENT_MAP, type Profile } from "@/lib/fdc";
+import { canonicalizeRecipeUrl } from "@/lib/ingest/canonicalize-url";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -111,12 +112,85 @@ async function reanalyzeRecipeNutrition(
   }
 }
 
+/**
+ * Dedup copy path: clone the 22-nutrient profile and the per-ingredient FDC
+ * matches from an existing import of the same canonical URL, skipping the
+ * whole analysis pipeline.
+ *
+ * The source id is client-supplied (it rode the preview payload), so nothing
+ * is copied until the row is re-verified server-side: it must be a URL import
+ * of the SAME canonical URL, with the same ingredients (per
+ * `ingredientsChanged`, i.e. the user didn't edit them in the preview), the
+ * same servings (columns are per-serving), and a completed profile. Any
+ * mismatch returns false and the caller re-analyzes instead.
+ *
+ * Best-effort like reanalyzeRecipeNutrition: never throws.
+ */
+async function copyNutritionFromSource(
+  recipe: { id: string; ingredients: unknown; servings: number },
+  sourceRecipeId: string,
+  canonicalUrl: string
+): Promise<boolean> {
+  try {
+    const sourceRecipe = await prisma.recipe.findUnique({
+      where: { id: sourceRecipeId },
+      include: { recipeIngredients: true },
+    });
+
+    if (
+      !sourceRecipe ||
+      sourceRecipe.source !== "url" ||
+      sourceRecipe.canonicalUrl !== canonicalUrl ||
+      sourceRecipe.servings !== recipe.servings ||
+      sourceRecipe.calories == null ||
+      ingredientsChanged(sourceRecipe.ingredients, recipe.ingredients)
+    ) {
+      return false;
+    }
+
+    const profile: Partial<Record<keyof Profile, number | null>> = {};
+    for (const key of Object.keys(PROFILE_NUTRIENT_MAP) as (keyof Profile)[]) {
+      profile[key] = sourceRecipe[key];
+    }
+
+    await prisma.$transaction([
+      prisma.recipe.update({ where: { id: recipe.id }, data: profile }),
+      prisma.recipeIngredient.createMany({
+        data: sourceRecipe.recipeIngredients.map(
+          ({ id: _id, recipeId: _recipeId, debugJson, ...rest }) => ({
+            ...rest,
+            // Read-side `JsonValue | null` isn't a valid write value — a DB
+            // NULL must be written as DbNull.
+            debugJson: debugJson ?? Prisma.DbNull,
+            recipeId: recipe.id,
+          })
+        ),
+      }),
+    ]);
+
+    console.info(
+      `[Recipe] copied nutrition from ${sourceRecipeId} for recipe: ${recipe.id}`
+    );
+    return true;
+  } catch (copyError) {
+    console.warn("[Recipe] Dedup nutrition copy failed:", copyError);
+    return false;
+  }
+}
+
 export interface PersistRecipeOptions {
   source?: RecipeSource;
   sourceUrl?: string;
   importedFrom?: string;
   analyzeNutrition?: boolean;
   locale?: "en" | "es" | "pl";
+  /**
+   * Id of an existing recipe imported from the same canonical URL (cross-user
+   * dedup). When set, nutrition is copied from that row instead of re-analyzed
+   * — but only after server-side verification (same canonical URL, unedited
+   * ingredients/servings, completed nutrition). See copyNutritionFromSource.
+   */
+  dedupSourceRecipeId?: string;
 }
 
 const isImportSource = (source: RecipeSource): boolean =>
@@ -161,12 +235,17 @@ export async function persistRecipe(
       }
 
       const sourceUrl = options.sourceUrl ?? recipeData.sourceUrl;
+      // Dedup key. Only URL imports get one — manual recipes have no source
+      // page and image imports carry a storage path that fails URL parsing.
+      const canonicalUrl =
+        source === "url" && sourceUrl ? canonicalizeRecipeUrl(sourceUrl) : null;
 
       const recipe = await prisma.recipe.create({
         data: {
           ...recipeData,
           tags,
           sourceUrl,
+          canonicalUrl,
           userId: ctx.user.id,
           source,
           categories: {
@@ -183,15 +262,25 @@ export async function persistRecipe(
 
       // Side-effect: FDC nutrition orchestration. Best-effort by contract — a
       // failure must not roll the recipe back (see reanalyzeRecipeNutrition).
-      // Persists the full 22-nutrient per-serving profile plus the
-      // per-ingredient FDC matches.
+      // Dedup imports first try to copy the source recipe's profile; anything
+      // that disqualifies the copy falls through to a fresh analysis.
       if (shouldAnalyze) {
-        await reanalyzeRecipeNutrition(
-          recipe.id,
-          formatIngredientsForNutrition(recipe.ingredients),
-          recipe.servings,
-          recipe.title
-        );
+        const copied =
+          options.dedupSourceRecipeId && canonicalUrl
+            ? await copyNutritionFromSource(
+                recipe,
+                options.dedupSourceRecipeId,
+                canonicalUrl
+              )
+            : false;
+        if (!copied) {
+          await reanalyzeRecipeNutrition(
+            recipe.id,
+            formatIngredientsForNutrition(recipe.ingredients),
+            recipe.servings,
+            recipe.title
+          );
+        }
       }
 
       return recipe;

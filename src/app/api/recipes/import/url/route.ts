@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { assertCanImportRecipe } from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
 import { extractRecipe, selectIngestStrategy } from "@/lib/ingest/extract-recipe";
+import { canonicalizeRecipeUrl } from "@/lib/ingest/canonicalize-url";
+import { findExistingImport, recipeRowToImported } from "@/lib/ingest/recipe-dedup";
 import { SupadataError } from "@/lib/supadata";
 import { GemmaExtractionError } from "@/lib/chat/llm-gemma";
 import type { Locale } from "@/lib/chat/context";
@@ -69,6 +71,32 @@ export async function POST(req: NextRequest) {
   const locale: Locale = VALID_LOCALES.has(String(body.locale))
     ? (body.locale as Locale)
     : "en";
+
+  // Import dedup: a canonical-URL hit answers without touching Supadata/Gemma.
+  // Own import → point the modal at the existing recipe. Someone else's →
+  // serve its content as the preview; the save path may then copy nutrition
+  // via dedupSourceRecipeId (re-verified server-side in persistRecipe).
+  const canonicalUrl = canonicalizeRecipeUrl(url);
+  if (canonicalUrl) {
+    const match = await findExistingImport(canonicalUrl, user.id);
+    if (match?.kind === "own") {
+      return new Response(
+        JSON.stringify({
+          alreadyImported: { id: match.recipe.id, title: match.recipe.title },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    if (match?.kind === "other") {
+      return new Response(
+        JSON.stringify({
+          recipe: recipeRowToImported(match.recipe, url),
+          dedupSourceRecipeId: match.recipe.id,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
 
   let strategy: ReturnType<typeof selectIngestStrategy>;
   try {
