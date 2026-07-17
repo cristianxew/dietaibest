@@ -74,33 +74,55 @@ export default async function SubscribePage({ searchParams }: SubscribePageProps
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight mb-3">
-          {t("title")}
-        </h1>
-        <p className="text-muted-foreground">{t("description")}</p>
+    <div className="w-full min-h-[calc(100vh-4rem)] md:min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-background relative overflow-hidden noise">
+      {/* Background decoration & Noise Overlay */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        {/* Top-right coral/peach glow */}
+        <div
+          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full opacity-30 dark:opacity-15 animate-pulse-soft"
+          style={{
+            background: "radial-gradient(circle, var(--brand-200) 0%, transparent 70%)",
+          }}
+        />
+        {/* Bottom-left golden amber glow */}
+        <div
+          className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full opacity-20 dark:opacity-10"
+          style={{
+            background: "radial-gradient(circle, #FED7AA 0%, transparent 70%)",
+          }}
+        />
       </div>
 
-      {canceled ? (
-        <Alert className="mb-6">
-          <AlertTitle>{t("canceledTitle")}</AlertTitle>
-          <AlertDescription>{t("canceledDescription")}</AlertDescription>
-        </Alert>
-      ) : null}
+      <div className="w-full max-w-5xl bg-card border border-border/80 shadow-2xl rounded-3xl overflow-hidden animate-scale-in relative z-10 p-6 sm:p-10 lg:p-12">
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight leading-tight md:leading-tight pb-2 bg-gradient-to-r from-brand-500 via-gold-500 to-brand-400 bg-clip-text text-transparent">
+            {t("title")}
+          </h1>
+          <p className="text-muted-foreground text-base max-w-xl mx-auto leading-relaxed">
+            {t("description")}
+          </p>
+        </div>
 
-      {loadError ? (
-        <Alert variant="destructive" className="mb-6">
-          <AlertTitle>{t("unavailableTitle")}</AlertTitle>
-          <AlertDescription>{loadError}</AlertDescription>
-        </Alert>
-      ) : plans ? (
-        <PlanSelector
-          plans={plans}
-          trialEligible={trialEligible}
-          trialDays={trialDays}
-        />
-      ) : null}
+        {canceled ? (
+          <Alert className="mb-6 max-w-3xl mx-auto border-brand-200 bg-brand-50/20 text-brand-850 dark:text-brand-300">
+            <AlertTitle className="font-semibold">{t("canceledTitle")}</AlertTitle>
+            <AlertDescription>{t("canceledDescription")}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {loadError ? (
+          <Alert variant="destructive" className="mb-6 max-w-3xl mx-auto">
+            <AlertTitle className="font-semibold">{t("unavailableTitle")}</AlertTitle>
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        ) : plans ? (
+          <PlanSelector
+            plans={plans}
+            trialEligible={trialEligible}
+            trialDays={trialDays}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
