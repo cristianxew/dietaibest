@@ -113,13 +113,35 @@ async function reanalyzeRecipeNutrition(
 }
 
 /**
+ * Same shape as `resolvedSomething` in use-recipe-form.ts's analyzeNutrition:
+ * FDC analysis reports success even when NO ingredient resolved against USDA
+ * FDC, returning an all-zero profile. A source row with `calories: 0` (not
+ * null) must not be treated as "has nutrition" — copying it would propagate a
+ * known-failed profile instead of falling back to a fresh analysis that might
+ * succeed.
+ */
+function hasNonZeroProfile(recipe: {
+  calories: number | null;
+  protein: number | null;
+  carbs: number | null;
+  fat: number | null;
+}): boolean {
+  return [recipe.calories, recipe.protein, recipe.carbs, recipe.fat].some(
+    (v) => typeof v === "number" && Number.isFinite(v) && v > 0
+  );
+}
+
+/**
  * Dedup copy path: clone the 22-nutrient profile and the per-ingredient FDC
  * matches from an existing import of the same canonical URL, skipping the
  * whole analysis pipeline.
  *
  * The source id is client-supplied (it rode the preview payload), so nothing
- * is copied until the row is re-verified server-side: it must be a URL import
- * of the SAME canonical URL, with the same ingredients (per
+ * is copied until the row is re-verified server-side: the requester must be
+ * allowed to see it (own it, or it is public — same rule as getRecipe and
+ * findExistingImport; re-checked HERE because visibility can flip between
+ * preview and save, and because the id itself is untrusted input), and it must
+ * be a URL import of the SAME canonical URL, with the same ingredients (per
  * `ingredientsChanged`, i.e. the user didn't edit them in the preview), the
  * same servings (columns are per-serving), and a completed profile. Any
  * mismatch returns false and the caller re-analyzes instead.
@@ -129,7 +151,8 @@ async function reanalyzeRecipeNutrition(
 async function copyNutritionFromSource(
   recipe: { id: string; ingredients: unknown; servings: number },
   sourceRecipeId: string,
-  canonicalUrl: string
+  canonicalUrl: string,
+  requesterId: string
 ): Promise<boolean> {
   try {
     const sourceRecipe = await prisma.recipe.findUnique({
@@ -139,10 +162,11 @@ async function copyNutritionFromSource(
 
     if (
       !sourceRecipe ||
+      (sourceRecipe.userId !== requesterId && !sourceRecipe.isPublic) ||
       sourceRecipe.source !== "url" ||
       sourceRecipe.canonicalUrl !== canonicalUrl ||
       sourceRecipe.servings !== recipe.servings ||
-      sourceRecipe.calories == null ||
+      !hasNonZeroProfile(sourceRecipe) ||
       ingredientsChanged(sourceRecipe.ingredients, recipe.ingredients)
     ) {
       return false;
@@ -153,20 +177,27 @@ async function copyNutritionFromSource(
       profile[key] = sourceRecipe[key];
     }
 
-    await prisma.$transaction([
+    // Same zero-rows guard as reanalyzeRecipeNutrition: a source with a
+    // profile but no ingredient matches copies the columns only.
+    const ops: Prisma.PrismaPromise<unknown>[] = [
       prisma.recipe.update({ where: { id: recipe.id }, data: profile }),
-      prisma.recipeIngredient.createMany({
-        data: sourceRecipe.recipeIngredients.map(
-          ({ id: _id, recipeId: _recipeId, debugJson, ...rest }) => ({
-            ...rest,
-            // Read-side `JsonValue | null` isn't a valid write value — a DB
-            // NULL must be written as DbNull.
-            debugJson: debugJson ?? Prisma.DbNull,
-            recipeId: recipe.id,
-          })
-        ),
-      }),
-    ]);
+    ];
+    if (sourceRecipe.recipeIngredients.length > 0) {
+      ops.push(
+        prisma.recipeIngredient.createMany({
+          data: sourceRecipe.recipeIngredients.map(
+            ({ id: _id, recipeId: _recipeId, debugJson, ...rest }) => ({
+              ...rest,
+              // Read-side `JsonValue | null` isn't a valid write value — a DB
+              // NULL must be written as DbNull.
+              debugJson: debugJson ?? Prisma.DbNull,
+              recipeId: recipe.id,
+            })
+          ),
+        })
+      );
+    }
+    await prisma.$transaction(ops);
 
     console.info(
       `[Recipe] copied nutrition from ${sourceRecipeId} for recipe: ${recipe.id}`
@@ -270,7 +301,8 @@ export async function persistRecipe(
             ? await copyNutritionFromSource(
                 recipe,
                 options.dedupSourceRecipeId,
-                canonicalUrl
+                canonicalUrl,
+                ctx.user.id
               )
             : false;
         if (!copied) {

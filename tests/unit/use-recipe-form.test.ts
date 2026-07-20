@@ -201,6 +201,59 @@ describe("useRecipeFormState", () => {
     });
   });
 
+  describe("handleSubmit — import dedup wiring", () => {
+    it("threads getDedupSourceRecipeId() into persistRecipe options for url imports", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: { id: "r-dedup" },
+      });
+
+      const { result } = renderHook(() =>
+        useRecipeFormState({ ...baseOpts, getDedupSourceRecipeId: () => "src-1" })
+      );
+
+      act(() => {
+        result.current.form.reset({
+          ...validFormValues,
+          sourceUrl: "https://example.com/pesto",
+        });
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(persistRecipe).toHaveBeenCalledWith(expect.anything(), {
+        source: "url",
+        dedupSourceRecipeId: "src-1",
+      });
+    });
+
+    it("never passes a dedup id for manual recipes even if the getter returns one", async () => {
+      const { persistRecipe } = await import("@/actions/recipe");
+      (persistRecipe as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: { id: "r-manual" },
+      });
+
+      const { result } = renderHook(() =>
+        useRecipeFormState({ ...baseOpts, getDedupSourceRecipeId: () => "src-1" })
+      );
+
+      act(() => {
+        result.current.form.reset(validFormValues);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(persistRecipe).toHaveBeenCalledWith(expect.anything(), {
+        source: "manual",
+        dedupSourceRecipeId: undefined,
+      });
+    });
+  });
+
   describe("handleSubmit — edit mode", () => {
     it("calls updateRecipe with recipeId and invokes onSubmitSuccess", async () => {
       const { updateRecipe } = await import("@/actions/recipe");

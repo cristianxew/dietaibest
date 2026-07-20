@@ -88,7 +88,12 @@ export interface RecipeFlowCtx {
   goToScreen: (screen: ModalScreen) => void;
   goBack: () => void;
   goToNextStep: () => Promise<void>;
-  setImportedPreview: (data: ImportedRecipe) => void;
+  /**
+   * `null` clears an abandoned import's preview — e.g. entry → preview →
+   * back → "Manual entry" must not carry a stale sourceUrl/dedupSourceRecipeId
+   * into a manual-entry session (see EntryScreen's handleManual).
+   */
+  setImportedPreview: (data: ImportedRecipe | null) => void;
 }
 
 export interface UseRecipeFlowStateOpts {
@@ -180,7 +185,7 @@ export function useRecipeFlowState(opts: UseRecipeFlowStateOpts): RecipeFlowCtx 
     if (next) goToScreen(next);
   }, [screen, validateScreen, goToScreen]);
 
-  const setImportedPreview = useCallback((data: ImportedRecipe) => {
+  const setImportedPreview = useCallback((data: ImportedRecipe | null) => {
     setImportedPreviewState(data);
   }, []);
 

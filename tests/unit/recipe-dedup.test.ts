@@ -25,6 +25,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   source: "url",
   sourceUrl: "https://example.com/carbonara?utm_source=x",
   canonicalUrl: "https://example.com/carbonara",
+  isPublic: true,
   calories: 500,
   protein: 20,
   carbs: 60,
@@ -74,8 +75,27 @@ describe("findExistingImport", () => {
     expect(secondCall?.where).toMatchObject({
       canonicalUrl: "https://example.com/carbonara",
       source: "url",
-      calories: { not: null },
+      isPublic: true,
+      calories: { gt: 0 },
     });
+  });
+
+  it("does not prefer an other-user match with an all-zero profile (calories: 0)", async () => {
+    // calories:{gt:0} excludes a zero-calorie row at the DB level (a real
+    // FDC-analysis-succeeded-but-resolved-nothing profile) — it falls through
+    // to the "any" query instead of being preferred as the analyzed source.
+    const fallback = row({ id: "recipe-6", userId: "user-b", calories: null });
+    vi.mocked(prisma.recipe.findFirst)
+      .mockResolvedValueOnce(null) // own
+      .mockResolvedValueOnce(null) // other analyzed — excluded (calories: 0)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockResolvedValueOnce(fallback as any); // other any
+
+    const match = await findExistingImport("https://example.com/carbonara", "user-a");
+
+    expect(match).toEqual({ kind: "other", recipe: fallback });
+    const analyzedCall = vi.mocked(prisma.recipe.findFirst).mock.calls[1][0];
+    expect(analyzedCall?.where).toMatchObject({ calories: { gt: 0 } });
   });
 
   it("falls back to another user's unanalyzed import", async () => {
@@ -89,6 +109,39 @@ describe("findExistingImport", () => {
     const match = await findExistingImport("https://example.com/carbonara", "user-a");
 
     expect(match).toEqual({ kind: "other", recipe: unanalyzed });
+    const thirdCall = vi.mocked(prisma.recipe.findFirst).mock.calls[2][0];
+    expect(thirdCall?.where).toMatchObject({ isPublic: true });
+  });
+
+  describe("visibility guard on other-user matches", () => {
+    it("does not return a private other-user recipe (falls through to null)", async () => {
+      // Both other-user queries now filter isPublic:true; a real DB excludes a
+      // private row from both, so the mocks return null for them too — the
+      // pre-fix code would have matched this row regardless of visibility.
+      vi.mocked(prisma.recipe.findFirst)
+        .mockResolvedValueOnce(null) // own
+        .mockResolvedValueOnce(null) // other analyzed — excluded (private)
+        .mockResolvedValueOnce(null); // other any — excluded (private)
+
+      const match = await findExistingImport("https://example.com/carbonara", "user-a");
+
+      expect(match).toBeNull();
+      const [, analyzedCall, anyCall] = vi.mocked(prisma.recipe.findFirst).mock.calls;
+      expect(analyzedCall[0]?.where).toMatchObject({ isPublic: true });
+      expect(anyCall[0]?.where).toMatchObject({ isPublic: true });
+    });
+
+    it("returns a public other-user recipe", async () => {
+      const publicMatch = row({ id: "recipe-4", userId: "user-b", isPublic: true });
+      vi.mocked(prisma.recipe.findFirst)
+        .mockResolvedValueOnce(null) // own
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .mockResolvedValueOnce(publicMatch as any); // other analyzed, public
+
+      const match = await findExistingImport("https://example.com/carbonara", "user-a");
+
+      expect(match).toEqual({ kind: "other", recipe: publicMatch });
+    });
   });
 
   it("returns null when nobody imported the URL", async () => {
@@ -128,6 +181,19 @@ describe("recipeRowToImported", () => {
     });
   });
 
+  it("drops out-of-enum difficulty values (strict re-parse in the chat resume path)", () => {
+    expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recipeRowToImported(row({ difficulty: "Fácil" }) as any, "https://example.com/x")
+        .difficulty
+    ).toBeUndefined();
+    expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recipeRowToImported(row({ difficulty: "easy" }) as any, "https://example.com/x")
+        .difficulty
+    ).toBe("easy");
+  });
+
   it("converts null optionals to undefined and guards non-array ingredients", () => {
     const sparse = row({
       description: null,
@@ -152,5 +218,17 @@ describe("recipeRowToImported", () => {
     expect(imported.description).toBeUndefined();
     expect(imported.calories).toBeUndefined();
     expect(imported.imageUrl).toBeUndefined();
+  });
+
+  it("maps string-shaped ingredients instead of dropping them", () => {
+    const stringRow = row({ ingredients: ["2 cups flour", "1 egg"] });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const imported = recipeRowToImported(stringRow as any, "https://example.com/x");
+
+    expect(imported.ingredients).toHaveLength(2);
+    expect(imported.ingredients).not.toEqual([]);
+    expect(imported.ingredients[0].name).toBe("flour");
+    expect(imported.ingredients[1].name).toBe("egg");
   });
 });

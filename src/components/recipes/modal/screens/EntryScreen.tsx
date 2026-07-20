@@ -167,6 +167,13 @@ export function EntryScreen() {
   );
 
   const handleManual = () => {
+    // An abandoned import (entry → preview → back → Manual entry) must not
+    // leak its sourceUrl/dedupSourceRecipeId into a manual-entry session —
+    // otherwise handleSubmit derives source: "url" for a recipe the user
+    // explicitly chose to type by hand, and persistRecipe computes a real
+    // canonicalUrl for a URL the user rejected.
+    setImportedPreview(null);
+    form.setValue("sourceUrl", "");
     goToScreen("step0");
   };
 

@@ -68,22 +68,28 @@ export function canonicalizeRecipeUrl(raw: string): string | null {
   // survive. Hosts align with VIDEO_HOST_PATTERNS in
   // src/lib/chat/ingestion/select-strategy.ts.
   if (host === "youtu.be") {
-    // youtu.be/<id> → youtube.com/watch?v=<id>
+    // youtu.be/<id> → youtube.com/watch?v=<id>. Without an id there is no
+    // video identity — returning a bare watch URL would collapse every such
+    // link onto ONE canonical key and cross-match unrelated recipes.
     const [id] = segmentsOf(path);
+    if (!id) return null;
     host = "youtube.com";
     path = "/watch";
-    params = id ? singleParam("v", id) : new URLSearchParams();
+    params = singleParam("v", id);
   } else if (hostMatches(host, "youtube.com")) {
     host = "youtube.com"; // collapses m. / music.
     const segments = segmentsOf(path);
-    if (["shorts", "embed", "live"].includes(segments[0] ?? "") && segments[1]) {
+    if (["shorts", "embed", "live"].includes(segments[0] ?? "")) {
+      if (!segments[1]) return null;
       path = "/watch";
       params = singleParam("v", segments[1]);
     } else if (segments[0] === "watch") {
       // Keep ONLY the video id — t/list/index/pp/ab_channel are all noise.
+      // watch without v (e.g. a playlist-only link) has no video identity.
       const v = params.get("v");
+      if (!v) return null;
       path = "/watch";
-      params = v ? singleParam("v", v) : new URLSearchParams();
+      params = singleParam("v", v);
     }
   } else if (hostMatches(host, "instagram.com")) {
     host = "instagram.com";
@@ -106,8 +112,9 @@ export function canonicalizeRecipeUrl(raw: string): string | null {
     host = "facebook.com";
     if (segmentsOf(path)[0] === "watch") {
       const v = params.get("v");
+      if (!v) return null;
       path = "/watch";
-      params = v ? singleParam("v", v) : new URLSearchParams();
+      params = singleParam("v", v);
     }
   } else if (host === "fb.watch") {
     params = new URLSearchParams();

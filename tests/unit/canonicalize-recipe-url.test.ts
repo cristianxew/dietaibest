@@ -84,6 +84,13 @@ describe("canonicalizeRecipeUrl — YouTube", () => {
       )
     ).toBe(canonical);
   });
+
+  it("returns null when no video id can be extracted (no shared collision key)", () => {
+    expect(canonicalizeRecipeUrl("https://youtu.be/")).toBeNull();
+    expect(canonicalizeRecipeUrl("https://youtu.be/?si=x")).toBeNull();
+    expect(canonicalizeRecipeUrl("https://www.youtube.com/watch?list=PLabc")).toBeNull();
+    expect(canonicalizeRecipeUrl("https://www.youtube.com/shorts/")).toBeNull();
+  });
 });
 
 describe("canonicalizeRecipeUrl — Instagram", () => {
@@ -135,5 +142,9 @@ describe("canonicalizeRecipeUrl — TikTok / X / Facebook", () => {
 
   it("canonicalizes fb.watch short links as-is", () => {
     expect(canonicalizeRecipeUrl("https://fb.watch/aBcD1/")).toBe("https://fb.watch/aBcD1");
+  });
+
+  it("returns null for facebook.com/watch without a v param", () => {
+    expect(canonicalizeRecipeUrl("https://www.facebook.com/watch/?ref=sharing")).toBeNull();
   });
 });

@@ -11,7 +11,6 @@ import {
 import { persistRecipe } from "@/actions/recipe";
 import { SupadataClient, setSupadataClientForTest } from "@/lib/supadata";
 import { importRecipeFromUrl } from "@/lib/chat/tools/importRecipeFromUrl";
-import { findExistingImport } from "@/lib/ingest/recipe-dedup";
 
 vi.mock("@/actions/recipe", () => ({
   persistRecipe: vi.fn(),

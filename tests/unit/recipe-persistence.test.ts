@@ -228,6 +228,7 @@ describe("persistRecipe — dedup nutrition copy path", () => {
   const dedupSource = (overrides: Record<string, unknown> = {}) => ({
     id: "src-1",
     userId: "user-b",
+    isPublic: true,
     source: "url",
     canonicalUrl: canonical,
     servings: 2,
@@ -279,6 +280,65 @@ describe("persistRecipe — dedup nutrition copy path", () => {
     expect(createManyRow.id).toBeUndefined();
   });
 
+  it("copies nutrient columns without createMany when the source has no ingredient rows", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ recipeIngredients: [] }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "recipe-1" },
+        data: expect.objectContaining({ calories: 100 }),
+      })
+    );
+    expect(prisma.recipeIngredient.createMany).not.toHaveBeenCalled();
+  });
+
+  it("survives a mid-copy transaction failure and falls back to analysis", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(dedupSource() as any);
+    vi.mocked(prisma.$transaction).mockRejectedValueOnce(new Error("db down"));
+
+    const result = await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(result.data).toBeTruthy();
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("refuses to copy from another user's private recipe", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ isPublic: false }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    // $transaction is the copy path's signature — the reanalysis fallback
+    // writes the profile with plain update/createMany calls instead.
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("still copies from the requester's OWN private recipe", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ isPublic: false, userId: baseUser.id }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ calories: 100 }),
+      })
+    );
+  });
+
   it("falls back to analysis when the source row is missing", async () => {
     vi.mocked(prisma.recipe.findUnique).mockResolvedValue(null);
     await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
@@ -316,8 +376,29 @@ describe("persistRecipe — dedup nutrition copy path", () => {
 
   it("falls back when the source has no completed nutrition", async () => {
     vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dedupSource({ calories: null }) as any
+      // A never-analyzed row has every macro column null together (they're
+      // written atomically as one Profile spread) — not just calories.
+      dedupSource({
+        calories: null,
+        protein: null,
+        carbs: null,
+        fat: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
+    );
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when the source has an all-zero profile (analysis 'succeeded' but resolved nothing)", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      dedupSource({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
     );
     await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
     expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();

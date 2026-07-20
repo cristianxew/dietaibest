@@ -26,19 +26,26 @@ async function backfillCanonicalUrls() {
   let skipped = 0;
 
   try {
-    // Cursor pagination over the not-yet-backfilled slice. Each pass re-queries
-    // from the start because updated rows drop out of the filter.
+    // Keyset pagination on the unique `id` (offset/skip over `createdAt`
+    // is not a stable order — bulk-inserted rows share timestamps and could
+    // be silently missed). Advancing past the whole batch also steps over
+    // non-canonicalizable rows without wedging the loop.
+    // "" as the initial cursor works unconditionally: every UUID string
+    // sorts greater than the empty string, so `id > lastId` needs no
+    // separate first-page branch (which is what caused the circular type
+    // inference below).
+    let lastId = "";
     for (;;) {
       const batch = await prisma.recipe.findMany({
         where: {
           source: "url",
           sourceUrl: { not: null },
           canonicalUrl: null,
+          id: { gt: lastId },
         },
         select: { id: true, sourceUrl: true },
-        orderBy: { createdAt: "asc" },
+        orderBy: { id: "asc" },
         take: BATCH_SIZE,
-        skip: skipped,
       });
       if (batch.length === 0) break;
 
@@ -46,7 +53,7 @@ async function backfillCanonicalUrls() {
         const canonicalUrl = canonicalizeRecipeUrl(recipe.sourceUrl ?? "");
         if (!canonicalUrl) {
           // Unparseable sourceUrl (shouldn't happen for source="url") — leave
-          // NULL and step over it so the loop can't spin on the same row.
+          // NULL; the id cursor moves past it regardless.
           console.warn(`  ⚠️  ${recipe.id}: sourceUrl not canonicalizable, skipping`);
           skipped += 1;
           continue;
@@ -57,6 +64,7 @@ async function backfillCanonicalUrls() {
         });
         updated += 1;
       }
+      lastId = batch[batch.length - 1].id;
       console.log(`  … ${updated} updated so far`);
     }
 
