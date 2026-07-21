@@ -322,6 +322,21 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [URL-import dedup rollout](./SOP/url-import-dedup-rollout.md)
+**Purpose:** Deploying the `Recipe.canonicalUrl` cross-user import dedup (PR #38) — no feature flag, so read the rollback section first
+
+**Contains:**
+- Why the migration needs no manual step (the entrypoint runs `migrate deploy`) and the `CREATE INDEX` lock caveat
+- Why the backfill **cannot** run in the app container (runner is `node:22-alpine`, only `docker-entrypoint.sh` is copied) and how to run it against prod instead
+- Smoke test including the privacy boundary (a private recipe must never surface as a dedup preview)
+- Rollback: revert the app, or `canonicalUrl = NULL` to go dormant without a deploy
+
+**When to read:**
+- Deploying or rolling back the import-dedup feature
+- Backfilling `canonicalUrl` for pre-existing recipes
+
+---
+
 ## =� Quick Start for New Developers
 
 ### 1. Read These First (in order):
