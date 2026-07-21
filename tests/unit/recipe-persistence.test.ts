@@ -6,6 +6,7 @@ vi.mock("@/lib/prisma", () => ({
     user: { findUnique: vi.fn() },
     recipe: { create: vi.fn(), update: vi.fn(), findUnique: vi.fn() },
     recipeIngredient: { deleteMany: vi.fn(), createMany: vi.fn() },
+    $transaction: vi.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
   },
 }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
@@ -194,6 +195,213 @@ describe("persistRecipe — tag injection", () => {
     const tags: string[] = lastCreateArgs().data.tags;
     expect(tags.filter((t) => t === "imported")).toHaveLength(1);
     expect(tags).toContain("dinner");
+  });
+});
+
+describe("persistRecipe — canonicalUrl derivation", () => {
+  it("writes the canonical URL for source 'url'", async () => {
+    await persistRecipe(
+      baseData({ sourceUrl: "https://example.com/carbonara/?utm_source=x" }),
+      { source: "url", sourceUrl: "https://example.com/carbonara/?utm_source=x" }
+    );
+    expect(lastCreateArgs().data.canonicalUrl).toBe("https://example.com/carbonara");
+  });
+
+  it("leaves canonicalUrl null for manual recipes", async () => {
+    await persistRecipe(baseData(), { source: "manual" });
+    expect(lastCreateArgs().data.canonicalUrl ?? null).toBeNull();
+  });
+
+  it("leaves canonicalUrl null for image imports (storage-path sourceUrl)", async () => {
+    await persistRecipe(baseData(), {
+      source: "imported",
+      sourceUrl: "user-1/event-1/jpg",
+    });
+    expect(lastCreateArgs().data.canonicalUrl ?? null).toBeNull();
+  });
+});
+
+describe("persistRecipe — dedup nutrition copy path", () => {
+  const rawUrl = "https://example.com/carbonara?utm_source=x";
+  const canonical = "https://example.com/carbonara";
+
+  const dedupSource = (overrides: Record<string, unknown> = {}) => ({
+    id: "src-1",
+    userId: "user-b",
+    isPublic: true,
+    source: "url",
+    canonicalUrl: canonical,
+    servings: 2,
+    ingredients: [{ name: "flour", amount: 2, unit: "cups" }],
+    ...FULL_PROFILE,
+    recipeIngredients: [
+      {
+        id: "ri-1",
+        recipeId: "src-1",
+        originalText: "2 cups flour",
+        nameNorm: "flour",
+        qty: 2,
+        unit: "cup",
+        fdcId: 123,
+        gramWeight: 480,
+        confidence: 0.9,
+      },
+    ],
+    ...overrides,
+  });
+
+  const importOpts = {
+    source: "url" as const,
+    sourceUrl: rawUrl,
+    dedupSourceRecipeId: "src-1",
+  };
+
+  it("copies nutrition + RecipeIngredient rows instead of re-analyzing", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(dedupSource() as any);
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "recipe-1" },
+        data: expect.objectContaining({ calories: 100, zinc: 12 }),
+      })
+    );
+    expect(prisma.recipeIngredient.createMany).toHaveBeenCalledWith({
+      data: [
+        expect.objectContaining({ recipeId: "recipe-1", fdcId: 123 }),
+      ],
+    });
+    const createManyRow =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (vi.mocked(prisma.recipeIngredient.createMany).mock.calls[0][0] as any).data[0];
+    expect(createManyRow.id).toBeUndefined();
+  });
+
+  it("copies nutrient columns without createMany when the source has no ingredient rows", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ recipeIngredients: [] }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "recipe-1" },
+        data: expect.objectContaining({ calories: 100 }),
+      })
+    );
+    expect(prisma.recipeIngredient.createMany).not.toHaveBeenCalled();
+  });
+
+  it("survives a mid-copy transaction failure and falls back to analysis", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(dedupSource() as any);
+    vi.mocked(prisma.$transaction).mockRejectedValueOnce(new Error("db down"));
+
+    const result = await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(result.data).toBeTruthy();
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("refuses to copy from another user's private recipe", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ isPublic: false }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    // $transaction is the copy path's signature — the reanalysis fallback
+    // writes the profile with plain update/createMany calls instead.
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("still copies from the requester's OWN private recipe", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ isPublic: false, userId: baseUser.id }) as any
+    );
+
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+
+    expect(analyzeRecipeProfileAction).not.toHaveBeenCalled();
+    expect(prisma.recipe.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ calories: 100 }),
+      })
+    );
+  });
+
+  it("falls back to analysis when the source row is missing", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(null);
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when the source canonicalUrl does not match (tamper guard)", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dedupSource({ canonicalUrl: "https://elsewhere.com/other" }) as any
+    );
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when ingredients were edited in the preview", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(dedupSource() as any);
+    await persistRecipe(
+      baseData({
+        sourceUrl: rawUrl,
+        ingredients: [{ name: "sugar", amount: 1, unit: "cups" }],
+      }),
+      importOpts
+    );
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when servings differ", async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(dedupSource() as any);
+    await persistRecipe(baseData({ sourceUrl: rawUrl, servings: 4 }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when the source has no completed nutrition", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      // A never-analyzed row has every macro column null together (they're
+      // written atomically as one Profile spread) — not just calories.
+      dedupSource({
+        calories: null,
+        protein: null,
+        carbs: null,
+        fat: null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
+    );
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
+  });
+
+  it("falls back when the source has an all-zero profile (analysis 'succeeded' but resolved nothing)", async () => {
+    vi.mocked(prisma.recipe.findUnique).mockResolvedValue(
+      dedupSource({
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any
+    );
+    await persistRecipe(baseData({ sourceUrl: rawUrl }), importOpts);
+    expect(analyzeRecipeProfileAction).toHaveBeenCalledOnce();
   });
 });
 

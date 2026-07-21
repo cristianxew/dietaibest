@@ -15,6 +15,13 @@ import { importRecipeFromUrl } from "@/lib/chat/tools/importRecipeFromUrl";
 vi.mock("@/actions/recipe", () => ({
   persistRecipe: vi.fn(),
 }));
+// Import dedup runs before extraction/persist in both tool phases; these tests
+// exercise the non-dedup path, so every lookup is a miss (findExistingImport
+// hits Prisma otherwise — unmocked here and unavailable in CI).
+vi.mock("@/lib/ingest/recipe-dedup", () => ({
+  findExistingImport: vi.fn(),
+  recipeRowToImported: vi.fn(),
+}));
 
 const PRO: Entitlements = {
   isPro: true,

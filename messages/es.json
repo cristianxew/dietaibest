@@ -1474,6 +1474,7 @@
       "servings": "Porciones"
     },
     "import": {
+      "alreadyImported": "Ya importaste esta receta — te llevamos a ella.",
       "errors": {
         "noRecipe": "No se pudo extraer ninguna receta. Probá con otro enlace o una foto más clara.",
         "rateLimited": "El importador está ocupado en este momento. Probá de nuevo en un momento.",

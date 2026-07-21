@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import { assertCanImportRecipe } from "@/lib/entitlements";
 import { toEntitlementError } from "@/lib/entitlement-error";
 import { extractRecipe, selectIngestStrategy } from "@/lib/ingest/extract-recipe";
+import { findExistingImport, recipeRowToImported } from "@/lib/ingest/recipe-dedup";
 import { SupadataError } from "@/lib/supadata";
 import { GemmaExtractionError } from "@/lib/chat/llm-gemma";
 import type { ImportedRecipe } from "@/types/recipe";
@@ -23,6 +24,10 @@ vi.mock("@/lib/entitlement-error", () => ({ toEntitlementError: vi.fn(() => null
 vi.mock("@/lib/ingest/extract-recipe", () => ({
   extractRecipe: vi.fn(),
   selectIngestStrategy: vi.fn(() => "supadata-web"),
+}));
+vi.mock("@/lib/ingest/recipe-dedup", () => ({
+  findExistingImport: vi.fn(),
+  recipeRowToImported: vi.fn(),
 }));
 
 const baseUser = { id: "user-123", email: "user@dietai.test", plan: "pro", subscriptionStatus: "active" };
@@ -51,6 +56,7 @@ describe("POST /api/recipes/import/url", () => {
     vi.mocked(assertCanImportRecipe).mockResolvedValue(undefined);
     vi.mocked(toEntitlementError).mockReturnValue(null);
     vi.mocked(selectIngestStrategy).mockReturnValue("supadata-web");
+    vi.mocked(findExistingImport).mockResolvedValue(null);
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -140,5 +146,54 @@ describe("POST /api/recipes/import/url", () => {
     const res = await POST(jsonRequest({ url: "https://example.com/pesto" }));
     expect(res.status).toBe(500);
     expect((await res.json()).error.code).toBe("generic");
+  });
+
+  describe("import dedup", () => {
+    const ownRow = { id: "recipe-own", title: "My Pesto" };
+    const otherRow = { id: "recipe-other", title: "Their Pesto" };
+
+    it("returns alreadyImported for the user's own previous import, skipping extraction", async () => {
+      vi.mocked(findExistingImport).mockResolvedValue({
+        kind: "own",
+        recipe: ownRow,
+      } as never);
+
+      const res = await POST(jsonRequest({ url: "https://example.com/pesto?utm_source=x" }));
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({
+        alreadyImported: { id: "recipe-own", title: "My Pesto" },
+      });
+      expect(findExistingImport).toHaveBeenCalledWith(
+        "https://example.com/pesto",
+        baseUser.id
+      );
+      expect(extractRecipe).not.toHaveBeenCalled();
+    });
+
+    it("returns another user's import as the preview with dedupSourceRecipeId, skipping extraction", async () => {
+      vi.mocked(findExistingImport).mockResolvedValue({
+        kind: "other",
+        recipe: otherRow,
+      } as never);
+      vi.mocked(recipeRowToImported).mockReturnValue(validRecipe);
+
+      const res = await POST(jsonRequest({ url: "https://example.com/pesto" }));
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.recipe.title).toBe("Pesto Pasta");
+      expect(json.dedupSourceRecipeId).toBe("recipe-other");
+      expect(recipeRowToImported).toHaveBeenCalledWith(otherRow, "https://example.com/pesto");
+      expect(extractRecipe).not.toHaveBeenCalled();
+    });
+
+    it("falls through to extraction on a dedup miss", async () => {
+      vi.mocked(extractRecipe).mockResolvedValue(validRecipe);
+      const res = await POST(jsonRequest({ url: "https://example.com/pesto" }));
+      expect(res.status).toBe(200);
+      expect((await res.json()).dedupSourceRecipeId).toBeUndefined();
+      expect(extractRecipe).toHaveBeenCalledOnce();
+    });
   });
 });

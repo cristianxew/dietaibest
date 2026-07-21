@@ -117,6 +117,10 @@ model Recipe {
   // Metadata
   source    String? // url, manual, imported
   sourceUrl String?
+  // Normalized sourceUrl for import dedup (NULL for manual/image imports).
+  // Derived by canonicalizeRecipeUrl(); legacy rows backfilled by
+  // scripts/backfill-canonical-url.ts.
+  canonicalUrl String?
   tags      String[]
   isPublic  Boolean  @default(false)
 
@@ -133,6 +137,7 @@ model Recipe {
 
   @@index([userId])
   @@index([isPublic, createdAt])
+  @@index([canonicalUrl])
 }
 
 model RecipeCategory {

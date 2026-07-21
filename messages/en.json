@@ -1475,6 +1475,7 @@
       "servings": "Servings"
     },
     "import": {
+      "alreadyImported": "You've already imported this recipe — taking you to it.",
       "errors": {
         "noRecipe": "No recipe could be extracted. Try a different link or a clearer photo.",
         "rateLimited": "The importer is busy right now. Please try again in a moment.",

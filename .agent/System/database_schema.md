@@ -399,6 +399,7 @@ model Recipe {
   // Metadata
   source    String?  // manual, url, imported
   sourceUrl String?
+  canonicalUrl String? // normalized sourceUrl for import dedup (indexed, NULL for manual/image)
   tags      String[]
   isPublic  Boolean  @default(false)
 
@@ -419,6 +420,9 @@ model Recipe {
 - `ingredients` stored as JSON for flexibility
 - `instructions` as string array for ordered steps
 - Cascade delete on user deletion
+- `canonicalUrl` is indexed but NOT unique (many users may import the same URL);
+  it drives the import-dedup lookup (see
+  [Recipe Import System](./recipe_import_system.md))
 
 **JSON Structure for `ingredients`:**
 ```json

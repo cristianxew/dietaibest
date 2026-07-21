@@ -45,11 +45,48 @@ and the modal state machine in
 
 ---
 
+## URL import dedup (cross-user copy semantics)
+
+Every URL import stores a normalized `Recipe.canonicalUrl`
+([`canonicalize-url.ts`](../../src/lib/ingest/canonicalize-url.ts) — strips
+tracking params, collapses YouTube/Instagram/TikTok/X share variants; NULL for
+manual recipes and image imports). Before extracting, both URL entry points run
+[`findExistingImport`](../../src/lib/ingest/recipe-dedup.ts):
+
+- **Same user re-imports a URL** → no extraction, no new row; the modal toasts
+  `recipeModal.import.alreadyImported` and navigates to the existing recipe;
+  the chat tool answers with `alreadyImported: true` + link (no confirmation
+  card).
+- **Another user's _public_ recipe** → both "other" lookups in
+  `findExistingImport` filter `isPublic: true` (mirroring `getRecipe`'s
+  `userId === viewer || isPublic` rule — a private recipe never surfaces as a
+  dedup source). Its content is served as the preview (Supadata/Gemma skipped)
+  and the save carries `dedupSourceRecipeId`. `persistRecipe` then **copies**
+  the 22-nutrient profile + `RecipeIngredient` rows from the source
+  (`copyNutritionFromSource`) instead of re-analyzing — but only after
+  server-side re-verification: the source is owned by the requester OR still
+  `isPublic` (re-checked at save time via `ctx.user.id`, since visibility can
+  flip between preview and save), same canonical URL, unedited ingredients
+  (`ingredientsChanged`), same servings, and a non-zero profile
+  (`hasNonZeroProfile` — an all-zero FDC result counts as "not analyzed"). Any
+  mismatch falls back to normal analysis. The importer always gets their OWN
+  row — recipes are never shared across users.
+- Legacy rows were backfilled via
+  [`scripts/backfill-canonical-url.ts`](../../scripts/backfill-canonical-url.ts)
+  (idempotent; re-run after restoring old data).
+- Known limits: redirect short links (`vm.tiktok.com`, `fb.watch`) only dedup
+  against themselves; a simultaneous first-import races harmlessly (both
+  extract, later imports dedup against either).
+
+---
+
 ## Modal import flow (entry point: "Import")
 
 1. **URL:** `POST /api/recipes/import/url` `{ url, locale }` →
    [`route.ts`](../../src/app/api/recipes/import/url/route.ts). Auth +
-   `assertCanImportRecipe` → `extractRecipe` → `{ recipe }`. Synchronous JSON
+   `assertCanImportRecipe` → dedup check (see above; may answer
+   `{ alreadyImported }` or `{ recipe, dedupSourceRecipeId }` without
+   extracting) → `extractRecipe` → `{ recipe }`. Synchronous JSON
    (no SSE / taskId).
 2. **Photo / PDF:** `POST /api/recipes/import/image` (multipart `file`) →
    [`route.ts`](../../src/app/api/recipes/import/image/route.ts). Auth +

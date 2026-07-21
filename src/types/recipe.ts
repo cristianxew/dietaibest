@@ -132,5 +132,11 @@ export interface ImportedRecipe {
   sourceUrl?: string;
   extractedAt?: string;
   confidence?: number;
+  /**
+   * Set when this preview was cloned from an existing import of the same
+   * canonical URL (cross-user dedup); `persistRecipe` may copy that recipe's
+   * nutrition instead of re-analyzing. Verified server-side before any copy.
+   */
+  dedupSourceRecipeId?: string;
 }
 
