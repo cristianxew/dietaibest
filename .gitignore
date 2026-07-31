@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# gent.ai
+/.atl/*
+
 # production
 /build
 /src/generated
