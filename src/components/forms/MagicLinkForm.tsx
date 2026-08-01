@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { AUTH_CALLBACK_PATH, buildAuthRedirectUrl } from "@/lib/auth-links";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +43,7 @@ export function MagicLinkForm({
 }: MagicLinkFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const locale = useLocale();
 
   const form = useForm<MagicLinkFormData>({
     resolver: zodResolver(magicLinkSchema),
@@ -59,8 +62,12 @@ export function MagicLinkForm({
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
-          emailRedirectTo: `${window.location.origin
-            }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
+          emailRedirectTo: buildAuthRedirectUrl({
+            origin: window.location.origin,
+            locale,
+            path: AUTH_CALLBACK_PATH,
+            params: { redirect: callbackUrl },
+          }),
         },
       });
 

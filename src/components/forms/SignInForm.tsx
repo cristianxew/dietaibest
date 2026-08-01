@@ -8,7 +8,9 @@ import { signIn } from "next-auth/react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
+import { AUTH_CALLBACK_PATH, buildAuthRedirectUrl } from "@/lib/auth-links";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +57,7 @@ export function SignInForm({
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("email");
   const t = useTranslations();
+  const locale = useLocale();
 
   // Create schemas with translations
   const emailPasswordSchema = createEmailPasswordSchema(t);
@@ -145,8 +148,12 @@ export function SignInForm({
       const { error } = await supabase.auth.signInWithOtp({
         email: data.email,
         options: {
-          emailRedirectTo: `${window.location.origin
-            }/auth/callback?redirect=${encodeURIComponent(callbackUrl)}`,
+          emailRedirectTo: buildAuthRedirectUrl({
+            origin: window.location.origin,
+            locale,
+            path: AUTH_CALLBACK_PATH,
+            params: { redirect: callbackUrl },
+          }),
         },
       });
 
@@ -249,6 +256,15 @@ export function SignInForm({
                   </FormItem>
                 )}
               />
+
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-primary font-medium hover:underline"
+                >
+                  {t("auth.forgotPassword.link")}
+                </Link>
+              </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? t("auth.signingIn") : t("auth.signIn")}

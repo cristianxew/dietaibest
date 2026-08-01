@@ -335,6 +335,20 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Deploying or rolling back the import-dedup feature
 - Backfilling `canonicalUrl` for pre-existing recipes
 
+#### [Auth email links (magic link + password reset)](./SOP/auth-email-links.md)
+**Purpose:** Rules for every Supabase Auth flow that emails the user a link back into the app
+
+**Contains:**
+- Why an email-reachable page MUST live under `src/app/[locale]/` (the next-intl rewrite that made every magic link a 404)
+- Building locale-correct redirect URLs with `src/lib/auth-links.ts`
+- Reading the implicit-flow URL fragment, and why a bare `getSession()` on mount races `detectSessionInUrl`
+- Handing the Supabase token to NextAuth, which is the app's session of record
+- Supabase dashboard URL configuration per environment, and the manual smoke test
+
+**When to read:**
+- Adding or changing a magic-link, password-reset or email-confirmation flow
+- An auth email link 404s, expires unexpectedly, or lands on the wrong page
+
 ---
 
 ## =� Quick Start for New Developers

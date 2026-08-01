@@ -70,7 +70,50 @@
     "authenticationRequired": "Wymagane uwierzytelnienie",
     "needToSignIn": "Musisz się zalogować, aby uzyskać dostęp do tej strony.",
     "signInToContinue": "Zaloguj się, aby kontynuować dostęp do tej chronionej treści.",
-    "goToHome": "Przejdź do strony głównej"
+    "goToHome": "Przejdź do strony głównej",
+    "forgotPassword": {
+      "link": "Nie pamiętasz hasła?",
+      "title": "Zresetuj hasło",
+      "description": "Podaj swój adres e-mail, a wyślemy Ci link do ustawienia nowego hasła.",
+      "sendResetLink": "Wyślij link resetujący",
+      "emailSentTo": "Jeśli konto dla adresu {email} istnieje, link do zresetowania hasła jest już w drodze.",
+      "emailInstructions": "Otwórz link w wiadomości e-mail, aby wybrać nowe hasło. Wygasa po 1 godzinie i można go użyć tylko raz.",
+      "sendAnother": "Wyślij kolejny link",
+      "backToSignIn": "Powrót do logowania"
+    },
+    "resetPassword": {
+      "title": "Ustaw nowe hasło",
+      "description": "Wybierz nowe hasło do swojego konta DietAI.",
+      "newPassword": "Nowe hasło",
+      "updatePassword": "Zaktualizuj hasło",
+      "updating": "Aktualizowanie...",
+      "passwordUpdated": "Hasło zostało zaktualizowane!",
+      "verifyingLink": "Weryfikowanie linku resetującego...",
+      "linkExpired": "Ten link do resetowania hasła wygasł lub został już wykorzystany.",
+      "linkInvalid": "Ten link do resetowania hasła jest nieprawidłowy.",
+      "requestNewLink": "Poproś o nowy link"
+    },
+    "callback": {
+      "title": "Uwierzytelnianie",
+      "subtitle": "Kończymy proces logowania...",
+      "processing": "Przetwarzanie uwierzytelnienia...",
+      "verifying": "Weryfikowanie uwierzytelnienia...",
+      "creatingSession": "Tworzenie sesji...",
+      "successRedirecting": "Uwierzytelnienie powiodło się! Przekierowujemy do panelu...",
+      "welcomeBack": "Witaj ponownie!",
+      "welcomeBackNamed": "Witaj ponownie, {name}!",
+      "authenticationFailed": "Uwierzytelnianie nie powiodło się",
+      "linkExpired": "Link wygasł",
+      "linkExpiredMessage": "Ten magiczny link wygasł. Poproś o nowy.",
+      "linkInvalid": "Ten magiczny link jest nieprawidłowy lub został już wykorzystany.",
+      "accessDenied": "Dostęp przez magiczny link został odrzucony lub anulowany.",
+      "noSession": "Nie znaleziono aktywnej sesji. Twój magiczny link mógł wygasnąć.",
+      "sessionFailed": "Nie udało się utworzyć sesji. Spróbuj zalogować się ponownie.",
+      "requestNewLink": "Poproś o nowy magiczny link",
+      "tryAgain": "Spróbuj ponownie",
+      "retry": "Ponów",
+      "retrying": "Ponawianie uwierzytelniania..."
+    }
   },
   "authCallback": {
     "processing": "Przetwarzanie uwierzytelnienia...",
