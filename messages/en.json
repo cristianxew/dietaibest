@@ -70,7 +70,50 @@
     "authenticationRequired": "Authentication Required",
     "needToSignIn": "You need to sign in to access this page.",
     "signInToContinue": "Please sign in to continue accessing this protected content.",
-    "goToHome": "Go to Home"
+    "goToHome": "Go to Home",
+    "forgotPassword": {
+      "link": "Forgot your password?",
+      "title": "Reset your password",
+      "description": "Enter your email address and we'll send you a link to set a new password.",
+      "sendResetLink": "Send reset link",
+      "emailSentTo": "If an account exists for {email}, a password reset link is on its way.",
+      "emailInstructions": "Open the link in your email to choose a new password. It expires in 1 hour and can only be used once.",
+      "sendAnother": "Send another link",
+      "backToSignIn": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Set a new password",
+      "description": "Choose a new password for your DietAI account.",
+      "newPassword": "New password",
+      "updatePassword": "Update password",
+      "updating": "Updating...",
+      "passwordUpdated": "Password updated successfully!",
+      "verifyingLink": "Verifying your reset link...",
+      "linkExpired": "This password reset link has expired or has already been used.",
+      "linkInvalid": "This password reset link is not valid.",
+      "requestNewLink": "Request a new link"
+    },
+    "callback": {
+      "title": "Authentication",
+      "subtitle": "Completing your sign-in process...",
+      "processing": "Processing your authentication...",
+      "verifying": "Verifying your authentication...",
+      "creatingSession": "Creating your session...",
+      "successRedirecting": "Authentication successful! Redirecting to your dashboard...",
+      "welcomeBack": "Welcome back!",
+      "welcomeBackNamed": "Welcome back, {name}!",
+      "authenticationFailed": "Authentication failed",
+      "linkExpired": "Link expired",
+      "linkExpiredMessage": "This magic link has expired. Please request a new one.",
+      "linkInvalid": "This magic link is invalid or has already been used.",
+      "accessDenied": "Magic link access was denied or cancelled.",
+      "noSession": "No active session found. Your magic link may have expired.",
+      "sessionFailed": "Failed to create your session. Please try signing in again.",
+      "requestNewLink": "Request new magic link",
+      "tryAgain": "Try again",
+      "retry": "Retry",
+      "retrying": "Retrying authentication..."
+    }
   },
   "authCallback": {
     "processing": "Processing your authentication...",

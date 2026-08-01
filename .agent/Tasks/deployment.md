@@ -319,13 +319,38 @@ Authentication issues are common in production deployments. This section covers 
 
 **Solution:** Configure Supabase Dashboard → Authentication → URL Configuration:
 
-| Setting           | Value                                              |
-| ----------------- | -------------------------------------------------- |
-| **Site URL**      | `https://yourdomain.com` (exact match, with https) |
-| **Redirect URLs** | `https://yourdomain.com/auth/callback`             |
-|                   | `https://yourdomain.com/api/auth/callback/google`  |
+| Setting           | Value                                                                   |
+| ----------------- | ----------------------------------------------------------------------- |
+| **Site URL**      | `https://yourdomain.com` (exact match, with https)                      |
+| **Redirect URLs** | `https://yourdomain.com/**` — wildcard, covers every locale prefix      |
+|                   | `https://yourdomain.com/api/auth/callback/google`                       |
 
-**Note:** Email/password login doesn't use redirect URLs - those are for magic links and OAuth only.
+The wildcard matters: app pages are locale-prefixed (`/es/auth/callback`,
+`/pl/auth/reset-password`), and an unlisted `redirect_to` makes Supabase
+**silently fall back to the Site URL** — the user lands on the landing page
+with no error anywhere.
+
+**Note:** Email/password login doesn't use redirect URLs - those are for magic links, password reset and OAuth only.
+
+### Magic Link / Password Reset Opens a 404
+
+**Symptom:** The link in the email opens the "This page could not be found" page.
+
+**Cause:** The target page does not live under `src/app/[locale]/`. The
+next-intl middleware (`localePrefix: "as-needed"`) rewrites `/auth/callback` to
+`/en/auth/callback`, so a page stored outside `[locale]` resolves to nothing.
+This shipped broken until 2026-08-01.
+
+**Solution:** Keep every email-reachable page under
+`src/app/[locale]/(public-pages)/` and list it in `PUBLIC_ROUTES` in
+`src/middleware.ts`. Verify with a raw request — the rewrite header names the
+route Next.js actually tried:
+
+```bash
+curl -s -D - -o /dev/null https://yourdomain.com/auth/callback | grep -iE 'HTTP|x-middleware-rewrite'
+```
+
+Full detail: [Auth email links SOP](../SOP/auth-email-links.md).
 
 ### Login Succeeds But Session Not Created
 

@@ -7,8 +7,14 @@ import {
   signOut as nextAuthSignOut,
 } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import {
+  AUTH_CALLBACK_PATH,
+  AUTH_RESET_PASSWORD_PATH,
+  buildAuthRedirectUrl,
+} from "@/lib/auth-links";
 
 /**
  * Core authentication hook
@@ -122,6 +128,8 @@ export function useRequireAuth(redirectTo?: string) {
  * Hook for handling sign-in flows
  */
 export function useSignIn() {
+  const locale = useLocale();
+
   /**
    * Sign in with email and password
    */
@@ -174,11 +182,12 @@ export function useSignIn() {
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${
-              window.location.origin
-            }/auth/callback?redirect=${encodeURIComponent(
-              callbackUrl || "/dashboard"
-            )}`,
+            emailRedirectTo: buildAuthRedirectUrl({
+              origin: window.location.origin,
+              locale,
+              path: AUTH_CALLBACK_PATH,
+              params: { redirect: callbackUrl || "/dashboard" },
+            }),
           },
         });
 
@@ -193,13 +202,43 @@ export function useSignIn() {
         return { success: false, error: message };
       }
     },
-    []
+    [locale]
+  );
+
+  /**
+   * Send a password-reset email. Only a rate-limit error is surfaced; anything
+   * else resolves as success so callers cannot probe which addresses exist.
+   */
+  const requestPasswordReset = useCallback(
+    async (email: string) => {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: buildAuthRedirectUrl({
+            origin: window.location.origin,
+            locale,
+            path: AUTH_RESET_PASSWORD_PATH,
+          }),
+        });
+
+        if (error && error.status === 429) {
+          return { success: false, error: error.message };
+        }
+
+        return { success: true, error: null };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Password reset failed";
+        return { success: false, error: message };
+      }
+    },
+    [locale]
   );
 
   return {
     signInWithCredentials,
     signInWithGoogle,
     signInWithMagicLink,
+    requestPasswordReset,
   };
 }
 

@@ -9,7 +9,12 @@ const PUBLIC_ROUTES = [
   "/",
   "/sign-in",
   "/sign-up",
+  "/forgot-password",
+  // Every page under /auth lives in src/app/[locale]/(public-pages)/auth — the
+  // intl middleware rewrites unprefixed paths to /{defaultLocale}{path}, so a
+  // page outside [locale] resolves to a route that does not exist (404).
   "/auth/callback",
+  "/auth/reset-password",
   "/auth/error",
 ];
 
