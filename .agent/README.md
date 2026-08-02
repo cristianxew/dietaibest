@@ -351,6 +351,23 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
+#### [Legal pages (Terms, Privacy, Cookies)](./SOP/legal-pages.md)
+**Purpose:** How the legal documents are structured, and what product changes force an update to them
+
+**Contains:**
+- Where the content model, per-locale documents and shared renderer live, and why legal copy is kept out of `messages/*.json`
+- Why `/terms`, `/privacy` and `/cookies` must stay in `PUBLIC_ROUTES` (the `authorized` callback defaults unknown routes to `!!token`)
+- The change triggers that make the Privacy Policy inaccurate — new subprocessor, new profile field, new LLM payload, changed retention
+- Versioning and the GDPR Art. 12 duty to notify before a material change takes effect
+- Why `pl`/`es` fall back to English rather than being machine-translated
+
+**When to read:**
+- Adding a third-party service that receives personal data, or a new field on `User`/`UserProfile`/`FamilyMember`
+- Changing the store-credential or shopping-automation flow
+- Adding any analytics or non-essential cookie (there are none today, which is why there is no consent banner)
+
+---
+
 ## =� Quick Start for New Developers
 
 ### 1. Read These First (in order):
