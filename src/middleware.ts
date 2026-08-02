@@ -16,6 +16,13 @@ const PUBLIC_ROUTES = [
   "/auth/callback",
   "/auth/reset-password",
   "/auth/error",
+  // Legal pages must stay reachable without a session: the sign-up form links
+  // to /terms and /privacy from its consent checkbox, and that user has no
+  // token yet. The `authorized` callback below defaults unknown routes to
+  // `!!token`, so omitting these would redirect them straight to /sign-in.
+  "/terms",
+  "/privacy",
+  "/cookies",
 ];
 
 // Prefix-matched public routes (dynamic segments, e.g. share links)

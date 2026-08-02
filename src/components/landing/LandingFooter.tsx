@@ -147,17 +147,19 @@ export function LandingFooter({ className }: LandingFooterProps) {
 
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+          {/* TODO: replace with the registered legal entity name from
+              src/content/legal/config.ts — "DietAI Inc." is unverified. */}
           <p>&copy; {new Date().getFullYear()} DietAI Inc. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-foreground transition-colors">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
+            </Link>
+            <Link href="/cookies" className="hover:text-foreground transition-colors">
               Cookie Policy
-            </a>
+            </Link>
           </div>
         </div>
       </div>
