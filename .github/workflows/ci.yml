@@ -14,6 +14,16 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run lint
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx prisma generate
+      - run: bun run typecheck
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -22,6 +32,18 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run test:unit
+
+  # Report-only until the existing advisory backlog is burned down
+  # (see .agent/System/engineering_standards.md — NIST SSDF RV), then make blocking.
+  audit:
+    name: Dependency Audit (report-only)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun audit
 
   nutrition-eval:
     name: Nutrition Eval

@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "verify": "prisma generate && bun run lint && bun run typecheck && bun run test:unit && bun run test:eval:nutrition",
     "test": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:eval:nutrition": "vitest run tests/eval/nutrition",

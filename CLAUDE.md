@@ -13,6 +13,16 @@ We should always update agent docs after we implement certain feature, to make s
 
 Before you plan any implementation, always read the .agent/README first to get context
 
+## Engineering standards (non-negotiable)
+
+We build to industry quality standards — ISO/IEC 25010 (product quality), ISO/IEC/IEEE 12207 (life cycle), ISO/IEC 29119 (testing), ISO 27001 / OWASP / NIST SSDF (security), DevSecOps — as mapped to this repo in `.agent/System/engineering_standards.md`. Generating code is not the deliverable; verified, secure, documented, traceable software is.
+
+- A change is complete only when it meets `.agent/SOP/definition_of_done.md`: `bun run verify` green (prisma generate · lint · typecheck · unit tests · nutrition eval) plus the conditional gates for what you touched (schema migration, i18n en/es/pl, security invariants, build, e2e).
+- Run `/quality-gates` (or `bun run verify`) and report the real results before declaring work done. Never report a gate you didn't run.
+- Never weaken a gate to get green: no skipped/disabled/deleted tests, no `any`/`@ts-expect-error`/`eslint-disable` to silence errors, no loosened rules or eval thresholds. Gate changes are their own reviewed change.
+- Every behavior change ships with tests (regression test for every bug fix); architectural decisions get an ADR in `docs/adr/`; server-boundary changes walk the security invariants (serverAction runtime, ownership re-check, Zod at the boundary, no email exposure).
+- Docs are part of the change: stale `.agent/` docs = unfinished work.
+
 ## Agent skills
 
 ### Issue tracker

@@ -2,7 +2,7 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2026-06-24
+Last Updated: 2026-08-27
 
 ---
 
@@ -24,6 +24,24 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 ## =� Documentation Index
 
 ### System Documentation
+
+#### [Engineering Quality Standards](./System/engineering_standards.md)
+**Purpose:** Binding quality/security standards for every contributor (human or AI agent) — how ISO/IEC 25010, ISO/IEC/IEEE 12207, ISO/IEC 29119, ISO 27001, OWASP, NIST SSDF and DevSecOps map to this repo's concrete practices
+
+**Contains:**
+- Non-negotiables (gates, no-weakening rule, tests-with-every-change, honesty over green)
+- ISO 25010 quality-characteristics table mapped to repo enforcement points
+- ISO 12207 life-cycle process → repo artifact mapping (PRD, ADR, gates, rollout SOPs) + traceability rule
+- ISO 29119 test policy (risk-based must-test list) and test-levels table
+- Repo security invariants (serverAction runtime, ownership, Zod boundaries, LLM output as untrusted input, secrets), OWASP Top 10 + LLM Top 10 mapping, NIST SSDF practice groups
+- CI gates table, release discipline (rollback required), prohibited shortcuts list
+
+**When to read:**
+- Before implementing anything (paired with [Definition of Done SOP](./SOP/definition_of_done.md))
+- Reviewing a PR or verifying agent output
+- Touching any server boundary, dependency, or release process
+
+---
 
 #### [Project Architecture](./System/project_architecture.md)
 **Purpose:** Complete technical overview of the DietAI application
@@ -270,6 +288,22 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 ---
 
 ### Standard Operating Procedures
+
+#### [Definition of Done & Quality Gates](./SOP/definition_of_done.md)
+**Purpose:** The operational checklist every change must pass before being declared complete — the enforcement arm of the [Engineering Quality Standards](./System/engineering_standards.md)
+
+**Contains:**
+- Always-on gates: `bun run verify` (prisma generate · lint · typecheck · unit tests · nutrition eval)
+- Conditional-gates table by touched area (schema, i18n, security boundaries, nutrition pipeline, chat agent, deps/build, payments, e2e)
+- Non-code completion criteria (tests, docs, traceability, diff hygiene, honest reporting)
+- Failure-handling rules (fix root cause, never weaken a gate) and a copy-paste PR checklist
+- Automated via the `/quality-gates` Claude skill and mirrored in `.github/pull_request_template.md`
+
+**When to read:**
+- Before declaring ANY implementation done or opening a PR
+- When a quality gate fails and you're deciding what to do
+
+---
 
 #### [React Hooks - Common Pitfalls](./SOP/react_hooks_pitfalls.md)
 **Purpose:** Quick reference for avoiding common React hooks mistakes
@@ -521,6 +555,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2026-06-24
+**Last Updated:** 2026-08-27
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes
