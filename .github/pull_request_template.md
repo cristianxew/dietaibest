@@ -8,18 +8,21 @@
 
 ## Definition of Done
 
-<!-- Per .agent/SOP/definition_of_done.md — check what you actually ran; call out anything skipped and why. -->
+<!-- Mirrors .agent/SOP/definition_of_done.md §5 — check what you actually ran; call out anything skipped and why. -->
 
-- [ ] `bun run verify` green (prisma generate · lint · typecheck · unit tests · nutrition eval)
-- [ ] Conditional gates for touched areas run (schema migration / i18n en·es·pl / build / e2e): <!-- list or n/a -->
+- [ ] `bun run verify:full` green (prisma generate · lint ratchet · typecheck · unit · nutrition eval · build)
+- [ ] Conditional gates for touched areas run (schema migration / i18n en·es·pl / security invariants / payments / e2e): <!-- list or n/a -->
 - [ ] Tests added or extended (regression test if this fixes a bug)
-- [ ] Security invariants walked for server-boundary changes (`serverAction` runtime, ownership re-check, Zod at boundary, no email exposure) — or n/a
-- [ ] `.agent/` docs + README index updated; ADR added for architectural decisions — or n/a
-- [ ] Diff is clean: no debug artifacts, no unrelated refactors, generated files regenerated not hand-edited
+- [ ] Docs updated (.agent System/SOP/Tasks + README index / ADR) — or n/a
+- [ ] Traceability: Linear issue referenced
+- [ ] Diff clean: no debug artifacts, no unrelated refactors, generated files regenerated not hand-edited
+- [ ] Honest report: real gate output included below, review-only items flagged as such
 
 ## Verification evidence
 
-<!-- Paste the tail of the real gate output (test counts, exit status). Unverified work is not done. -->
+<!-- Paste the tail of the real gate output (test counts, exit status). Unverified work is not done.
+     Review-only criteria (security invariants, docs, traceability) are judgement calls — say so
+     rather than presenting them as passing gates. -->
 
 ```
 ```

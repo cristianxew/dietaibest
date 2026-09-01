@@ -201,5 +201,5 @@ The only reason NOT to use it is when the action genuinely doesn't need any of: 
 6. Move `revalidatePath(...)` calls into `revalidates`.
 7. Drop the surrounding `try/catch` + `toEntitlementError` mapping — the runtime handles them.
 8. **Check the unused-imports**: `toEntitlementError` is usually no longer needed; `getServerSession` may no longer be needed (only if no other functions in the file use them).
-9. Run `bun tsc --noEmit` on the file to confirm clean.
+9. Run `bun run typecheck` to confirm clean, then `bun run verify` before declaring done.
 10. If the action is the LAST one in its file using `getAuthenticatedUser`, delete the file-local helper too.

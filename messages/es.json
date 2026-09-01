@@ -813,6 +813,7 @@
     "noSchedules": "No hay planes de comidas programados",
     "noSchedulesDescription": "Programa un plan de comidas para el rango de fechas seleccionado para generar tu lista de compras.",
     "selectDateRange": "Genera tu lista de compras",
+    "dateRangePlaceholder": "Seleccionar fechas",
     "selectDateRangeDescription": "Selecciona un rango de fechas y haz clic en Generar para crear tu lista de compras desde los planes programados.",
     "categories": {
       "fruits": "Frutas",

@@ -19,10 +19,8 @@ Before you plan any implementation, always read the .agent/README first to get c
 
 # Engineering standards (non-negotiable)
 
-We build to industry quality standards — ISO/IEC 25010, ISO/IEC/IEEE 12207, ISO/IEC 29119, ISO 27001 / OWASP / NIST SSDF, DevSecOps — as mapped to this repo in `.agent/System/engineering_standards.md`. Generating code is not the deliverable; verified, secure, documented, traceable software is.
+We build to industry quality standards — ISO/IEC 25010, ISO/IEC/IEEE 12207, ISO/IEC 29119, ISO 27001 / OWASP / NIST SSDF, DevSecOps. Generating code is not the deliverable; verified, secure, documented, traceable software is.
 
-- A change is complete only when it meets `.agent/SOP/definition_of_done.md`: `bun run verify` green (prisma generate · lint · typecheck · unit tests · nutrition eval) plus the conditional gates for what you touched (schema migration, i18n en/es/pl, security invariants, build, e2e).
-- Report the real gate results before declaring work done; never report a gate you didn't run.
-- Never weaken a gate to get green: no skipped/disabled/deleted tests, no `any`/`@ts-expect-error`/`eslint-disable` to silence errors, no loosened rules or eval thresholds.
-- Every behavior change ships with tests (regression test for every bug fix); architectural decisions get an ADR in `docs/adr/`; server-boundary changes walk the security invariants.
-- Docs are part of the change: stale `.agent/` docs = unfinished work.
+**The rules live in `.agent/System/engineering_standards.md` and the checklist in `.agent/SOP/definition_of_done.md`. Read those — do not rely on a summary.** They are the single source of truth; this file deliberately carries a pointer rather than a copy, because forked copies of a rule drift apart and then contradict each other.
+
+Shortest possible version: run `bun run verify:full`, report its real output, never weaken a gate to get green.

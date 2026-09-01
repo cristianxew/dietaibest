@@ -4,55 +4,35 @@ on:
   push:
   pull_request:
 
+# Supersede in-flight runs for the same ref instead of paying for both.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned so the gate that blocks a PR is the same toolchain contributors run
+  # locally. An unpinned setup-bun undercuts the frozen lockfile it reads.
+  BUN_VERSION: "1.3.11"
+
 jobs:
-  lint:
-    name: Lint
+  # Runs exactly `bun run verify` — the command CLAUDE.md and the Definition of
+  # Done tell contributors to run. Invoking the script rather than re-listing
+  # its steps is what keeps the local gate and the CI gate from drifting apart.
+  verify:
+    name: Verify (lint · typecheck · unit · nutrition eval)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      - run: bun run lint
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bunx prisma generate
-      - run: bun run typecheck
-
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run test:unit
-
-  # Report-only until the existing advisory backlog is burned down
-  # (see .agent/System/engineering_standards.md — NIST SSDF RV), then make blocking.
-  audit:
-    name: Dependency Audit (report-only)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun audit
-
-  nutrition-eval:
-    name: Nutrition Eval
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - run: bun run test:eval:nutrition
+      - run: bun run verify
 
   build:
     name: Build
@@ -67,6 +47,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - run: bunx prisma generate
       - run: bun run build
+
+  # Advisory-only: `bun audit` exits non-zero on the standing backlog, so the
+  # failure is swallowed at the STEP level. Job-level continue-on-error would
+  # still report the check as failed, leaving a permanently red check on every
+  # PR — which trains reviewers to ignore red and blocks any merge queue.
+  # `bun audit` reads package.json + bun.lock only, so no install is needed.
+  audit:
+    name: Dependency Audit (advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: bun audit
+        run: |
+          set +e
+          bun audit | tee audit.txt
+          set -e
+          {
+            echo '### Dependency audit'
+            echo ''
+            echo 'Advisory only — see .agent/System/engineering_standards.md'
+            echo '(NIST SSDF RV) for the burn-down policy.'
+            echo ''
+            echo '```'
+            tail -n 25 audit.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

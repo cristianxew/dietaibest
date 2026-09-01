@@ -2,13 +2,13 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2026-08-27
+Last Updated: 2026-09-01
 
 ---
 
 ## =� Documentation Structure
 
-This directory contains comprehensive documentation for the DietAI project, organized into three main categories:
+This directory contains comprehensive documentation for the DietAI project, organized into four main categories:
 
 ### 1. System Documentation (`/System/`)
 Core architecture, database design, and technical specifications for understanding how the system works.
@@ -18,6 +18,20 @@ Feature PRDs (Product Requirement Documents) and implementation plans for specif
 
 ### 3. Standard Operating Procedures (`/SOP/`)
 Best practices, workflows, and step-by-step guides for common development tasks.
+
+### 4. Agent rules (`/rules/`)
+Always-on operating rules loaded by coding agents. `rules/agent.md` is a pointer to the canonical docs, deliberately not a copy of them.
+
+### Quality artifacts outside `.agent/`
+These are part of the same system and are indexed here so they are findable:
+
+| Artifact | Purpose |
+|---|---|
+| [`.claude/skills/quality-gates/SKILL.md`](../.claude/skills/quality-gates/SKILL.md) | `/quality-gates` — runs the Definition of Done and renders an honest pass/fail verdict |
+| [`.github/pull_request_template.md`](../.github/pull_request_template.md) | PR-side mirror of the DoD checklist + verification evidence |
+| [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | The blocking gates: Verify (`bun run verify`) + Build, plus an advisory dependency audit |
+| [`scripts/lint-ratchet.mjs`](../scripts/lint-ratchet.mjs) | Lint gate — fails when warnings rise above `.lint-baseline.json` |
+| [`tests/unit/i18n-parity.test.ts`](../tests/unit/i18n-parity.test.ts) | en/es/pl catalog parity across every namespace |
 
 ---
 
@@ -35,6 +49,8 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - ISO 29119 test policy (risk-based must-test list) and test-levels table
 - Repo security invariants (serverAction runtime, ownership, Zod boundaries, LLM output as untrusted input, secrets), OWASP Top 10 + LLM Top 10 mapping, NIST SSDF practice groups
 - CI gates table, release discipline (rollback required), prohibited shortcuts list
+- **Enforcement status table** — which rules a machine actually checks vs. which are honor-system
+- **Known coverage gaps** — no integration suite, e2e covers chat only, no coverage thresholds
 
 **When to read:**
 - Before implementing anything (paired with [Definition of Done SOP](./SOP/definition_of_done.md))
@@ -293,11 +309,11 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 **Purpose:** The operational checklist every change must pass before being declared complete — the enforcement arm of the [Engineering Quality Standards](./System/engineering_standards.md)
 
 **Contains:**
-- Always-on gates: `bun run verify` (prisma generate · lint · typecheck · unit tests · nutrition eval)
+- Always-on gates: `bun run verify:full` (prisma generate · lint ratchet · typecheck · unit tests · nutrition eval · build) — the exact local equivalent of the blocking CI jobs
+- Diff-scoping commands that work for uncommitted work and shallow clones
 - Conditional-gates table by touched area (schema, i18n, security boundaries, nutrition pipeline, chat agent, deps/build, payments, e2e)
-- Non-code completion criteria (tests, docs, traceability, diff hygiene, honest reporting)
+- Non-code completion criteria, explicitly flagged as review-enforced rather than machine-enforced
 - Failure-handling rules (fix root cause, never weaken a gate) and a copy-paste PR checklist
-- Automated via the `/quality-gates` Claude skill and mirrored in `.github/pull_request_template.md`
 
 **When to read:**
 - Before declaring ANY implementation done or opening a PR
@@ -555,6 +571,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-09-01
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes

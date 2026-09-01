@@ -69,16 +69,28 @@ cd DietAI
 bun install
 
 # Set up environment variables
-cp .env.example
+cp .env.example .env.local
 # Configure your API keys (see Environment Variables section)
 
-# Initialize database
-bun run db:push    # Push Prisma schema changes to Supabase PostgreSQL
-bun run db:seed    # Populate database with default categories and sample data
+# Initialize database (local dev only — shared environments use migrations,
+# see .agent/SOP/definition_of_done.md)
+bunx prisma migrate dev    # Apply migrations to your local database
+bunx prisma db seed        # Populate with default categories and sample data
 
 # Start development server
 bun dev
 ```
+
+### Before you commit
+
+```bash
+bun run verify:full   # lint ratchet · typecheck · unit tests · nutrition eval · build
+```
+
+This is the local equivalent of the blocking CI jobs. See
+[.agent/SOP/definition_of_done.md](.agent/SOP/definition_of_done.md) for the full
+Definition of Done and [.agent/System/engineering_standards.md](.agent/System/engineering_standards.md)
+for the standards it implements.
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 

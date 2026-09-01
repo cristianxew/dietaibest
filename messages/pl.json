@@ -192,6 +192,11 @@
       "screenReaderOnly": "Treść tylko dla czytnika ekranu",
       "authenticatedUser": "Kontrole uwierzytelnionego użytkownika",
       "authenticationOptions": "Opcje uwierzytelniania"
+    },
+    "settingsHeader": {
+      "title": "Ustawienia",
+      "subtitle": "Zarządzaj preferencjami i automatyzacjami aplikacji",
+      "section": "Preferencje"
     }
   },
   "dashboard": {
@@ -808,6 +813,7 @@
     "noSchedules": "Brak zaplanowanych planów posiłków",
     "noSchedulesDescription": "Zaplanuj plan posiłków dla wybranego zakresu dat, aby wygenerować listę zakupów.",
     "selectDateRange": "Wygeneruj listę zakupów",
+    "dateRangePlaceholder": "Wybierz daty",
     "selectDateRangeDescription": "Wybierz zakres dat i kliknij Generuj, aby utworzyć listę zakupów z zaplanowanych planów posiłków.",
     "categories": {
       "fruits": "Owoce",

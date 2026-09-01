@@ -1,0 +1,9 @@
+{
+  "maxWarnings": 105,
+  "dirs": [
+    "src",
+    "tests",
+    "e2e",
+    "scripts"
+  ]
+}

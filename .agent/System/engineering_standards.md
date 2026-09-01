@@ -1,7 +1,9 @@
 # Engineering Quality Standards
 
-**Last Updated:** 2026-08-27
+**Last Updated:** 2026-09-01
 **Status:** Binding for every contributor — human or AI agent. This document is part of the agent operating instructions, not background reading.
+
+**This file is the single source of truth for these rules.** `CLAUDE.md` carries a short summary for agents that never open this file, and `.agent/rules/agent.md` points here. When a rule changes, change it *here* — do not fork the wording into the other two.
 
 ---
 
@@ -17,7 +19,7 @@ We do not claim certification against any of these standards. We adopt their pra
 
 ## Non-negotiables (summary)
 
-1. **A change is complete only when it meets the [Definition of Done](../SOP/definition_of_done.md).** `bun run verify` green, plus the conditional gates for what you touched. "The code is written" is not a completion state.
+1. **A change is complete only when it meets the [Definition of Done](../SOP/definition_of_done.md).** `bun run verify:full` green (the two blocking CI jobs), plus the conditional gates for what you touched. "The code is written" is not a completion state.
 2. **Never weaken a gate to get green.** No skipping, disabling, or deleting tests; no `any` / `@ts-expect-error` / `eslint-disable` to silence an error you should fix; no loosening tsconfig or lint rules; no lowering eval thresholds. If a gate is genuinely wrong, fix the gate in its own reviewed change and say why.
 3. **Every behavior change ships with tests.** Every fixed bug ships with a regression test. Every architectural decision gets an ADR in `docs/adr/`.
 4. **The [security invariants](#repo-security-invariants) hold at every server boundary.** No exceptions for "internal" or "temporary" code.
@@ -36,7 +38,7 @@ The eight quality characteristics, mapped to what they mean in DietAI and where 
 | **Reliability** | Honest-status contract (never silently zero a no-match), graceful degradation on LLM/FDC outage, every rollout SOP has a rollback | Coverage-chain rules in [CONTEXT.md](../../CONTEXT.md), rollback sections in `.agent/SOP/*-rollout.md` |
 | **Security** | See [Security](#security--iso-27001-owasp-nist-ssdf) below | `serverAction` runtime, ownership checks, Zod boundaries, CI dependency audit |
 | **Performance efficiency** | Cache layers (`FdcCache`, `IngredientNameCache`, `RecipeAnalysisCache`), batched LLM calls, indexed queries, no N+1 | [Database Schema — Indexes](./database_schema.md), batched Stage 1/Stage 2 design (ADR 0003/0004) |
-| **Usability** | Complete i18n (en/es/pl), accessible components (roles/labels), dark mode, mobile/PWA | i18n parity test, `ui-translation-validator` agent, [Design System](./design_system.md) |
+| **Usability** | Complete i18n (en/es/pl), accessible components (roles/labels), dark mode, mobile/PWA | `tests/unit/i18n-parity.test.ts` (all namespaces), `ui-translation-validator` agent, [Design System](./design_system.md) |
 | **Maintainability** | Strict TypeScript, explicit seams (Resolve/Compute, `LlmProvider`, `ConversationStore`), current docs, small focused modules | `bun run typecheck` gate, lint gate, `.agent/` doc discipline |
 | **Compatibility** | Works across browsers, PWA offline behavior, standalone Docker output | Build gate, e2e suite (`e2e/`), [PWA Implementation](./pwa_implementation.md) |
 | **Portability** | Reproducible Docker/Dokploy deployment; env-driven config only | `Dockerfile`, [Deployment Guide](../Tasks/deployment.md), `.env.example` discipline |
@@ -54,7 +56,7 @@ Software is a life cycle, not a code dump. Each 12207 process group has a concre
 | Stakeholder needs & requirements | Linear issue (project "Dietai desktop") + PRD in `.agent/Tasks/` |
 | Architecture definition | ADR in `docs/adr/` (numbered, immutable once accepted) + domain language in [CONTEXT.md](../../CONTEXT.md) |
 | Design & implementation | Feature branch; patterns from `.agent/System/` docs and `.agent/SOP/` procedures |
-| Verification (did we build it right?) | Quality gates: `bun run verify` + conditional gates + CI (`.github/workflows/ci.yml`) |
+| Verification (did we build it right?) | Quality gates: `bun run verify:full` + conditional gates + CI (`.github/workflows/ci.yml`) |
 | Validation (did we build the right thing?) | Smoke tests defined in each rollout SOP; PRD acceptance criteria |
 | Transition (deployment) | [Deployment Guide](../Tasks/deployment.md) + per-feature rollout SOPs (each with pre-flight, smoke test, rollback) |
 | Operation & maintenance | Monitoring notes in rollout SOPs; incidents feed back into SOPs ("mistakes we made") |
@@ -83,10 +85,18 @@ Highest-risk areas, in order — these never ship untested:
 | Level | Location | Command | Required when |
 |---|---|---|---|
 | Unit | `tests/unit/` | `bun run test:unit` | Always (part of `verify` and CI) |
-| Golden-recipe eval (deterministic, recorded fixtures) | `tests/eval/nutrition/` | `bun run test:eval:nutrition` | Always in CI; extend it when changing nutrition-calc behavior |
-| Integration | `tests/integration/` | `bun run test:integration` | Cross-module flows |
-| End-to-end | `e2e/` | `bun run e2e` | Critical user journeys; before releases touching those flows |
-| Live eval (opt-in, real APIs) | `tests/eval/nutrition/` | `bun run test:eval:nutrition:real` | Before nutrition-engine rollouts (see [rollout SOP](../SOP/nutrition-llm-rollout.md)) |
+| Golden-recipe eval — deterministic replay over recorded FDC/LLM fixtures, **no network** | `tests/eval/nutrition/` | `bun run test:eval:nutrition` | Always in CI; extend it when changing nutrition-calc behavior. Includes `golden-recipes-real.test.ts`, which despite its name is a fixture replay, not a live run |
+| End-to-end | `e2e/` | `bun run e2e` | Critical user journeys — **but see the coverage gap below before relying on it** |
+| Fixture recording — genuinely live, hits USDA FDC + Vertex | `tests/eval/nutrition/record-fixtures.test.ts` | `bun run eval:nutrition:record` (needs `FDC_API_KEY` + Vertex auth) | Refreshing golden fixtures; the only nutrition command that exercises the real APIs |
+| Medical-refusal eval — live model call, opt-in | `tests/eval/medical-refusal.test.ts` | `bun run test:eval:refusal` (needs `ANTHROPIC_API_KEY`) | Changing the chat system prompt or refusal guardrails ([ADR 0001](../../docs/adr/0001-system-prompt-is-sole-medical-refusal-classifier.md)) |
+
+### Known coverage gaps
+
+Naming a gate that does not exist is worse than admitting the gap, because it converts an unknown into a false pass. Current gaps, to be closed rather than papered over:
+
+- **No integration level.** There is no `tests/integration/` suite. Cross-module flows are covered by unit tests with mocked seams, or not at all.
+- **E2E covers chat only.** `e2e/` holds three chat specs. There is **no** auth, recipe-create, or recipe-import e2e spec, so `bun run e2e` passing says nothing about those journeys.
+- **No coverage thresholds.** `vitest.config.mts` sets none, so "every behavior change ships with tests" is a review judgement, not a measured gate.
 
 ### Testing rules
 
@@ -139,7 +149,9 @@ ISO 27001's core demand is that security be **systematic, not ad-hoc**: known co
 | **PW** — Produce Well-Secured Software | Security invariants, secure defaults (`serverAction`), quality gates before merge, code review |
 | **RV** — Respond to Vulnerabilities | `bun audit` surfacing in CI, remediation via issues, incidents feed SOP updates |
 
-**Current known debt:** `bun audit` (2026-08-27) reports 115 advisories (4 critical, 50 high), notably in `jspdf`. The CI audit job is therefore **report-only**; the intent is to burn this backlog down (upgrade/replace affected packages) and then make the job blocking. Do not add new dependencies with known critical/high advisories.
+**Current known debt:** the dependency tree carries a substantial advisory backlog (heavily `jspdf`), so the CI audit job is **advisory, not blocking**. The live count is the `Dependency Audit` job summary on any recent CI run — read it there rather than trusting a number transcribed into this doc, which drifts within days of being written.
+
+**Policy:** do not add or bump a dependency that introduces a new critical/high advisory. The job becomes blocking once the backlog reaches zero critical/high, or once an allowlist of the known advisory IDs is committed so that anything outside it fails the build. Until one of those lands, this control is *surfaced* but not *enforced* — see the enforcement table below.
 
 ---
 
@@ -151,14 +163,32 @@ Quality and security are wired into the pipeline, not inspected in afterwards.
 
 | Job | Command | Blocking |
 |---|---|---|
-| Lint | `bun run lint` | ✅ |
-| Typecheck | `bunx prisma generate && bun run typecheck` | ✅ |
-| Unit tests | `bun run test:unit` | ✅ |
-| Nutrition eval | `bun run test:eval:nutrition` | ✅ |
-| Build | `prisma generate && next build` | ✅ |
-| Dependency audit | `bun audit` | ⬜ report-only (see security debt above) |
+| Verify | `bun run verify` (prisma generate → lint ratchet → typecheck → unit → nutrition eval) | ✅ |
+| Build | `bunx prisma generate && bun run build` | ✅ |
+| Dependency Audit | `bun audit` | ⬜ advisory — swallowed at step level so the check stays green (see debt above) |
 
-The local mirror of the blocking gates is **`bun run verify`** — run it before declaring any change done.
+The Verify job **invokes `bun run verify` itself** rather than re-listing its steps, so the local gate and the CI gate cannot drift apart: changing the script changes both. The two blocking jobs together are exactly **`bun run verify:full`** (`verify` + `build`) — that is the command to run before declaring a change done. Use the faster `bun run verify` while iterating; `next build` catches a class of error (`useSearchParams` without Suspense, server/client boundary violations, invalid route exports) that `tsc --noEmit` accepts.
+
+### Enforcement status — what is mechanized vs. honor-system
+
+Presenting a review convention as if it were a gate is how a quality regime rots. This table says plainly which rules a machine will catch:
+
+| Rule | Status |
+|---|---|
+| Type errors | ✅ enforced — `tsc --noEmit`, `strict: true`, blocking in CI |
+| Test regressions (unit + nutrition eval) | ✅ enforced — blocking in CI |
+| Build breakage | ✅ enforced — blocking in CI |
+| New lint warnings (incl. new `any`) | ✅ enforced — `lint:ratchet` fails above the `.lint-baseline.json` count; covers `src/`, `tests/`, `e2e/`, `scripts/` |
+| i18n en/es/pl key parity | ✅ enforced — `tests/unit/i18n-parity.test.ts` walks every namespace |
+| Dependency advisories | ⬜ surfaced only — advisory CI job, no threshold yet |
+| `eslint-disable` / `@ts-expect-error` used to silence | ⬜ honor-system — the ratchet catches added *warnings*, not suppressions that remove them |
+| `console.log` and debug artifacts | ⬜ honor-system — no `no-console` rule; `src/` already carries dozens |
+| Tests accompany every behavior change | ⬜ honor-system — no coverage threshold |
+| ADR written for architectural decisions | ⬜ honor-system — review only |
+| Security invariants walked | ⬜ honor-system — review only |
+| Docs updated / traceability | ⬜ honor-system — review only |
+
+An honor-system rule is not a weaker rule; it is one whose only enforcement is the reviewer and the agent's own discipline. Closing these gaps with real mechanisms is ongoing work, and each closure belongs in its own reviewed change.
 
 ### Release discipline
 
@@ -176,7 +206,7 @@ These are the "burning tokens" anti-patterns. Any of them makes a change incompl
 
 - Declaring work done without running the gates, or reporting gates as passed without running them.
 - Skipping, disabling, deleting, or loosening a test, lint rule, type rule, or eval threshold to get green.
-- `any`, `@ts-expect-error`, `@ts-ignore`, or `eslint-disable` used to silence an error instead of fixing it (new code targets zero new lint warnings — the `warn` rules exist for legacy code, not as a budget).
+- `any`, `@ts-expect-error`, `@ts-ignore`, or `eslint-disable` used to silence an error instead of fixing it. New code targets zero new lint warnings — the `warn` severities exist for the legacy backlog, not as a budget, and `lint:ratchet` enforces that by failing when the count rises above `.lint-baseline.json`. Raising the baseline to get green is itself a prohibited shortcut.
 - Leaving debugging artifacts: `console.log` noise, commented-out blocks, dead code, unused exports.
 - Duplicating logic that already exists as a utility/seam instead of reusing it (check `src/lib/` first).
 - Hand-editing generated files (`src/generated/`, lockfiles, Prisma client) instead of regenerating with the tool.

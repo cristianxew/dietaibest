@@ -41,20 +41,27 @@ bun add -d @playwright/test
 ```
 DietAI/
 ├── tests/
-│   ├── unit/              # Unit tests
-│   │   ├── Button.test.tsx
-│   │   └── MacroDisplay.test.tsx
-│   └── integration/       # Integration tests
-│       ├── INTEGRATION_TEST_CHECKLIST.md
-│       └── manual-test-script.js
-├── e2e/                   # End-to-end tests
-│   ├── recipe-import.spec.ts
-│   └── auth-flow.spec.ts
+│   ├── unit/              # Unit tests (~106 files) — bun run test:unit
+│   │   ├── i18n-parity.test.ts        # en/es/pl catalog parity, all namespaces
+│   │   ├── nutrients/                 # pure nutrition logic
+│   │   └── chat/                      # chat tool contracts + guardrails
+│   ├── eval/
+│   │   ├── nutrition/     # golden-recipe eval (deterministic fixture replay)
+│   │   │   └── fixtures/  # recorded FDC/LLM responses — no network at test time
+│   │   └── medical-refusal.test.ts    # opt-in live model eval
+│   └── stubs/             # module stubs (e.g. server-only)
+├── e2e/                   # Playwright — chat specs only, see gap note below
+├── scripts/lint-ratchet.mjs  # lint gate: fails above .lint-baseline.json
 ├── vitest.config.mts      # Vitest configuration
 ├── vitest.setup.ts        # Vitest setup file
 ├── playwright.config.ts   # Playwright configuration
 └── TESTING.md            # This file
 ```
+
+> **Coverage gap — do not assume otherwise:** there is no `tests/integration/`
+> suite, and `e2e/` covers chat flows only (no auth, recipe-create, or
+> recipe-import spec). A green `bun run e2e` says nothing about those journeys.
+> Tracked in [.agent/System/engineering_standards.md](.agent/System/engineering_standards.md#known-coverage-gaps).
 
 ## 🧪 Unit Testing with Vitest
 
@@ -206,7 +213,7 @@ bun run e2e:report
 
 ```bash
 # Run specific unit test file
-bun run test tests/unit/Button.test.tsx
+bun run test tests/unit/unit-registry.test.ts
 
 # Run specific E2E test file
 bun run e2e e2e/recipe-import.spec.ts
@@ -308,31 +315,22 @@ test("should navigate between tabs", async ({ page }) => {
 
 ## 🔄 CI/CD Integration
 
-### GitHub Actions Example
+The real pipeline is [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — read it there rather than trusting a copy in this file. It has three jobs:
 
-```yaml
-name: Tests
+| Job | Runs | Blocking |
+|---|---|---|
+| Verify | `bun run verify` — prisma generate · lint ratchet · typecheck · `test:unit` · `test:eval:nutrition` | ✅ |
+| Build | `bunx prisma generate && bun run build` | ✅ |
+| Dependency Audit | `bun audit` | ⬜ advisory |
 
-on: [push, pull_request]
+The Verify job invokes the `verify` script rather than re-listing its steps, so the
+local command and the CI gate cannot drift apart.
 
-jobs:
-  unit-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun run test
+**Locally, `bun run verify:full` (verify + build) is the exact equivalent of the two
+blocking jobs.** Run it before declaring a change done — see
+[.agent/SOP/definition_of_done.md](.agent/SOP/definition_of_done.md).
 
-  e2e-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bunx playwright install --with-deps
-      - run: bun run e2e
-```
+E2E is **not** in CI; it is run locally against a running environment.
 
 ## 🐛 Troubleshooting
 
