@@ -101,6 +101,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - ConversationStore seam
 - Tool definition shape: `description` (schema channel) vs `guidance` (system-prompt channel)
 - Entitlement filtering (hybrid C+B) and feature-flag gating at the registry
+- `generateMealPlan` workflow: selects from the user's saved recipes by index (never invents ids), profile targets/allergies, `NO_RECIPES` fail-fast → [ADR 0005](../docs/adr/0005-meal-plan-generation-selects-saved-recipes.md)
 - System prompt composition: the three-category split + desync elimination
 - Medical-refusal classifier constraint (decision #117) → links ADR-0001 + the refusal eval
 

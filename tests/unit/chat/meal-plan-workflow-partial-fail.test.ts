@@ -7,7 +7,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ToolEmit } from "@/lib/chat/tools/types";
-import { makeSkeletonModel, makeFailFanoutModel, make14Slots } from "./_workflow-fixtures";
+import {
+  makeSkeletonModel,
+  makeFailFanoutModel,
+  make14Slots,
+  makeWorkflowInput,
+} from "./_workflow-fixtures";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -54,11 +59,7 @@ describe("generateMealPlanWorkflow — partial failure (2/14 slots fail)", () =>
     const workflow = mastra.getWorkflow("generateMealPlanWorkflow");
     const run = await workflow.createRun();
     const result = await run.start({
-      inputData: {
-        days: 7,
-        mealsPerDay: ["breakfast", "dinner"],
-        userId: "u1",
-      },
+      inputData: makeWorkflowInput(),
       requestContext,
     });
 

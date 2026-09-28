@@ -7,7 +7,13 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ToolEmit } from "@/lib/chat/tools/types";
-import { makeSkeletonModel, makeFailFanoutModel, make14Slots } from "./_workflow-fixtures";
+import {
+  makeSkeletonModel,
+  makeFailFanoutModel,
+  make14Slots,
+  makeCandidates,
+  makeWorkflowInput,
+} from "./_workflow-fixtures";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -20,7 +26,17 @@ vi.mock("@/mastra/workflows/_llm", () => ({
   getFanoutModel: vi.fn(),
 }));
 
+// The chat tool loads the profile + candidate pool before starting the workflow.
+vi.mock("@/lib/prisma", () => {
+  const prisma = {
+    userProfile: { findUnique: vi.fn() },
+    recipe: { findMany: vi.fn() },
+  };
+  return { prisma, default: prisma };
+});
+
 import { createMealPlan } from "@/actions/meal-plan";
+import prisma from "@/lib/prisma";
 import { getSkeletonModel, getFanoutModel } from "@/mastra/workflows/_llm";
 import { mastra } from "@/mastra";
 import { generateMealPlan as generateMealPlanTool } from "@/lib/chat/tools/generateMealPlan";
@@ -32,6 +48,8 @@ import { makeCtx } from "./_fixtures";
 describe("generateMealPlanWorkflow — threshold exceeded (5/14 fail → abort)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prisma.userProfile.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.recipe.findMany).mockResolvedValue(makeCandidates() as never);
   });
 
   it("aborts with PlanIncompleteError code and does NOT call createMealPlan", async () => {
@@ -51,11 +69,7 @@ describe("generateMealPlanWorkflow — threshold exceeded (5/14 fail → abort)"
     const workflow = mastra.getWorkflow("generateMealPlanWorkflow");
     const run = await workflow.createRun();
     const result = await run.start({
-      inputData: {
-        days: 7,
-        mealsPerDay: ["breakfast", "dinner"],
-        userId: "u1",
-      },
+      inputData: makeWorkflowInput(),
       requestContext,
     });
 
