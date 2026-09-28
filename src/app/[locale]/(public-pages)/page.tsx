@@ -1,53 +1,45 @@
+import type { Metadata } from "next";
 import {
-  LandingLayout,
-  LandingNav,
-  LandingFooter,
-  AgentSidebar,
-  HeroSection,
-  // ProblemSection,
-  FeaturesGrid,
-  // HowItWorks,
-  // TestimonialsSection,
-  // PricingSection,
-  // FAQSection,
+  FAQSection,
+  FeaturesSection,
   FinalCTASection,
+  HeroSection,
+  HowItWorks,
+  LandingFooter,
+  LandingNav,
+  LandingShell,
+  PricingSection,
+  // QuoteSection,
+  // StatsStrip,
 } from "@/components/landing";
+import { buildLandingMetadata } from "@/components/landing/metadata";
+
+interface LandingPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: LandingPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return buildLandingMetadata(locale);
+}
 
 export default function LandingPage() {
   return (
-    <>
-      <LandingLayout>
-        {/* Navigation */}
-        <LandingNav />
-
-        {/* Content */}
-        <div className="flex-1 z-10 relative">
-          {/* Hero Section */}
-          <HeroSection />
-
-          {/* Features Grid */}
-          <FeaturesGrid />
-
-          {/* Testimonials */}
-          {/* <TestimonialsSection /> */}
-
-          {/* Final CTA */}
-          <FinalCTASection />
-
-          {/* Commented out — available if needed:
-          <ProblemSection />
-          <HowItWorks />
-          <PricingSection />
-          <FAQSection />
-          */}
-        </div>
-
-        {/* Footer */}
-        <LandingFooter />
-      </LandingLayout>
-
-      {/* Agent Sidebar Demo */}
-      <AgentSidebar />
-    </>
+    <LandingShell>
+      <LandingNav />
+      <main>
+        <HeroSection />
+        <HowItWorks />
+        <FeaturesSection />
+        {/* Enable only with real data: verifiable figures and a real, consented
+            customer quote. Both take their content via props.
+            <StatsStrip stats={[{ value: "…", label: "…" }]} />
+            <QuoteSection quote="…" attribution="…" /> */}
+        <PricingSection />
+        <FAQSection />
+        <FinalCTASection />
+      </main>
+      <LandingFooter />
+    </LandingShell>
   );
 }

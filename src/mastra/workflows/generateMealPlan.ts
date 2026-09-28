@@ -3,21 +3,57 @@
  *
  * 3-step Mastra workflow:
  *   1. skeletonStep  — Sonnet 4.6 generates a meal plan skeleton (slots with brief descriptions)
- *   2. fanoutStep    — Haiku 4.5 resolves each slot to a recipeId in parallel (concurrency=8)
+ *   2. fanoutStep    — Haiku 4.5 picks, for each slot in parallel (concurrency=8), ONE recipe
+ *                      from the user's candidate library by index; the server maps the index
+ *                      back to a real recipe id. The model never produces an id itself.
  *   3. persistStep   — 25% threshold check → createMealPlan action
+ *
+ * The candidate pool (own recipes + favorited public recipes) and the merged
+ * profile targets/allergies are loaded by the chat tool and passed in as
+ * workflow input, so the workflow stays pure orchestration.
  */
 import { createStep, createWorkflow } from "@mastra/core/workflows";
-import { generateObject, generateText } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 import { createMealPlan } from "@/actions/meal-plan";
+import {
+  formatCandidatesForPrompt,
+  pickCandidate,
+  type CandidateRecipe,
+} from "@/lib/meal-plan/generation-candidates";
 import { getSkeletonModel, getFanoutModel } from "./_llm";
-import { SkeletonFailedError, PlanIncompleteError } from "./_errors";
+import {
+  SkeletonFailedError,
+  PlanIncompleteError,
+  NoCandidateRecipesError,
+} from "./_errors";
 import type { ToolEmit } from "@/lib/chat/tools/types";
 
 // ── Re-export errors for consumers ─────────────────────────────────────────
-export { SkeletonFailedError, PlanIncompleteError } from "./_errors";
+export {
+  SkeletonFailedError,
+  PlanIncompleteError,
+  NoCandidateRecipesError,
+} from "./_errors";
 
 // ── Shared schemas ──────────────────────────────────────────────────────────
+
+/** Meal types the generator accepts — a subset of `mealTypeEnum` in src/types/meal-plan.ts. */
+export const GENERATOR_MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
+type GeneratorMealType = (typeof GENERATOR_MEAL_TYPES)[number];
+
+const DEFAULT_MEAL_TYPES: GeneratorMealType[] = ["breakfast", "dinner"];
+
+const candidateSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional(),
+  calories: z.number().nullable().optional(),
+  protein: z.number().nullable().optional(),
+  carbs: z.number().nullable().optional(),
+  fat: z.number().nullable().optional(),
+});
 
 const workflowInputSchema = z.object({
   days: z.number().int().min(1).max(14),
@@ -26,12 +62,16 @@ const workflowInputSchema = z.object({
   targetCarbs: z.number().positive().optional(),
   targetFat: z.number().positive().optional(),
   dietary: z.array(z.string()).optional(),
-  mealsPerDay: z
-    .array(z.enum(["breakfast", "lunch", "dinner", "snack"]))
-    .min(1)
-    .optional(),
+  /** Hard exclusions (from the profile). */
+  allergies: z.array(z.string()).optional(),
+  // min(2) mirrors mealPlanTemplateFormSchema.mealSlots — a 1-meal plan can't persist.
+  mealsPerDay: z.array(z.enum(GENERATOR_MEAL_TYPES)).min(2).optional(),
   userId: z.string(),
+  /** Recipes the fanout step may choose from. Empty → NoCandidateRecipesError. */
+  candidates: z.array(candidateSchema),
 });
+
+type WorkflowInput = z.infer<typeof workflowInputSchema>;
 
 const slotSchema = z.object({
   day: z.number().int().min(1),
@@ -132,19 +172,87 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function resolveMealTypes(mealsPerDay: WorkflowInput["mealsPerDay"]): GeneratorMealType[] {
+  return mealsPerDay?.length ? mealsPerDay : DEFAULT_MEAL_TYPES;
+}
+
+/** Workflow input candidates → the shape the prompt formatter expects. */
+function toCandidateRecipes(candidates: WorkflowInput["candidates"]): CandidateRecipe[] {
+  return candidates.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description ?? null,
+    tags: c.tags ?? [],
+    calories: c.calories ?? null,
+    protein: c.protein ?? null,
+    carbs: c.carbs ?? null,
+    fat: c.fat ?? null,
+  }));
+}
+
+function constraintLines(input: {
+  dietary?: string[];
+  allergies?: string[];
+}): string[] {
+  const lines: string[] = [];
+  if (input.allergies?.length) {
+    lines.push(
+      `ALLERGIES — never choose or suggest anything containing: ${input.allergies.join(", ")}.`
+    );
+  }
+  if (input.dietary?.length) {
+    lines.push(`Dietary preferences: ${input.dietary.join(", ")}.`);
+  }
+  return lines;
+}
+
 /**
- * Resolve a single slot to a recipeId via Haiku.
- * The model is asked to directly return a recipe ID string (either existing or
- * newly created). In tests, the model returns a plain text string with the ID.
- * In production, the model would use tool calls (searchRecipes / createRecipe).
+ * Ask the fanout model to pick ONE candidate (by index) for a slot.
+ * The answer is validated twice: by the per-call schema bounds and by
+ * `pickCandidate`, so an invalid pick fails the slot instead of leaking a
+ * fake id downstream.
  *
  * 1 retry: on transient errors only, 1s backoff.
  */
 async function resolveSlot(
   slot: { day: number; mealType: string; brief: string },
-  userId: string
+  slotIndex: number,
+  ctx: {
+    candidates: CandidateRecipe[];
+    dietary?: string[];
+    allergies?: string[];
+    perMealCalories?: number;
+  }
 ): Promise<string> {
   const model = getFanoutModel();
+  const { candidates } = ctx;
+
+  const pickSchema = z.object({
+    index: z
+      .number()
+      .int()
+      .min(0)
+      .max(candidates.length - 1)
+      .describe("The #index of the chosen recipe from the candidate list"),
+  });
+
+  const system = [
+    "You assign a recipe from the user's saved library to one meal slot of a meal plan.",
+    "You MUST answer with the #index of exactly one recipe from the CANDIDATES list below.",
+    "Never invent recipes or indices that are not in the list.",
+    "Prefer the first suitable recipe you find; avoid obviously wrong meal types (e.g. a dessert for breakfast only if nothing else fits).",
+    ...constraintLines(ctx),
+    "",
+    "CANDIDATES (index, title, per-serving macros, tags):",
+    formatCandidatesForPrompt(candidates, slotIndex),
+  ].join("\n");
+
+  const prompt =
+    `Slot: Day ${slot.day}, ${slot.mealType} — "${slot.brief}". ` +
+    (ctx.perMealCalories
+      ? `Aim for roughly ${Math.round(ctx.perMealCalories)} kcal for this meal. `
+      : "") +
+    `Return the #index of the best matching recipe.`;
 
   let lastError: unknown;
 
@@ -158,18 +266,19 @@ async function resolveSlot(
     }
 
     try {
-      const result = await generateText({
+      const result = await generateObject({
         model,
-        prompt:
-          `You are a recipe resolver. Given this meal slot: Day ${slot.day} ${slot.mealType} - "${slot.brief}". ` +
-          `Return ONLY a recipe ID string (like "recipe-123") for this meal. ` +
-          `User ID: ${userId}`,
+        schema: pickSchema,
+        system,
+        prompt,
         maxRetries: 0, // we handle retries ourselves
       });
 
-      const recipeId = result.text.trim();
-      if (!recipeId) throw new Error("Empty recipeId returned by model");
-      return recipeId;
+      const chosen = pickCandidate(candidates, result.object.index);
+      if (!chosen) {
+        throw new Error(`Model picked an invalid candidate index: ${result.object.index}`);
+      }
+      return chosen.id;
     } catch (err) {
       lastError = err;
       if (attempt === 0 && !isTransient(err)) {
@@ -252,11 +361,44 @@ const skeletonStep = createStep({
   outputSchema: skeletonOutputSchema,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async execute({ inputData }: any) {
-    const model = getSkeletonModel();
-    const { days, mealsPerDay, dietary, targetCalories, targetProtein, targetCarbs, targetFat } =
-      inputData;
+    const input = inputData as WorkflowInput;
+    const {
+      days,
+      dietary,
+      allergies,
+      targetCalories,
+      targetProtein,
+      targetCarbs,
+      targetFat,
+      candidates,
+    } = input;
 
-    const mealTypes = mealsPerDay?.length ? mealsPerDay.join(", ") : "breakfast, dinner";
+    // Defense in depth — the chat tool already fails fast, but a direct
+    // workflow caller must not spend a Sonnet call on an unfillable plan.
+    if (!candidates?.length) {
+      throw new NoCandidateRecipesError();
+    }
+
+    const model = getSkeletonModel();
+    const mealTypes = resolveMealTypes(input.mealsPerDay);
+
+    // Constrain the model to the requested meal types so persist never sees a
+    // value outside mealTypeEnum ("Breakfast", "morning snack", …).
+    const perRunSkeletonSchema = z.object({
+      slots: z.array(
+        z.object({
+          day: z.number().int().min(1).max(days),
+          mealType: z.enum([mealTypes[0], ...mealTypes.slice(1)] as [
+            GeneratorMealType,
+            ...GeneratorMealType[],
+          ]),
+          brief: z.string(),
+        })
+      ),
+      // mealPlanTemplateFormSchema.name is min(3).max(100)
+      planName: z.string().min(3).max(100),
+    });
+
     const macroHint = [
       targetCalories ? `${targetCalories} kcal/day` : "",
       targetProtein ? `${targetProtein}g protein` : "",
@@ -266,11 +408,13 @@ const skeletonStep = createStep({
       .filter(Boolean)
       .join(", ");
 
-    const dietaryNote = dietary?.length ? `Dietary restrictions: ${dietary.join(", ")}` : "";
-
-    const systemPrompt =
+    const systemPrompt = [
       "You are a meal plan architect. Given target macros and constraints, " +
-      "produce a balanced N-day plan as a list of meal slots with brief recipe ideas.";
+        "produce a balanced N-day plan as a list of meal slots with brief meal ideas.",
+      "Each slot will later be matched to ONE recipe from the user's saved recipe library, " +
+        "so keep briefs generic (e.g. \"high-protein oat breakfast\") rather than naming exotic dishes.",
+      ...constraintLines({ dietary, allergies }),
+    ].join("\n");
 
     let lastError: unknown;
 
@@ -285,11 +429,11 @@ const skeletonStep = createStep({
           model,
           system: systemPrompt,
           prompt:
-            `Create a ${days}-day meal plan with these meals per day: ${mealTypes}. ` +
+            `Create a ${days}-day meal plan with exactly these meals per day: ${mealTypes.join(", ")}. ` +
             (macroHint ? `Target macros: ${macroHint}. ` : "") +
-            (dietaryNote ? `${dietaryNote}. ` : "") +
-            `Return an object with "planName" (string) and "slots" (array of { day, mealType, brief }).`,
-          schema: skeletonOutputSchema,
+            `Return an object with "planName" (string, 3-100 chars) and "slots" ` +
+            `(one entry per day per meal type: { day, mealType, brief }).`,
+          schema: perRunSkeletonSchema,
           maxRetries: 0,
         });
 
@@ -312,8 +456,12 @@ const fanoutStep = createStep({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async execute({ inputData, requestContext, getInitData }: any) {
     const emit = requestContext.get("emit") as ToolEmit | undefined;
-    const initData = getInitData() as { userId: string };
-    const userId = initData.userId;
+    const initData = getInitData() as WorkflowInput;
+    const candidates = toCandidateRecipes(initData.candidates);
+    const mealTypes = resolveMealTypes(initData.mealsPerDay);
+    const perMealCalories = initData.targetCalories
+      ? initData.targetCalories / mealTypes.length
+      : undefined;
 
     const slots = (inputData.slots as Array<{ day: number; mealType: string; brief: string }>);
     const limit = createLimiter(8);
@@ -322,7 +470,12 @@ const fanoutStep = createStep({
       slots.map((slot, i) =>
         limit(async () => {
           try {
-            const recipeId = await resolveSlot(slot, userId);
+            const recipeId = await resolveSlot(slot, i, {
+              candidates,
+              dietary: initData.dietary,
+              allergies: initData.allergies,
+              perMealCalories,
+            });
             emit?.({
               statusKey: "mealplan.slot",
               payload: { slot: { n: i + 1, m: slots.length } },
@@ -373,14 +526,7 @@ const persistStep = createStep({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async execute({ inputData, requestContext, getInitData }: any) {
     const emit = requestContext.get("emit") as ToolEmit | undefined;
-    const initData = getInitData() as {
-      days: number;
-      mealsPerDay?: string[];
-      targetCalories?: number;
-      targetProtein?: number;
-      targetCarbs?: number;
-      targetFat?: number;
-    };
+    const initData = getInitData() as WorkflowInput;
 
     const resolvedSlots = inputData.resolvedSlots as Array<{
       day: number;
@@ -405,7 +551,7 @@ const persistStep = createStep({
     const result = await createMealPlan({
       name: planName,
       duration: initData.days,
-      mealSlots: initData.mealsPerDay ?? ["breakfast", "dinner"],
+      mealSlots: resolveMealTypes(initData.mealsPerDay),
       targetCalories: initData.targetCalories,
       targetProtein: initData.targetProtein,
       targetCarbs: initData.targetCarbs,

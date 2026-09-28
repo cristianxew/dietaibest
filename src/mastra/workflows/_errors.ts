@@ -17,6 +17,19 @@ export class SkeletonFailedError extends Error {
 }
 
 /**
+ * Thrown before any model call when the user has no recipes the generator may
+ * select from (own recipes + favorited public recipes). Spending tokens on a
+ * skeleton would be pointless: every slot would fail to resolve.
+ */
+export class NoCandidateRecipesError extends Error {
+  readonly code = "NO_RECIPES" as const;
+  constructor() {
+    super("No saved recipes to plan from — import or create recipes first");
+    this.name = "NoCandidateRecipesError";
+  }
+}
+
+/**
  * Thrown by the persist step when the failure rate exceeds 25% of total slots.
  * Nothing is persisted when this is thrown.
  */

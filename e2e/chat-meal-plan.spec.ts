@@ -23,6 +23,14 @@
  *     generateMealPlan on the keyword match below
  *   - Stub or seed the database state expected by createMealPlan so it
  *     succeeds without a live Anthropic call
+ *   - Seed the Pro test user with a few recipes: the generator only assigns
+ *     recipes from the user's own library (+ favorited public recipes) and
+ *     fails fast with "No saved recipes to plan from" on an empty library
+ *     (see docs/adr/0005-meal-plan-generation-selects-saved-recipes.md)
+ *
+ * Deterministic coverage of the tool → workflow → createMealPlan chain lives in
+ * tests/integration/meal-plan-workflow-persist.test.ts; this spec is only about
+ * the browser UX (progress bubbles, ToolResultLink, ?selected= deep-link).
  *
  * Once those exist, remove `.fixme` from the `test()` calls and the spec runs.
  *

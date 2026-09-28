@@ -1,93 +1,58 @@
-"use client";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localizedHref } from "../links";
+import { LandingButton } from "../ui/LandingButton";
+import { ProductMock } from "../ui/ProductMock";
 
-import Link from "next/link";
-import { Icon } from "@iconify/react";
-import { Play, ArrowRight } from "lucide-react";
-import { AnimatedBadge, DashboardPreview } from "../ui";
-import { cn } from "@/lib/utils";
+const TRUST_KEYS = ["trust.free", "trust.usda", "trust.languages"] as const;
 
-interface HeroSectionProps {
-  className?: string;
-}
+export async function HeroSection() {
+  const [t, locale] = await Promise.all([getTranslations("landing.hero"), getLocale()]);
 
-export function HeroSection({ className }: HeroSectionProps) {
   return (
-    <section
-      className={cn(
-        "pt-16 pb-20 md:pt-24 md:pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto",
-        className
-      )}
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-        {/* Hero Text */}
-        <div className="flex flex-col gap-6 animate-fade-up">
-          <AnimatedBadge variant="gold">Smarter Eating Starts Here</AnimatedBadge>
+    <header className="relative isolate pt-24 pb-14">
+      <div className="lp-hero-bg" aria-hidden="true">
+        <span className="lp-orb lp-orb-1" />
+        <span className="lp-orb lp-orb-2" />
+        <span className="lp-orb lp-orb-3" />
+        <span className="lp-spark lp-spark-1" />
+        <span className="lp-spark lp-spark-2" />
+        <span className="lp-spark lp-spark-3" />
+        <span className="lp-spark lp-spark-4" />
+      </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.1] font-display font-semibold text-foreground tracking-tight">
-            Healthy Eating{" "}
-            <span className="text-gradient bg-gradient-to-r from-brand-500 via-gold-500 to-brand-400">
-              Without the Guesswork
-            </span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-            DietAI helps you truly understand what you eat, plan meals around
-            your nutritional targets, and automate everything from recipe
-            collection to grocery shopping—so healthy eating finally fits your
-            life.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-2">
-            <Link
-              href="/sign-up"
-              className="group inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <Icon icon="solar:chef-hat-bold-duotone" width={18} />
-              Build My First Plan
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-foreground rounded-xl text-sm font-medium hover:bg-secondary hover:border-brand-200 transition-all duration-200"
-            >
-              <Play className="w-4 h-4" />
-              See How It Works
-            </a>
-          </div>
-
-          {/* Social Proof */}
-          <div className="flex items-center gap-4 mt-6 pt-6 border-t border-border">
-            <div className="flex -space-x-2">
-              {[
-                "bg-brand-100 text-brand-700",
-                "bg-gold-100 text-gold-700",
-                "bg-sage-100 text-sage-700",
-                "bg-violet-200 text-violet-700"
-              ].map((colors, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "w-8 h-8 rounded-full border-2 border-background flex items-center justify-center text-xs font-medium",
-                    colors
-                  )}
-                >
-                  {["JD", "AK", "MS", "RT"][i]}
-                </div>
-              ))}
-            </div>
-            <div className="text-sm">
-              <span className="text-foreground font-medium">Join 2,500+</span>
-              <span className="text-muted-foreground"> people who finally understand their food</span>
-            </div>
-          </div>
+      <div className="mx-auto max-w-[1180px] px-8">
+        <p className="lp-hero-in mb-7 inline-flex items-center gap-2 font-lp-mono text-[11px] uppercase tracking-[0.16em] text-lp-muted before:h-px before:w-6 before:shrink-0 before:bg-lp-muted">
+          {t("eyebrow")}
+        </p>
+        <h1 className="lp-hero-in max-w-[18ch] font-lp-display text-[clamp(48px,8vw,96px)] font-medium leading-[1.02] tracking-[-0.025em] text-lp-fg">
+          {t("titleLead")}
+          <br />
+          <em className="font-medium italic text-lp-primary">{t("titleAccent")}</em>
+        </h1>
+        <p className="lp-hero-in lp-hero-in-d1 mt-7 max-w-[52ch] text-[19px] leading-[1.55] text-lp-fg-soft">
+          {t("sub")}
+        </p>
+        <div className="lp-hero-in lp-hero-in-d2 mt-10 flex flex-wrap items-center gap-3">
+          <LandingButton href={localizedHref(locale, "/sign-up")}>{t("primaryCta")}</LandingButton>
+          <LandingButton href="#how" variant="ghost">
+            {t("secondaryCta")}
+          </LandingButton>
         </div>
+        <ul className="lp-hero-in lp-hero-in-d3 mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-[13px] text-lp-muted">
+          {TRUST_KEYS.map((key) => (
+            <li
+              key={key}
+              className="flex items-center gap-2 before:size-1.5 before:shrink-0 before:rounded-full before:bg-lp-primary"
+            >
+              {t(key)}
+            </li>
+          ))}
+        </ul>
 
-        {/* Hero Visual - Dashboard Preview */}
-        <div className="lg:pl-8 animate-fade-up stagger-2">
-          <DashboardPreview />
+        <div className="relative mt-20">
+          <ProductMock />
         </div>
       </div>
-    </section>
+    </header>
   );
 }
