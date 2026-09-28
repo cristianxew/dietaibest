@@ -1,10 +1,5 @@
-export { AnimatedBadge } from "./AnimatedBadge";
-export { FeatureCard } from "./FeatureCard";
-export { PricingCard } from "./PricingCard";
-export { StepItem, StepConnector } from "./StepItem";
-export {
-  TerminalCard,
-  TerminalSection,
-  TerminalRow,
-} from "./TerminalCard";
-export { DashboardPreview } from "./DashboardPreview";
+export { BrandLogo } from "./BrandLogo";
+export { LandingButton } from "./LandingButton";
+export { ProductMock } from "./ProductMock";
+export { SectionHead } from "./SectionHead";
+export * from "./visuals";

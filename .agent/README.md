@@ -122,7 +122,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Typography (Inter, Space Grotesk, Geist Mono)
 - Semantic color tokens for light/dark modes
 - Component styling patterns (cards, buttons, forms)
-- Landing page component guidelines
+- Landing page components (scoped `.landing` tokens, light/dark, `landing.*` i18n, Stripe-backed pricing, SEO/OG metadata)
 - Utility classes (glass effect, animations)
 - Dark mode implementation
 - Migration guide from old design system

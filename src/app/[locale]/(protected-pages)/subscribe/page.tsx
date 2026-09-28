@@ -10,23 +10,12 @@ import {
 } from "@/lib/stripe";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { formatPrice } from "@/lib/format-price";
 
 import { PlanSelector, type PlanOption } from "./PlanSelector";
 
-function formatPrice(
-  unitAmount: number | null,
-  currency: string,
-  locale: string
-): string {
-  if (unitAmount == null) return "—";
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: currency.toUpperCase(),
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(unitAmount / 100);
-}
-
+// All-or-nothing on purpose: checkout needs both intervals. The landing's
+// pricing loader (src/components/landing/pricing-data.ts) degrades per card.
 async function loadPlanOptions(
   currency: SupportedCurrency,
   locale: string

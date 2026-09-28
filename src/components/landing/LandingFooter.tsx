@@ -1,164 +1,93 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { Icon } from "@iconify/react";
-import { cn } from "@/lib/utils";
+import { getLocale, getTranslations } from "next-intl/server";
+import { LanguageSwitcherFull } from "@/components/LanguageSwitcher";
+import { localizedHref } from "./links";
+import { BrandLogo } from "./ui/BrandLogo";
 
 interface FooterLink {
   label: string;
+  /** In-page `#anchor` or a locale-prefixed route. */
   href: string;
 }
 
-interface FooterSection {
+interface FooterColumn {
   title: string;
   links: FooterLink[];
 }
 
-const footerSections: FooterSection[] = [
-  {
-    title: "Product",
-    links: [
-      { label: "Features", href: "#features" },
-      { label: "Pricing", href: "#pricing" },
-      { label: "FAQ", href: "#faq" },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { label: "Blog", href: "#" },
-      { label: "Nutrition Guides", href: "#" },
-      { label: "Recipe Library", href: "#" },
-      { label: "Help Center", href: "#" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About Us", href: "#" },
-      { label: "Contact", href: "#" },
-      { label: "Careers", href: "#" },
-    ],
-  },
-];
+const linkClass = "text-[14px] text-lp-fg-soft transition-colors duration-150 hover:text-lp-fg";
 
-interface LandingFooterProps {
-  className?: string;
-}
+export async function LandingFooter() {
+  const [t, tNav, locale] = await Promise.all([
+    getTranslations("landing.footer"),
+    getTranslations("landing.nav"),
+    getLocale(),
+  ]);
+  const year = new Date().getFullYear();
 
-export function LandingFooter({ className }: LandingFooterProps) {
+  const columns: FooterColumn[] = [
+    {
+      title: t("columns.product"),
+      links: [
+        { label: tNav("features"), href: "#features" },
+        { label: tNav("how"), href: "#how" },
+        { label: tNav("pricing"), href: "#pricing" },
+        { label: tNav("faq"), href: "#faq" },
+      ],
+    },
+    {
+      title: t("columns.account"),
+      links: [
+        { label: t("links.signIn"), href: localizedHref(locale, "/sign-in") },
+        { label: t("links.signUp"), href: localizedHref(locale, "/sign-up") },
+      ],
+    },
+    {
+      title: t("columns.legal"),
+      links: [
+        { label: t("links.privacy"), href: localizedHref(locale, "/privacy") },
+        { label: t("links.terms"), href: localizedHref(locale, "/terms") },
+        { label: t("links.cookies"), href: localizedHref(locale, "/cookies") },
+      ],
+    },
+  ];
+
   return (
-    <footer
-      className={cn(
-        "bg-card border-t border-border pt-16 pb-8 px-4 sm:px-6 lg:px-8 z-10",
-        className
-      )}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
-          {/* Brand section */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="block relative w-[184px] h-[60px] mb-4">
-              <Image
-                src="/Dietai_logo_dark.png"
-                alt="DietAI"
-                fill
-                className="object-contain hidden dark:block"
-              />
-              <Image
-                src="/Dietai_logo_light.png"
-                alt="DietAI"
-                fill
-                className="object-contain dark:hidden"
-              />
+    <footer className="border-t border-lp-line pt-12 pb-16">
+      <div className="mx-auto max-w-[1180px] px-8">
+        <div className="mb-12 grid grid-cols-[2fr_1fr_1fr_1fr] gap-12 max-[801px]:grid-cols-2 max-[481px]:grid-cols-1 max-[481px]:gap-10">
+          <div className="max-[801px]:col-span-2 max-[481px]:col-span-1">
+            <Link href={localizedHref(locale, "/")} aria-label={tNav("home")} className="inline-flex">
+              <BrandLogo className="h-9" />
             </Link>
-            <p className="text-muted-foreground leading-relaxed mb-6 max-w-sm">
-              Making healthy eating simple, smart, and sustainable — powered by
-              AI-driven meal planning and professional nutrition analysis.
-            </p>
-            {/* Social links */}
-            {/* <div className="flex gap-4">
-              {[
-                { icon: "mdi:twitter", href: "#" },
-                { icon: "mdi:instagram", href: "#" },
-                { icon: "mdi:facebook", href: "#" },
-                { icon: "mdi:linkedin", href: "#" },
-              ].map((social) => (
-                <a
-                  key={social.icon}
-                  href={social.href}
-                  className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-                >
-                  <Icon icon={social.icon} width={20} />
-                </a>
-              ))}
-            </div> */}
+            <p className="mt-4 max-w-[36ch] text-[14px] leading-[1.6] text-lp-fg-soft">{t("blurb")}</p>
           </div>
-
-          {/* Link sections */}
-          {footerSections.map((section) => (
-            <div key={section.title}>
-              <h4 className="font-semibold text-foreground mb-4">
-                {section.title}
+          {columns.map((column) => (
+            <div key={column.title}>
+              <h4 className="mb-[18px] font-lp-mono text-[11px] font-medium uppercase leading-[1.5] tracking-[0.12em] text-lp-muted">
+                {column.title}
               </h4>
-              <ul className="space-y-3">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </a>
+              <ul className="flex flex-col gap-2.5">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    {link.href.startsWith("#") ? (
+                      <a href={link.href} className={linkClass}>
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link href={link.href} className={linkClass}>
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
           ))}
         </div>
-
-        {/* Newsletter */}
-        <div className="py-8 border-y border-border mb-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h4 className="font-semibold text-foreground mb-1">
-                Get nutrition tips in your inbox
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Weekly insights on healthy eating. No spam, ever.
-              </p>
-            </div>
-            <form className="flex gap-3 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 md:w-64 px-4 py-2.5 bg-muted border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-              <button
-                type="submit"
-                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:shadow-md transition-shadow"
-              >
-                Subscribe
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} DietAI Inc. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-foreground transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Cookie Policy
-            </a>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-lp-line pt-6 text-[13px] text-lp-muted">
+          <span>{t("copyright", { year })}</span>
+          <LanguageSwitcherFull className="h-9 rounded-full border-lp-line bg-transparent text-[13px] text-lp-fg-soft shadow-none hover:bg-lp-bg-soft hover:text-lp-fg dark:border-lp-line dark:bg-transparent dark:hover:bg-lp-bg-soft" />
         </div>
       </div>
     </footer>

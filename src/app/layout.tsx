@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Playfair_Display, Inter, Lato, Alice, Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "next-themes";
+import { unstable_rethrow } from "next/navigation";
+import { getLocale } from "next-intl/server";
 import "./globals.css";
 
 // Primary fonts for the "Culinary Elegance" design system
@@ -35,9 +37,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "DietAI - Autonomous Nutrition Operating System",
+  title: "DietAI — Healthy eating, simplified.",
   description:
-    "Stop manually tracking calories. DietAI agents build your meal plans, scrape recipes, and order your groceries automatically—while balancing your macros.",
+    "Save recipes from any website, video or photo, see USDA-based nutrition and plan your week.",
   keywords: [
     "meal planning",
     "nutrition",
@@ -59,10 +61,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   openGraph: {
-    title: "DietAI - Nutrition on Autopilot",
+    title: "DietAI — Healthy eating, simplified.",
     description:
-      "AI-powered meal planning and nutrition tracking. Let our agents handle the tedious parts of nutrition.",
+      "Save recipes from any website, video or photo, see USDA-based nutrition and plan your week.",
     type: "website",
+    siteName: "DietAI",
   },
   icons: {
     icon: "/favicon.ico",
@@ -70,14 +73,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+/** Active next-intl locale for `<html lang>`; "en" when none can be resolved. */
+async function resolveHtmlLang(): Promise<string> {
+  try {
+    return await getLocale();
+  } catch (error) {
+    unstable_rethrow(error); // let Next's dynamic-rendering signals through
+    return "en";
+  }
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const lang = await resolveHtmlLang();
+
   return (
     <html
-      lang="en"
+      lang={lang}
       suppressHydrationWarning
       className={`
         ${dmSans.variable}
