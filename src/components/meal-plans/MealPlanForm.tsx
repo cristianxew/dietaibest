@@ -165,8 +165,11 @@ export function MealPlanForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent
+        mobileSheet
+        className="max-w-lg p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden max-sm:overflow-hidden max-sm:pb-0"
+      >
+        <DialogHeader className="px-6 pt-6 pb-4 pr-12 text-left">
           <DialogTitle>
             {editMode ? "Edit Meal Plan" : "Create New Meal Plan"}
           </DialogTitle>
@@ -177,262 +180,270 @@ export function MealPlanForm({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Meal Plan Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">{t("mealPlans.form.name")}</Label>
-            <Input
-              id="name"
-              placeholder="e.g., Healthy Weight Loss Plan"
-              {...register("name")}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Give your meal plan a memorable name you can reuse
-            </p>
-          </div>
-
-          {/* Meal Plan Selection - Only for create mode */}
-          {!editMode && availablePlans.length > 0 && (
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-2 space-y-6">
+            {/* Meal Plan Name */}
             <div className="space-y-2">
-              <Label htmlFor="templateId">
-                {t("mealPlans.form.createFromTemplate")}
-              </Label>
-              <Select
-                value={templateId || "none"}
-                onValueChange={(value) => {
-                  const newTemplateId = value === "none" ? undefined : value;
-                  setValue("templateId", newTemplateId);
-
-                  // If a template is selected, update duration to match
-                  if (newTemplateId) {
-                    const selectedTemplate = availablePlans.find(
-                      (p) => p.id === newTemplateId
-                    );
-                    if (selectedTemplate) {
-                      setValue("duration", selectedTemplate.duration);
-                    }
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t("mealPlans.form.selectTemplate")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
-                    {t("mealPlans.form.noTemplate")}
-                  </SelectItem>
-                  {availablePlans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} ({plan.duration}{" "}
-                      {plan.duration === 1
-                        ? t("mealPlans.calendar.day")
-                        : t("mealPlans.calendar.days")}
-                      )
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="name">{t("mealPlans.form.name")}</Label>
+              <Input
+                className="touch:h-11"
+                id="name"
+                placeholder="e.g., Healthy Weight Loss Plan"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                {t("mealPlans.form.templateDescription")}
+                Give your meal plan a memorable name you can reuse
               </p>
             </div>
-          )}
 
-          {/* Duration Input with Slider */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="duration">{t("mealPlans.form.duration")}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-primary">
-                  {duration}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {duration === 1
-                    ? t("mealPlans.calendar.day")
-                    : t("mealPlans.calendar.days")}
-                </span>
-              </div>
-            </div>
-
-            <Slider
-              value={[duration]}
-              onValueChange={handleDurationChange}
-              min={1}
-              max={30}
-              step={1}
-              className="w-full"
-            />
-
-            {/* Quick duration presets */}
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setValue("duration", 7)}
-                className={cn(duration === 7 && "border-primary")}
-              >
-                {t("mealPlans.form.oneWeek")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setValue("duration", 14)}
-                className={cn(duration === 14 && "border-primary")}
-              >
-                {t("mealPlans.form.twoWeeks")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setValue("duration", 30)}
-                className={cn(duration === 30 && "border-primary")}
-              >
-                {t("mealPlans.form.oneMonth")}
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {t("mealPlans.form.scheduleHint")}
-            </p>
-            {errors.duration && (
-              <p className="text-sm text-destructive">
-                {errors.duration.message}
-              </p>
-            )}
-          </div>
-
-          {/* Meal Count Selection */}
-          <div className="space-y-3">
-            <Label>{t("mealPlans.form.mealsPerDay")}</Label>
-            <RadioGroup
-              value={selectedMealCount.toString()}
-              onValueChange={handleMealCountChange}
-              className="grid grid-cols-1 gap-2"
-            >
-              {MEAL_SLOT_PRESETS.map((preset) => (
-                <div key={preset.count} className="flex items-center space-x-2">
-                  <RadioGroupItem
-                    value={preset.count.toString()}
-                    id={`meal-count-${preset.count}`}
-                  />
-                  <Label
-                    htmlFor={`meal-count-${preset.count}`}
-                    className="font-normal cursor-pointer flex-1"
-                  >
-                    {t(preset.label)}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-            <p className="text-xs text-muted-foreground">
-              {t("mealPlans.form.mealCountDescription")}
-            </p>
-          </div>
-
-          {/* Macro Targets */}
-          <div className="space-y-3">
-            <Label>Daily Macro Targets (Optional)</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label
-                  htmlFor="targetCalories"
-                  className="text-xs text-muted-foreground"
-                >
-                  Calories
+            {/* Meal Plan Selection - Only for create mode */}
+            {!editMode && availablePlans.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="templateId">
+                  {t("mealPlans.form.createFromTemplate")}
                 </Label>
-                <Input
-                  id="targetCalories"
-                  type="number"
-                  placeholder="2000"
-                  {...register("targetCalories", { valueAsNumber: true })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label
-                  htmlFor="targetProtein"
-                  className="text-xs text-muted-foreground"
-                >
-                  Protein (g)
-                </Label>
-                <Input
-                  id="targetProtein"
-                  type="number"
-                  placeholder="150"
-                  {...register("targetProtein", { valueAsNumber: true })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label
-                  htmlFor="targetCarbs"
-                  className="text-xs text-muted-foreground"
-                >
-                  Carbs (g)
-                </Label>
-                <Input
-                  id="targetCarbs"
-                  type="number"
-                  placeholder="200"
-                  {...register("targetCarbs", { valueAsNumber: true })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label
-                  htmlFor="targetFat"
-                  className="text-xs text-muted-foreground"
-                >
-                  Fat (g)
-                </Label>
-                <Input
-                  id="targetFat"
-                  type="number"
-                  placeholder="65"
-                  {...register("targetFat", { valueAsNumber: true })}
-                />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Set target macros to help you stay on track with your nutrition
-              goals
-            </p>
-          </div>
+                <Select
+                  value={templateId || "none"}
+                  onValueChange={(value) => {
+                    const newTemplateId = value === "none" ? undefined : value;
+                    setValue("templateId", newTemplateId);
 
-          {/* Settings */}
-          <div className="space-y-3 pt-2 border-t">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="isPublic">{t("mealPlans.form.makePublic")}</Label>
+                    // If a template is selected, update duration to match
+                    if (newTemplateId) {
+                      const selectedTemplate = availablePlans.find(
+                        (p) => p.id === newTemplateId
+                      );
+                      if (selectedTemplate) {
+                        setValue("duration", selectedTemplate.duration);
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="touch:h-11">
+                    <SelectValue
+                      placeholder={t("mealPlans.form.selectTemplate")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      {t("mealPlans.form.noTemplate")}
+                    </SelectItem>
+                    {availablePlans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} ({plan.duration}{" "}
+                        {plan.duration === 1
+                          ? t("mealPlans.calendar.day")
+                          : t("mealPlans.calendar.days")}
+                        )
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  {t("mealPlans.form.generateShareLink")}
+                  {t("mealPlans.form.templateDescription")}
                 </p>
               </div>
-              <Switch
-                id="isPublic"
-                checked={isPublic}
-                onCheckedChange={(checked) => setValue("isPublic", checked)}
+            )}
+
+            {/* Duration Input with Slider */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="duration">{t("mealPlans.form.duration")}</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-primary">
+                    {duration}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {duration === 1
+                      ? t("mealPlans.calendar.day")
+                      : t("mealPlans.calendar.days")}
+                  </span>
+                </div>
+              </div>
+
+              <Slider
+                value={[duration]}
+                onValueChange={handleDurationChange}
+                min={1}
+                max={30}
+                step={1}
+                className="w-full"
               />
+
+              {/* Quick duration presets */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setValue("duration", 7)}
+                  className={cn("touch:h-11", duration === 7 && "border-primary")}
+                >
+                  {t("mealPlans.form.oneWeek")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setValue("duration", 14)}
+                  className={cn("touch:h-11", duration === 14 && "border-primary")}
+                >
+                  {t("mealPlans.form.twoWeeks")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setValue("duration", 30)}
+                  className={cn("touch:h-11", duration === 30 && "border-primary")}
+                >
+                  {t("mealPlans.form.oneMonth")}
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {t("mealPlans.form.scheduleHint")}
+              </p>
+              {errors.duration && (
+                <p className="text-sm text-destructive">
+                  {errors.duration.message}
+                </p>
+              )}
             </div>
+
+            {/* Meal Count Selection */}
+            <div className="space-y-3">
+              <Label>{t("mealPlans.form.mealsPerDay")}</Label>
+              <RadioGroup
+                value={selectedMealCount.toString()}
+                onValueChange={handleMealCountChange}
+                className="grid grid-cols-1 gap-2"
+              >
+                {MEAL_SLOT_PRESETS.map((preset) => (
+                  <div key={preset.count} className="flex items-center space-x-2 touch:min-h-11">
+                    <RadioGroupItem
+                      value={preset.count.toString()}
+                      id={`meal-count-${preset.count}`}
+                    />
+                    <Label
+                      htmlFor={`meal-count-${preset.count}`}
+                      className="font-normal cursor-pointer flex-1"
+                    >
+                      {t(preset.label)}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              <p className="text-xs text-muted-foreground">
+                {t("mealPlans.form.mealCountDescription")}
+              </p>
+            </div>
+
+            {/* Macro Targets */}
+            <div className="space-y-3">
+              <Label>Daily Macro Targets (Optional)</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="targetCalories"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Calories
+                  </Label>
+                  <Input
+                    className="touch:h-11"
+                    id="targetCalories"
+                    type="number"
+                    placeholder="2000"
+                    {...register("targetCalories", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="targetProtein"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Protein (g)
+                  </Label>
+                  <Input
+                    className="touch:h-11"
+                    id="targetProtein"
+                    type="number"
+                    placeholder="150"
+                    {...register("targetProtein", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="targetCarbs"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Carbs (g)
+                  </Label>
+                  <Input
+                    className="touch:h-11"
+                    id="targetCarbs"
+                    type="number"
+                    placeholder="200"
+                    {...register("targetCarbs", { valueAsNumber: true })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="targetFat"
+                    className="text-xs text-muted-foreground"
+                  >
+                    Fat (g)
+                  </Label>
+                  <Input
+                    className="touch:h-11"
+                    id="targetFat"
+                    type="number"
+                    placeholder="65"
+                    {...register("targetFat", { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Set target macros to help you stay on track with your nutrition
+                goals
+              </p>
+            </div>
+
+            {/* Settings */}
+            <div className="space-y-3 pt-2 border-t">
+              <div className="flex items-center justify-between touch:min-h-11">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isPublic">{t("mealPlans.form.makePublic")}</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {t("mealPlans.form.generateShareLink")}
+                  </p>
+                </div>
+                <Switch
+                  id="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={(checked) => setValue("isPublic", checked)}
+                />
+              </div>
+            </div>
+
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 border-t bg-background px-6 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="flex-1 touch:h-11"
               disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={isPending}>
+            <Button type="submit" className="flex-1 touch:h-11" disabled={isPending}>
               {isPending
                 ? "Saving..."
                 : editMode

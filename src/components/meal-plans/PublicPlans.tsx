@@ -123,7 +123,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             </div>
 
             {/* Overview stats */}
-            <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] touch:text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="w-[11px] h-[11px]" />
                 {plan.duration}d
@@ -143,7 +143,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {(plan.targetProtein != null ||
               plan.targetCarbs != null ||
               plan.targetFat != null) && (
-              <div className="flex flex-wrap gap-2 text-[10px] font-medium">
+              <div className="flex flex-wrap gap-2 text-[10px] touch:text-xs font-medium">
                 {plan.targetProtein != null && (
                   <span className="px-1.5 py-0.5 rounded-md bg-sage-500/10 text-sage-600 dark:text-sage-400">
                     {Math.round(plan.targetProtein)}g P
@@ -165,7 +165,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {/* Recipe preview */}
             {plan.recipes.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="text-[10px] touch:text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {t("recipes")}
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -178,7 +178,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
                     />
                   ))}
                   {plan.recipeCount > 5 && (
-                    <span className="text-[11px] font-medium text-muted-foreground ml-0.5">
+                    <span className="text-[11px] touch:text-xs font-medium text-muted-foreground ml-0.5">
                       +{plan.recipeCount - 5}
                     </span>
                   )}
@@ -189,7 +189,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             <Button
               size="sm"
               variant="outline"
-              className="mt-auto gap-2 self-start"
+              className="mt-auto gap-2 self-start touch:h-11 touch:px-4"
               disabled={duplicatingId === plan.id}
               onClick={() => handleDuplicate(plan)}
             >
@@ -204,6 +204,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
         <div className="flex justify-center">
           <Button
             variant="outline"
+            className="touch:h-11"
             disabled={isPending}
             onClick={() => loadPage(page + 1)}
           >

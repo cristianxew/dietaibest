@@ -70,9 +70,12 @@ export function RecipePicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden flex flex-col max-h-[88vh] sm:max-h-[80vh]">
+      <DialogContent
+        mobileSheet
+        className="max-w-lg p-0 gap-0 overflow-hidden max-sm:overflow-hidden max-sm:pb-0 flex flex-col sm:max-h-[80dvh]"
+      >
         {/* Header */}
-        <DialogHeader className="p-5 pb-3 space-y-3 text-left">
+        <DialogHeader className="p-5 pb-3 pr-12 space-y-3 text-left">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center flex-shrink-0">
               <ChefHat className="w-[18px] h-[18px] text-brand-600 dark:text-brand-400" />
@@ -107,7 +110,7 @@ export function RecipePicker({
         </DialogHeader>
 
         {/* Results */}
-        <div className="flex-1 overflow-y-auto px-5 pb-5 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] scrollbar-thin">
           {loading ? (
             <div className="flex flex-col gap-2">
               <RecipeSidebarSkeleton />
@@ -154,7 +157,7 @@ export function RecipePicker({
                         </Chip>
                       )}
                       {recipe.prepTime != null && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
+                        <span className="text-[10px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
                           <Icon name="Clock" size={10} />
                           {recipe.prepTime}m
                         </span>
@@ -163,8 +166,8 @@ export function RecipePicker({
                   </div>
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0 text-[#1C1A17]",
-                      "sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                      "w-8 h-8 touch:w-11 touch:h-11 rounded-lg bg-brand-500 flex items-center justify-center flex-shrink-0 text-[#1C1A17]",
+                      "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 touch:opacity-100 transition-opacity"
                     )}
                   >
                     <Plus className="w-4 h-4" />
