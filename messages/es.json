@@ -438,7 +438,45 @@
     },
     "previous": "Anterior",
     "next": "Siguiente",
-    "pageOf": "Página {{current}} de {{total}}",
+    "pageOf": "Página {current} de {total}",
+    "pagination": "Paginación",
+    "firstPage": "Primera página",
+    "lastPage": "Última página",
+    "goToPage": "Ir a:",
+    "libraryEyebrow": "Biblioteca de recetas",
+    "gridView": "Cuadrícula",
+    "listView": "Lista",
+    "totalTime": "Total",
+    "addToPlan": "Añadir al plan",
+    "tabsShort": {
+      "my": "Mías",
+      "public": "Públicas",
+      "favorites": "Favoritas"
+    },
+    "filters": {
+      "title": "Filtros",
+      "description": "Filtra y organiza tus recetas.",
+      "category": "Categoría",
+      "difficulty": "Dificultad",
+      "view": "Vista",
+      "perPage": "Recetas por página",
+      "clear": "Limpiar",
+      "showResults": "Ver {count, plural, =0 {resultados} one {# receta} other {# recetas}}",
+      "removeFilter": "Quitar filtro: {name}"
+    },
+    "search": {
+      "clear": "Borrar búsqueda",
+      "searching": "Buscando...",
+      "suggestions": "Sugerencias",
+      "recent": "Búsquedas recientes",
+      "clearRecent": "Borrar",
+      "noSuggestions": "No se encontraron sugerencias",
+      "type": {
+        "title": "Receta",
+        "tag": "Etiqueta",
+        "category": "Categoría"
+      }
+    },
     "loadError": "Error al cargar recetas",
     "favoriteAdded": "Agregado a favoritos",
     "favoriteRemoved": "Eliminado de favoritos",

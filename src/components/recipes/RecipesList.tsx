@@ -29,10 +29,7 @@ import {
   Tag,
   ChefHat,
   Folder,
-  Heart,
-  SlidersHorizontal,
   Sparkles,
-  Globe,
   LayoutGrid,
   List,
 } from "lucide-react";
@@ -41,11 +38,16 @@ import { toast } from "sonner";
 import { Recipe, RecipeCategory, UserFavorite } from "@/generated/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
 import { AddRecipeButton } from "@/components/recipes/AddRecipeButton";
+import {
+  RecipeFiltersDrawer,
+  ITEMS_PER_PAGE_OPTIONS,
+} from "@/components/recipes/RecipeFiltersDrawer";
 import { AskDietAIButton } from "@/components/chat/AskDietAIButton";
 
 const RECENT_SEARCHES_KEY = "DietAI-recent-searches";
@@ -91,6 +93,12 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const listTopRef = useRef<HTMLDivElement>(null);
+
+  // Below `lg` the sticky toolbar slides away while scrolling down and returns on scroll up
+  const { ref: toolbarRef, hidden: toolbarHidden } = useHideOnScroll({
+    disabled: showSuggestions,
+  });
 
   // Debounce search input
   const debouncedSearchInput = useDebounce(searchInput, 300);
@@ -277,33 +285,27 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
   if (loading && recipes.length === 0) {
     return (
-      <div className="space-y-8">
-        {/* Loading skeleton for filters */}
-        <div
-          className={cn(
-            "p-5 rounded-2xl",
-            "bg-card border border-border/50",
-            "space-y-4"
-          )}
-        >
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-10 w-36 rounded-lg" />
-            <Skeleton className="h-10 w-36 rounded-lg" />
-            <Skeleton className="h-10 w-36 rounded-lg" />
-            <Skeleton className="h-10 w-48 rounded-lg" />
+      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+        {/* Loading skeleton for filters — mirrors the compact mobile toolbar */}
+        <div className="space-y-3 lg:space-y-4 lg:p-4 lg:rounded-xl lg:bg-card lg:border lg:border-border/50">
+          <div className="flex gap-2 lg:gap-3">
+            <Skeleton className="h-11 flex-1 rounded-xl" />
+            <Skeleton className="h-11 w-11 sm:w-28 rounded-xl lg:hidden" />
+            <Skeleton className="hidden lg:block h-11 w-[180px] rounded-lg" />
+            <Skeleton className="hidden lg:block h-11 w-[160px] rounded-lg" />
           </div>
+          <Skeleton className="h-9 w-full sm:w-96 rounded-lg" />
         </div>
 
         {/* Loading skeleton for recipe grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
               className="rounded-2xl overflow-hidden border border-border/50 bg-card"
             >
-              <Skeleton className="aspect-[4/3] w-full" />
-              <div className="p-5 space-y-3">
+              <Skeleton className="aspect-[16/10] sm:aspect-[4/3] w-full" />
+              <div className="p-4 sm:p-5 space-y-3">
                 <Skeleton className="h-4 w-20 rounded-full" />
                 <Skeleton className="h-6 w-4/5" />
                 <Skeleton className="h-4 w-full" />
@@ -354,23 +356,55 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
     selectedDifficulty !== "all" ||
     activeTab !== "my";
 
+  const getCategoryLabel = (category: RecipeCategory) =>
+    category.slug && t.has(`categoryNames.${category.slug}`)
+      ? t(`categoryNames.${category.slug}`)
+      : category.name;
+
+  const selectedCategoryData = categories.find((c) => c.id === selectedCategory);
+
+  const clearFilters = () => {
+    setSelectedCategory("all");
+    setSelectedDifficulty("all");
+  };
+
+  // Paginating from the bottom of a long list would otherwise leave the user
+  // at the bottom of the next page — bring the list back into view.
+  const goToPage = (nextPage: number) => {
+    setPage(nextPage);
+    listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="space-y-8">
-      {/* Unified control panel wrapper — full-bleed sticky bar pinned to the top.
-          Negative margins cancel PageContainer's padding so the bar (and its
-          solid backdrop) spans the full content width; px re-aligns the inner card. */}
-      <div className="sticky top-16 md:top-0 z-30 -mx-6 lg:-mx-10 px-6 lg:px-10 py-3 bg-background/95 backdrop-blur-md border-b border-border/60 transition-all">
-        {/* Unified control panel: Search + Categories + Difficulties + Tabs + Layout + Add Recipe */}
-        <div className="flex flex-col gap-4 p-4 bg-card border border-border/60 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-          {/* Top Row: Search Input + Select Dropdowns */}
-          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+    <div ref={listTopRef} className="space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* Unified control panel wrapper — full-bleed sticky bar pinned to the top
+          of the scroll container (#main-content, which already sits below the
+          mobile header). Negative margins cancel PageContainer's padding so the
+          bar (and its solid backdrop) spans the full content width; px re-aligns
+          the inner card. Below `lg` it hides on scroll down, returns on scroll up. */}
+      <div
+        ref={toolbarRef}
+        className={cn(
+          "sticky top-0 z-30 -mx-4 sm:-mx-6 lg:-mx-10 px-4 sm:px-6 lg:px-10 py-3",
+          "bg-background/95 backdrop-blur-md border-b border-border/60",
+          "transition-transform duration-300 ease-out motion-reduce:transition-none",
+          toolbarHidden && "max-lg:-translate-y-full"
+        )}
+      >
+        {/* Unified control panel: Search + Filters + Tabs + Layout (+ Add Recipe on desktop).
+            Below `lg` it is a flat two-row bar; category/difficulty move into a bottom drawer. */}
+        <div className="flex flex-col gap-3 lg:gap-4 lg:p-4 lg:bg-card lg:border lg:border-border/60 lg:rounded-xl lg:shadow-sm lg:hover:shadow-md lg:transition-shadow lg:duration-300">
+          {/* Top Row: Search Input + Filters (drawer below lg, selects from lg) */}
+          <div className="flex items-center gap-2 lg:gap-3">
             {/* Search Input & Suggestions */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
                 <Search className="h-4 w-4 text-brand-500" />
               </div>
               <Input
                 ref={searchInputRef}
+                enterKeyHint="search"
+                aria-label={t("searchPlaceholder")}
                 placeholder={t("searchPlaceholder") || "Search recipes, tags, ingredients..."}
                 value={searchInput}
                 onChange={(e) => {
@@ -384,7 +418,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 className={cn(
-                  "h-11 pl-11 pr-12 text-sm",
+                  // text-base below lg keeps iOS Safari from zooming in on focus
+                  "h-11 pl-11 pr-12 text-base lg:text-sm",
                   "rounded-xl border border-border/40",
                   "bg-muted/40 hover:bg-muted/80",
                   "focus:bg-background focus:border-brand-300 focus:ring-1 focus:ring-brand-200",
@@ -400,6 +435,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                     setSearchInput("");
                     setSearchTerm("");
                   }}
+                  aria-label={t("search.clear")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-muted"
                 >
                   <X className="h-4 w-4" />
@@ -412,21 +448,21 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                   ref={suggestionsRef}
                   className={cn(
                     "absolute top-full left-0 right-0 mt-2 z-50",
-                    "max-h-80 overflow-auto",
+                    "max-h-[min(20rem,60dvh)] overflow-auto",
                     "shadow-xl border-border/50 rounded-xl"
                   )}
                 >
                   {loadingSuggestions && (
                     <div className="p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
                       <Sparkles className="h-4 w-4 animate-pulse text-brand-500" />
-                      Searching...
+                      {t("search.searching")}
                     </div>
                   )}
 
                   {!loadingSuggestions && suggestions.length > 0 && (
                     <div className="p-2">
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
-                        Suggestions
+                        {t("search.suggestions")}
                       </div>
                       {suggestions.map((suggestion, idx) => (
                         <button
@@ -441,14 +477,14 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                           <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted">
                             {getSuggestionIcon(suggestion.type)}
                           </div>
-                          <span className="flex-1 text-left font-medium">
+                          <span className="flex-1 min-w-0 truncate text-left font-medium">
                             {suggestion.value}
                           </span>
                           <Badge
                             variant="secondary"
-                            className="text-[10px] uppercase tracking-wider"
+                            className="hidden sm:inline-flex text-[10px] uppercase tracking-wider"
                           >
-                            {suggestion.type}
+                            {t(`search.type.${suggestion.type}`)}
                           </Badge>
                         </button>
                       ))}
@@ -459,7 +495,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                     <div className="p-2">
                       <div className="flex items-center justify-between px-3 py-2">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Recent Searches
+                          {t("search.recent")}
                         </span>
                         <Button
                           variant="ghost"
@@ -467,7 +503,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                           onClick={clearRecentSearches}
                           className="h-6 text-xs text-muted-foreground hover:text-foreground"
                         >
-                          Clear
+                          {t("search.clearRecent")}
                         </Button>
                       </div>
                       {recentSearches.map((search, idx) => (
@@ -480,7 +516,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                           )}
                         >
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="flex-1 text-left">{search}</span>
+                          <span className="flex-1 min-w-0 truncate text-left">{search}</span>
                         </button>
                       ))}
                     </div>
@@ -488,17 +524,34 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
                   {!loadingSuggestions && searchInput && suggestions.length === 0 && (
                     <div className="p-6 text-center text-sm text-muted-foreground">
-                      No suggestions found
+                      {t("search.noSuggestions")}
                     </div>
                   )}
                 </Card>
               )}
             </div>
 
-            {/* Dropdown filters (Category & Difficulty) */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Mobile & tablet: filters live in a bottom drawer */}
+            <RecipeFiltersDrawer
+              className="lg:hidden"
+              categories={categories}
+              getCategoryLabel={getCategoryLabel}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedDifficulty={selectedDifficulty}
+              onDifficultyChange={setSelectedDifficulty}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+              onClear={clearFilters}
+              totalCount={totalCount}
+            />
+
+            {/* Desktop: dropdown filters (Category & Difficulty) */}
+            <div className="hidden lg:flex items-center gap-3 shrink-0">
               {/* Category Dropdown */}
-              <div className="flex-shrink-0 w-full sm:w-[180px]">
+              <div className="w-[180px]">
                 <Select
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
@@ -512,9 +565,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                     </SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id} className="text-xs">
-                        {c.slug && t.has(`categoryNames.${c.slug}`)
-                          ? t(`categoryNames.${c.slug}`)
-                          : c.name}
+                        {getCategoryLabel(c)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -522,7 +573,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
               </div>
 
               {/* Difficulty Dropdown */}
-              <div className="flex-shrink-0 w-full sm:w-[160px]">
+              <div className="w-[160px]">
                 <Select
                   value={selectedDifficulty}
                   onValueChange={setSelectedDifficulty}
@@ -545,14 +596,14 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
             </div>
           </div>
 
-          {/* Bottom Row: Tab Pills + Layout switcher + Add recipe button */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-border/50 pt-3">
-            {/* Source/Tabs Pills */}
-            <div className="flex gap-1 p-0.5 bg-muted border border-border rounded-lg self-start">
+          {/* Bottom Row: Tab Pills + Layout switcher (sm+) + Add recipe button (lg+; the page header has it below lg) */}
+          <div className="flex items-center justify-between gap-3 lg:border-t lg:border-border/50 lg:pt-3">
+            {/* Source/Tabs Pills — full-width segmented control on phones */}
+            <div className="flex flex-1 sm:flex-none min-w-0 gap-1 p-0.5 bg-muted border border-border rounded-lg">
               {[
-                { id: "my", label: t("allRecipes") },
-                { id: "public", label: t("publicRecipes") },
-                { id: "favorites", label: t("favorites") },
+                { id: "my", label: t("allRecipes"), shortLabel: t("tabsShort.my") },
+                { id: "public", label: t("publicRecipes"), shortLabel: t("tabsShort.public") },
+                { id: "favorites", label: t("favorites"), shortLabel: t("tabsShort.favorites") },
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -560,21 +611,23 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id as any)}
+                    aria-pressed={isActive}
                     className={cn(
-                      "px-3.5 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 cursor-pointer",
+                      "flex-1 sm:flex-none min-w-0 truncate px-2 sm:px-3.5 py-2 sm:py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 cursor-pointer",
                       isActive
                         ? "bg-card text-brand-500 shadow-sm"
                         : "bg-transparent text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    {tab.label}
+                    <span className="sm:hidden">{tab.shortLabel}</span>
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Layout switcher + Add button */}
-            <div className="flex items-center gap-3 justify-end w-full sm:w-auto">
+            {/* Layout switcher + Add button (phones get the view switch inside the filters drawer) */}
+            <div className="hidden sm:flex items-center gap-3 shrink-0">
               <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
                 {(
                   [
@@ -583,18 +636,21 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                   ] as const
                 ).map(({ id, Icon: LIcon }) => {
                   const isActive = viewMode === id;
+                  const label = id === "grid" ? t("gridView") : t("listView");
                   return (
                     <button
                       key={id}
                       type="button"
                       onClick={() => setViewMode(id)}
+                      aria-pressed={isActive}
+                      aria-label={label}
                       className={cn(
                         "flex items-center justify-center p-2 rounded-md transition-all duration-150 cursor-pointer",
                         isActive
                           ? "bg-card text-brand-500 shadow-sm"
                           : "bg-transparent text-muted-foreground hover:text-foreground"
                       )}
-                      title={id === "grid" ? "Grid view" : "List view"}
+                      title={label}
                     >
                       <LIcon className="w-4 h-4" />
                     </button>
@@ -602,7 +658,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 })}
               </div>
 
-              <AddRecipeButton label={t("addRecipe")} className="flex-shrink-0" />
+              <AddRecipeButton label={t("addRecipe")} className="hidden lg:inline-flex flex-shrink-0" />
             </div>
           </div>
         </div>
@@ -610,8 +666,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
       {/* Results summary */}
       {!loading && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 text-sm text-muted-foreground">
             {totalCount > 0 ? (
               <span>
                 {t("showing")}{" "}
@@ -622,37 +678,50 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 {t("of")}{" "}
                 <span className="font-medium text-foreground">{totalCount}</span>{" "}
                 {t("recipesCount")}
-                {activeTab === "favorites" && (
-                  <Badge variant="gold" className="ml-2 text-[10px]">
-                    {t("favorites")}
-                  </Badge>
-                )}
-                {activeTab === "public" && (
-                  <Badge variant="secondary" className="ml-2 text-[10px]">
-                    {t("publicRecipes")}
-                  </Badge>
-                )}
-                {selectedCategory !== "all" &&
-                  categories.find((c) => c.id === selectedCategory) && (
-                    <Badge variant="brand" className="ml-2 text-[10px]">
-                      {categories.find((c) => c.id === selectedCategory)?.slug && t.has(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`)
-                        ? t(`categoryNames.${categories.find((c) => c.id === selectedCategory)?.slug}`)
-                        : categories.find((c) => c.id === selectedCategory)?.name}
-                    </Badge>
-                  )}
-                {selectedDifficulty !== "all" && (
-                  <Badge variant="secondary" className="ml-2 text-[10px] capitalize">
-                    {t(`difficulty.${selectedDifficulty}`)}
-                  </Badge>
-                )}
               </span>
             ) : (
               <span className="text-muted-foreground">{t("noRecipesFoundTitle")}</span>
             )}
+            {activeTab === "favorites" && (
+              <Badge variant="gold" className="text-[10px]">
+                {t("favorites")}
+              </Badge>
+            )}
+            {activeTab === "public" && (
+              <Badge variant="secondary" className="text-[10px]">
+                {t("publicRecipes")}
+              </Badge>
+            )}
+            {/* Active filters as removable chips — the only visible trace of
+                drawer filters on mobile, so each one can be cleared in one tap */}
+            {selectedCategoryData && (
+              <Badge variant="brand" asChild className="text-[10px] py-1 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory("all")}
+                  aria-label={t("filters.removeFilter", { name: getCategoryLabel(selectedCategoryData) })}
+                >
+                  {getCategoryLabel(selectedCategoryData)}
+                  <X />
+                </button>
+              </Badge>
+            )}
+            {selectedDifficulty !== "all" && (
+              <Badge variant="secondary" asChild className="text-[10px] py-1 capitalize">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDifficulty("all")}
+                  aria-label={t("filters.removeFilter", { name: t(`difficulty.${selectedDifficulty}`) })}
+                >
+                  {t(`difficulty.${selectedDifficulty}`)}
+                  <X />
+                </button>
+              </Badge>
+            )}
           </div>
 
-          {/* Items per page selector */}
-          <div className="flex items-center gap-2">
+          {/* Items per page selector (inside the filters drawer below lg) */}
+          <div className="hidden lg:flex items-center gap-2">
             <span className="text-xs text-muted-foreground">{t("show")}</span>
             <Select
               value={itemsPerPage.toString()}
@@ -662,10 +731,11 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="8">8</SelectItem>
-                <SelectItem value="12">12</SelectItem>
-                <SelectItem value="24">24</SelectItem>
-                <SelectItem value="48">48</SelectItem>
+                {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option.toString()}>
+                    {option}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <span className="text-xs text-muted-foreground">{t("perPage")}</span>
@@ -677,7 +747,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
       {recipes.length === 0 ? (
         <div
           className={cn(
-            "text-center py-16 px-8 rounded-2xl",
+            "text-center py-12 px-5 sm:py-16 sm:px-8 rounded-2xl",
             "bg-muted/30 border border-dashed border-border"
           )}
         >
@@ -714,8 +784,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
         <>
           <div className={cn(
             viewMode === "list"
-              ? "flex flex-col gap-4"
-              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              ? "flex flex-col gap-3 sm:gap-4"
+              : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
           )}>
             {recipes.map((recipe) => (
               <RecipeCard key={recipe.id} recipe={recipe} showAuthor={activeTab === "public"} viewMode={viewMode} />
@@ -724,21 +794,48 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
           {/* Enhanced Pagination */}
           {totalPages > 1 && (
-            <div
+            <nav
+              aria-label={t("pagination")}
               className={cn(
-                "flex flex-col sm:flex-row justify-center items-center gap-4 mt-10 pt-8",
+                "flex flex-col sm:flex-row justify-center items-center gap-4 mt-8 pt-6 sm:mt-10 sm:pt-8",
                 "border-t border-border/30"
               )}
             >
-              <div className="flex items-center gap-1">
+              {/* Phones: compact previous / "Page X of Y" / next */}
+              <div className="flex w-full items-center justify-between gap-2 sm:hidden">
+                <Button
+                  variant="outline"
+                  onClick={() => goToPage(Math.max(1, page - 1))}
+                  disabled={page === 1 || isPending}
+                  className="h-10 rounded-lg border-border/50 px-3"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {t("previous")}
+                </Button>
+                <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap" aria-current="page">
+                  {t("pageOf", { current: page, total: totalPages })}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => goToPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages || isPending}
+                  className="h-10 rounded-lg border-border/50 px-3"
+                >
+                  {t("next")}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-1">
                 {/* First page button */}
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setPage(1)}
+                  onClick={() => goToPage(1)}
                   disabled={page === 1 || isPending}
                   className="h-9 w-9 rounded-lg border-border/50"
-                  title="First page"
+                  title={t("firstPage")}
+                  aria-label={t("firstPage")}
                 >
                   <ChevronsLeft className="h-4 w-4" />
                 </Button>
@@ -747,10 +844,11 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => goToPage(Math.max(1, page - 1))}
                   disabled={page === 1 || isPending}
                   className="h-9 w-9 rounded-lg border-border/50"
-                  title="Previous page"
+                  title={t("previous")}
+                  aria-label={t("previous")}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -770,8 +868,9 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                         key={pageNum}
                         variant={page === pageNum ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setPage(Number(pageNum))}
+                        onClick={() => goToPage(Number(pageNum))}
                         disabled={isPending}
+                        aria-current={page === pageNum ? "page" : undefined}
                         className={cn(
                           "h-9 min-w-[2.25rem] rounded-lg",
                           page === pageNum
@@ -789,10 +888,11 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => goToPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages || isPending}
                   className="h-9 w-9 rounded-lg border-border/50"
-                  title="Next page"
+                  title={t("next")}
+                  aria-label={t("next")}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -801,10 +901,11 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setPage(totalPages)}
+                  onClick={() => goToPage(totalPages)}
                   disabled={page === totalPages || isPending}
                   className="h-9 w-9 rounded-lg border-border/50"
-                  title="Last page"
+                  title={t("lastPage")}
+                  aria-label={t("lastPage")}
                 >
                   <ChevronsRight className="h-4 w-4" />
                 </Button>
@@ -812,8 +913,8 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
 
               {/* Go to page input */}
               {totalPages > 10 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Go to:</span>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t("goToPage")}</span>
                   <Input
                     type="number"
                     min={1}
@@ -834,7 +935,7 @@ export function RecipesList({ initialViewMode = "grid" }: { initialViewMode?: "g
                   />
                 </div>
               )}
-            </div>
+            </nav>
           )}
         </>
       )}

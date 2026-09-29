@@ -438,7 +438,45 @@
     },
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
+    "pageOf": "Page {current} of {total}",
+    "pagination": "Pagination",
+    "firstPage": "First page",
+    "lastPage": "Last page",
+    "goToPage": "Go to:",
+    "libraryEyebrow": "Recipe Library",
+    "gridView": "Grid",
+    "listView": "List",
+    "totalTime": "Total",
+    "addToPlan": "Add to Plan",
+    "tabsShort": {
+      "my": "Mine",
+      "public": "Public",
+      "favorites": "Favorites"
+    },
+    "filters": {
+      "title": "Filters",
+      "description": "Narrow down and arrange your recipes.",
+      "category": "Category",
+      "difficulty": "Difficulty",
+      "view": "View",
+      "perPage": "Recipes per page",
+      "clear": "Clear",
+      "showResults": "Show {count, plural, =0 {results} one {# recipe} other {# recipes}}",
+      "removeFilter": "Remove filter: {name}"
+    },
+    "search": {
+      "clear": "Clear search",
+      "searching": "Searching...",
+      "suggestions": "Suggestions",
+      "recent": "Recent searches",
+      "clearRecent": "Clear",
+      "noSuggestions": "No suggestions found",
+      "type": {
+        "title": "Recipe",
+        "tag": "Tag",
+        "category": "Category"
+      }
+    },
     "loadError": "Failed to load recipes",
     "favoriteAdded": "Added to favorites",
     "favoriteRemoved": "Removed from favorites",

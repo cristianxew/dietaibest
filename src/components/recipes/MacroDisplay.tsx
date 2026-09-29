@@ -35,7 +35,7 @@ export function MacroDisplay({
 
   return (
     <div className="bg-card border border-border/60 rounded-2xl overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-border/40 flex items-center justify-between">
+      <div className="p-4 border-b border-border/40 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h3 className="font-display font-bold text-lg text-foreground">
           {t("nutrition", { fallback: "Nutrition Facts" })}
         </h3>
@@ -47,7 +47,7 @@ export function MacroDisplay({
 
       <div className="grid grid-cols-4 divide-x divide-border/40">
         <div className="flex flex-col items-center justify-center py-5 bg-brand-50/40 dark:bg-brand-900/10">
-          <span className="font-bold text-2xl text-brand-600 dark:text-brand-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums text-brand-600 dark:text-brand-400">
             {displayCals.toFixed(0)}
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-brand-600/70 dark:text-brand-400/70 mt-0.5">
@@ -55,7 +55,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-sage-50/40 dark:bg-sage-900/10">
-          <span className="font-bold text-2xl text-sage-600 dark:text-sage-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums text-sage-600 dark:text-sage-400">
             {protein.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-sage-600/70 dark:text-sage-400/70 mt-0.5">
@@ -63,7 +63,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-gold-50/40 dark:bg-gold-900/10">
-          <span className="font-bold text-2xl text-gold-600 dark:text-gold-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums text-gold-600 dark:text-gold-400">
             {carbs.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-gold-600/70 dark:text-gold-400/70 mt-0.5">
@@ -71,7 +71,7 @@ export function MacroDisplay({
           </span>
         </div>
         <div className="flex flex-col items-center justify-center py-5 bg-stone-50 dark:bg-stone-900/20">
-          <span className="font-bold text-2xl text-stone-600 dark:text-stone-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums text-stone-600 dark:text-stone-400">
             {fat.toFixed(0)}g
           </span>
           <span className="text-[9px] font-bold uppercase tracking-wider text-stone-600/70 dark:text-stone-400/70 mt-0.5">

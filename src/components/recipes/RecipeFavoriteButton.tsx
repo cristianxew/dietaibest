@@ -14,6 +14,8 @@ interface RecipeFavoriteButtonProps {
   showText?: boolean;
   compact?: boolean;
   className?: string;
+  /** Lets callers hide the text label responsively (it stays the accessible name). */
+  labelClassName?: string;
 }
 
 export function RecipeFavoriteButton({
@@ -22,6 +24,7 @@ export function RecipeFavoriteButton({
   showText = false,
   compact = false,
   className,
+  labelClassName,
 }: RecipeFavoriteButtonProps) {
   const t = useTranslations("recipes");
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
@@ -60,14 +63,11 @@ export function RecipeFavoriteButton({
       className={cn(showText && !compact ? "w-full" : "", className)}
       onClick={handleToggleFavorite}
       disabled={isToggling}
+      aria-label={label}
+      aria-pressed={isFavorited}
     >
-      <Heart
-        className={cn(
-          showText ? "h-4 w-4 mr-2" : "h-4 w-4",
-          isFavorited && "fill-current"
-        )}
-      />
-      {showText && label}
+      <Heart className={cn("h-4 w-4", isFavorited && "fill-current")} />
+      {showText && <span className={labelClassName}>{label}</span>}
     </Button>
   );
 }
