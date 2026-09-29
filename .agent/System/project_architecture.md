@@ -1,6 +1,6 @@
 # DietAI - Project Architecture
 
-**Last Updated:** 2026-06-24
+**Last Updated:** 2026-09-29
 
 ## Related Documentation
 - [Database Schema](./database_schema.md)
@@ -478,6 +478,11 @@ discontinued 2026-06-14.
 **Features:**
 - Vision-based recipe extraction (ingredients + instructions) from images
 - Daily per-user cap (`src/lib/chat/multimodal-cap.ts`)
+
+**Models (Vertex, default per module — see [Gemini 3 migration](../Tasks/gemini-3-migration.md)):**
+- `gemini-3.5-flash-lite` — recipe import (`llm-gemma.ts`) + ingredient canonicalizer (`ingredient-canonicalizer.ts`)
+- `gemini-3.5-flash` — nutrition Stage-2 food/portion selection (`recipe-analyzer.ts`)
+- `GEMMA_MODEL` overrides **all three** at once — leave it unset in prod
 
 **Implementation:** `src/lib/chat/llm-gemma.ts`, `src/lib/chat/tools/importRecipeFromImage.ts`
 

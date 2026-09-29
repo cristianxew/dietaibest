@@ -15,7 +15,9 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { buildGenAIVertexOptions } from "./chat/tools/genai-options";
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+// Gemini 2.5 Flash is retiring on Vertex (shutdown 2027-03-31). Name
+// normalization is a light task, so Flash-Lite (priced like 2.5 Flash) is enough.
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 /** Per-100g macro estimate for a food USDA does not carry. */
 export interface MacroEstimate {
