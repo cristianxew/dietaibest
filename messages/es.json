@@ -751,8 +751,12 @@
       "noMealsPlanned": "No hay comidas planificadas para este día",
       "moreSchedules": "+{count} más",
       "yourMealPlans": "Tus Planes de Comidas",
-      "dragInstruction": "Arrastra planes de comidas a las fechas del calendario para programarlos",
-      "dragInstructionTouch": "Mantén pulsado un plan de comidas y arrástralo a una fecha del calendario",
+      "clickOrDragInstruction": "Haz clic en un día para programar un plan, o arrastra un plan a una fecha",
+      "tapOrDragInstruction": "Toca un día para programar un plan, o mantén pulsado un plan y arrástralo a una fecha",
+      "pickPlanTitle": "Programar un plan de comidas",
+      "pickPlanStarting": "Comienza el {date}",
+      "pickPlanEmpty": "Todavía no tienes planes de comidas. Crea uno primero y luego prográmalo aquí.",
+      "scheduleOnDay": "Programar un plan de comidas el {date}",
       "noPlansAvailable": "No hay planes de comidas disponibles",
       "today": "Hoy",
       "scheduledLegend": "Programado (coloreado por plan de comidas)",
@@ -781,6 +785,11 @@
       "noMealsForDay": "Sin comidas asignadas para este día."
     },
     "generateWithAI": "Generá con IA",
+    "tabs": {
+      "plannerShort": "Planes",
+      "calendarShort": "Calendario",
+      "discoverShort": "Comunidad"
+    },
     "aiGeneratePrompt": "Generá un plan de comidas para mí",
     "dragToSlot": "Arrastrá a un slot del plan",
     "holdToDrag": "Mantén pulsada una receta y arrástrala a un slot",
@@ -823,6 +832,13 @@
       "compact": "Compacto"
     },
     "showServings": "Mostrar Porciones",
+    "viewOptions": {
+      "title": "Opciones de vista",
+      "description": "Elige cómo se muestra tu plan de comidas.",
+      "layout": "Diseño",
+      "density": "Densidad",
+      "done": "Listo"
+    },
     "slot": {
       "dragToMove": "Arrastra para mover comida",
       "removeMeal": "Eliminar comida",
