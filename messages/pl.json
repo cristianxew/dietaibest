@@ -433,7 +433,45 @@
     },
     "previous": "Poprzednia",
     "next": "Następna",
-    "pageOf": "Strona {{current}} z {{total}}",
+    "pageOf": "Strona {current} z {total}",
+    "pagination": "Paginacja",
+    "firstPage": "Pierwsza strona",
+    "lastPage": "Ostatnia strona",
+    "goToPage": "Przejdź do:",
+    "libraryEyebrow": "Biblioteka przepisów",
+    "gridView": "Siatka",
+    "listView": "Lista",
+    "totalTime": "Razem",
+    "addToPlan": "Dodaj do planu",
+    "tabsShort": {
+      "my": "Moje",
+      "public": "Publiczne",
+      "favorites": "Ulubione"
+    },
+    "filters": {
+      "title": "Filtry",
+      "description": "Zawęź i uporządkuj swoje przepisy.",
+      "category": "Kategoria",
+      "difficulty": "Poziom trudności",
+      "view": "Widok",
+      "perPage": "Przepisów na stronę",
+      "clear": "Wyczyść",
+      "showResults": "Pokaż {count, plural, =0 {wyniki} one {# przepis} few {# przepisy} many {# przepisów} other {# przepisu}}",
+      "removeFilter": "Usuń filtr: {name}"
+    },
+    "search": {
+      "clear": "Wyczyść wyszukiwanie",
+      "searching": "Szukam...",
+      "suggestions": "Sugestie",
+      "recent": "Ostatnie wyszukiwania",
+      "clearRecent": "Wyczyść",
+      "noSuggestions": "Nie znaleziono sugestii",
+      "type": {
+        "title": "Przepis",
+        "tag": "Tag",
+        "category": "Kategoria"
+      }
+    },
     "loadError": "Błąd ładowania przepisów",
     "favoriteAdded": "Dodano do ulubionych",
     "favoriteRemoved": "Usunięto z ulubionych",

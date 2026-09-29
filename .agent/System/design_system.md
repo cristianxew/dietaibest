@@ -434,6 +434,8 @@ import { ThemeToggleSimple } from "@/components/ui/ThemeToggle";
 4. **Use gold sparingly** - For premium badges and special highlights only
 5. **Use the font-display class** for headings (Playfair Display)
 6. **Test in both themes** before committing changes
+7. **Make hover-revealed actions touch-safe** - Tailwind v4 only applies `hover:`/`group-hover:` on devices that can hover, so pair them with `pointer-coarse:` variants (e.g. `pointer-coarse:opacity-100 pointer-coarse:pointer-events-auto`) or hide the action on touch and expose it elsewhere. See [recipes responsive pass](../Tasks/recipes_responsive_mobile.md)
+8. **Use `text-base` (16px) inputs on touch screens** - smaller text makes iOS Safari zoom on focus (`text-base lg:text-sm`)
 
 ### DON'T:
 1. **Don't overuse the primary coral** - Use secondary and muted styles for less important elements

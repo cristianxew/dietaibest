@@ -83,6 +83,12 @@ const difficultyBadgeClass: Record<string, string> = {
   hard: "border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400",
 };
 
+const statCellClass =
+  "flex flex-1 sm:flex-none flex-col items-center justify-center min-w-0 sm:min-w-[80px] px-2 sm:px-6 py-3";
+const statValueClass = "font-bold text-lg sm:text-xl text-foreground tabular-nums";
+const statLabelClass =
+  "max-w-full truncate text-[10px] font-bold uppercase tracking-wide sm:tracking-wider text-muted-foreground mt-0.5";
+
 const getCategoryStyles = (categoryName?: string) => {
   const n = categoryName?.toLowerCase() || '';
   if (n.includes('breakfast')) {
@@ -233,22 +239,22 @@ export function RecipeDetailClient({
   };
 
   return (
-    <PageContainer>
+    <PageContainer className="px-4 py-5 sm:p-6 lg:p-10">
       <Link
         href={`/${locale}/recipes`}
-        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-8"
+        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-5 sm:mb-8"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t("backToRecipes")}
       </Link>
 
       {/* Top Section: Image + Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-start mb-8 lg:mb-10">
 
         {/* Image Column */}
         <div className="lg:col-span-5">
           {showImage ? (
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-xl shadow-stone-900/5 border border-black/5 dark:border-white/10 group">
+            <div className="relative aspect-[16/10] lg:aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-xl shadow-stone-900/5 border border-black/5 dark:border-white/10 group">
               <Image
                 src={currentImageUrl!}
                 alt={recipe.title}
@@ -258,7 +264,7 @@ export function RecipeDetailClient({
                 onError={() => setImageError(true)}
               />
               {isOwner && (
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-10">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-10">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -289,15 +295,15 @@ export function RecipeDetailClient({
           ) : (
             <div
               className={cn(
-                "aspect-[4/3] w-full rounded-2xl border border-border/60 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 shadow-xl shadow-stone-900/5 group",
+                "aspect-[16/10] lg:aspect-[4/3] w-full rounded-2xl border border-border/60 flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 shadow-xl shadow-stone-900/5 group",
                 styles.bg
               )}
               style={{
                 backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(0,0,0,0.02) 15px, rgba(0,0,0,0.02) 30px)`
               }}
             >
-              <div className="flex flex-col items-center gap-4 text-center z-10 p-6 group-hover:scale-95 transition-transform duration-300">
-                <div className={cn("h-16 w-16 rounded-full flex items-center justify-center bg-background border border-border/40 shadow-sm transition-transform duration-300 hover:scale-105", styles.text)}>
+              <div className="flex flex-col items-center gap-3 sm:gap-4 text-center z-10 p-6 group-hover:scale-95 transition-transform duration-300">
+                <div className={cn("h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center bg-background border border-border/40 shadow-sm transition-transform duration-300 hover:scale-105", styles.text)}>
                   <ChefHat className="h-8 w-8" />
                 </div>
                 <div className="space-y-1">
@@ -311,7 +317,7 @@ export function RecipeDetailClient({
               </div>
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/5" />
               {isOwner && (
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-20">
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 transition-opacity duration-300 flex items-center gap-2 z-20">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -394,7 +400,7 @@ export function RecipeDetailClient({
           </div>
 
           {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground leading-[1.1]">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-foreground leading-[1.1] break-words">
             {recipe.title}
           </h1>
 
@@ -407,45 +413,44 @@ export function RecipeDetailClient({
 
           {/* Description */}
           {recipe.description && (
-            <p className="text-base text-muted-foreground leading-relaxed">
+            <p className="text-[15px] sm:text-base text-muted-foreground leading-relaxed">
               {recipe.description}
             </p>
           )}
 
-          {/* Time Stats Bar */}
-          <div className="flex items-stretch bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm divide-x divide-border/60 w-fit">
+          {/* Time Stats Bar — equal-width cells spanning the row on phones */}
+          <div className="flex items-stretch w-full sm:w-fit bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm divide-x divide-border/60">
             {recipe.prepTime !== null && (
-              <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-bold text-xl text-foreground">{recipe.prepTime}m</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("prepTime")}</span>
+              <div className={statCellClass}>
+                <span className={statValueClass}>{recipe.prepTime}m</span>
+                <span className={statLabelClass}>{t("prepTime")}</span>
               </div>
             )}
             {recipe.cookTime !== null && (
-              <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-bold text-xl text-foreground">{recipe.cookTime}m</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("cookTime")}</span>
+              <div className={statCellClass}>
+                <span className={statValueClass}>{recipe.cookTime}m</span>
+                <span className={statLabelClass}>{t("cookTime")}</span>
               </div>
             )}
             {totalTime > 0 && (
-              <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-                <span className="font-bold text-xl text-foreground">{totalTime}m</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">Total</span>
+              <div className={statCellClass}>
+                <span className={statValueClass}>{totalTime}m</span>
+                <span className={statLabelClass}>{t("totalTime")}</span>
               </div>
             )}
-            <div className="flex flex-col items-center justify-center px-6 py-3 min-w-[80px]">
-              <span className="font-bold text-xl text-foreground">{selectedPortions}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{t("servings")}</span>
+            <div className={statCellClass}>
+              <span className={statValueClass}>{selectedPortions}</span>
+              <span className={statLabelClass}>{t("servings")}</span>
             </div>
           </div>
 
-
-
           {/* Adjust Servings */}
-          <div className="flex items-center justify-between bg-card border border-border/60 rounded-xl px-5 py-3.5 shadow-sm">
+          <div className="flex items-center justify-between gap-3 bg-card border border-border/60 rounded-xl px-4 sm:px-5 py-3 sm:py-3.5 shadow-sm">
             <span className="text-sm font-bold text-foreground">{t("portions.adjustServings")}</span>
             <div className="flex items-center gap-2">
               <button
-                className="h-8 w-8 rounded-lg border border-border/80 flex items-center justify-center text-foreground hover:bg-accent transition-colors disabled:opacity-40"
+                type="button"
+                className="h-9 w-9 sm:h-8 sm:w-8 rounded-lg border border-border/80 flex items-center justify-center text-foreground hover:bg-accent transition-colors disabled:opacity-40"
                 onClick={() => setSelectedPortions((p) => Math.max(1, p - 1))}
                 disabled={selectedPortions <= 1}
               >
@@ -455,7 +460,8 @@ export function RecipeDetailClient({
                 {selectedPortions}
               </span>
               <button
-                className="h-8 w-8 rounded-lg border border-border/80 flex items-center justify-center text-foreground hover:bg-accent transition-colors disabled:opacity-40"
+                type="button"
+                className="h-9 w-9 sm:h-8 sm:w-8 rounded-lg border border-border/80 flex items-center justify-center text-foreground hover:bg-accent transition-colors disabled:opacity-40"
                 onClick={() => setSelectedPortions((p) => Math.min(20, p + 1))}
                 disabled={selectedPortions >= 20}
               >
@@ -464,20 +470,22 @@ export function RecipeDetailClient({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Action Buttons — on phones the favorite toggle is icon-only so the primary action gets the room */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <RecipeFavoriteButton
               recipeId={recipe.id}
               initialFavorited={isFavorited}
               showText
               compact
+              className="size-9 has-[>svg]:px-0 sm:w-auto sm:has-[>svg]:px-3"
+              labelClassName="hidden sm:inline"
             />
             <Button
-              className="bg-brand-500 hover:bg-brand-600 text-white border-0"
+              className="flex-1 sm:flex-none min-w-0 bg-brand-500 hover:bg-brand-600 text-white border-0"
               disabled
             >
-              <Star className="h-4 w-4 mr-2" />
-              Add to Plan
+              <Star className="h-4 w-4" />
+              <span className="truncate">{t("addToPlan")}</span>
             </Button>
             {isOwner && (
               <>
@@ -486,6 +494,7 @@ export function RecipeDetailClient({
                   size="icon"
                   className="h-9 w-9 shrink-0"
                   onClick={() => openEdit(recipe.id, recipeToFormData(recipe))}
+                  aria-label={t("editRecipe")}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -514,7 +523,7 @@ export function RecipeDetailClient({
                     href={sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary truncate max-w-[200px]"
+                    className="text-primary hover:text-primary/80 font-medium transition-colors border-b border-primary/30 hover:border-primary truncate min-w-0 max-w-[200px]"
                   >
                     {hostname}
                   </a>

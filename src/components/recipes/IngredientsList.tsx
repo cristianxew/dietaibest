@@ -32,9 +32,9 @@ export function IngredientsList({ ingredients, multiplier = 1 }: IngredientsList
       {ingredientsList.map((ingredient: Ingredient, index: number) => {
         const scaledAmount = parseFloat((ingredient.amount * multiplier).toFixed(2));
         return (
-          <li key={index} className="flex items-start gap-4 py-3.5 border-b border-border/50 last:border-0 relative">
+          <li key={index} className="flex items-start gap-3 sm:gap-4 py-3 sm:py-3.5 border-b border-border/50 last:border-0 relative">
             <div className="w-2 h-2 rounded-full bg-brand-500 shrink-0 mt-1.5" />
-            <span className="flex-1 flex flex-wrap items-baseline gap-x-1.5 text-base">
+            <span className="flex-1 min-w-0 flex flex-wrap items-baseline gap-x-1.5 text-[15px] sm:text-base">
               <span className="font-bold text-foreground tabular-nums">{scaledAmount}</span>
               <span className="font-medium text-foreground">{ingredient.unit}</span>
               <span className="text-muted-foreground ml-1">{ingredient.name}</span>
