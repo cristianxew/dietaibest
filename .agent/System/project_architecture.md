@@ -479,7 +479,7 @@ discontinued 2026-06-14.
 - Vision-based recipe extraction (ingredients + instructions) from images
 - Daily per-user cap (`src/lib/chat/multimodal-cap.ts`)
 
-**Models (Vertex, default per module — see [Gemini 3 migration](../Tasks/gemini-3-migration.md)):**
+**Models (Vertex, default per module):**
 - `gemini-3.5-flash-lite` — recipe import (`llm-gemma.ts`) + ingredient canonicalizer (`ingredient-canonicalizer.ts`)
 - `gemini-3.5-flash` — nutrition Stage-2 food/portion selection (`recipe-analyzer.ts`)
 - `GEMMA_MODEL` overrides **all three** at once — leave it unset in prod

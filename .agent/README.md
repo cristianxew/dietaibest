@@ -217,21 +217,6 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 
 ---
 
-#### [Gemini 2.5 → 3.5 migration](./Tasks/gemini-3-migration.md)
-**Purpose:** Move every Vertex Gemini caller off the retiring `gemini-2.5-flash` (public retirement 2026-10-20, shutdown 2027-03-31)
-
-**Contains:**
-- Retirement timeline from Google's notice, and which Gemini 3 targets were picked and why
-- Model per module: `gemini-3.5-flash-lite` (recipe import + canonicalizer), `gemini-3.5-flash` (recipe analyzer)
-- Gemini 3 notes: thought signatures (not needed), temperature, thinking level
-- Prod rollout checklist: **remove `GEMMA_MODEL`**, check the Vertex location, smoke tests
-
-**When to read:**
-- Changing which Gemini model a module uses, or setting `GEMMA_MODEL`
-- Debugging Vertex model-not-found / quality regressions after the switch
-
----
-
 #### [Public Sharing Feature](./Tasks/public-sharing-feature.md)
 **Purpose:** Public recipes & meal plans — discovery tabs, author identity, share links
 
@@ -438,7 +423,6 @@ bun dev
 **External APIs**
 - USDA FoodData Central (nutrition engine) � [Project Architecture - USDA FoodData Central](./System/project_architecture.md#1-usda-fooddata-central-api)
 - Browser-Use � [Project Architecture - Browser-Use Cloud](./System/project_architecture.md#2-browser-use-cloud-api)
-- Google Gemini (Vertex) models → [Gemini 2.5 → 3.5 migration](./Tasks/gemini-3-migration.md)
 
 **Database Questions**
 - Table structure � [Database Schema - Core Entities](./System/database_schema.md#core-entities)
