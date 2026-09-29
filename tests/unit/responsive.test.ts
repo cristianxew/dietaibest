@@ -61,6 +61,14 @@ describe("slot column classes", () => {
       expect(splitSlotCols(n).startsWith("grid-cols-1")).toBe(true);
     }
   });
+  it("keeps phones at one column so meal rows get the full width", () => {
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      for (const cols of [stackSlotCols(n), splitSlotCols(n)]) {
+        const narrowest = cols.split(" ").find((c) => c !== "grid-cols-1");
+        expect(narrowest?.startsWith("sm:")).toBe(true);
+      }
+    }
+  });
   it("uses four columns for four slots only from 768px", () => {
     expect(stackSlotCols(4)).toContain("min-[768px]:grid-cols-4");
     expect(splitSlotCols(4)).toContain("min-[768px]:grid-cols-4");

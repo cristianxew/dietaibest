@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { duplicateMealPlan, getPublicMealPlans } from "@/actions/meal-plan";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { RecipeThumb } from "./shared";
 
 type PublicPlansData = NonNullable<
@@ -110,7 +111,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className="p-4 bg-card border border-border rounded-xl flex flex-col gap-3"
+            className="min-w-0 p-3.5 lg:p-4 bg-card border border-border rounded-xl flex flex-col gap-2.5 lg:gap-3"
           >
             {/* Title + author */}
             <div>
@@ -186,10 +187,14 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
               </div>
             )}
 
+            {/* 36px below lg, with a hit slop that keeps the touch target at 44px */}
             <Button
               size="sm"
               variant="outline"
-              className="mt-auto gap-2 self-start touch:h-11 touch:px-4"
+              className={cn(
+                "mt-auto gap-2 self-start max-lg:h-9 max-lg:px-3.5 lg:touch:h-11 lg:touch:px-4",
+                "relative max-lg:after:absolute max-lg:after:-inset-1 max-lg:after:content-['']"
+              )}
               disabled={duplicatingId === plan.id}
               onClick={() => handleDuplicate(plan)}
             >

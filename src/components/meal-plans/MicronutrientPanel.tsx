@@ -59,17 +59,17 @@ export function MicronutrientPanel({
       )}
     >
       <AccordionItem value="micros" className="border-none">
-        <AccordionTrigger className="px-4 py-3.5 hover:no-underline">
-          <div className="flex items-center gap-2.5">
-            <span className="font-display font-bold text-base text-foreground">
+        <AccordionTrigger className="px-3.5 py-3 lg:px-4 lg:py-3.5 hover:no-underline">
+          <div className="flex items-center gap-2 lg:gap-2.5">
+            <span className="font-display font-bold text-[15px] lg:text-base text-foreground">
               {t("title")}
             </span>
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-xs lg:text-[11px] font-medium text-muted-foreground">
               {variant === "aggregate" ? t("dailyAverage") : t("perDay")}
             </span>
           </div>
         </AccordionTrigger>
-        <AccordionContent className="px-4 pb-5">
+        <AccordionContent className="px-3.5 pb-4 lg:px-4 lg:pb-5">
           {hasData ? (
             <div className="space-y-6">
               {groups.map((group) => (

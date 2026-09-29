@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Icon } from './icons';
 import { RecipeThumb, MacroBar, Chip } from './shared';
 import { cn } from '@/lib/utils';
+import { mealPlansReturnPath, recipeHref } from '@/lib/recipe-back-link';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import type { TemplateWithMealsAndSchedules } from '@/lib/meal-plan-adapter';
@@ -27,6 +28,7 @@ import {
 } from './layout-classes';
 import { MicronutrientPanel } from './MicronutrientPanel';
 import type { ReferenceIntakes } from '@/lib/nutrition-rda';
+import { useViewportTier } from '@/hooks/use-media-query';
 
 /* ── PlanSwitcher ──────────────────────────────── */
 interface PlanSwitcherProps {
@@ -49,7 +51,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
   };
 
   return (
-    <div className="flex flex-nowrap lg:flex-wrap gap-2.5 items-stretch overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain scrollbar-thin -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 pb-2 lg:pb-0">
+    <div className="flex flex-nowrap lg:flex-wrap gap-2.5 items-stretch overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain scrollbar-thin -mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0 pb-2 lg:pb-0">
       {templates.map(template => {
         const isActive = template.id === activeId;
         return (
@@ -57,28 +59,29 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
             key={template.id}
             onClick={() => onPick(template.id)}
             className={cn(
-              'min-w-[200px] shrink-0 snap-start px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200 ease-in-out',
+              // Fixed width so a long plan name wraps instead of widening the card
+              'w-[200px] sm:w-[240px] lg:w-[260px] shrink-0 snap-start p-3 lg:px-4 lg:py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200 ease-in-out',
               isActive
                 ? 'bg-muted border border-brand-500 shadow-[0_12px_20px_-8px_rgba(224,122,95,0.35),0_4px_12px_-2px_rgba(0,0,0,0.12),0_0_0_4px_rgba(224,122,95,0.1)]'
                 : 'bg-card border border-border shadow-none'
             )}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-start justify-between gap-2 mb-1.5 lg:mb-2">
               <div
                 className={cn(
-                  'font-display text-base font-semibold tracking-tight',
+                  'min-w-0 font-display text-base max-lg:text-[15px] max-lg:leading-snug font-semibold tracking-tight line-clamp-2 break-words',
                   isActive ? 'text-brand-500' : 'text-foreground'
                 )}
               >
                 {template.name}
               </div>
               {isActive && (
-                <div className="w-[18px] h-[18px] rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0 text-[#1C1A17]">
+                <div className="w-[18px] h-[18px] mt-0.5 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0 text-[#1C1A17]">
                   <Icon name="Check" size={11} />
                 </div>
               )}
             </div>
-            <div className="flex gap-3.5 text-[11px] touch:text-xs text-muted-foreground mb-2">
+            <div className="flex gap-3 lg:gap-3.5 text-[11px] touch:text-xs text-muted-foreground mb-2">
               <span className="flex items-center gap-1">
                 <Icon name="Clock" size={11} />{template.duration}d
               </span>
@@ -121,7 +124,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
       <button
         onClick={onCreate}
         className={cn(
-          'min-w-[140px] shrink-0 snap-start px-4 py-3.5',
+          'min-w-[120px] lg:min-w-[140px] shrink-0 snap-start p-3 lg:px-4 lg:py-3.5',
           'flex flex-col items-center justify-center gap-1.5',
           'bg-transparent border-[1.5px] border-dashed border-border rounded-xl cursor-pointer',
           'text-muted-foreground transition-all duration-150',
@@ -140,6 +143,8 @@ interface RecipeLibraryProps {
   dense?: boolean;
   searchQuery?: string;
   selectedCategory?: string;
+  /** Plan being edited; recipe links carry it so the recipe page can return to it. */
+  planId?: string | null;
 }
 
 type RecipeWithCategories = Recipe & { categories: RecipeCategory[] };
@@ -150,7 +155,7 @@ const difficultyBadgeClass: Record<string, string> = {
   hard: 'border-brand-300 text-brand-600 dark:border-brand-700 dark:text-brand-400',
 };
 
-function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; dense: boolean }) {
+function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCategories; dense: boolean; planId?: string | null }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `library-${recipe.id}`,
     data: {
@@ -334,7 +339,7 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; d
         {/* View full recipe link */}
         <div className="pt-2 border-t border-border/40 flex justify-end">
           <Link
-            href={`/${locale}/recipes/${recipe.id}`}
+            href={recipeHref(locale, recipe.id, mealPlansReturnPath(planId))}
             className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors inline-flex items-center gap-1"
           >
             <span>{t('viewFullRecipe', { fallback: 'View full recipe' })}</span>
@@ -346,7 +351,7 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; d
   );
 }
 
-export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategory = 'all' }: RecipeLibraryProps) {
+export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategory = 'all', planId }: RecipeLibraryProps) {
   const t = useTranslations('mealPlans');
   const [recipes, setRecipes] = useState<RecipeWithCategories[]>([]);
   const [loading, setLoading] = useState(true);
@@ -389,7 +394,7 @@ export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategor
           </div>
         ) : (
           filtered.map(r => (
-            <DraggableRecipeRow key={r.id} recipe={r} dense={dense} />
+            <DraggableRecipeRow key={r.id} recipe={r} dense={dense} planId={planId} />
           ))
         )}
       </div>
@@ -409,6 +414,13 @@ interface MealCellProps {
   compact?: boolean;
   showServings?: boolean;
   onViewRecipeDetail?: (id: string) => void;
+  /** Plan this cell belongs to; the phone row's recipe link carries it back. */
+  planId?: string;
+  /**
+   * `row` renders one flat horizontal row (thumb, name + macros, actions) for
+   * phones, where a bordered card per meal inside the day card wastes space.
+   */
+  variant?: 'card' | 'row';
 }
 
 export function MealCell({
@@ -422,8 +434,13 @@ export function MealCell({
   compact = false,
   showServings = false,
   onViewRecipeDetail,
+  planId,
+  variant = 'card',
 }: MealCellProps) {
   const t = useTranslations('mealPlans');
+  const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
   // Drop target: always active regardless of filled/empty
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `${dayId}:${mealType}`,
@@ -461,6 +478,46 @@ export function MealCell({
   // picker — the touch add path, since the drag library is hidden.
   // Desktop (no onSlotSelect): the original drop-target div, unchanged.
   if (!meal) {
+    if (variant === 'row') {
+      const rowClass = cn(
+        'w-full flex items-center gap-3 rounded-xl border-[1.5px] border-dashed px-2 text-left transition-all duration-150',
+        dense ? 'min-h-11 py-1' : 'min-h-12 py-1.5',
+        isOver
+          ? 'border-brand-500 bg-brand-500/5 text-brand-500'
+          : 'border-border bg-card/50 text-muted-foreground',
+      );
+      const rowContent = (
+        <>
+          <span className="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+            <Icon
+              name={isOver ? 'Sparkles' : 'Plus'}
+              size={14}
+              className={isOver ? 'text-brand-500' : 'text-muted-foreground'}
+            />
+          </span>
+          <span className={cn('text-[13px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground')}>
+            {isOver ? t('dropMealHere') : onSlotSelect ? t('tapToAdd') : t('dragOrSuggest')}
+          </span>
+        </>
+      );
+
+      return onSlotSelect ? (
+        <button
+          ref={setDropRef}
+          type="button"
+          onClick={() => onSlotSelect(dayId, mealType)}
+          aria-label={t('tapToAdd')}
+          className={cn(rowClass, 'cursor-pointer active:bg-muted/60')}
+        >
+          {rowContent}
+        </button>
+      ) : (
+        <div ref={setDropRef} className={rowClass}>
+          {rowContent}
+        </div>
+      );
+    }
+
     if (onSlotSelect) {
       return (
         <button
@@ -499,6 +556,115 @@ export function MealCell({
         <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
           {isOver ? t('dropMealHere') : t('dragOrSuggest')}
         </div>
+      </div>
+    );
+  }
+
+  const servingsStepper = (
+    <>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
+        className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
+        aria-label={t('slot.decreaseServings')}
+      >
+        <Icon name="Minus" size={10} />
+      </button>
+      <span className="text-[11px] touch:text-xs font-semibold text-foreground w-5 text-center tabular-nums">
+        {meal.servings}
+      </span>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
+        className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
+        aria-label={t('slot.increaseServings')}
+      >
+        <Icon name="Plus" size={10} />
+      </button>
+      <span className="text-[10px] touch:text-xs text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
+    </>
+  );
+
+  // Filled phone row: no border of its own (the day card already frames it).
+  // Tapping thumb + text opens the recipe page (drag starts from the same area
+  // on long-press); the 44px remove button shows a 32px circle.
+  if (variant === 'row') {
+    // router.push rather than an <a>: once a drag activates, dnd-kit stops the
+    // click from propagating (so this never runs), but it can't cancel an
+    // anchor's native navigation.
+    const openRecipe = meal.recipeId
+      ? () => router.push(recipeHref(locale, meal.recipeId!, mealPlansReturnPath(planId)))
+      : undefined;
+
+    const rowActionClass =
+      'flex size-11 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors cursor-pointer';
+    const rowActionCircle =
+      'flex size-8 items-center justify-center rounded-full border border-border/60 bg-card';
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={dragStyle}
+        className={cn(
+          'rounded-xl transition-all duration-150 select-none [-webkit-touch-callout:none]',
+          dense ? 'py-1 pl-1.5 pr-0.5' : 'py-1.5 pl-2 pr-0.5',
+          isOver ? 'bg-brand-500/5 ring-2 ring-brand-500/30' : 'bg-muted/40',
+        )}
+      >
+        <div className="flex items-center">
+          <div
+            className={cn(
+              'flex flex-1 min-w-0 items-center rounded-lg transition-opacity',
+              dense ? 'gap-2.5' : 'gap-3',
+              isDragging ? 'cursor-grabbing' : openRecipe ? 'cursor-pointer active:opacity-70' : 'cursor-grab',
+            )}
+            {...dragAttributes}
+            {...dragListeners}
+            onClick={openRecipe}
+            aria-label={openRecipe ? `${t('slot.viewRecipe')}: ${meal.recipeName}` : undefined}
+          >
+            <RecipeThumb
+              recipe={{ title: meal.recipeName, imageUrl: meal.recipeImage ?? null }}
+              size={dense ? 40 : 48}
+              radius={8}
+            />
+            <div className="flex-1 min-w-0">
+              <div
+                className={cn(
+                  'text-sm font-semibold text-foreground leading-snug break-words',
+                  dense ? 'line-clamp-1' : 'line-clamp-2',
+                )}
+              >
+                {meal.recipeName}
+              </div>
+              <div className={cn('flex gap-1.5 flex-wrap items-center', dense ? 'mt-0.5' : 'mt-1')}>
+                <Chip color="coral" size="xs">{meal.calories} kcal</Chip>
+                <Chip color="sage" size="xs">{meal.protein}g P</Chip>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onRemove(meal.id); }}
+            className={cn(rowActionClass, 'hover:text-destructive')}
+            aria-label={t('slot.removeMeal')}
+          >
+            <span className={rowActionCircle}>
+              <Icon name="X" size={15} />
+            </span>
+          </button>
+        </div>
+
+        {/* Servings stepper — its own line so the name keeps its width */}
+        {showServings && (
+          <div
+            className="flex items-center justify-end gap-2 pr-2.5 pb-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {servingsStepper}
+          </div>
+        )}
       </div>
     );
   }
@@ -627,26 +793,7 @@ export function MealCell({
               className="flex items-center gap-1 touch:gap-2 mt-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
-                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
-                aria-label={t('slot.decreaseServings')}
-              >
-                <Icon name="Minus" size={10} />
-              </button>
-              <span className="text-[11px] touch:text-xs font-semibold text-foreground w-5 text-center tabular-nums">
-                {meal.servings}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
-                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
-                aria-label={t('slot.increaseServings')}
-              >
-                <Icon name="Plus" size={10} />
-              </button>
-              <span className="text-[10px] touch:text-xs text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
+              {servingsStepper}
             </div>
           )}
         </>
@@ -766,6 +913,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange, onSl
               {template.days.map(day => (
                 <MealCell
                   key={day.id}
+                  planId={template.id}
                   meal={day.meals.find(m => m.mealType === slot)}
                   dayId={day.id}
                   mealType={slot}
@@ -815,34 +963,37 @@ interface LayoutProps {
 export function StackLayout({ template, density, onRemove, onServingsChange, onSlotSelect, showServings = false, reference, onViewRecipeDetail }: LayoutProps) {
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
+  // Phones get flat meal rows instead of a bordered card per meal
+  const cellVariant = useViewportTier() === 'phone' ? 'row' : 'card';
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-3 lg:gap-3.5">
       {template.days.map(day => {
         const numSlots = template.mealSlots.length;
         const colsClass = stackSlotCols(numSlots);
         return (
-          <div key={day.id} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-[18px]">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-3.5">
+          <div key={day.id} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-4 lg:p-[18px]">
+            <div className="flex flex-row items-start justify-between gap-3 sm:gap-4 mb-3 lg:mb-3.5">
               <div className="flex items-baseline gap-3">
-                <div className="font-display text-2xl font-semibold text-foreground tracking-tight">
+                <div className="font-display text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
                   {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
               <DayMacros macros={day.macros} targets={template.targets} compact />
             </div>
-            <div className={cn('grid gap-2.5', colsClass)}>
+            <div className={cn('grid', dense ? 'gap-2 lg:gap-2.5' : 'gap-2.5', colsClass)}>
               {template.mealSlots.map(slot => {
                 const meta = MEAL_SLOT_META[slot];
                 return (
                   <div key={slot}>
-                    <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className={cn('flex items-center gap-1.5', dense ? 'mb-1 lg:mb-1.5' : 'mb-1.5')}>
                       <Icon name={meta.iconName} size={12} className={meta.colorClass} />
                       <span className={cn('text-[10px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
                         {t(meta.i18nKey)}
                       </span>
                     </div>
                     <MealCell
+                      planId={template.id}
                       meal={day.meals.find(m => m.mealType === slot)}
                       dayId={day.id}
                       mealType={slot}
@@ -852,6 +1003,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
                       dense={dense}
                       showServings={showServings}
                       onViewRecipeDetail={onViewRecipeDetail}
+                      variant={cellVariant}
                     />
                   </div>
                 );
@@ -861,7 +1013,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
               variant="day"
               micros={day.micros}
               reference={reference}
-              className="mt-3.5"
+              className="mt-3 lg:mt-3.5"
             />
           </div>
         );
@@ -876,6 +1028,8 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
   const [selIdx, setSelIdx] = useState(0);
   useEffect(() => { setSelIdx(0); }, [template.id]);
   const dense = density === 'compact';
+  // Phones get flat meal rows instead of a bordered card per meal
+  const cellVariant = useViewportTier() === 'phone' ? 'row' : 'card';
   const selectedDay = template.days[selIdx] ?? template.days[0];
   const numSlots = template.mealSlots.length;
   const colsClass = splitSlotCols(numSlots);
@@ -883,7 +1037,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
   return (
     <div className="grid gap-3 lg:gap-[18px] items-start grid-cols-1 lg:grid-cols-[200px_1fr]">
       {/* Day rail */}
-      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain pb-2 lg:pb-0 lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10 scrollbar-thin -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain pb-2 lg:pb-0 lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10 scrollbar-thin -mx-4 px-4 scroll-px-4 sm:-mx-6 sm:px-6 sm:scroll-px-6 lg:mx-0 lg:px-0 lg:scroll-px-0">
         {template.days.map((day, i) => {
           const isActive = i === selIdx;
           const calTarget = template.targets?.calories ?? 2000;
@@ -896,18 +1050,18 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
               type="button"
               onClick={() => setSelIdx(i)}
               className={cn(
-                'flex-shrink-0 snap-start min-w-[130px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
+                'flex-shrink-0 snap-start min-w-[88px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2 lg:py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
                 isActive
                   ? 'bg-muted shadow-[inset_0_0_0_1.5px_theme(colors.brand.500)]'
                   : 'bg-transparent shadow-[inset_0_0_0_1px_theme(colors.border)]',
               )}
             >
-              <div className="flex items-baseline justify-between mb-1.5">
-                <div className="font-display text-[18px] font-semibold text-foreground">
+              <div className="flex items-baseline justify-between mb-1 lg:mb-1.5">
+                <div className="font-display text-[15px] leading-tight lg:text-[18px] lg:leading-normal font-semibold text-foreground whitespace-nowrap">
                   {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
-              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono mb-1.5">
+              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono whitespace-nowrap mb-1 lg:mb-1.5">
                 {Math.round(day.macros.calories)} kcal
               </div>
               <div className="h-[3px] bg-muted rounded-full overflow-hidden">
@@ -923,32 +1077,33 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
 
       {/* Day editor */}
       {selectedDay && (
-        <div className="bg-card border border-border rounded-[14px] p-4 sm:p-6 min-w-0">
-          <div className="flex items-start justify-between mb-5">
+        <div className="bg-card border border-border rounded-[14px] p-3.5 sm:p-5 lg:p-6 min-w-0">
+          <div className="flex items-start justify-between mb-3 lg:mb-5">
             <div>
               <div className="text-[11px] touch:text-xs font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
                 {template.name}
               </div>
-              <div className="font-display text-2xl sm:text-[30px] font-semibold text-foreground tracking-tight">
+              <div className="font-display text-xl sm:text-2xl lg:text-[30px] font-semibold text-foreground tracking-tight">
                 {t('calendar.dayNumber', { number: selectedDay.dayNumber })}
               </div>
             </div>
           </div>
-          <div className="mb-5">
+          <div className="mb-4 lg:mb-5">
             <DayMacros macros={selectedDay.macros} targets={template.targets} />
           </div>
-          <div className={cn('grid gap-3', colsClass)}>
+          <div className={cn('grid', dense ? 'gap-2 lg:gap-3' : 'gap-2.5 lg:gap-3', colsClass)}>
             {template.mealSlots.map(slot => {
               const meta = MEAL_SLOT_META[slot];
               return (
                 <div key={slot}>
-                  <div className="flex items-center gap-1.5 mb-2">
+                  <div className="flex items-center gap-1.5 mb-1.5 lg:mb-2">
                     <Icon name={meta.iconName} size={13} className={meta.colorClass} />
                     <span className={cn('text-[11px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
                       {t(meta.i18nKey)}
                     </span>
                   </div>
                   <MealCell
+                    planId={template.id}
                     meal={selectedDay.meals.find(m => m.mealType === slot)}
                     dayId={selectedDay.id}
                     mealType={slot}
@@ -958,6 +1113,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
                     dense={dense}
                     showServings={showServings}
                     onViewRecipeDetail={onViewRecipeDetail}
+                    variant={cellVariant}
                   />
                 </div>
               );
@@ -967,7 +1123,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
             variant="day"
             micros={selectedDay.micros}
             reference={reference}
-            className="mt-5"
+            className="mt-4 lg:mt-5"
           />
         </div>
       )}

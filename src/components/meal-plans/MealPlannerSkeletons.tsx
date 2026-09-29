@@ -19,7 +19,7 @@ export function PlanSwitcherSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="min-w-[200px] shrink-0 px-4 py-3.5 bg-card border border-border rounded-xl flex flex-col justify-between"
+          className="w-[200px] sm:w-[240px] lg:w-[260px] shrink-0 p-3 lg:px-4 lg:py-3.5 bg-card border border-border rounded-xl flex flex-col justify-between"
         >
           <div className="mb-3">
             {/* Title Line */}
@@ -44,7 +44,7 @@ export function PlanSwitcherSkeleton() {
       ))}
       <div
         className={cn(
-          "min-w-[140px] shrink-0 px-4 py-3.5",
+          "min-w-[120px] lg:min-w-[140px] shrink-0 p-3 lg:px-4 lg:py-3.5",
           "flex flex-col items-center justify-center gap-1.5",
           "bg-transparent border-[1.5px] border-dashed border-border rounded-xl opacity-60"
         )}
@@ -61,14 +61,14 @@ export function WeeklyMacroStripSkeleton() {
   return (
     <div
       className={cn(
-        "grid gap-x-3.5 gap-y-4 px-4 sm:px-[18px] py-3.5 animate-pulse",
+        "grid gap-x-3 gap-y-2.5 p-3.5 sm:gap-x-3.5 sm:gap-y-3 sm:p-4 lg:gap-y-4 lg:px-[18px] lg:py-3.5 animate-pulse",
         "grid-cols-2 sm:grid-cols-4 lg:grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
         "bg-card border border-border rounded-xl"
       )}
     >
       {/* Label block */}
-      <div className="flex flex-col justify-center col-span-2 sm:col-span-4 lg:col-span-1">
-        <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 mb-1.5" />
+      <div className="flex flex-row items-center justify-between lg:flex-col lg:items-start lg:justify-center col-span-2 sm:col-span-4 lg:col-span-1">
+        <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 lg:mb-1.5" />
         <Skeleton className="h-3 w-36 bg-stone-200 dark:bg-slate-800" />
       </div>
 
@@ -126,7 +126,9 @@ export function MealCellSkeleton({ dense = false, compact = false }: { dense?: b
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-border/70 bg-card/40 text-center animate-pulse",
-        compact ? "p-2.5 min-h-[64px]" : dense ? "p-2.5 min-h-[72px]" : "p-3.5 min-h-[88px]"
+        compact ? "p-2.5 min-h-[64px]" : dense ? "p-2.5 min-h-[72px]" : "p-3.5 min-h-[88px]",
+        // Phones render meals as short rows (MealCell variant="row")
+        "max-sm:min-h-14 max-sm:p-2"
       )}
     >
       <Skeleton className="w-4 h-4 rounded-full bg-stone-200 dark:bg-slate-800" />
@@ -223,7 +225,7 @@ export function StackLayoutSkeleton({ density }: { density: "regular" | "compact
   return (
     <div className="flex flex-col gap-3.5 animate-pulse">
       {[1, 2, 3].map((dayNum) => (
-        <div key={dayNum} className="bg-card border border-border rounded-[14px] p-[18px]">
+        <div key={dayNum} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-4 lg:p-[18px]">
           <div className="flex items-start justify-between mb-3.5 gap-4">
             <div className="flex items-baseline gap-3">
               <Skeleton className="h-6 w-20 bg-stone-200 dark:bg-slate-800" />
@@ -259,7 +261,7 @@ export function SplitLayoutSkeleton({ density }: { density: "regular" | "compact
         {[1, 2, 3, 4, 5].map((dayNum) => (
           <div
             key={dayNum}
-            className="flex-shrink-0 min-w-[130px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2.5 rounded-[10px] bg-transparent border border-border flex flex-col gap-1.5"
+            className="flex-shrink-0 min-w-[88px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2 lg:py-2.5 rounded-[10px] bg-transparent border border-border flex flex-col gap-1.5"
           >
             <Skeleton className="h-4 w-12 bg-stone-200 dark:bg-slate-800" />
             <Skeleton className="h-3 w-16 bg-stone-200 dark:bg-slate-800" />
@@ -269,7 +271,7 @@ export function SplitLayoutSkeleton({ density }: { density: "regular" | "compact
       </div>
 
       {/* Day editor pane */}
-      <div className="bg-card border border-border rounded-[14px] p-4 sm:p-6">
+      <div className="bg-card border border-border rounded-[14px] p-3.5 sm:p-5 lg:p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
             <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 mb-1" />

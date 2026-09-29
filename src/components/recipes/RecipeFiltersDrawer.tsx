@@ -15,6 +15,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { FilterChip, FilterSection } from "@/components/custom-ui/filter-chip";
 import { cn } from "@/lib/utils";
 
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
@@ -34,51 +35,6 @@ interface RecipeFiltersDrawerProps {
   onClear: () => void;
   totalCount: number;
   className?: string;
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-[13px] font-medium transition-colors",
-        active
-          ? "bg-brand-500 border-brand-500 text-white shadow-sm"
-          : "bg-card border-border/70 text-foreground/80 hover:border-brand-300 hover:text-foreground"
-      )}
-    >
-      {children}
-    </button>
-  );
-}
-
-function FilterSection({
-  title,
-  className,
-  children,
-}: {
-  title: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className={className}>
-      <h3 className="mb-2.5 font-sans text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h3>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </section>
-  );
 }
 
 /**

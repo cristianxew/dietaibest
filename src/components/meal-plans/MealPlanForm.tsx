@@ -357,6 +357,7 @@ export function MealPlanForm({
                     className="touch:h-11"
                     id="targetCalories"
                     type="number"
+                    inputMode="decimal"
                     placeholder="2000"
                     {...register("targetCalories", { valueAsNumber: true })}
                   />
@@ -372,6 +373,7 @@ export function MealPlanForm({
                     className="touch:h-11"
                     id="targetProtein"
                     type="number"
+                    inputMode="decimal"
                     placeholder="150"
                     {...register("targetProtein", { valueAsNumber: true })}
                   />
@@ -387,6 +389,7 @@ export function MealPlanForm({
                     className="touch:h-11"
                     id="targetCarbs"
                     type="number"
+                    inputMode="decimal"
                     placeholder="200"
                     {...register("targetCarbs", { valueAsNumber: true })}
                   />
@@ -402,6 +405,7 @@ export function MealPlanForm({
                     className="touch:h-11"
                     id="targetFat"
                     type="number"
+                    inputMode="decimal"
                     placeholder="65"
                     {...register("targetFat", { valueAsNumber: true })}
                   />

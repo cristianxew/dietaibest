@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useTransition, useCallback, useRef, useId } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import { RecipeDetailSheet } from "../recipes/RecipeDetailSheet";
+import { mealPlansReturnPath } from "@/lib/recipe-back-link";
 import {
   StyledTabs as Tabs,
   StyledTabsContent as TabsContent,
@@ -42,6 +44,7 @@ import { ScheduleCalendar } from "./ScheduleCalendar";
 import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
 import { MicronutrientPanel } from "./MicronutrientPanel";
 import { RecipePicker } from "./RecipePicker";
+import { ViewOptionsDrawer } from "./ViewOptionsDrawer";
 import type { ReferenceIntakes } from "@/lib/nutrition-rda";
 import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
@@ -76,6 +79,54 @@ import type {
 import { openChatWithPrompt } from "@/components/chat/openChat";
 import { useIsTouchFirst, useViewportTier } from "@/hooks/use-media-query";
 import { useHeightCssVar } from "@/hooks/use-height-css-var";
+import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
+
+/**
+ * Vertical hit slop so 36px controls below `lg` still give a 44px touch target.
+ * Switched off from `lg`, where the desktop controls keep their own sizing.
+ */
+const HIT_SLOP_Y =
+  "relative after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] lg:after:hidden";
+
+/** Tab triggers: recipes-style 36px segmented control below `lg`, StyledTabs look from `lg`. */
+const TAB_TRIGGER_CLASS = cn(
+  "flex-1 sm:flex-none min-w-0 whitespace-nowrap px-2 sm:px-3.5 lg:px-4 lg:touch:min-h-11",
+  "max-lg:py-2 max-lg:rounded-md max-lg:border-0 max-lg:text-[13px] max-lg:data-[state=active]:text-brand-500",
+  HIT_SLOP_Y
+);
+
+/**
+ * Sticky bar that slides away on scroll down and returns on scroll up below
+ * `lg` (the recipes toolbar pattern). It owns the hide state so scrolling
+ * re-renders only the bar, not the whole planner; `barRef` still receives the
+ * node for the `--planner-toolbar-h` measurement used on desktop.
+ */
+function HideOnScrollBar({
+  barRef,
+  disabled,
+  className,
+  children,
+}: {
+  barRef: RefObject<HTMLDivElement | null>;
+  disabled: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  const { ref, hidden } = useHideOnScroll({ disabled });
+  const setNode = useCallback(
+    (el: HTMLDivElement | null) => {
+      barRef.current = el;
+      ref(el);
+    },
+    [barRef, ref]
+  );
+
+  return (
+    <div ref={setNode} className={cn(className, hidden && "max-lg:-translate-y-full")}>
+      {children}
+    </div>
+  );
+}
 
 function updateTemplateServingsOptimistically(
   template: MealPlanTemplateDisplay,
@@ -153,9 +204,11 @@ function updateTemplateServingsOptimistically(
 interface MealPlannerProps {
   /** Micronutrient reference intakes (personalized or standard DV). */
   reference: ReferenceIntakes;
+  /** Optional banner rendered at the top of the planner's scroll area. */
+  banner?: React.ReactNode;
 }
 
-export function MealPlanner({ reference }: MealPlannerProps) {
+export function MealPlanner({ reference, banner }: MealPlannerProps) {
   const t = useTranslations("mealPlans");
   const searchParams = useSearchParams();
   const params = useParams();
@@ -190,11 +243,24 @@ export function MealPlanner({ reference }: MealPlannerProps) {
   const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
   const tier = useViewportTier();
   const touchFirst = useIsTouchFirst();
+  // Grid needs width, so phones fall back to Stack when Grid is stored; the
+  // stored choice comes back on wider tiers.
+  const effectiveLayout = tier === "phone" && layout === "grid" ? "stack" : layout;
   const [showRecipePanel, setShowRecipePanel] = useState(false);
+  const [viewOptionsOpen, setViewOptionsOpen] = useState(false);
   const servingsSwitchId = useId();
+  // The toolbar only hides below lg, and never while an overlay is open.
+  const toolbarPinned =
+    tier === "desktop" ||
+    showCreateDialog ||
+    pickerSlot !== null ||
+    selectedRecipeIdForDetail !== null ||
+    viewOptionsOpen;
 
   const sensors = useSensors(
-    useSensor(MouseSensor),
+    // A few px of movement before a mouse drag starts, so plain clicks (and the
+    // compatibility mouse events a phone fires after a tap) still reach onClick.
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor)
   );
@@ -546,11 +612,16 @@ export function MealPlanner({ reference }: MealPlannerProps) {
     loadCats();
   }, []);
 
-  // Honor ?selected=<id> from URL (e.g. deep link from chat after generateMealPlan)
+  // Honor ?selected=<id> from URL (deep link from chat after generateMealPlan, or
+  // "Back to Meal Plans" on a recipe page). Applied once per value: the param
+  // stays in the URL, so re-applying it whenever the selection changed would
+  // snap the user back to it after picking another plan.
+  const appliedSelectedParam = useRef<string | null>(null);
   useEffect(() => {
     const requested = searchParams.get("selected");
-    if (!requested || templates.length === 0 || selectedPlanId === requested) return;
-    if (templates.some((tpl) => tpl.id === requested)) {
+    if (!requested || templates.length === 0 || appliedSelectedParam.current === requested) return;
+    appliedSelectedParam.current = requested;
+    if (selectedPlanId !== requested && templates.some((tpl) => tpl.id === requested)) {
       handleSelectPlan(requested);
     }
   }, [searchParams, templates, selectedPlanId, handleSelectPlan]);
@@ -610,49 +681,105 @@ export function MealPlanner({ reference }: MealPlannerProps) {
         onValueChange={(v) => setActiveTab(v as "planner" | "calendar" | "discover")}
         className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative scrollbar-thin"
       >
-        {/* Hero Header */}
-        <div className="px-4 sm:px-6 lg:px-10 pt-5 sm:pt-6 lg:pt-8 bg-background">
-          <div className="flex flex-col gap-6 justify-between items-start pb-5">
-            <div className="space-y-3">
+        {banner}
+        {/* Hero Header — below lg the page actions sit here, right of the title
+            (recipes pattern); phones drop the icon badge and description */}
+        <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-8 bg-background">
+          <div className="flex items-end justify-between gap-4 pb-3 sm:pb-5">
+            <div className="min-w-0 space-y-0.5 sm:space-y-3">
               <div className="flex items-center gap-2">
-                <div className="w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] flex items-center justify-center flex-shrink-0">
+                <div className="hidden lg:flex w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] items-center justify-center flex-shrink-0">
                   <CalendarDays className="w-[15px] h-[15px] text-brand-500 dark:text-brand-600" />
                 </div>
-                <span className="text-xs font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
+                <span className="text-xs lg:font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
                   {t("mealPlanner")}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold text-foreground tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold lg:font-semibold text-foreground tracking-tight">
                 {t("title")}
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground max-w-lg leading-relaxed">
+              <p className="hidden sm:block text-base text-muted-foreground max-w-lg leading-relaxed">
                 {t("subtitle")}
               </p>
+            </div>
+
+            <div className="flex lg:hidden items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                aria-label={t("generateWithAI")}
+                className={cn(
+                  "relative after:absolute after:-inset-0.5 after:content-['']",
+                  "h-10 w-10 sm:w-auto has-[>svg]:px-0 sm:has-[>svg]:px-3.5 border-brand-300/60 dark:border-brand-500/30",
+                  "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
+                )}
+                onClick={handleGenerateWithAI}
+              >
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">{t("generateWithAI")}</span>
+              </Button>
+              <Button
+                onClick={() => setShowCreateDialog(true)}
+                className={cn(
+                  "relative after:absolute after:-inset-0.5 after:content-['']",
+                  "h-10 px-4 gap-1.5 shadow-sm bg-brand-500 hover:bg-brand-600 text-white transition-all"
+                )}
+                disabled={isPending}
+              >
+                <PlusIcon className="w-4 h-4 flex-shrink-0" />
+                {t("createPlan")}
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Tab nav */}
-        <div
-          ref={toolbarRef}
-          className="sm:sticky sm:top-0 z-30 px-4 sm:px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-stretch sm:items-center"
+        {/* Tab nav — sticky on every tier; below lg it is a full-bleed recipes-style
+            bar that hides on scroll down and returns on scroll up. Phones get the
+            planner view options in a drawer; the page actions live in the header
+            below lg and at the end of this bar from lg up. */}
+        <HideOnScrollBar
+          barRef={toolbarRef}
+          disabled={toolbarPinned}
+          className={cn(
+            "sticky top-0 z-30 px-4 sm:px-6 lg:px-10 py-3 lg:py-4",
+            "bg-background/95 backdrop-blur-md lg:backdrop-blur-sm border-b border-border/60 lg:border-border",
+            "transition-transform duration-300 ease-out motion-reduce:transition-none",
+            "flex flex-row flex-wrap items-center justify-between gap-2 sm:gap-3 lg:gap-4"
+          )}
         >
-          <TabsList className="mb-0 w-full sm:w-auto">
-            <TabsTrigger value="planner" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
-              <Edit2 className="w-4 h-4 mr-2" />
-              {t("mealPlanner")}
+          {/* Short text-only labels on phones, icon + short label on tablets, full labels from lg */}
+          <TabsList className="mb-0 flex-1 sm:flex-none min-w-0 max-lg:gap-1 max-lg:p-0.5">
+            <TabsTrigger value="planner" className={TAB_TRIGGER_CLASS}>
+              <Edit2 className="hidden sm:block w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate lg:hidden">{t("tabs.plannerShort")}</span>
+              <span className="hidden lg:inline">{t("mealPlanner")}</span>
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
-              <CalendarDays className="w-4 h-4 mr-2" />
-              {t("calendarView")}
+            <TabsTrigger value="calendar" className={TAB_TRIGGER_CLASS}>
+              <CalendarDays className="hidden sm:block w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate lg:hidden">{t("tabs.calendarShort")}</span>
+              <span className="hidden lg:inline">{t("calendarView")}</span>
             </TabsTrigger>
-            <TabsTrigger value="discover" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
-              <Globe className="w-4 h-4 mr-2" />
-              {t("discoverTab")}
+            <TabsTrigger value="discover" className={TAB_TRIGGER_CLASS}>
+              <Globe className="hidden sm:block w-4 h-4 mr-2 flex-shrink-0" />
+              <span className="truncate lg:hidden">{t("tabs.discoverShort")}</span>
+              <span className="hidden lg:inline">{t("discoverTab")}</span>
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          {activeTab === "planner" && (
+            <ViewOptionsDrawer
+              open={viewOptionsOpen}
+              onOpenChange={setViewOptionsOpen}
+              layout={effectiveLayout}
+              onLayoutChange={setLayout}
+              density={density}
+              onDensityChange={setDensity}
+              showServings={showServings}
+              onShowServingsChange={setShowServings}
+              className="sm:hidden"
+            />
+          )}
+
+          <div className="hidden lg:flex items-center gap-3 ml-auto">
             <Button
               variant="outline"
               className={cn(
@@ -678,12 +805,13 @@ export function MealPlanner({ reference }: MealPlannerProps) {
               <span className="truncate">{t("createPlan")}</span>
             </Button>
           </div>
-        </div>
+        </HideOnScrollBar>
 
         {/* ── Non-scrollable body container (main viewport handles scroll) ── */}
         <div className="flex-1 min-h-0">
-          {/* Planner tab */}
-          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-5">
+          {/* Planner tab. Every tab's bottom padding clears the fixed chat FAB
+              (h-14 at bottom-6, see ChatFAB) below lg. */}
+          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10 space-y-3 sm:space-y-4 lg:space-y-5">
             {/* Plan count */}
             {isLoadingTemplates ? (
               <Skeleton className="h-4 w-24 bg-stone-200 dark:bg-slate-800" />
@@ -711,7 +839,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 lg:gap-4">
                 {/* Weekly macro summary strip — full width */}
                 {isLoadingTemplates || isLoadingPlan ? (
                   <WeeklyMacroStripSkeleton />
@@ -728,13 +856,14 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                     </>
                   )
                 )}
-                {/* Unified control panel wrapper */}
+                {/* Unified control panel wrapper — phones get these controls in the
+                    toolbar's view options drawer; tablets get a bare compact row */}
                 <div
                   ref={controlsRef}
-                  className="relative lg:sticky lg:top-[var(--planner-toolbar-h,78px)] z-20 pt-2 lg:pt-5 pb-3 bg-background"
+                  className="hidden sm:block relative lg:sticky lg:top-[var(--planner-toolbar-h,78px)] z-20 lg:pt-5 lg:pb-3 bg-background"
                 >
                   {/* Unified control panel: Search + Categories + Layout + Density */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-3 sm:p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:p-4 lg:bg-card lg:border lg:border-border lg:rounded-xl lg:shadow-sm lg:hover:shadow-md lg:transition-all lg:duration-300">
                     {/* Left: Search & Category Filters — desktop only; on tablet they
                         live in the collapsible recipe panel, on phones in the picker */}
                     <div className="hidden lg:flex lg:flex-row lg:items-center gap-3 flex-1 max-w-2xl w-full">
@@ -743,7 +872,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
 
                     {/* Right: Layout & Density controls */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                      {/* 3-way layout switcher */}
+                      {/* Layout switcher (sm+; phones pick Stack/Split in the view options drawer) */}
                       <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
                         {(
                           [
@@ -752,14 +881,15 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             { id: "split", Icon: Columns2 },
                           ] as const
                         ).map(({ id, Icon: LIcon }) => {
-                          const isActive = layout === id;
+                          const isActive = effectiveLayout === id;
                           return (
                             <button
                               key={id}
                               type="button"
                               onClick={() => setLayout(id)}
                               className={cn(
-                                "flex items-center gap-1.5 px-2.5 py-1.5 touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
+                                "flex items-center gap-1.5 px-2.5 py-1.5 max-lg:min-h-9 lg:touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
+                                HIT_SLOP_Y,
                                 isActive
                                   ? "bg-card text-brand-500 shadow-sm"
                                   : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -782,7 +912,8 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                               type="button"
                               onClick={() => setDensity(d)}
                               className={cn(
-                                "px-2.5 py-1.5 touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
+                                "px-2.5 py-1.5 max-lg:min-h-9 lg:touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
+                                HIT_SLOP_Y,
                                 isActive
                                   ? "bg-card text-brand-500 shadow-sm"
                                   : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -797,7 +928,10 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                       {/* Servings toggle */}
                       <label
                         htmlFor={servingsSwitchId}
-                        className="flex items-center gap-2.5 px-2.5 py-1 bg-muted border border-border rounded-lg h-[30px] touch:h-11 cursor-pointer"
+                        className={cn(
+                          "flex items-center gap-2.5 px-2.5 py-1 bg-muted border border-border rounded-lg h-[30px] max-lg:h-[42px] lg:touch:h-11 cursor-pointer",
+                          HIT_SLOP_Y
+                        )}
                       >
                         <span className="text-[11px] touch:text-xs font-semibold text-muted-foreground">
                           {t("showServings")}
@@ -844,6 +978,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             dense={density === "compact"}
                             searchQuery={searchQuery}
                             selectedCategory={selectedCategory}
+                            planId={selectedPlanId}
                           />
                         </div>
                       </div>
@@ -869,6 +1004,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                           dense={density === "compact"}
                           searchQuery={searchQuery}
                           selectedCategory={selectedCategory}
+                          planId={selectedPlanId}
                         />
                       </div>
                     </div>
@@ -878,19 +1014,19 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                   <div className="min-w-0">
                     {isLoadingTemplates || isLoadingPlan ? (
                       <>
-                        {layout === "grid" && (
+                        {effectiveLayout === "grid" && (
                           <GridLayoutSkeleton density={density} />
                         )}
-                        {layout === "stack" && (
+                        {effectiveLayout === "stack" && (
                           <StackLayoutSkeleton density={density} />
                         )}
-                        {layout === "split" && (
+                        {effectiveLayout === "split" && (
                           <SplitLayoutSkeleton density={density} />
                         )}
                       </>
                     ) : editingTemplate ? (
                       <>
-                        {layout === "grid" && (
+                        {effectiveLayout === "grid" && (
                           <GridLayout
                             template={editingTemplate}
                             density={density}
@@ -901,7 +1037,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
-                        {layout === "stack" && (
+                        {effectiveLayout === "stack" && (
                           <StackLayout
                             template={editingTemplate}
                             density={density}
@@ -913,7 +1049,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
-                        {layout === "split" && (
+                        {effectiveLayout === "split" && (
                           <SplitLayout
                             template={editingTemplate}
                             density={density}
@@ -964,12 +1100,12 @@ export function MealPlanner({ reference }: MealPlannerProps) {
           </TabsContent>
 
           {/* Calendar tab */}
-          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8 space-y-6">
+          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10 space-y-6">
             <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
           </TabsContent>
 
           {/* Discover tab: browse other users' public plans */}
-          <TabsContent value="discover" className="px-4 sm:px-6 lg:px-10 pt-6 pb-8">
+          <TabsContent value="discover" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10">
             <PublicPlans
               onDuplicated={(id) => {
                 loadTemplates({ showLoading: false });
@@ -1004,6 +1140,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
         recipeId={selectedRecipeIdForDetail}
         onClose={() => setSelectedRecipeIdForDetail(null)}
         locale={locale}
+        from={mealPlansReturnPath(selectedPlanId)}
       />
     </PageContainer>
   );

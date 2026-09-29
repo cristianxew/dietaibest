@@ -19,7 +19,7 @@ export async function PlannerNutritionBanner() {
   if (count === null || count === 0) return null;
 
   return (
-    <div className="px-4 pt-4 sm:px-6">
+    <div className="px-4 pt-4 sm:px-6 lg:px-10">
       <Link
         href="/nutrition/my-week"
         className="flex items-center justify-between gap-3 rounded-xl border border-gold-300/60 dark:border-gold-500/30 bg-gold-50/60 dark:bg-gold-500/10 px-4 py-2.5 text-sm hover:bg-gold-100/60 dark:hover:bg-gold-500/15 transition-colors"
