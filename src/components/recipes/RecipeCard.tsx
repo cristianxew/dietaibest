@@ -99,14 +99,14 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
       <article
         className={cn(
           "relative overflow-hidden rounded-2xl bg-card border border-border/60 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
-          viewMode === "list" ? "flex flex-row items-center p-3 gap-5" : "flex flex-col h-full hover:-translate-y-1"
+          viewMode === "list" ? "flex flex-row items-center p-3 gap-3 sm:gap-5" : "flex flex-col h-full hover:-translate-y-1"
         )}
       >
         {/* Placeholder Block or Real Image */}
         <div
           className={cn(
             "relative flex items-center justify-center overflow-hidden shrink-0",
-            viewMode === "list" ? "aspect-square w-24 h-24 sm:w-28 sm:h-28 rounded-xl" : "aspect-[4/3] w-full",
+            viewMode === "list" ? "aspect-square w-20 h-20 sm:w-28 sm:h-28 rounded-xl" : "aspect-[16/10] sm:aspect-[4/3] w-full",
             !showImage && styles.bg
           )}
           style={!showImage ? {
@@ -132,7 +132,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
           {/* Conditional Delete button inside image ONLY for GRID view! */}
           {viewMode === "grid" && isOwner && (
             <div
-              className="absolute left-3 top-3 z-10 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200"
+              className="absolute left-3 top-3 z-10 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto pointer-coarse:hidden transition-all duration-200"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -156,12 +156,17 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
           {/* Conditional Heart inside image ONLY for GRID view! */}
           {viewMode === "grid" && (
             <button
+              type="button"
+              aria-label={isFavorited ? t("removeFavorite") : t("addFavorite")}
+              aria-pressed={isFavorited}
               className={cn(
                 "absolute right-3 top-3 z-10 flex items-center justify-center",
-                "h-8 w-8 rounded-full shadow-sm transition-all duration-200 hover:scale-110",
+                "h-8 w-8 pointer-coarse:h-9 pointer-coarse:w-9 rounded-full shadow-sm transition-all duration-200 hover:scale-110",
                 isFavorited
                   ? "opacity-100 scale-100"
                   : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto",
+                // Touch screens have no hover: keep the heart reachable
+                "pointer-coarse:opacity-100 pointer-coarse:scale-100 pointer-coarse:pointer-events-auto",
                 showImage
                   ? "bg-white/80 dark:bg-stone-900/80 backdrop-blur-md border border-stone-200/50 dark:border-stone-800/50 text-stone-600 dark:text-stone-300 hover:text-brand-500 dark:hover:text-brand-400"
                   : "bg-white dark:bg-stone-900 border border-border/60 text-muted-foreground hover:text-brand-500 dark:hover:text-brand-400"
@@ -212,7 +217,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
         </div>
 
         {/* Content */}
-        <div className={cn("flex flex-col bg-transparent flex-1 min-w-0 overflow-hidden", viewMode === "list" ? "py-1 pr-2" : "p-5")}>
+        <div className={cn("flex flex-col bg-transparent flex-1 min-w-0 overflow-hidden", viewMode === "list" ? "py-1 pr-1 sm:pr-2" : "p-4 sm:p-5")}>
           {viewMode === "grid" ? (
             <>
               <div className="mb-3">
@@ -266,12 +271,12 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
             </>
           ) : (
             <div className="flex flex-row justify-between items-start w-full">
-              <div className="flex flex-col flex-1 min-w-0 pr-4">
-                <h3 className="font-display text-base font-bold text-card-foreground line-clamp-2" title={recipe.title}>
+              <div className="flex flex-col flex-1 min-w-0 pr-2 sm:pr-4">
+                <h3 className="font-display text-[15px] sm:text-base font-bold leading-snug text-card-foreground line-clamp-2" title={recipe.title}>
                   {recipe.title}
                 </h3>
                 {recipe.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1" title={recipe.description}>
+                  <p className="text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2 mt-1" title={recipe.description}>
                     {recipe.description}
                   </p>
                 )}
@@ -280,7 +285,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                     {t("byAuthor", { author: recipe.user.name })}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium mt-3">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-medium mt-2 sm:mt-3">
                   {recipe.calories && <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>}
                   {recipe.protein && <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>}
                   {recipe.carbs && <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>}
@@ -294,7 +299,8 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
               </div>
 
               <div className="flex flex-col items-end shrink-0 gap-3 justify-between h-full">
-                <div className="flex gap-2">
+                {/* Badges don't fit next to the title on phones; the placeholder/meta already carry them */}
+                <div className="hidden sm:flex gap-2">
                   {recipe.difficulty && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground lowercase">
                       {t(`difficulty.${recipe.difficulty}`)}
@@ -307,7 +313,7 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                 <div className="flex gap-2 items-center mt-auto">
                   {isOwner && (
                     <div
-                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      className="opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto pointer-coarse:hidden transition-opacity duration-200"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -323,13 +329,17 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                     </div>
                   )}
                   <button
+                    type="button"
                     onClick={handleToggleFavorite}
                     disabled={isPending}
+                    aria-label={isFavorited ? t("removeFavorite") : t("addFavorite")}
+                    aria-pressed={isFavorited}
                     className={cn(
-                      "p-1.5 hover:bg-muted rounded-full transition-all duration-200",
+                      "p-1.5 pointer-coarse:p-2 hover:bg-muted rounded-full transition-all duration-200",
                       isFavorited
                         ? "opacity-100 scale-100"
-                        : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
+                        : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto",
+                      "pointer-coarse:opacity-100 pointer-coarse:scale-100 pointer-coarse:pointer-events-auto"
                     )}
                   >
                     <Heart className={cn("w-4 h-4", isFavorited ? "fill-brand-500 text-brand-500" : "text-muted-foreground")} />

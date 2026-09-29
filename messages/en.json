@@ -438,7 +438,45 @@
     },
     "previous": "Previous",
     "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}",
+    "pageOf": "Page {current} of {total}",
+    "pagination": "Pagination",
+    "firstPage": "First page",
+    "lastPage": "Last page",
+    "goToPage": "Go to:",
+    "libraryEyebrow": "Recipe Library",
+    "gridView": "Grid",
+    "listView": "List",
+    "totalTime": "Total",
+    "addToPlan": "Add to Plan",
+    "tabsShort": {
+      "my": "Mine",
+      "public": "Public",
+      "favorites": "Favorites"
+    },
+    "filters": {
+      "title": "Filters",
+      "description": "Narrow down and arrange your recipes.",
+      "category": "Category",
+      "difficulty": "Difficulty",
+      "view": "View",
+      "perPage": "Recipes per page",
+      "clear": "Clear",
+      "showResults": "Show {count, plural, =0 {results} one {# recipe} other {# recipes}}",
+      "removeFilter": "Remove filter: {name}"
+    },
+    "search": {
+      "clear": "Clear search",
+      "searching": "Searching...",
+      "suggestions": "Suggestions",
+      "recent": "Recent searches",
+      "clearRecent": "Clear",
+      "noSuggestions": "No suggestions found",
+      "type": {
+        "title": "Recipe",
+        "tag": "Tag",
+        "category": "Category"
+      }
+    },
     "loadError": "Failed to load recipes",
     "favoriteAdded": "Added to favorites",
     "favoriteRemoved": "Removed from favorites",
@@ -1903,6 +1941,299 @@
       "noResults": "No conversations match \"{query}\"",
       "active": "Active",
       "back": "Back to conversation"
+    }
+  },
+  "landing": {
+    "meta": {
+      "title": "DietAI — Healthy eating, simplified.",
+      "description": "Save recipes from any website, video or photo, see USDA-based nutrition for every serving, plan your week and get your shopping list built for you."
+    },
+    "nav": {
+      "features": "Features",
+      "how": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "signIn": "Sign in",
+      "startFree": "Start free",
+      "home": "DietAI home",
+      "menu": "Menu",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "language": "Language",
+      "theme": "Theme"
+    },
+    "hero": {
+      "eyebrow": "Meal planning with real nutrition data",
+      "titleLead": "Healthy eating,",
+      "titleAccent": "simplified.",
+      "sub": "Save recipes from any website, video or photo. DietAI analyzes every ingredient with USDA data, fits your meals into the week and builds your shopping list.",
+      "primaryCta": "Start free →",
+      "secondaryCta": "See how it works",
+      "trust": {
+        "free": "Free plan, no card needed",
+        "usda": "Nutrition from USDA FoodData Central",
+        "languages": "English · Español · Polski"
+      }
+    },
+    "units": {
+      "kcal": "{value, number} kcal",
+      "grams": "{value, number} g",
+      "milligrams": "{value, number} mg",
+      "micrograms": "{value, number} µg",
+      "milliliters": "{value, number} ml",
+      "percent": "{value, number, percent}"
+    },
+    "productMock": {
+      "path": "meal-plans / this-week",
+      "nav": {
+        "thisWeek": "This week",
+        "recipes": "Recipes",
+        "mealPlans": "Meal plans",
+        "shoppingList": "Shopping list"
+      },
+      "savedPlans": {
+        "label": "Saved plans",
+        "highProtein": "High-protein week",
+        "mediterranean": "Mediterranean",
+        "quick": "Quick weeknights"
+      },
+      "title": "This week",
+      "subtitle": "3 meals planned today",
+      "meals": {
+        "breakfast": {
+          "slot": "Breakfast",
+          "name": "Greek yogurt with berries & oats"
+        },
+        "lunch": {
+          "slot": "Lunch",
+          "name": "Mediterranean grain bowl"
+        },
+        "dinner": {
+          "slot": "Dinner",
+          "name": "Herb-crusted salmon with roasted vegetables"
+        }
+      },
+      "protein": "{value, number} g protein",
+      "nutritionTitle": "Today's nutrition",
+      "donutCaption": "of calorie target",
+      "macros": {
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat"
+      },
+      "assistantMessage": "Added the salmon to Wednesday's dinner. You're now at <strong>112 g</strong> of protein — 80% of your target."
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "From goals to groceries in <em>three steps</em>.",
+      "rhs": "No spreadsheets, no scattered recipe tabs, no guessing what's on your plate.",
+      "steps": {
+        "goals": {
+          "title": "Set your goals",
+          "body": "Tell us about yourself and what you're aiming for. DietAI calculates your calorie and macro targets and saves your diet preferences and allergies to your profile."
+        },
+        "week": {
+          "title": "Build your week",
+          "body": "Save recipes, drag them into a weekly plan and schedule it on your calendar. Reuse the plans you love — or ask the assistant to make changes for you."
+        },
+        "shop": {
+          "title": "Shop without the chore",
+          "body": "Your shopping list builds itself from the week's meals, grouped by category and ready to export. In Poland, DietAI can even fill your cart at Auchan, Carrefour or Frisco."
+        }
+      }
+    },
+    "features": {
+      "eyebrow": "What you get",
+      "title": "Smart enough to know <em>your</em> week.",
+      "rhs": "Every recipe gets real nutrition data, every plan adds up, and your shopping list is ready when you are.",
+      "items": {
+        "import": {
+          "title": "Any recipe, one link away.",
+          "body": "Paste a link from a recipe site or a YouTube, TikTok or Instagram video — or snap a photo of a cookbook page. DietAI pulls out the ingredients and steps, and you can edit everything before saving.",
+          "points": {
+            "sources": "Websites, videos, photos and PDFs",
+            "servings": "Adjust servings and the quantities follow",
+            "sharing": "Keep recipes private or share them"
+          }
+        },
+        "nutrition": {
+          "title": "Nutrition you can trust.",
+          "body": "Every ingredient is matched to USDA FoodData Central, so each serving shows 22 nutrients — from protein and fiber to iron and vitamin D — measured against your personal targets.",
+          "points": {
+            "nutrients": "22 nutrients per serving",
+            "targets": "Targets calculated from your profile",
+            "totals": "Daily and weekly totals for your plan"
+          }
+        },
+        "shopping": {
+          "title": "Your shopping list, done.",
+          "body": "DietAI adds up every ingredient from your scheduled meals, merges duplicates and groups them by category. Export it as a PDF — or, in Poland, let DietAI fill your cart at Auchan, Carrefour or Frisco, then review and pay yourself.",
+          "points": {
+            "scheduled": "Built from your scheduled meals",
+            "export": "Grouped by category, with PDF export",
+            "cart": "Cart filling in Poland (beta)"
+          }
+        },
+        "assistant": {
+          "title": "An assistant that knows your kitchen.",
+          "body": "Ask it to find a recipe, import one from a link, check the nutrition or move tomorrow's dinner. It works with your real recipes and plans, in English, Spanish or Polish.",
+          "points": {
+            "recipes": "Search, create and edit recipes",
+            "plan": "Update your meal plan in plain language",
+            "photos": "Generate a photo for any recipe"
+          }
+        }
+      }
+    },
+    "visuals": {
+      "import": {
+        "url": "youtube.com/watch?v=…",
+        "recipeTitle": "Creamy tomato pasta",
+        "imported": "Imported",
+        "servings": "4 servings",
+        "ingredients": {
+          "pasta": "Penne",
+          "tomatoes": "Crushed tomatoes",
+          "cream": "Heavy cream",
+          "parmesan": "Parmesan"
+        }
+      },
+      "nutrition": {
+        "title": "Per serving",
+        "targetColumn": "% of target",
+        "nutrients": {
+          "protein": "Protein",
+          "fiber": "Fiber",
+          "iron": "Iron",
+          "vitaminD": "Vitamin D",
+          "calcium": "Calcium"
+        },
+        "source": "Source: USDA FoodData Central"
+      },
+      "shopping": {
+        "title": "Shopping list",
+        "categories": {
+          "vegetables": "Vegetables",
+          "proteins": "Proteins",
+          "dairy": "Dairy"
+        },
+        "items": {
+          "tomatoes": "Cherry tomatoes",
+          "spinach": "Baby spinach",
+          "zucchini": "Zucchini",
+          "salmon": "Salmon fillets",
+          "chicken": "Chicken breast",
+          "yogurt": "Greek yogurt",
+          "parmesan": "Parmesan"
+        },
+        "pdf": "PDF",
+        "stores": "Auchan · Carrefour · Frisco"
+      },
+      "assistant": {
+        "label": "Assistant",
+        "userMessage": "Move tomorrow's dinner to Friday and add a high-protein breakfast",
+        "reply": "Done — salmon is now on Friday, and I added Greek yogurt with oats to Thursday's breakfast (32 g protein)."
+      }
+    },
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Simple plans for <em>real</em> kitchens.",
+      "rhs": "Start free. Upgrade when you want imports, the AI assistant and shopping automation. Cancel anytime.",
+      "badge": "Most popular",
+      "free": {
+        "name": "Free",
+        "period": "free forever",
+        "tagline": "Everything you need to plan your first weeks.",
+        "features": {
+          "recipes": "15 saved recipes",
+          "newRecipes": "3 new recipes per month",
+          "mealPlan": "1 meal plan, up to 3 days",
+          "nutrition": "USDA nutrition analysis",
+          "shopping": "Shopping list with PDF export"
+        },
+        "cta": "Start free"
+      },
+      "monthly": {
+        "name": "Pro",
+        "period": "/ month",
+        "tagline": "The full DietAI, without limits.",
+        "features": {
+          "unlimited": "Unlimited recipes and meal plans",
+          "import": "Import from websites, videos, photos and PDFs",
+          "assistant": "AI assistant for recipes and plans",
+          "photos": "AI-generated recipe photos",
+          "cart": "Cart filling at Auchan, Carrefour and Frisco (Poland)"
+        }
+      },
+      "yearly": {
+        "name": "Pro yearly",
+        "period": "/ year",
+        "tagline": "Best value, billed once a year.",
+        "features": {
+          "everything": "Everything in Pro",
+          "savings": "Save {percent}% compared to monthly"
+        }
+      },
+      "trialCta": "Start {days}-day free trial",
+      "trialLength": "{days}-day free trial",
+      "finePrint": "Pro trial requires a card. You won't be charged until the trial ends, and you can cancel anytime.",
+      "currency": "Prices in {currency}."
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title": "Questions, <em>answered</em>.",
+      "items": {
+        "nutritionSource": {
+          "q": "Where does the nutrition data come from?",
+          "a": "From USDA FoodData Central, the U.S. government's food composition database. DietAI matches each ingredient to real USDA entries and estimates grams from your recipe's quantities, so every serving shows 22 nutrients."
+        },
+        "import": {
+          "q": "Can I import my own recipes?",
+          "a": "Yes. On Pro, paste a link from any recipe website or a YouTube, TikTok, Instagram, Facebook or X video, or upload a photo or PDF. DietAI extracts the ingredients and steps, and you can edit everything before saving. On the free plan you can add recipes by hand."
+        },
+        "stores": {
+          "q": "Which grocery stores does shopping automation support?",
+          "a": "Right now, Auchan, Carrefour and Frisco in Poland. DietAI fills your cart and hands it back to you — you review it and pay on the store's site. Everywhere else, you get a shopping list grouped by category that you can export as a PDF."
+        },
+        "freePlan": {
+          "q": "What's included in the free plan?",
+          "a": "15 saved recipes, 3 new recipes a month, one meal plan of up to 3 days, USDA nutrition analysis and a shopping list with PDF export. No credit card needed."
+        },
+        "trial": {
+          "q": "How does the free trial work?",
+          "a": "Pro comes with a {days}-day free trial. You add a card to start it and won't be charged until the trial ends. Cancel anytime from your billing settings — you keep Pro until the end of the period you've paid for."
+        },
+        "medical": {
+          "q": "Is DietAI medical advice?",
+          "a": "No. DietAI helps with everyday healthy eating. It doesn't replace a doctor or registered dietitian, and the assistant won't give advice for medical conditions such as diabetes, diagnosed food allergies or pregnancy."
+        },
+        "languages": {
+          "q": "Which languages does DietAI support?",
+          "a": "English, Spanish and Polish — including the AI assistant, which replies in your language."
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Eat better this week. <em>Plan less.</em>",
+      "sub": "Your recipes, real nutrition data and a ready-made shopping list — all in one place. Start free, no card needed.",
+      "primaryCta": "Start free →",
+      "secondaryCta": "See pricing"
+    },
+    "footer": {
+      "blurb": "Recipes, real nutrition data and a shopping list that builds itself.",
+      "columns": {
+        "product": "Product",
+        "account": "Account",
+        "legal": "Legal"
+      },
+      "links": {
+        "signIn": "Sign in",
+        "signUp": "Create account",
+        "privacy": "Privacy policy",
+        "terms": "Terms of service",
+        "cookies": "Cookie policy"
+      },
+      "copyright": "© {year} DietAI"
     }
   }
 }

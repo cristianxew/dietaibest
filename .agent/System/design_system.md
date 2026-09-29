@@ -1,6 +1,6 @@
 # DietAI Design System - "Culinary Elegance"
 
-**Last Updated:** 2025-12-11
+**Last Updated:** 2026-09-27
 
 ## Related Documentation
 - [Project Architecture](./project_architecture.md)
@@ -269,61 +269,67 @@ All components should use semantic tokens rather than raw color values.
 
 ## Landing Page Components
 
-### Location
-All landing page components are in `src/components/landing/`:
+The marketing landing (`src/app/[locale]/(public-pages)/page.tsx`) has its **own scoped visual language** (editorial serif, sage accent) separate from the app tokens above. Source design: the "DietAI Landing" HTML prototype (saved tweaks: sage accent, italic-accent headline, cozy density = 64px section padding). All copy is translated (en/es/pl) and restricted to features that exist in the product.
 
+### Structure
 ```
 src/components/landing/
-├── LandingLayout.tsx      # Main container with warm gradient blobs
-├── LandingNav.tsx         # Navigation bar
-├── LandingFooter.tsx      # Footer with links
+├── LandingShell.tsx      # Wrapper: `.landing` token scope + landing fonts, overflow-x-clip
+├── LandingNav.tsx        # Client: sticky nav, border on scroll; ≥1041px section links, LanguageSwitcherCompact, ThemeToggleSimple, Sign in, Start free
+├── LandingMobileMenu.tsx # Client: <1041px menu toggle + panel (section links, Sign in, language, theme)
+├── LandingFooter.tsx     # Real logo, Product / Account / Legal columns, © year, LanguageSwitcherFull
+├── fonts.ts              # next/font: Playfair Display (with italics) + JetBrains Mono
+├── links.ts              # localizedHref(locale, route): `localePrefix` + path (`/sign-up` → `/es/sign-up`)
+├── metadata.ts           # buildLandingMetadata(locale): title/description, canonical + hreflang, OG, Twitter card
+├── pricing-data.ts       # server-only: loadLandingPricing(locale) — Stripe Pro prices, never throws
 ├── sections/
-│   ├── HeroSection.tsx    # Hero with sunset gradient text
-│   ├── FeaturesGrid.tsx   # Feature cards grid
-│   ├── HowItWorks.tsx     # Step-by-step workflow
-│   └── PricingSection.tsx # Pricing tiers
+│   ├── HeroSection.tsx     # Headline, CTAs, trust items, orbs/sparks background, ProductMock
+│   ├── HowItWorks.tsx      # id="how"
+│   ├── FeaturesSection.tsx # id="features" — 4 zig-zag rows with mock visuals
+│   ├── PricingSection.tsx  # id="pricing" — Free + Pro monthly + Pro yearly (live Stripe prices)
+│   ├── FAQSection.tsx      # id="faq" — server; passes translated items to FAQAccordion
+│   ├── FAQAccordion.tsx    # Client: single-open accordion (grid-rows animation, no height cap)
+│   ├── FinalCTASection.tsx
+│   ├── StatsStrip.tsx      # Props-only (`stats`), NOT rendered — enable only with real data
+│   └── QuoteSection.tsx    # Props-only (`quote`, `attribution`), NOT rendered — enable only with a real quote
 └── ui/
-    ├── AnimatedBadge.tsx  # Pulsing status badge (gold, brand, success variants)
-    ├── FeatureCard.tsx    # Feature card component
-    ├── PricingCard.tsx    # Pricing tier card (coral gradient highlight)
-    ├── StepItem.tsx       # Numbered step item
-    ├── TerminalCard.tsx   # Terminal/code display
-    └── DashboardPreview.tsx # Mock dashboard visual
+    ├── SectionHead.tsx     # Mono eyebrow + serif title (`<em>` = accent) + optional rhs copy
+    ├── LandingButton.tsx   # primary / ghost pill link; `onInk` for dark panels; `#anchor` → <a>, route → next/link
+    ├── BrandLogo.tsx       # Real logo: /Dietai_logo_light.png (light) + /Dietai_logo_dark.png (dark) via next/image
+    ├── ProductMock.tsx     # Decorative planner preview (aria-hidden), LogoSymbol avatars
+    └── visuals/            # Feature-row mocks (aria-hidden, server): Import, Nutrition, Shopping, Assistant
 ```
 
-### Component Guidelines
+**Page order:** Nav · Hero · How it works · Features · Pricing · FAQ · Final CTA · Footer. StatsStrip and QuoteSection stay commented out in `page.tsx` until there is real, verifiable content for them.
 
-#### AnimatedBadge
-Variants: `default`, `success`, `warning`, `info`, `gold`, `brand`
-```tsx
-<AnimatedBadge variant="gold" pulse>
-  AI Agent V2.0 Live
-</AnimatedBadge>
-```
+**Also part of the landing:** `src/app/[locale]/(public-pages)/opengraph-image.tsx` (localized 1200×630 social card) and `landing.*` in `messages/{en,es,pl}.json`.
 
-#### FeatureCard
-```tsx
-<FeatureCard
-  icon="solar:link-bold-duotone"
-  iconColor="text-brand-600 dark:text-brand-400"
-  iconBg="bg-brand-50 border-brand-100"
-  title="Smart Import"
-  description="Description text..."
-/>
-```
+### Content rules
+- Claim only shipped features (recipe import, USDA nutrition, targets, meal planner, shopping list, Poland-only cart filling that never checks out, AI assistant, AI recipe photos, en/es/pl). No testimonials, user counts, wearables, US grocery stores, pantry/food/weight logging, AI-generated meal plans, or links to the Nutrition Hub.
+- Every user-facing string (aria-labels included) lives under `landing.*`; only the brand name, arrows and quote marks are literal. Accents use rich text: `t.rich("title", { em: (c) => <em>{c}</em> })`. Numbers and units go through ICU (`landing.units.grams` = `"{value, number} g"`) so they format per locale; weekday initials come from `Intl.DateTimeFormat(locale, { weekday: "narrow" })`.
+- Spanish is Spain Spanish with tuteo (no voseo), matching the app's newer copy.
+- `tests/unit/i18n-landing-parity.test.ts` enforces key parity, `{days}` in every trial string, and matching ICU args / rich tags across locales.
 
-#### PricingCard
-```tsx
-<PricingCard
-  name="Pro Chef"
-  price="$12"
-  period="/mo"
-  features={["Feature 1", "Feature 2"]}
-  buttonText="Start Trial"
-  highlighted={true}  // Coral gradient background
-  badge="Recommended"  // Gold badge
-/>
-```
+### Data, links and metadata
+- **Pricing:** `loadLandingPricing` resolves `pro_{monthly|yearly}_{currency}` via `resolvePrice` (currency from `currencyForLocale`), 3 s timeout per price, `Promise.allSettled`, logs failures. A failed price hides its card; if both fail, one Pro card shows "{days}-day free trial" instead of an amount. The Free card always renders. Yearly shows "Save N%" only when both prices loaded and N > 0. `formatPrice` (`src/lib/format-price.ts`) is shared with the subscribe page. Trial length is `getTrialDays()`.
+- **Links:** routes use `localizedHref(locale, …)` (`/sign-in`, `/sign-up`, `/privacy`, `/terms`, `/cookies`, home); in-page anchors stay `#…`. No `href="#"` placeholders.
+- **Metadata:** `generateMetadata` → `buildLandingMetadata`; `metadataBase` from `NEXTAUTH_URL` (ignored if unset/invalid). The root layout sets `<html lang>` from next-intl `getLocale()`.
+- **OG image:** none for now. A file-based `src/app/[locale]/(public-pages)/opengraph-image.tsx` (with `generateImageMetadata`) shipped in #42 and made metadata resolution throw in **production builds only** for every page under `(public-pages)` (landing, sign-in, sign-up, forgot-password, auth/*): no `og:*` tags, a `data-dgst` error boundary in the HTML, and a client-side "Application error" + reload loop. `next dev` rendered it fine. It was removed in the hotfix. Before re-adding a social image, verify with a local production build (`bun run build` + `node .next/standalone/server.js`, then request `/pl` — the default-locale `/` rewrite self-redirects on localhost) and check for `data-dgst` markers; a static `public/og.png` referenced from `buildLandingMetadata` is the low-risk option.
+
+### Tokens (`.landing` scope)
+- Defined in the `/* ─── Landing ─── */` block of `src/app/globals.css` on `.landing`, overridden under `.dark .landing` (light = design, dark = derived from the app dark palette).
+- Registered in `@theme inline` as `--color-lp-*`, so use utilities: `bg-lp-bg`, `text-lp-fg-soft`, `border-lp-line`, `bg-lp-bg/78`, etc. Tokens: `bg`, `bg-soft`, `fg`, `fg-soft`, `fg-strong`, `muted`, `line`, `line-soft`, `card`, `primary(-soft|-tint)`, `coral(-soft|-tint)`, `sage(-tint)`, `gold(-soft|-tint)`, `ink`, `ink-fg`, `ink-line` (dark panels), plus `--lp-frame-shadow` (`shadow-(--lp-frame-shadow)`, product mock) and `--lp-card-shadow` (`shadow-(--lp-card-shadow)`, cards inside feature visuals).
+- Fonts: `font-lp-display` (Playfair, italics loaded) and `font-lp-mono` (JetBrains Mono); body uses `font-sans` (DM Sans).
+- The CSS block only holds what is awkward as utilities: tokens, keyframes, hero background (`.lp-hero-bg`), orbs/sparks (`.lp-orb*`, `.lp-spark*`), hero entrance (`.lp-hero-in*`), the feature-visual dot grid (`.lp-dots`) and a `prefers-reduced-motion` guard. Everything else is Tailwind utilities.
+
+### Gotchas
+- Global base styles target every `h1`–`h6`: landing headings must set font family, size, weight, line-height, tracking and color explicitly.
+- Use `overflow-x-clip`, never `overflow-x-hidden`, on the wrapper (hidden breaks the sticky nav).
+- Breakpoints mirror the design's `max-width: N` as `max-[N+1px]` (Tailwind's `max-[Npx]` is `width < N`).
+- The app theme overrides the radius scale (`rounded-lg` = 12px), so landing radii are explicit (`rounded-[8px]`).
+- Nav below 1041px: the bar keeps only logo, "Start free" and a Menu/X toggle; section links, Sign in, language and theme live in the mobile panel. The panel is a **non-modal, non-portaled** Radix Dialog (`@radix-ui/react-dialog`, what `Sheet` wraps) rendered inside the sticky `<nav>`: a portal would escape the `.landing` token scope, the shadcn `Sheet` close button has a hardcoded English label, and a modal overlay would cover the bar toggle. It closes on Escape, outside click, focus leaving it and link clicks; focus starts on the first link and returns to the toggle (except after following a link).
+- Feature-visual frames use `aspect-[4/3.2]` **without** `overflow-hidden`, so the ratio is a minimum and the frame grows with its mock on narrow columns instead of clipping it.
+- Anchored sections carry `scroll-mt-[68px]` so the sticky nav does not cover their heading.
 
 ---
 
@@ -444,6 +450,8 @@ Introduced with the meal plans responsive pass. Source of truth: `src/lib/respon
 4. **Use gold sparingly** - For premium badges and special highlights only
 5. **Use the font-display class** for headings (Playfair Display)
 6. **Test in both themes** before committing changes
+7. **Make hover-revealed actions touch-safe** - Tailwind v4 only applies `hover:`/`group-hover:` on devices that can hover, so pair them with `pointer-coarse:` variants (e.g. `pointer-coarse:opacity-100 pointer-coarse:pointer-events-auto`) or hide the action on touch and expose it elsewhere. See [recipes responsive pass](../Tasks/recipes_responsive_mobile.md)
+8. **Use `text-base` (16px) inputs on touch screens** - smaller text makes iOS Safari zoom on focus (`text-base lg:text-sm`)
 
 ### DON'T:
 1. **Don't overuse the primary coral** - Use secondary and muted styles for less important elements
@@ -480,10 +488,14 @@ For nutritional/macro displays, use semantic colors:
 ### Landing Page Files
 | File | Purpose |
 |------|---------|
-| `src/components/landing/LandingLayout.tsx` | Page container with warm gradients |
-| `src/components/landing/sections/HeroSection.tsx` | Hero with sunset gradient |
-| `src/components/landing/ui/AnimatedBadge.tsx` | Badge with gold/brand variants |
-| `src/components/landing/ui/PricingCard.tsx` | Pricing with coral highlight |
+| `src/components/landing/LandingShell.tsx` | `.landing` token scope + landing fonts |
+| `src/components/landing/fonts.ts` | Landing fonts (Playfair with italics, JetBrains Mono) |
+| `src/components/landing/sections/HeroSection.tsx` | Hero with orb background + `ProductMock` |
+| `src/components/landing/pricing-data.ts` | Server-only Stripe price loader for the pricing section |
+| `src/components/landing/metadata.ts` | Localized metadata, hreflang alternates, OG/Twitter |
+| `src/app/[locale]/(public-pages)/opengraph-image.tsx` | Localized OG image (`/{locale}/opengraph-image-<hash>/og.png`) |
+| `src/app/globals.css` (`/* ─── Landing ─── */` block) | `--lp-*` tokens (light/dark), keyframes, hero/orb classes, `.lp-dots` |
+| `messages/{en,es,pl}.json` → `landing` | All landing copy |
 
 ---
 

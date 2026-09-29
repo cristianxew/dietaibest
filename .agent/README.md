@@ -2,7 +2,7 @@
 
 **DietAI - AI-Powered Meal Planning & Nutrition Management**
 
-Last Updated: 2026-06-24
+Last Updated: 2026-09-29
 
 ---
 
@@ -101,6 +101,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - ConversationStore seam
 - Tool definition shape: `description` (schema channel) vs `guidance` (system-prompt channel)
 - Entitlement filtering (hybrid C+B) and feature-flag gating at the registry
+- `generateMealPlan` workflow: selects from the user's saved recipes by index (never invents ids), profile targets/allergies, `NO_RECIPES` fail-fast → [ADR 0005](../docs/adr/0005-meal-plan-generation-selects-saved-recipes.md)
 - System prompt composition: the three-category split + desync elimination
 - Medical-refusal classifier constraint (decision #117) → links ADR-0001 + the refusal eval
 
@@ -121,7 +122,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Typography (Inter, Space Grotesk, Geist Mono)
 - Semantic color tokens for light/dark modes
 - Component styling patterns (cards, buttons, forms)
-- Landing page component guidelines
+- Landing page components (scoped `.landing` tokens, light/dark, `landing.*` i18n, Stripe-backed pricing, SEO/OG metadata)
 - Responsive and touch conventions (tiers, 44px targets, dvh, bottom sheets)
 - Utility classes (glass effect, animations)
 - Dark mode implementation
@@ -260,6 +261,21 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Adding nutrients, swaps, or encyclopedia entries
 - Touching the FDC cache or nutrition comparison logic
 - Working on hub UI modules
+
+---
+
+#### [Recipes Library & Detail — Mobile/Tablet Responsive](./Tasks/recipes_responsive_mobile.md)
+**Purpose:** Responsive pass on `/recipes` and `/recipes/[id]` for phones and tablets
+
+**Contains:**
+- Breakpoint behavior of the library toolbar (bottom filter drawer, hide-on-scroll sticky bar, header "Add recipe")
+- `useHideOnScroll` hook and `RecipeFiltersDrawer` component
+- Touch-safe card actions (`pointer-coarse:`), mobile pagination, detail-page fixes
+- Gotchas: sticky offsets inside `#main-content`, Tailwind v4 hover on touch, iOS input zoom
+
+**When to read:**
+- Touching the recipes list toolbar, filters, cards or pagination
+- Adding hover-revealed actions or sticky bars inside the protected shell
 
 ---
 
@@ -522,6 +538,6 @@ If you can't find information in this documentation:
 
 ---
 
-**Last Updated:** 2026-06-24
+**Last Updated:** 2026-09-29
 **Maintained By:** Development Team
 **Next Review:** When major features are added or architecture changes

@@ -116,6 +116,28 @@ defensively at dispatch (`runtime.ts`). Feature flags (e.g.
 `FEATURE_MULTIMODAL_IMPORT` gating `importRecipeFromImage`) are applied at the
 **registry** level only.
 
+**generateMealPlan (Mastra workflow) — selects saved recipes, never invents
+ids** ([ADR-0005](../../docs/adr/0005-meal-plan-generation-selects-saved-recipes.md)).
+Gated on `aiMealPlan`. Before starting `generateMealPlanWorkflow`
+(`src/mastra/workflows/generateMealPlan.ts`) the tool:
+
+1. merges the request with `UserProfile` (`src/lib/meal-plan/generation-profile.ts`):
+   explicit input > profile calories/macros/`dietaryType`; `allergies` always
+   from the profile;
+2. loads the candidate pool (`src/lib/meal-plan/generation-candidates.ts`):
+   own recipes + favorited public recipes, allergen-filtered on title/tags,
+   max 150. **Empty → returns `ok:false` "No saved recipes…" with zero model
+   calls** (`NO_RECIPES`).
+
+Workflow: skeleton (Sonnet, meal types constrained to the requested set) →
+fanout (Haiku, one `generateObject` per slot answering `{ index }` into the
+numbered candidate list; `pickCandidate` maps it to the real UUID, invalid →
+slot `generationFailed`) → persist (≥25% failed → `PLAN_INCOMPLETE`, else
+`createMealPlan`, which also rejects recipe ids the user can't see). Error
+codes are matched by `code` because Mastra serializes errors. Full-chain
+coverage: `tests/integration/meal-plan-workflow-persist.test.ts` (real
+`createMealPlan`, fake Prisma/models).
+
 ---
 
 ## System prompt composition (`src/lib/chat/system-prompt.ts`)

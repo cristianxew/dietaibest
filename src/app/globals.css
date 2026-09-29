@@ -133,6 +133,33 @@
   --color-ai-500: var(--ai-500);
   --color-ai-600: var(--color-ai-600);
   --color-ai-700: var(--color-ai-700);
+
+  /* Landing — values are scoped to `.landing` (see the "Landing" block below) */
+  --color-lp-bg: var(--lp-bg);
+  --color-lp-bg-soft: var(--lp-bg-soft);
+  --color-lp-fg: var(--lp-fg);
+  --color-lp-fg-soft: var(--lp-fg-soft);
+  --color-lp-fg-strong: var(--lp-fg-strong);
+  --color-lp-muted: var(--lp-muted);
+  --color-lp-line: var(--lp-line);
+  --color-lp-line-soft: var(--lp-line-soft);
+  --color-lp-card: var(--lp-card);
+  --color-lp-primary: var(--lp-primary);
+  --color-lp-primary-soft: var(--lp-primary-soft);
+  --color-lp-primary-tint: var(--lp-primary-tint);
+  --color-lp-coral: var(--lp-coral);
+  --color-lp-coral-soft: var(--lp-coral-soft);
+  --color-lp-coral-tint: var(--lp-coral-tint);
+  --color-lp-sage: var(--lp-sage);
+  --color-lp-sage-tint: var(--lp-sage-tint);
+  --color-lp-gold: var(--lp-gold);
+  --color-lp-gold-soft: var(--lp-gold-soft);
+  --color-lp-gold-tint: var(--lp-gold-tint);
+  --color-lp-ink: var(--lp-ink);
+  --color-lp-ink-fg: var(--lp-ink-fg);
+  --color-lp-ink-line: var(--lp-ink-line);
+  --font-lp-display: var(--font-landing-display), Georgia, serif;
+  --font-lp-mono: var(--font-landing-mono), ui-monospace, monospace;
 }
 
 :root {
@@ -842,35 +869,226 @@
   transform: translateX(100%);
 }
 
-/* ─── Landing V2 orb animations ───────────────────────────── */
-@keyframes drift-1 {
+/* ─── Landing ─────────────────────────────────────────────────
+   Marketing landing (src/components/landing). Tokens are scoped to the
+   `.landing` wrapper (LandingShell) and exposed to Tailwind through the
+   `--color-lp-*` / `--font-lp-*` entries in `@theme inline`, so markup uses
+   utilities like `bg-lp-bg` or `text-lp-fg-soft`. Light values come from the
+   landing design; dark values are derived from the app design system.
+   Only what is awkward as utilities lives here.
+   Breakpoints: Tailwind's `max-[Npx]` compiles to `width < N`, so the design's
+   `max-width: 800px` is written `max-[801px]` (same for 1040/900/760/700). */
+.landing {
+  --lp-bg: #FAF8F4;
+  --lp-bg-soft: #F2EFE8;
+  --lp-fg: #1C1A17;
+  --lp-fg-soft: #5C574D;
+  --lp-fg-strong: #000000;
+  --lp-muted: #8A8276;
+  --lp-line: #E5E0D6;
+  --lp-line-soft: #EFEBE2;
+  --lp-card: #FFFFFF;
+  --lp-primary: #4A7C59;
+  --lp-primary-soft: #6B9B6B;
+  --lp-primary-tint: #E6EDE6;
+  --lp-coral: #C8633F;
+  --lp-coral-soft: #E07A5F;
+  --lp-coral-tint: #F8E9E1;
+  --lp-sage: #4A7C59;
+  --lp-sage-tint: #E6EDE6;
+  --lp-gold: #B8860B;
+  --lp-gold-soft: #D4A017;
+  --lp-gold-tint: #FBF1D4;
+  /* Dark panels: final CTA, featured price card, product-mock agent bubble */
+  --lp-ink: #1C1A17;
+  --lp-ink-fg: #FAF8F4;
+  --lp-ink-line: #1C1A17;
+  --lp-frame-shadow:
+    0 1px 2px rgba(28, 26, 23, 0.04),
+    0 24px 60px -24px rgba(28, 26, 23, 0.18),
+    0 60px 120px -40px rgba(200, 99, 63, 0.12);
+  /* Small floating cards inside the mocks (feature visuals) */
+  --lp-card-shadow:
+    0 1px 2px rgba(28, 26, 23, 0.04),
+    0 12px 32px -16px rgba(28, 26, 23, 0.16);
+}
+
+.dark .landing {
+  --lp-bg: #0F0E0D;
+  --lp-bg-soft: #221F1D;
+  --lp-fg: #FAF9F7;
+  --lp-fg-soft: #D4CEC4;
+  --lp-fg-strong: #FFFFFF;
+  --lp-muted: #A8A092;
+  --lp-line: #2D2B26;
+  --lp-line-soft: #262422;
+  --lp-card: #1A1918;
+  --lp-primary: #6B9B6B;
+  --lp-primary-soft: #9FBC9F;
+  --lp-primary-tint: #233A2A;
+  --lp-coral: #F47B5C;
+  --lp-coral-soft: #F8A08A;
+  --lp-coral-tint: #2A1C19;
+  --lp-sage: #6B9B6B;
+  --lp-sage-tint: #233A2A;
+  --lp-gold: #D4A017;
+  --lp-gold-soft: #FBBF24;
+  --lp-gold-tint: #2E2612;
+  --lp-ink: #1A1918;
+  --lp-ink-fg: #FAF9F7;
+  --lp-ink-line: #2D2B26;
+  --lp-frame-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 24px 60px -24px rgba(0, 0, 0, 0.6),
+    0 60px 120px -40px rgba(244, 123, 92, 0.1);
+  --lp-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+
+.landing ::selection {
+  background: var(--lp-primary-tint);
+  color: var(--lp-primary);
+}
+
+/* Hero background: faint dotted grid + soft glow at the top */
+.lp-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+.lp-hero-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--lp-fg) 7%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 35%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 35%, #000 30%, transparent 75%);
+  opacity: 0.55;
+}
+.lp-hero-bg::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  width: 1200px;
+  height: 700px;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    ellipse 50% 60% at 50% 40%,
+    color-mix(in oklab, var(--lp-primary-tint) 70%, transparent) 0%,
+    transparent 60%
+  );
+  filter: blur(20px);
+  opacity: 0.85;
+}
+
+/* Drifting orbs */
+.lp-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.lp-orb-1 {
+  width: 380px;
+  height: 380px;
+  top: 8%;
+  left: 58%;
+  background: radial-gradient(circle, var(--lp-primary-soft), transparent 70%);
+  animation: lp-drift-1 18s ease-in-out infinite alternate;
+}
+.lp-orb-2 {
+  width: 320px;
+  height: 320px;
+  top: 35%;
+  left: 6%;
+  /* Fixed sage in the design, independent of the accent */
+  background: radial-gradient(circle, #6B9B6B, transparent 70%);
+  opacity: 0.32;
+  animation: lp-drift-2 22s ease-in-out infinite alternate;
+}
+.lp-orb-3 {
+  width: 260px;
+  height: 260px;
+  top: 55%;
+  left: 75%;
+  background: radial-gradient(circle, var(--lp-gold-soft), transparent 70%);
+  opacity: 0.22;
+  animation: lp-drift-3 26s ease-in-out infinite alternate;
+}
+.dark .lp-orb-1 { opacity: 0.22; }
+.dark .lp-orb-2 { opacity: 0.18; }
+.dark .lp-orb-3 { opacity: 0.14; }
+
+@keyframes lp-drift-1 {
   0%   { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-40px, 30px) scale(1.06); }
+  100% { transform: translate(-60px, 40px) scale(1.08); }
 }
-@keyframes drift-2 {
+@keyframes lp-drift-2 {
   0%   { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(30px, -25px) scale(0.96); }
+  100% { transform: translate(50px, -30px) scale(1.05); }
 }
-@keyframes drift-3 {
+@keyframes lp-drift-3 {
   0%   { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-20px, -35px) scale(1.04); }
+  100% { transform: translate(-40px, -50px) scale(1.1); }
 }
-@keyframes spark-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%       { opacity: 1;   transform: scale(1.4); }
+
+/* Tiny decorative sparkles */
+.lp-spark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--lp-primary);
+  opacity: 0;
+  animation: lp-spark 6s ease-in-out infinite;
 }
-@keyframes hero-in {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
+.lp-spark-1 { top: 18%; left: 22%; animation-delay: 0s; }
+.lp-spark-2 { top: 30%; left: 78%; animation-delay: 1.6s; background: var(--lp-sage); }
+.lp-spark-3 { top: 62%; left: 14%; animation-delay: 3.2s; background: var(--lp-gold); }
+.lp-spark-4 { top: 48%; left: 88%; animation-delay: 4.4s; }
+@keyframes lp-spark {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50%      { opacity: 0.7; transform: scale(1); }
 }
-.animate-drift-1  { animation: drift-1 18s ease-in-out infinite alternate; }
-.animate-drift-2  { animation: drift-2 22s ease-in-out infinite alternate; }
-.animate-drift-3  { animation: drift-3 16s ease-in-out infinite alternate; }
-.animate-spark    { animation: spark-pulse 3.2s ease-in-out infinite; }
-.animate-hero-in  { animation: hero-in 0.7s ease both; }
-.animate-hero-in-d1 { animation: hero-in 0.7s 0.1s ease both; }
-.animate-hero-in-d2 { animation: hero-in 0.7s 0.2s ease both; }
-.animate-hero-in-d3 { animation: hero-in 0.7s 0.35s ease both; }
+
+/* Hero copy entrance */
+.lp-hero-in { animation: lp-hero-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.lp-hero-in-d1 { animation-delay: 0.1s; }
+.lp-hero-in-d2 { animation-delay: 0.2s; }
+.lp-hero-in-d3 { animation-delay: 0.3s; }
+@keyframes lp-hero-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-orb,
+  .lp-spark,
+  .lp-hero-in {
+    animation: none !important;
+  }
+}
+
+/* Feature-visual frames: faint dot grid behind the mock UI */
+.lp-dots {
+  background-color: var(--lp-bg-soft);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--lp-fg) 9%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 18px 18px;
+}
 
 /* ── Chat assistant (DIE-30) ──────────────────────────────────────────── */
 @keyframes ai-pulse {

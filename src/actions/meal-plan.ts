@@ -90,6 +90,29 @@ export async function createMealPlan(data: MealPlanTemplateFormData) {
         }
       }
 
+      // Every explicit recipeId must be a recipe this user may use (own or
+      // public). Without this, the AI generator — or any direct caller — could
+      // link another user's private recipe into the plan.
+      const requestedRecipeIds = Array.from(
+        new Set(
+          (validatedData.days ?? [])
+            .flatMap((d) => (d.meals ?? []).map((m) => m.recipeId))
+            .filter((id): id is string => typeof id === "string")
+        )
+      );
+      if (requestedRecipeIds.length > 0) {
+        const accessible = await prisma.recipe.findMany({
+          where: {
+            id: { in: requestedRecipeIds },
+            OR: [{ userId: ctx.user.id }, { isPublic: true }],
+          },
+          select: { id: true },
+        });
+        if (accessible.length !== requestedRecipeIds.length) {
+          throw new Error("One or more recipes are not accessible");
+        }
+      }
+
       // Build days payload outside the Prisma call for clarity.
       const daysPayload = Array.from(
         { length: validatedData.duration },

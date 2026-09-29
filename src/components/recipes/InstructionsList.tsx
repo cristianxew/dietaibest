@@ -27,12 +27,12 @@ export function InstructionsList({ instructions }: InstructionsListProps) {
   const totalCount = instructions.length;
 
   return (
-    <div className="bg-card border border-border/60 rounded-2xl p-6 md:p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/40">
-        <h2 className="text-2xl font-display font-bold text-foreground">
+    <div className="bg-card border border-border/60 rounded-2xl p-5 sm:p-6 md:p-8 shadow-sm">
+      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-border/40">
+        <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
           {t("instructions", { fallback: "Instructions" })}
         </h2>
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
           {completedCount}/{totalCount} {t("done", { fallback: "done" })}
         </span>
       </div>
@@ -44,7 +44,7 @@ export function InstructionsList({ instructions }: InstructionsListProps) {
           return (
             <div
               key={index}
-              className={`flex gap-5 group cursor-pointer transition-opacity duration-200 py-4 border-b border-border/40 last:border-0 last:pb-0 first:pt-0 ${isCompleted ? "opacity-50" : "opacity-100"}`}
+              className={`flex gap-4 sm:gap-5 group cursor-pointer transition-opacity duration-200 py-4 border-b border-border/40 last:border-0 last:pb-0 first:pt-0 ${isCompleted ? "opacity-50" : "opacity-100"}`}
               onClick={() => toggleStep(index)}
             >
               <div

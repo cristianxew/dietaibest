@@ -1,7 +1,7 @@
 {
-  "name": "DietAI - Autonomous Nutrition Operating System",
+  "name": "DietAI",
   "short_name": "DietAI",
-  "description": "Stop manually tracking calories. DietAI agents build your meal plans, scrape recipes, and order your groceries automatically—while balancing your macros.",
+  "description": "Save recipes from any website, video or photo, see USDA-based nutrition and plan your week.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
