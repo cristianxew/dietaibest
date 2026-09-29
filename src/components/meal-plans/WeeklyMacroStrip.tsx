@@ -55,16 +55,16 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
     <div
       className={cn(
         "grid gap-x-3.5 gap-y-4 px-4 sm:px-[18px] py-3.5",
-        "grid-cols-2 lg:grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
+        "grid-cols-2 sm:grid-cols-4 lg:grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
         "bg-card border border-border rounded-xl"
       )}
     >
       {/* Label block */}
-      <div className="col-span-2 lg:col-span-1">
-        <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1">
+      <div className="col-span-2 sm:col-span-4 lg:col-span-1">
+        <div className="text-[10px] touch:text-xs font-bold tracking-[0.12em] uppercase text-muted-foreground mb-1">
           {t("weeklySummary")}
         </div>
-        <div className="text-[12px] text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           {t("dailyAverageWithCalories", { calories: Math.round(averageDailyMacros.calories) })}
         </div>
       </div>
@@ -77,16 +77,16 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
         return (
           <div key={m.label}>
             <div className="flex justify-between items-baseline mb-1">
-              <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground">
+              <span className="text-[10px] touch:text-xs font-bold tracking-[0.1em] uppercase text-muted-foreground">
                 {m.label}
               </span>
             </div>
-            <div className="flex items-baseline gap-[5px] mb-[5px]">
+            <div className="flex flex-wrap items-baseline gap-x-[5px] mb-[5px]">
               <span className="font-mono text-[18px] font-medium text-foreground">
                 {m.value.toLocaleString()}
               </span>
               {hasTarget && (
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] touch:text-xs text-muted-foreground">
                   {m.unit} / {m.target.toLocaleString()}
                   {m.unit}
                 </span>

@@ -743,6 +743,7 @@
     "generateWithAI": "Generá con IA",
     "aiGeneratePrompt": "Generá un plan de comidas para mí",
     "dragToSlot": "Arrastrá a un slot del plan",
+    "holdToDrag": "Mantén pulsada una receta y arrástrala a un slot",
     "selectPlanToEdit": "Seleccioná un plan para editarlo",
     "dragOrSuggest": "Soltá o sugerí",
     "tapToAdd": "Tocá para agregar",

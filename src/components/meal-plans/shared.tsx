@@ -119,10 +119,10 @@ const CHIP_COLOR_CLASSES: Record<ChipColor, string> = {
   danger:  'bg-destructive/10 text-destructive',
 };
 
-const CHIP_SIZE_CLASSES: Record<ChipSize, { wrapper: string; fontSize: number; iconSize: number }> = {
-  xs: { wrapper: 'py-[2px] px-[7px]',  fontSize: 10, iconSize: 12 },
-  sm: { wrapper: 'py-[3px] px-[9px]',  fontSize: 11, iconSize: 13 },
-  md: { wrapper: 'py-[5px] px-[11px]', fontSize: 12, iconSize: 14 },
+const CHIP_SIZE_CLASSES: Record<ChipSize, { wrapper: string; iconSize: number }> = {
+  xs: { wrapper: 'py-[2px] px-[7px] text-[10px] touch:text-xs',  iconSize: 12 },
+  sm: { wrapper: 'py-[3px] px-[9px] text-[11px] touch:text-xs',  iconSize: 13 },
+  md: { wrapper: 'py-[5px] px-[11px] text-xs',                   iconSize: 14 },
 };
 
 export function Chip({ children, color = 'neutral', size = 'sm', icon, style }: ChipProps) {
@@ -136,7 +136,7 @@ export function Chip({ children, color = 'neutral', size = 'sm', icon, style }: 
         colorCls,
         sz.wrapper,
       )}
-      style={{ ...style, fontSize: sz.fontSize }}
+      style={style}
     >
       {icon && <Icon name={icon} size={sz.iconSize} />}
       {children}

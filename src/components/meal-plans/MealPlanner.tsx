@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useCallback, useRef } from "react";
+import { useState, useEffect, useTransition, useCallback, useRef, useId } from "react";
 import { useSearchParams, useParams } from "next/navigation";
 import { RecipeDetailSheet } from "../recipes/RecipeDetailSheet";
 import {
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PageContainer } from "@/components/ui/page-container";
 import { MealPlanForm } from "@/components/meal-plans/MealPlanForm";
-import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search, Globe } from "lucide-react";
+import { ChefHat, PlusIcon, Sparkles, Edit2, CalendarDays, LayoutGrid, Layers, Columns2, Search, Globe, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCategories } from "@/actions/recipe";
 import {
@@ -46,7 +46,16 @@ import type { ReferenceIntakes } from "@/lib/nutrition-rda";
 import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
 import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
-import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { Recipe } from "@/generated/prisma";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +74,8 @@ import type {
   MicronutrientSummary,
 } from "@/types/meal-plan";
 import { openChatWithPrompt } from "@/components/chat/openChat";
+import { useIsTouchFirst, useViewportTier } from "@/hooks/use-media-query";
+import { useHeightCssVar } from "@/hooks/use-height-css-var";
 
 function updateTemplateServingsOptimistically(
   template: MealPlanTemplateDisplay,
@@ -174,20 +185,26 @@ export function MealPlanner({ reference }: MealPlannerProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRecipeIdForDetail, setSelectedRecipeIdForDetail] = useState<string | null>(null);
 
-  // Tap-to-add: which (day, slot) the recipe picker is targeting. This is a
-  // mobile-only add path (drag-and-drop from the sidebar stays the desktop flow).
+  // Tap-to-add: which (day, slot) the recipe picker is targeting. Offered on
+  // every touch-first surface (phones, tablets, coarse pointers) next to drag.
   const [pickerSlot, setPickerSlot] = useState<{ dayId: string; mealType: MealType } | null>(null);
-  // True below the `lg` breakpoint, where the drag library is hidden and meal
-  // slots become tap-to-add. Kept in sync with the CSS breakpoint so desktop
-  // behavior is never altered.
-  const [isCompactViewport, setIsCompactViewport] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 1023px)");
-    const onChange = () => setIsCompactViewport(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  const tier = useViewportTier();
+  const touchFirst = useIsTouchFirst();
+  const [showRecipePanel, setShowRecipePanel] = useState(false);
+  const servingsSwitchId = useId();
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  useHeightCssVar(toolbarRef, scrollRef, "--planner-toolbar-h", activeTab);
+  useHeightCssVar(controlsRef, scrollRef, "--planner-controls-h", activeTab);
+  
   // ── Debounced Servings mutation refs ─────────────────────────────────────────
   const servingsTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const pendingServingsRef = useRef<Record<string, number>>({});
@@ -547,14 +564,51 @@ export function MealPlanner({ reference }: MealPlannerProps) {
     }
   }, [templates, selectedPlanId, editingTemplate, handleSelectPlan, searchParams]);
 
+  const recipeFilters = (
+    <>
+      <div className="relative flex-1 min-w-0">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <Search className="w-4 h-4" />
+        </div>
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t("searchRecipes")}
+          className={cn(
+            "w-full py-2 touch:py-3 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] touch:text-base outline-none transition-all duration-200",
+            "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
+          )}
+        />
+      </div>
+      <div className="flex-shrink-0">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full sm:w-[180px] h-9 touch:h-11 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+            <SelectValue placeholder={t("allCategories")} />
+          </SelectTrigger>
+          <SelectContent className="border-border">
+            <SelectItem value="all" className="text-xs touch:min-h-11">
+              {t("allCategories")}
+            </SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.name} className="text-xs touch:min-h-11">
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <PageContainer viewport>
       <Tabs
+        ref={scrollRef}
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "planner" | "calendar" | "discover")}
-        className="flex flex-col flex-1 min-h-0 overflow-y-auto relative scrollbar-thin"
+        className="flex flex-col flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative scrollbar-thin"
       >
         {/* Hero Header */}
         <div className="px-4 sm:px-6 lg:px-10 pt-5 sm:pt-6 lg:pt-8 bg-background">
@@ -579,17 +633,20 @@ export function MealPlanner({ reference }: MealPlannerProps) {
         </div>
 
         {/* Tab nav */}
-        <div className="sticky top-0 z-30 px-4 sm:px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-4 border-b border-border flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-stretch sm:items-center">
+        <div
+          ref={toolbarRef}
+          className="sm:sticky sm:top-0 z-30 px-4 sm:px-6 lg:px-10 bg-background/95 backdrop-blur-sm py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-stretch sm:items-center"
+        >
           <TabsList className="mb-0 w-full sm:w-auto">
-            <TabsTrigger value="planner" className="flex-1 sm:flex-none">
+            <TabsTrigger value="planner" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
               <Edit2 className="w-4 h-4 mr-2" />
               {t("mealPlanner")}
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex-1 sm:flex-none">
+            <TabsTrigger value="calendar" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
               <CalendarDays className="w-4 h-4 mr-2" />
               {t("calendarView")}
             </TabsTrigger>
-            <TabsTrigger value="discover" className="flex-1 sm:flex-none">
+            <TabsTrigger value="discover" className="flex-1 sm:flex-none touch:min-h-11 px-2 sm:px-4">
               <Globe className="w-4 h-4 mr-2" />
               {t("discoverTab")}
             </TabsTrigger>
@@ -599,7 +656,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
             <Button
               variant="outline"
               className={cn(
-                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 touch:h-11 px-3 sm:px-4 border-brand-300/60 dark:border-brand-500/30 text-xs",
                 "text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-500/10"
               )}
               onClick={handleGenerateWithAI}
@@ -611,7 +668,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
             <Button
               onClick={() => setShowCreateDialog(true)}
               className={cn(
-                "flex-1 sm:flex-none gap-2 h-10 px-3 sm:px-5 text-[#1C1A17] transition-all duration-300 text-xs",
+                "flex-1 sm:flex-none gap-2 h-10 touch:h-11 px-3 sm:px-5 text-[#1C1A17] transition-all duration-300 text-xs",
                 "shadow-[0_4px_14px_rgba(224,122,95,0.30)] hover:shadow-[0_6px_18px_rgba(224,122,95,0.40)]",
                 "hover:-translate-y-0.5"
               )}
@@ -649,6 +706,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
 
             {/* Editor body */}
             <DndContext
+              sensors={sensors}
               collisionDetection={pointerWithin}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
@@ -671,53 +729,20 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                   )
                 )}
                 {/* Unified control panel wrapper */}
-                <div className="relative lg:sticky lg:top-[78px] z-20 pt-5 pb-3 bg-background">
+                <div
+                  ref={controlsRef}
+                  className="relative lg:sticky lg:top-[var(--planner-toolbar-h,78px)] z-20 pt-2 lg:pt-5 pb-3 bg-background"
+                >
                   {/* Unified control panel: Search + Categories + Layout + Density */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                    {/* Left: Search & Category Filters — desktop only (drag library
-                        is hidden on mobile, where recipe search lives in the picker modal) */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-3 sm:p-4 bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+                    {/* Left: Search & Category Filters — desktop only; on tablet they
+                        live in the collapsible recipe panel, on phones in the picker */}
                     <div className="hidden lg:flex lg:flex-row lg:items-center gap-3 flex-1 max-w-2xl w-full">
-                      {/* Search Input */}
-                      <div className="relative flex-1">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          <Search className="w-4 h-4" />
-                        </div>
-                        <input
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder={t("searchRecipes")}
-                          className={cn(
-                            "w-full py-2 pr-3 pl-[38px] rounded-lg border border-border bg-background text-foreground font-sans text-[13px] outline-none transition-all duration-200",
-                            "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20"
-                          )}
-                        />
-                      </div>
-
-                      {/* Category Dropdown Selector */}
-                      <div className="flex-shrink-0">
-                        <Select
-                          value={selectedCategory}
-                          onValueChange={setSelectedCategory}
-                        >
-                          <SelectTrigger className="w-full sm:w-[180px] h-9 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
-                            <SelectValue placeholder={t("allCategories")} />
-                          </SelectTrigger>
-                          <SelectContent className="border-border">
-                            <SelectItem value="all" className="text-xs">
-                              {t("allCategories")}
-                            </SelectItem>
-                            {categories.map((c) => (
-                              <SelectItem key={c.id} value={c.name} className="text-xs">
-                                {c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {recipeFilters}
                     </div>
 
                     {/* Right: Layout & Density controls */}
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       {/* 3-way layout switcher */}
                       <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
                         {(
@@ -734,7 +759,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                               type="button"
                               onClick={() => setLayout(id)}
                               className={cn(
-                                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                                "flex items-center gap-1.5 px-2.5 py-1.5 touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
                                 isActive
                                   ? "bg-card text-brand-500 shadow-sm"
                                   : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -757,7 +782,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                               type="button"
                               onClick={() => setDensity(d)}
                               className={cn(
-                                "px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-150 cursor-pointer",
+                                "px-2.5 py-1.5 touch:min-h-11 rounded-md text-[11px] touch:text-xs font-semibold transition-all duration-150 cursor-pointer",
                                 isActive
                                   ? "bg-card text-brand-500 shadow-sm"
                                   : "bg-transparent text-muted-foreground hover:text-foreground"
@@ -770,43 +795,87 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                       </div>
 
                       {/* Servings toggle */}
-                      <div className="flex items-center gap-2.5 px-2.5 py-1 bg-muted border border-border rounded-lg h-[30px]">
-                        <span className="text-[11px] font-semibold text-muted-foreground">
+                      <label
+                        htmlFor={servingsSwitchId}
+                        className="flex items-center gap-2.5 px-2.5 py-1 bg-muted border border-border rounded-lg h-[30px] touch:h-11 cursor-pointer"
+                      >
+                        <span className="text-[11px] touch:text-xs font-semibold text-muted-foreground">
                           {t("showServings")}
                         </span>
                         <Switch
+                          id={servingsSwitchId}
                           checked={showServings}
                           onCheckedChange={setShowServings}
                         />
-                      </div>
+                      </label>
                     </div>
                   </div>
                 </div>
 
+                {/* Tablet: collapsible recipe panel (drag by press-and-hold) */}
+                {tier === "tablet" && (
+                  <div className="bg-card border border-border rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setShowRecipePanel((v) => !v)}
+                      aria-expanded={showRecipePanel}
+                      className="flex w-full items-center justify-between gap-3 px-4 min-h-12 text-left cursor-pointer"
+                    >
+                      <span className="min-w-0">
+                        <span className="block font-display text-[17px] font-semibold text-foreground">
+                          {t("recipes")}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {t("holdToDrag")}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "w-5 h-5 flex-shrink-0 text-muted-foreground transition-transform duration-200",
+                          showRecipePanel && "rotate-180"
+                        )}
+                      />
+                    </button>
+                    {showRecipePanel && (
+                      <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                        <div className="flex flex-row items-center gap-3">{recipeFilters}</div>
+                        <div className="h-[40dvh] min-h-[240px]">
+                          <RecipeLibrary
+                            dense={density === "compact"}
+                            searchQuery={searchQuery}
+                            selectedCategory={selectedCategory}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* 2-column grid: recipe library + meal layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-[18px] items-start">
-                  {/* Recipe library sidebar — drag source, desktop only.
-                      On touch, adding happens by tapping a slot (RecipePicker). */}
-                  <div className="hidden lg:block bg-card border border-border rounded-xl p-4 lg:h-[calc(100vh-210px)] lg:sticky lg:top-[178px] z-10">
-                    <div className="mb-2.5">
-                      <div className="font-display text-[17px] font-semibold text-foreground">
-                        {t("recipes")}
+                  {/* Recipe library sidebar — drag source, desktop widths only. */}
+                  {tier === "desktop" && (
+                    <div className="bg-card border border-border rounded-xl p-4 lg:h-[calc(100dvh-var(--planner-toolbar-h,78px)-var(--planner-controls-h,100px)-32px)] lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10">
+                      <div className="mb-2.5">
+                        <div className="font-display text-[17px] font-semibold text-foreground">
+                          {t("recipes")}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {touchFirst ? t("holdToDrag") : t("dragToSlot")}
+                        </div>
                       </div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {t("dragToSlot")}
+                      <div className="h-[calc(100%-60px)] pt-2.5">
+                        <RecipeLibrary
+                          dense={density === "compact"}
+                          searchQuery={searchQuery}
+                          selectedCategory={selectedCategory}
+                        />
                       </div>
                     </div>
-                    <div className="h-[calc(100%-60px)] pt-2.5">
-                      <RecipeLibrary
-                        dense={density === "compact"}
-                        searchQuery={searchQuery}
-                        selectedCategory={selectedCategory}
-                      />
-                    </div>
-                  </div>
+                  )}
 
                   {/* Meal layout */}
-                  <div className="min-w-0 overflow-x-auto">
+                  <div className="min-w-0">
                     {isLoadingTemplates || isLoadingPlan ? (
                       <>
                         {layout === "grid" && (
@@ -827,7 +896,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
+                            onSlotSelect={touchFirst ? handleOpenPicker : undefined}
                             showServings={showServings}
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
@@ -838,7 +907,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
+                            onSlotSelect={touchFirst ? handleOpenPicker : undefined}
                             showServings={showServings}
                             reference={reference}
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
@@ -850,7 +919,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                             density={density}
                             onRemove={handleRemoveMeal}
                             onServingsChange={handleServingsChange}
-                            onSlotSelect={isCompactViewport ? handleOpenPicker : undefined}
+                            onSlotSelect={touchFirst ? handleOpenPicker : undefined}
                             showServings={showServings}
                             reference={reference}
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
@@ -884,7 +953,7 @@ export function MealPlanner({ reference }: MealPlannerProps) {
                     )}
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p className="text-[13px] font-semibold text-foreground truncate">{activeDrag.name}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-[11px] touch:text-xs text-muted-foreground mt-0.5">
                         {activeDrag.type === "recipe" ? t("dragToSlot") : t("moveMeal")}
                       </p>
                     </div>

@@ -17,7 +17,7 @@ export function PageContainer({ children, className, viewport = false }: PageCon
     <div
       className={cn(
         viewport
-          ? "flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden"
+          ? "flex flex-col h-[calc(100dvh-4rem)] md:h-dvh overflow-hidden"
           : "relative p-6 lg:p-10",
         className
       )}

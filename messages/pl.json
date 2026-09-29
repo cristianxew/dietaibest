@@ -738,6 +738,7 @@
     "generateWithAI": "Generuj z AI",
     "aiGeneratePrompt": "Wygeneruj dla mnie plan posiłków",
     "dragToSlot": "Przeciągnij do slotu planu",
+    "holdToDrag": "Przytrzymaj przepis i przeciągnij do slotu",
     "selectPlanToEdit": "Wybierz plan do edycji",
     "dragOrSuggest": "Upuść lub zaproponuj",
     "tapToAdd": "Dotknij, aby dodać",

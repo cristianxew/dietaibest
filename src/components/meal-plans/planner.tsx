@@ -18,6 +18,13 @@ import { toast } from 'sonner';
 import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
 import { compareMacro, getMacroStatusColor } from '@/lib/meal-plan-macros';
 import { RecipeSidebarSkeleton } from './MealPlannerSkeletons';
+import {
+  GRID_COL_MIN_DENSE,
+  GRID_COL_MIN_REGULAR,
+  GRID_LABEL_COL,
+  splitSlotCols,
+  stackSlotCols,
+} from './layout-classes';
 import { MicronutrientPanel } from './MicronutrientPanel';
 import type { ReferenceIntakes } from '@/lib/nutrition-rda';
 
@@ -42,7 +49,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
   };
 
   return (
-    <div className="flex flex-wrap gap-2.5 items-stretch">
+    <div className="flex flex-nowrap lg:flex-wrap gap-2.5 items-stretch overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain scrollbar-thin -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 pb-2 lg:pb-0">
       {templates.map(template => {
         const isActive = template.id === activeId;
         return (
@@ -50,7 +57,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
             key={template.id}
             onClick={() => onPick(template.id)}
             className={cn(
-              'min-w-[200px] px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200 ease-in-out',
+              'min-w-[200px] shrink-0 snap-start px-4 py-3.5 text-left rounded-xl cursor-pointer relative transition-all duration-200 ease-in-out',
               isActive
                 ? 'bg-muted border border-brand-500 shadow-[0_12px_20px_-8px_rgba(224,122,95,0.35),0_4px_12px_-2px_rgba(0,0,0,0.12),0_0_0_4px_rgba(224,122,95,0.1)]'
                 : 'bg-card border border-border shadow-none'
@@ -71,7 +78,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
                 </div>
               )}
             </div>
-            <div className="flex gap-3.5 text-[11px] text-muted-foreground mb-2">
+            <div className="flex gap-3.5 text-[11px] touch:text-xs text-muted-foreground mb-2">
               <span className="flex items-center gap-1">
                 <Icon name="Clock" size={11} />{template.duration}d
               </span>
@@ -90,7 +97,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
                     role="button"
                     tabIndex={0}
                     title={t('copyShareLink')}
-                    className="inline-flex items-center justify-center w-5 h-5 rounded-md text-muted-foreground hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors"
+                    className="relative inline-flex items-center justify-center w-5 h-5 touch:w-7 touch:h-7 rounded-md text-muted-foreground hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors after:absolute after:-inset-2 after:content-['']"
                     onClick={(e) => {
                       e.stopPropagation();
                       copyShareLink(template.shareToken!);
@@ -114,7 +121,7 @@ export function PlanSwitcher({ templates, activeId, onPick, onCreate }: PlanSwit
       <button
         onClick={onCreate}
         className={cn(
-          'min-w-[140px] px-4 py-3.5',
+          'min-w-[140px] shrink-0 snap-start px-4 py-3.5',
           'flex flex-col items-center justify-center gap-1.5',
           'bg-transparent border-[1.5px] border-dashed border-border rounded-xl cursor-pointer',
           'text-muted-foreground transition-all duration-150',
@@ -189,7 +196,7 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; d
           {...attributes}
           {...listeners}
           className={cn(
-            'flex gap-2.5 rounded-[10px] border border-border bg-card cursor-grab transition-all duration-150',
+            'flex gap-2.5 rounded-[10px] border border-border bg-card cursor-grab transition-all duration-150 select-none [-webkit-touch-callout:none]',
             'hover:border-brand-500 hover:-translate-y-px',
             dense ? 'p-2' : 'p-2.5',
           )}
@@ -207,7 +214,7 @@ function DraggableRecipeRow({ recipe, dense }: { recipe: RecipeWithCategories; d
                 <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
               )}
               {recipe.prepTime != null && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-[3px]">
+                <span className="text-[10px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
                   <Icon name="Clock" size={10} />{recipe.prepTime}m
                 </span>
               )}
@@ -368,12 +375,12 @@ export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategor
   return (
     <div className="flex flex-col gap-2.5 h-full">
       {/* Count */}
-      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pb-1">
+      <div className="text-[11px] touch:text-xs text-muted-foreground flex items-center gap-1.5 pb-1">
         <Icon name="UtensilsCrossed" size={12} />{t('recipesFound', { count: filtered.length })}
       </div>
 
       {/* Recipe rows */}
-      <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pr-1">
         {loading ? (
           <RecipeSidebarSkeleton dense={dense} />
         ) : filtered.length === 0 ? (
@@ -470,7 +477,7 @@ export function MealCell({
           )}
         >
           <Icon name={isOver ? 'Sparkles' : 'Plus'} size={14} className={isOver ? 'text-brand-500' : 'text-muted-foreground/50'} />
-          <div className={cn('text-[11px] font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
+          <div className={cn('text-[11px] touch:text-xs font-medium', isOver ? 'text-brand-500' : 'text-muted-foreground/60')}>
             {isOver ? t('dropMealHere') : t('tapToAdd')}
           </div>
         </button>
@@ -506,22 +513,22 @@ export function MealCell({
         compact ? 'p-2' : 'p-2.5',
         isOver ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-border bg-card',
         isDragging ? 'cursor-grabbing' : 'cursor-grab',
+        'select-none [-webkit-touch-callout:none]',
       )}
     >
-      {/* Clear button — hover-revealed, outside drag listeners */}
+      {/* Clear button — hover-revealed on pointer devices, always visible on touch */}
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onRemove(meal.id); }}
         className={cn(
-          'absolute top-1 right-1 z-10 w-5 h-5 rounded-full',
-          'bg-black/50 flex items-center justify-center',
-          // Always visible on touch; hover-revealed on pointer devices.
-          'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150',
+          'absolute top-1 right-1 z-10 w-5 h-5 touch:w-7 touch:h-7 rounded-full',
+          "bg-black/50 flex items-center justify-center after:absolute after:-inset-2 after:content-['']",
+          'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150',
           'cursor-pointer border-none',
         )}
         aria-label={t('slot.removeMeal')}
       >
-        <Icon name="X" size={11} className="text-white" />
+        <Icon name="X" size={11} className="text-white touch:size-[14px]" />
       </button>
 
       {/* View Details button — hover-revealed, outside drag listeners */}
@@ -530,14 +537,14 @@ export function MealCell({
           type="button"
           onClick={(e) => { e.stopPropagation(); onViewRecipeDetail(meal.recipeId!); }}
           className={cn(
-            'absolute top-1 right-7 z-10 w-5 h-5 rounded-full',
-            'bg-black/50 flex items-center justify-center',
-            'opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-150',
+            'absolute top-1 right-7 touch:right-12 z-10 w-5 h-5 touch:w-7 touch:h-7 rounded-full',
+            "bg-black/50 flex items-center justify-center after:absolute after:-inset-2 after:content-['']",
+            'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150',
             'cursor-pointer border-none',
           )}
           aria-label={t('slot.viewRecipe')}
         >
-          <Icon name="Eye" size={11} className="text-white" />
+          <Icon name="Eye" size={11} className="text-white touch:size-[14px]" />
         </button>
       )}
 
@@ -556,10 +563,10 @@ export function MealCell({
               radius={6}
             />
             <div className="flex-1 min-w-0">
-              <div className="text-[11px] font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.25]">
+              <div className="text-[11px] touch:text-xs font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.25]">
                 {meal.recipeName}
               </div>
-              <div className="text-[10px] text-muted-foreground font-mono">{meal.calories} kcal</div>
+              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono">{meal.calories} kcal</div>
             </div>
           </div>
           {/* Servings stepper */}
@@ -568,18 +575,18 @@ export function MealCell({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
-                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
                 aria-label={t('slot.decreaseServings')}
               >
                 <Icon name="Minus" size={10} />
               </button>
-              <span className="text-[11px] font-semibold text-foreground w-4 text-center tabular-nums">
+              <span className="text-[11px] touch:text-xs font-semibold text-foreground w-4 touch:w-5 text-center tabular-nums">
                 {meal.servings}
               </span>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
-                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
                 aria-label={t('slot.increaseServings')}
               >
                 <Icon name="Plus" size={10} />
@@ -617,29 +624,29 @@ export function MealCell({
           {/* Servings stepper — outside drag listeners */}
           {showServings && (
             <div
-              className="flex items-center gap-1 mt-2"
+              className="flex items-center gap-1 touch:gap-2 mt-2"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, Math.max(1, meal.servings - 1)); }}
-                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
                 aria-label={t('slot.decreaseServings')}
               >
                 <Icon name="Minus" size={10} />
               </button>
-              <span className="text-[11px] font-semibold text-foreground w-5 text-center tabular-nums">
+              <span className="text-[11px] touch:text-xs font-semibold text-foreground w-5 text-center tabular-nums">
                 {meal.servings}
               </span>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onServingsChange(meal.id, meal.servings + 1); }}
-                className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="relative w-5 h-5 touch:w-7 touch:h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors after:absolute after:-inset-2 after:content-['']"
                 aria-label={t('slot.increaseServings')}
               >
                 <Icon name="Plus" size={10} />
               </button>
-              <span className="text-[10px] text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
+              <span className="text-[10px] touch:text-xs text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
             </div>
           )}
         </>
@@ -671,18 +678,18 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
           {Math.round(macros.calories)}
         </div>
         {targets?.calories != null && (
-          <div className="text-[10px] text-muted-foreground">
+          <div className="text-[10px] touch:text-xs text-muted-foreground">
             / {targets.calories} kcal
           </div>
         )}
         {!compact && comparison.status && (
-          <div className={cn('inline-flex items-center text-[10px] font-semibold ml-auto px-1.5 py-0.5 rounded-full border', statusColor)}>
+          <div className={cn('inline-flex items-center text-[10px] touch:text-xs font-semibold ml-auto px-1.5 py-0.5 rounded-full border', statusColor)}>
             {statusLabel}
           </div>
         )}
       </div>
       <MacroBar p={macros.protein} c={macros.carbs} f={macros.fat} height={5} />
-      <div className="flex gap-2.5 text-[10px] text-muted-foreground font-mono">
+      <div className="flex flex-wrap gap-x-2.5 text-[10px] touch:text-xs text-muted-foreground font-mono">
         <span><span className="text-brand-500">●</span> {Math.round(macros.protein)}g P</span>
         <span><span className="text-gold-500">●</span> {Math.round(macros.carbs)}g C</span>
         <span><span className="text-sage-500">●</span> {Math.round(macros.fat)}g F</span>
@@ -692,6 +699,7 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
 }
 
 /* ── GridLayout ────────────────────────────────── */
+
 interface GridLayoutProps {
   template: MealPlanTemplateDisplay;
   density: 'regular' | 'compact';
@@ -706,79 +714,87 @@ export function GridLayout({ template, density, onRemove, onServingsChange, onSl
   const t = useTranslations('mealPlans');
   const dense = density === 'compact';
   const numDays = template.days.length;
-  const cellMin = dense ? 'minmax(110px, 1fr)' : 'minmax(132px, 1fr)';
-  const gridCols = `72px repeat(${numDays}, ${cellMin})`;
+  const gridCols = `${GRID_LABEL_COL} repeat(${numDays}, minmax(var(--grid-col-min), 1fr))`;
+  const minWidth = `calc(${GRID_LABEL_COL} + ${numDays} * (var(--grid-col-min) + 0.5rem))`;
+  const labelCellClass = 'sticky left-0 z-[5] bg-background shadow-[8px_0_0_0_var(--background)]';
 
   return (
-    <div className="flex flex-col">
-      {/* Day headers */}
-      <div
-        className="grid gap-2 mb-2.5 pb-1.5"
-        style={{ gridTemplateColumns: gridCols }}
-      >
-        <div />
-        {template.days.map(day => (
-          <div key={day.id} className="text-center py-1.5 px-1">
-            <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">
-              {t('calendar.dayPrefix')}
-            </div>
-            <div className="font-display text-lg font-semibold text-foreground">
-              {day.dayNumber}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Meal rows */}
-      {template.mealSlots.map(slot => {
-        const meta = MEAL_SLOT_META[slot];
-        return (
-          <div
-            key={slot}
-            className="grid gap-2 mb-2.5"
-            style={{ gridTemplateColumns: gridCols }}
-          >
-            {/* Row label */}
-            <div className="flex flex-col items-start justify-center pt-1.5">
-              <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center">
-                <Icon name={meta.iconName} size={13} className={meta.colorClass} />
+    <div
+      className={cn(
+        'overflow-x-auto overscroll-x-contain snap-x snap-proximity scroll-pl-[72px] scrollbar-thin pb-2',
+        dense ? GRID_COL_MIN_DENSE : GRID_COL_MIN_REGULAR,
+      )}
+    >
+      <div className="flex flex-col" style={{ minWidth }}>
+        {/* Day headers */}
+        <div
+          className="grid gap-2 mb-2.5 pb-1.5"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <div className={labelCellClass} />
+          {template.days.map(day => (
+            <div key={day.id} className="text-center py-1.5 px-1 snap-start">
+              <div className="text-[10px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground">
+                {t('calendar.dayPrefix')}
               </div>
-              <div className="text-[11px] font-semibold text-muted-foreground mt-1.5 leading-tight">
-                {t(meta.i18nKey)}
+              <div className="font-display text-lg font-semibold text-foreground">
+                {day.dayNumber}
               </div>
             </div>
-            {/* Cells */}
-            {template.days.map(day => (
-              <MealCell
-                key={day.id}
-                meal={day.meals.find(m => m.mealType === slot)}
-                dayId={day.id}
-                mealType={slot}
-                onRemove={onRemove}
-                onServingsChange={onServingsChange}
-                onSlotSelect={onSlotSelect}
-                dense={dense}
-                showServings={showServings}
-                onViewRecipeDetail={onViewRecipeDetail}
-              />
-            ))}
-          </div>
-        );
-      })}
-
-      {/* Macro footer */}
-      <div
-        className="grid gap-2 mt-2 pt-3.5 border-t border-border"
-        style={{ gridTemplateColumns: gridCols }}
-      >
-        <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground self-center">
-          {t('total')}
+          ))}
         </div>
-        {template.days.map(day => (
-          <div key={day.id} className="py-1 px-1.5">
-            <DayMacros macros={day.macros} targets={template.targets} compact />
+
+        {/* Meal rows */}
+        {template.mealSlots.map(slot => {
+          const meta = MEAL_SLOT_META[slot];
+          return (
+            <div
+              key={slot}
+              className="grid gap-2 mb-2.5"
+              style={{ gridTemplateColumns: gridCols }}
+            >
+              {/* Row label */}
+              <div className={cn('flex flex-col items-start justify-center pt-1.5', labelCellClass)}>
+                <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center">
+                  <Icon name={meta.iconName} size={13} className={meta.colorClass} />
+                </div>
+                <div className="text-[11px] touch:text-xs font-semibold text-muted-foreground mt-1.5 leading-tight">
+                  {t(meta.i18nKey)}
+                </div>
+              </div>
+              {/* Cells */}
+              {template.days.map(day => (
+                <MealCell
+                  key={day.id}
+                  meal={day.meals.find(m => m.mealType === slot)}
+                  dayId={day.id}
+                  mealType={slot}
+                  onRemove={onRemove}
+                  onServingsChange={onServingsChange}
+                  onSlotSelect={onSlotSelect}
+                  dense={dense}
+                  showServings={showServings}
+                  onViewRecipeDetail={onViewRecipeDetail}
+                />
+              ))}
+            </div>
+          );
+        })}
+
+        {/* Macro footer */}
+        <div
+          className="grid gap-2 mt-2 pt-3.5 border-t border-border"
+          style={{ gridTemplateColumns: gridCols }}
+        >
+          <div className={cn('text-[10px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground self-center', labelCellClass)}>
+            {t('total')}
           </div>
-        ))}
+          {template.days.map(day => (
+            <div key={day.id} className="py-1 px-1.5">
+              <DayMacros macros={day.macros} targets={template.targets} compact />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -804,7 +820,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
     <div className="flex flex-col gap-3.5">
       {template.days.map(day => {
         const numSlots = template.mealSlots.length;
-        const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-2 sm:grid-cols-3' : numSlots === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5';
+        const colsClass = stackSlotCols(numSlots);
         return (
           <div key={day.id} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-[18px]">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4 mb-3.5">
@@ -822,7 +838,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
                   <div key={slot}>
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Icon name={meta.iconName} size={12} className={meta.colorClass} />
-                      <span className={cn('text-[10px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
+                      <span className={cn('text-[10px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
                         {t(meta.i18nKey)}
                       </span>
                     </div>
@@ -862,12 +878,12 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
   const dense = density === 'compact';
   const selectedDay = template.days[selIdx] ?? template.days[0];
   const numSlots = template.mealSlots.length;
-  const colsClass = numSlots <= 2 ? 'grid-cols-2' : numSlots === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
+  const colsClass = splitSlotCols(numSlots);
 
   return (
     <div className="grid gap-3 lg:gap-[18px] items-start grid-cols-1 lg:grid-cols-[200px_1fr]">
       {/* Day rail */}
-      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 lg:sticky lg:top-[178px] z-10 scrollbar-thin">
+      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible snap-x snap-proximity overscroll-x-contain pb-2 lg:pb-0 lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10 scrollbar-thin -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
         {template.days.map((day, i) => {
           const isActive = i === selIdx;
           const calTarget = template.targets?.calories ?? 2000;
@@ -880,7 +896,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
               type="button"
               onClick={() => setSelIdx(i)}
               className={cn(
-                'flex-shrink-0 min-w-[130px] lg:min-w-0 lg:w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
+                'flex-shrink-0 snap-start min-w-[130px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2.5 rounded-[10px] cursor-pointer transition-all duration-150',
                 isActive
                   ? 'bg-muted shadow-[inset_0_0_0_1.5px_theme(colors.brand.500)]'
                   : 'bg-transparent shadow-[inset_0_0_0_1px_theme(colors.border)]',
@@ -891,7 +907,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
                   {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
-              <div className="text-[10px] text-muted-foreground font-mono mb-1.5">
+              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono mb-1.5">
                 {Math.round(day.macros.calories)} kcal
               </div>
               <div className="h-[3px] bg-muted rounded-full overflow-hidden">
@@ -910,7 +926,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
         <div className="bg-card border border-border rounded-[14px] p-4 sm:p-6 min-w-0">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <div className="text-[11px] font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
+              <div className="text-[11px] touch:text-xs font-bold tracking-[0.12em] uppercase text-brand-500 mb-1">
                 {template.name}
               </div>
               <div className="font-display text-2xl sm:text-[30px] font-semibold text-foreground tracking-tight">
@@ -928,7 +944,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
                 <div key={slot}>
                   <div className="flex items-center gap-1.5 mb-2">
                     <Icon name={meta.iconName} size={13} className={meta.colorClass} />
-                    <span className={cn('text-[11px] font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
+                    <span className={cn('text-[11px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
                       {t(meta.i18nKey)}
                     </span>
                   </div>
