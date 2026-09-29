@@ -854,10 +854,11 @@ export function AppSidebarDock({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content — min-w-0 stops wide page content from stretching the
+            flex item (and the document) past the viewport */}
         <main
           className={cn(
-            "flex-1 bg-background min-h-screen",
+            "flex-1 min-w-0 bg-background min-h-screen",
             "pt-16 md:pt-0",
             "transition-[margin-left] duration-300 ease-out",
             collapsed ? "md:ml-16" : "md:ml-[220px]"
