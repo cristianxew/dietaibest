@@ -75,6 +75,9 @@ interface RecipeDetailClientProps {
   isFavorited: boolean;
   locale: string;
   authorName?: string;
+  /** Where "Back" goes; defaults to the recipe library. */
+  backHref?: string;
+  backLabel?: string;
 }
 
 const difficultyBadgeClass: Record<string, string> = {
@@ -130,6 +133,8 @@ export function RecipeDetailClient({
   isFavorited,
   locale,
   authorName,
+  backHref,
+  backLabel,
 }: RecipeDetailClientProps) {
   const t = useTranslations("recipes");
   const paywall = usePaywall();
@@ -241,11 +246,11 @@ export function RecipeDetailClient({
   return (
     <PageContainer className="px-4 py-5 sm:p-6 lg:p-10">
       <Link
-        href={`/${locale}/recipes`}
+        href={backHref ?? `/${locale}/recipes`}
         className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors mb-5 sm:mb-8"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        {t("backToRecipes")}
+        {backLabel ?? t("backToRecipes")}
       </Link>
 
       {/* Top Section: Image + Details */}

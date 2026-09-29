@@ -28,11 +28,14 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { recipeHref } from "@/lib/recipe-back-link";
 
 interface RecipeDetailSheetProps {
   recipeId: string | null;
   onClose: () => void;
   locale?: string;
+  /** In-app path the full recipe page's "Back" should return to (see recipe-back-link). */
+  from?: string | null;
 }
 
 const difficultyBadgeClass: Record<string, string> = {
@@ -80,6 +83,7 @@ export function RecipeDetailSheet({
   recipeId,
   onClose,
   locale = "en",
+  from,
 }: RecipeDetailSheetProps) {
   const t = useTranslations("recipes");
   const [recipe, setRecipe] = useState<any>(null);
@@ -133,7 +137,7 @@ export function RecipeDetailSheet({
           </SheetTitle>
           {recipe && (
             <Link
-              href={`/${locale}/recipes/${recipe.id}`}
+              href={recipeHref(locale, recipe.id, from)}
               onClick={onClose}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors mr-6"
             >
