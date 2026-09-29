@@ -34,28 +34,33 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /.*\.responsive\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
 
     {
       name: "firefox",
+      testIgnore: /.*\.responsive\.spec\.ts/,
       use: { ...devices["Desktop Firefox"] },
     },
 
     {
       name: "webkit",
+      testIgnore: /.*\.responsive\.spec\.ts/,
       use: { ...devices["Desktop Safari"] },
     },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    {
+      name: "mobile",
+      testMatch: /.*\.responsive\.spec\.ts/,
+      use: { ...devices["iPhone 13"] },
+    },
+
+    {
+      name: "tablet",
+      testMatch: /.*\.responsive\.spec\.ts/,
+      use: { ...devices["iPad (gen 7)"] },
+    },
 
     /* Test against branded browsers. */
     // {
