@@ -17,7 +17,8 @@
 6. [Landing Page Components](#landing-page-components)
 7. [Utility Classes](#utility-classes)
 8. [Dark Mode Implementation](#dark-mode-implementation)
-9. [Best Practices](#best-practices)
+9. [Responsive & Touch Conventions](#responsive--touch-conventions)
+10. [Best Practices](#best-practices)
 
 ---
 
@@ -416,6 +417,21 @@ import { ThemeToggleSimple } from "@/components/ui/ThemeToggle";
 // In navigation
 <ThemeToggleSimple size="sm" />
 ```
+
+---
+
+## Responsive & Touch Conventions
+
+Introduced with the meal plans responsive pass. Source of truth: `src/lib/responsive.ts`.
+
+- **Tiers:** phone `<=639px`, tablet `640-1023px`, desktop `>=1024px`. Use `getViewportTier()` / `useMediaQuery` (`src/hooks/use-media-query.ts`) in JS and `sm:` / `lg:` in CSS. Tablet is NOT treated as phone.
+- **Touch targets:** anything tappable is at least 44x44 CSS px on touch (`min-h-11 min-w-11`, or padding / hit slop while keeping the visual size small). Nothing may be hover-only; reveal on touch with `[@media(hover:hover)]:` variants.
+- **Viewport units:** use `dvh` / `min-h-dvh`, never `vh`, so mobile browser chrome does not break layouts.
+- **Sticky offsets:** never hard-code `top-[NNpx]`. Measure the toolbar with `useHeightCssVar` (`src/hooks/use-height-css-var.ts`) and consume the CSS variable.
+- **Bottom sheets:** `DialogContent` / `AlertDialogContent` accept an opt-in `mobileSheet` prop (classes in `src/components/ui/mobile-sheet.ts`). Below `sm` they anchor to the bottom with `90dvh` max height and safe-area padding; from `sm` up they stay centred modals. Default is off, so other dialogs are unchanged.
+- **Drag and drop:** dnd-kit uses `MouseSensor`, `KeyboardSensor` and a long-press `TouchSensor` (200ms delay, 8px tolerance) so page scroll keeps working; every drag action also has a tap alternative (recipe picker, day sheet).
+- **Text:** meaningful labels are at least 12px.
+- **Testing:** Playwright `mobile` (iPhone 13) and `tablet` (iPad gen 7) projects run only `*.responsive.spec.ts`. The share page spec needs `E2E_SHARE_TOKEN` and is skipped without it.
 
 ---
 
