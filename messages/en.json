@@ -714,6 +714,7 @@
       "moreSchedules": "+{count} more",
       "yourMealPlans": "Your Meal Plans",
       "dragInstruction": "Drag meal plans onto calendar dates to schedule them",
+      "dragInstructionTouch": "Press and hold a meal plan, then drag it onto a calendar date",
       "noPlansAvailable": "No meal plans available",
       "today": "Today",
       "scheduledLegend": "Scheduled (colored by meal plan)",
@@ -738,6 +739,7 @@
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
       "clickToUnschedule": "Click a scheduled day to unschedule",
+      "tapToUnschedule": "Tap a scheduled day to unschedule",
       "noMealsForDay": "No meals assigned for this day."
     },
     "generateWithAI": "Generate with AI",

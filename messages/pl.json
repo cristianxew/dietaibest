@@ -709,6 +709,7 @@
       "moreSchedules": "+{count} więcej",
       "yourMealPlans": "Twoje Plany Posiłków",
       "dragInstruction": "Przeciągnij plany posiłków na daty kalendarza, aby je zaplanować",
+      "dragInstructionTouch": "Przytrzymaj plan posiłków i przeciągnij go na datę w kalendarzu",
       "noPlansAvailable": "Brak dostępnych planów posiłków",
       "today": "Dzisiaj",
       "scheduledLegend": "Zaplanowane (kolorowane według planu posiłków)",
@@ -733,6 +734,7 @@
       "prevMonth": "Poprzedni miesiąc",
       "nextMonth": "Następny miesiąc",
       "clickToUnschedule": "Kliknij zaplanowany dzień, aby usunąć harmonogram",
+      "tapToUnschedule": "Dotknij zaplanowanego dnia, aby usunąć harmonogram",
       "noMealsForDay": "Brak posiłków przypisanych na ten dzień."
     },
     "generateWithAI": "Generuj z AI",

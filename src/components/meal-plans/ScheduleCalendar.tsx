@@ -4,9 +4,14 @@ import { useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
   pointerWithin,
   useDraggable,
   useDroppable,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
@@ -26,7 +31,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useIsTouchFirst, useViewportTier } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { scheduleMealPlan, unscheduleMealPlan } from "@/actions/meal-plan";
 import type { TemplateWithMealsAndSchedules } from "@/lib/meal-plan-adapter";
@@ -119,7 +132,8 @@ function DraggableTemplateItem({
     <div
       ref={setNodeRef}
       className={cn(
-        "relative p-3 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing",
+        "relative p-3 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing select-none [-webkit-touch-callout:none]",
+        "shrink-0 w-[220px] snap-start lg:w-auto",
         "bg-muted border-border hover:border-brand-300/60 dark:hover:border-brand-500/40",
         "hover:shadow-md hover:-translate-y-0.5",
         isDragging && "opacity-40 scale-95"
@@ -158,6 +172,86 @@ function DraggableTemplateItem({
   );
 }
 
+// ── Day details (shared by popover and bottom sheet) ─────────────────────────
+
+type CellMeal = TemplateWithMealsAndSchedules["days"][number]["meals"][number];
+
+function DayDetailsBody({
+  scheduledInfo,
+  meals,
+  onUnschedule,
+}: {
+  scheduledInfo: ScheduledCellInfo;
+  meals: CellMeal[];
+  onUnschedule: () => void;
+}) {
+  const t = useTranslations("mealPlans");
+  const withRecipe = meals.filter((m) => m.recipe);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span
+            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+            style={{ backgroundColor: scheduledInfo.color.badge, color: scheduledInfo.color.text }}
+          >
+            {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
+          </span>
+          <span className="text-sm font-display font-medium text-foreground line-clamp-1">
+            {scheduledInfo.templateName}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="relative w-7 h-7 touch:w-11 touch:h-11 flex items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground flex-shrink-0"
+          onClick={onUnschedule}
+          aria-label={t("calendar.removeScheduleAction")}
+        >
+          <X className="w-3.5 h-3.5 touch:w-4 touch:h-4" />
+        </button>
+      </div>
+
+      {withRecipe.length > 0 ? (
+        <div className="space-y-2 pl-1">
+          {withRecipe.map((meal, idx) => (
+            <div
+              key={meal.id ?? idx}
+              className="flex items-center gap-3 p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+            >
+              <Avatar className="w-10 h-10 rounded-lg flex-shrink-0 border border-border/50">
+                {meal.recipe?.imageUrl ? (
+                  <AvatarImage
+                    src={meal.recipe.imageUrl}
+                    alt={meal.recipe.title || t("calendar.recipe")}
+                    className="object-cover"
+                  />
+                ) : null}
+                <AvatarFallback className="rounded-lg bg-brand-50 dark:bg-brand-500/10">
+                  <Utensils className="w-4 h-4 text-brand-500" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-wider capitalize">
+                  {meal.mealType}
+                </p>
+                <p className="text-sm font-medium text-foreground line-clamp-2 sm:line-clamp-1">
+                  {meal.recipe?.title || t("calendar.unknownRecipe")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {meal.servings} {meal.servings === 1 ? t("serving") : t("servings")}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic pl-1">{t("calendar.noMealsForDay")}</p>
+      )}
+    </div>
+  );
+}
+
 // ── Droppable Calendar Cell ───────────────────────────────────────────────────
 
 function CalendarCell({
@@ -179,7 +273,8 @@ function CalendarCell({
   const iso = isoOf(date);
   const today = startOfDay(new Date());
   const isPast = isBefore(date, today) && !isToday;
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const isPhone = useViewportTier() === "phone";
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const { setNodeRef, isOver } = useDroppable({
@@ -194,15 +289,32 @@ function CalendarCell({
     const day = tpl.days.find((d) => d.dayNumber === scheduledInfo.dayNumber);
     return day?.meals ?? [];
   })();
+  const mealCount = meals.filter((m) => m.recipe).length;
 
   const handleUnschedule = () => {
-    setPopoverOpen(false);
+    setDetailsOpen(false);
     if (scheduledInfo) onUnschedule(scheduledInfo.scheduleId);
   };
+
+  const weekdayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date);
+  const dateFullLabel = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric" }).format(date);
 
   const cellDiv = (
     <div
       ref={setNodeRef}
+      {...(scheduledInfo
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": `${scheduledInfo.templateName}, ${dateFullLabel}`,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setDetailsOpen(true);
+              }
+            },
+          }
+        : {})}
       className={cn(
         "min-h-[58px] sm:min-h-[90px] p-1 sm:p-2 rounded-lg border transition-all duration-150 relative",
         !inMonth && "opacity-30",
@@ -213,6 +325,7 @@ function CalendarCell({
         isOver && "bg-brand-50/60 dark:bg-brand-500/10 ring-2 ring-brand-500/40 ring-inset border-brand-400/50",
         scheduledInfo ? "cursor-pointer" : isOver ? "cursor-copy" : "cursor-default"
       )}
+      onClick={isPhone && scheduledInfo ? () => setDetailsOpen(true) : undefined}
       onMouseEnter={() => { if (scheduledInfo) setIsHovered(true); }}
       onMouseLeave={() => setIsHovered(false)}
       style={
@@ -245,34 +358,71 @@ function CalendarCell({
         )}
       </div>
 
-      {/* Schedule badge */}
+      {/* Schedule marker: dot + meal count on phones, labelled badge from sm up */}
       {scheduledInfo && (
-        <div
-          className="mt-1 px-2 py-1 rounded-md"
-          style={{ backgroundColor: scheduledInfo.color.text }}
-        >
-          <p className="text-[10px] font-bold leading-tight line-clamp-1" style={{ color: "#1C1A17" }}>
-            {scheduledInfo.templateName}
-          </p>
-          <p className="text-[9px] mt-0.5" style={{ color: "rgba(28,26,23,0.65)" }}>
-            {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
-          </p>
-        </div>
+        <>
+          <div className="sm:hidden flex items-center justify-center gap-1 mt-1">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: scheduledInfo.color.text }}
+            />
+            {mealCount > 0 && (
+              <span className="text-xs font-semibold text-foreground leading-none">{mealCount}</span>
+            )}
+          </div>
+          <div
+            className="hidden sm:block mt-1 px-2 py-1 rounded-md"
+            style={{ backgroundColor: scheduledInfo.color.text }}
+          >
+            <p className="text-[10px] touch:text-xs font-bold leading-tight line-clamp-1" style={{ color: "#1C1A17" }}>
+              {scheduledInfo.templateName}
+            </p>
+            <p className="text-[10px] touch:text-xs mt-0.5" style={{ color: "rgba(28,26,23,0.75)" }}>
+              {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
+            </p>
+          </div>
+        </>
       )}
     </div>
   );
 
   if (!scheduledInfo) return cellDiv;
 
-  const weekdayLabel = new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date);
-  const dateFullLabel = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric" }).format(date);
+  if (isPhone) {
+    return (
+      <>
+        {cellDiv}
+        <Sheet open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[85dvh] rounded-t-2xl gap-0 pb-[env(safe-area-inset-bottom)]"
+          >
+            <SheetHeader className="pr-12 border-b border-border/50">
+              <SheetDescription className="text-xs font-medium text-brand-500 dark:text-brand-600 uppercase tracking-wider capitalize">
+                {weekdayLabel}
+              </SheetDescription>
+              <SheetTitle className="font-display text-lg tracking-tight capitalize">
+                {dateFullLabel}
+              </SheetTitle>
+            </SheetHeader>
+            <div className="overflow-y-auto p-4">
+              <DayDetailsBody
+                scheduledInfo={scheduledInfo}
+                meals={meals}
+                onUnschedule={handleUnschedule}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
 
   return (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+    <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
       <PopoverTrigger asChild>{cellDiv}</PopoverTrigger>
       <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="start">
         <div className="max-h-[440px] overflow-y-auto p-4">
-          {/* Date header */}
           <div className="mb-4 pb-3 border-b border-border/50">
             <p className="text-xs font-medium text-brand-500 dark:text-brand-600 uppercase tracking-wider mb-1 capitalize">
               {weekdayLabel}
@@ -281,72 +431,11 @@ function CalendarCell({
               {dateFullLabel}
             </h4>
           </div>
-
-          {/* Plan + meals */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: scheduledInfo.color.badge, color: scheduledInfo.color.text }}
-                >
-                  {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
-                </span>
-                <span className="text-sm font-display font-medium text-foreground line-clamp-1">
-                  {scheduledInfo.templateName}
-                </span>
-              </div>
-              <button
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors text-muted-foreground flex-shrink-0"
-                onClick={handleUnschedule}
-                aria-label={t("calendar.removeScheduleAction")}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {meals.filter((m) => m.recipe).length > 0 ? (
-              <div className="space-y-2 pl-1">
-                {meals
-                  .filter((m) => m.recipe)
-                  .map((meal, idx) => (
-                    <div
-                      key={meal.id ?? idx}
-                      className="flex items-center gap-3 p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <Avatar className="w-10 h-10 rounded-lg flex-shrink-0 border border-border/50">
-                        {meal.recipe?.imageUrl ? (
-                          <AvatarImage
-                            src={meal.recipe.imageUrl}
-                            alt={meal.recipe.title || t("calendar.recipe")}
-                            className="object-cover"
-                          />
-                        ) : null}
-                        <AvatarFallback className="rounded-lg bg-brand-50 dark:bg-brand-500/10">
-                          <Utensils className="w-4 h-4 text-brand-500" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-wider capitalize">
-                          {meal.mealType}
-                        </p>
-                        <p className="text-sm font-medium text-foreground line-clamp-1">
-                          {meal.recipe?.title || t("calendar.unknownRecipe")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {meal.servings}{" "}
-                          {meal.servings === 1 ? t("serving") : t("servings")}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic pl-1">
-                {t("calendar.noMealsForDay")}
-              </p>
-            )}
-          </div>
+          <DayDetailsBody
+            scheduledInfo={scheduledInfo}
+            meals={meals}
+            onUnschedule={handleUnschedule}
+          />
         </div>
       </PopoverContent>
     </Popover>
@@ -363,6 +452,12 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
   const [draggedTemplateId, setDraggedTemplateId] = useState<string | null>(null);
   const [unscheduleDialogOpen, setUnscheduleDialogOpen] = useState(false);
   const [scheduleToDelete, setScheduleToDelete] = useState<string | null>(null);
+  const touchFirst = useIsTouchFirst();
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
 
   // ── Flatten active schedules from all templates ────────────────────────────
 
@@ -540,6 +635,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
   return (
     <>
       <DndContext
+        sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
@@ -551,8 +647,8 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
               <p className="font-display text-[17px] font-semibold text-foreground">
                 {t("calendar.yourMealPlans")}
               </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                {t("calendar.dragInstruction")}
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {touchFirst ? t("calendar.dragInstructionTouch") : t("calendar.dragInstruction")}
               </p>
             </div>
 
@@ -566,7 +662,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex gap-2 overflow-x-auto overscroll-x-contain snap-x snap-proximity pb-2 -mx-1 px-1 scrollbar-thin lg:block lg:space-y-2 lg:overflow-visible lg:pb-0 lg:mx-0 lg:px-0">
                 {templates.map((tpl) => (
                   <DraggableTemplateItem key={tpl.id} template={tpl} />
                 ))}
@@ -581,7 +677,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={prevMonth}
-                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+                  className="w-8 h-8 touch:w-11 touch:h-11 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
                   aria-label={t("calendar.prevMonth")}
                 >
                   <ChevronLeft className="w-4 h-4 text-muted-foreground" />
@@ -596,7 +692,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
                 <button
                   onClick={nextMonth}
-                  className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+                  className="w-8 h-8 touch:w-11 touch:h-11 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
                   aria-label={t("calendar.nextMonth")}
                 >
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -605,7 +701,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
               <button
                 onClick={goToToday}
-                className="px-3 py-1.5 rounded-lg border border-border bg-transparent text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                className="px-3 py-1.5 touch:min-h-11 rounded-lg border border-border bg-transparent text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
               >
                 {t("calendar.today")}
               </button>
@@ -616,7 +712,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
               {weekdayNames.map((name) => (
                 <div
                   key={name}
-                  className="text-[10px] font-bold tracking-widest text-muted-foreground/60 px-1 py-1"
+                  className="text-xs font-bold tracking-wider text-muted-foreground px-0.5 py-1 text-center sm:text-left sm:tracking-widest"
                 >
                   {name}
                 </div>
@@ -650,7 +746,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
             {/* Legend */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4 pt-4 border-t border-border/40 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-white text-[10px] font-bold">
+                <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center text-white text-xs font-bold">
                   {today.getDate()}
                 </div>
                 <span>{t("calendar.today")}</span>
@@ -674,8 +770,8 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
                 );
               })}
               {templates.length > 0 && (
-                <div className="flex items-center gap-1.5 ml-auto text-[10px] text-muted-foreground/60 italic">
-                  {t("calendar.clickToUnschedule")}
+                <div className="flex items-center gap-1.5 ml-auto text-xs text-muted-foreground italic">
+                  {touchFirst ? t("calendar.tapToUnschedule") : t("calendar.clickToUnschedule")}
                 </div>
               )}
             </div>
@@ -707,7 +803,7 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
 
       {/* Unschedule confirmation dialog */}
       <AlertDialog open={unscheduleDialogOpen} onOpenChange={setUnscheduleDialogOpen}>
-        <AlertDialogContent className="rounded-2xl">
+        <AlertDialogContent mobileSheet className="rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display text-lg">
               {t("calendar.removeScheduleTitle")}
@@ -717,10 +813,10 @@ export function ScheduleCalendar({ templates, onUpdate }: ScheduleCalendarProps)
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl max-sm:h-11">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmUnschedule}
-              className="rounded-xl bg-destructive hover:bg-destructive/90"
+              className="rounded-xl max-sm:h-11 bg-destructive hover:bg-destructive/90"
             >
               {t("calendar.removeScheduleAction")}
             </AlertDialogAction>

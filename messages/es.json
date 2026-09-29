@@ -714,6 +714,7 @@
       "moreSchedules": "+{count} más",
       "yourMealPlans": "Tus Planes de Comidas",
       "dragInstruction": "Arrastra planes de comidas a las fechas del calendario para programarlos",
+      "dragInstructionTouch": "Mantén pulsado un plan de comidas y arrástralo a una fecha del calendario",
       "noPlansAvailable": "No hay planes de comidas disponibles",
       "today": "Hoy",
       "scheduledLegend": "Programado (coloreado por plan de comidas)",
@@ -738,6 +739,7 @@
       "prevMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
       "clickToUnschedule": "Hacé clic en un día programado para desprogramar",
+      "tapToUnschedule": "Toca un día programado para desprogramar",
       "noMealsForDay": "Sin comidas asignadas para este día."
     },
     "generateWithAI": "Generá con IA",
