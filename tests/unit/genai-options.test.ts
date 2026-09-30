@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   buildGenAIVertexOptions,
   resolveGoogleServiceAccountAuth,
+  toMultiRegionLocation,
 } from "@/lib/chat/tools/genai-options";
 
 const SA_JSON = JSON.stringify({
@@ -75,6 +76,24 @@ describe("buildGenAIVertexOptions", () => {
     expect(opts?.googleAuthOptions).toEqual({
       credentials: JSON.parse(SA_JSON),
     });
+  });
+});
+
+describe("toMultiRegionLocation", () => {
+  it("keeps European regions in the EU multi-region (data residency)", () => {
+    expect(toMultiRegionLocation("europe-west3")).toBe("eu");
+    expect(toMultiRegionLocation("europe-west4")).toBe("eu");
+    expect(toMultiRegionLocation("eu")).toBe("eu");
+  });
+
+  it("maps US regions to the US multi-region", () => {
+    expect(toMultiRegionLocation("us-central1")).toBe("us");
+    expect(toMultiRegionLocation("us")).toBe("us");
+  });
+
+  it("falls back to global for anything else", () => {
+    expect(toMultiRegionLocation("global")).toBe("global");
+    expect(toMultiRegionLocation("asia-northeast1")).toBe("global");
   });
 });
 

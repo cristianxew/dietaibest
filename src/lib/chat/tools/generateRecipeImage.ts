@@ -1,7 +1,7 @@
 import { z } from "zod";
 import sharp from "sharp";
 import { randomUUID } from "node:crypto";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -11,7 +11,13 @@ import {
   RECIPE_IMAGES_BUCKET,
 } from "@/lib/storage/recipe-images";
 import type { Tool } from "./types";
-import { buildGenAIVertexOptions } from "./genai-options";
+import { buildGenAIVertexOptions, toMultiRegionLocation } from "./genai-options";
+
+// Imagen was retired on Vertex (2026-06-30); Gemini image models replace it.
+// gemini-3.1-flash-image is only served from the global / multi-region
+// endpoints, so the client targets the multi-region matching
+// GOOGLE_VERTEX_LOCATION (europe-west3 → eu) to keep EU data residency.
+const IMAGE_MODEL = "gemini-3.1-flash-image";
 
 const inputSchema = z.object({
   recipeId: z.string().min(1),
@@ -144,27 +150,28 @@ export const generateRecipeImage: Tool<
         };
       }
 
-      client = new GoogleGenAI(options);
+      client = new GoogleGenAI({
+        ...options,
+        location: toMultiRegionLocation(options.location),
+      });
     }
 
     // 3. Formulate premium prompt
     const baseDescription = promptDescription || recipe.description || recipe.title;
-    const prompt = `Premium professional food photography of ${recipe.title}. ${baseDescription}. Served on a matching high-end dish, beautiful lighting, shot at 45 degree angle, shallow depth of field, appetizing, delicious, clean composition, high-end culinary plating style.`;
+    // Gemini image models have no negativePrompt, so the exclusions live in the prompt.
+    const prompt = `Premium professional food photography of ${recipe.title}. ${baseDescription}. Served on a matching high-end dish, beautiful lighting, shot at 45 degree angle, shallow depth of field, appetizing, delicious, clean composition, high-end culinary plating style. Photorealistic, sharp, high resolution. No text, watermarks or logos; no people or hands; not a cartoon, drawing or illustration; not an overhead shot; no messy plate.`;
 
     emit?.({ statusKey: "recipe.generatingImage" });
 
-    // 4. Generate image using Imagen 3
+    // 4. Generate image using Gemini image generation
     let response;
     try {
-      response = await client.models.generateImages({
-        model: "imagen-3.0-generate-002",
-        prompt,
+      response = await client.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: prompt,
         config: {
-          numberOfImages: 1,
-          aspectRatio: "4:3",
-          outputMimeType: "image/jpeg",
-          negativePrompt:
-            "text, watermark, logo, cartoon, drawing, illustration, blurry, low resolution, overhead shot, messy plate, hands, person",
+          responseModalities: [Modality.IMAGE],
+          imageConfig: { aspectRatio: "4:3" },
         },
       });
     } catch (err) {
@@ -172,24 +179,30 @@ export const generateRecipeImage: Tool<
       // Failure messages only travel to the model as tool results — log them
       // so production failures (auth, quota, retired model) hit the container
       // logs too.
-      console.error("[generateRecipeImage] Imagen call failed:", msg);
+      console.error("[generateRecipeImage] Gemini image call failed:", msg);
       return {
         ok: false,
         reason: "generic",
-        message: `Google Imagen generation failed: ${msg}`,
+        message: `Gemini image generation failed: ${msg}`,
       };
     }
 
-    const imageBytes = response.generatedImages?.[0]?.image?.imageBytes;
+    const candidate = response.candidates?.[0];
+    const imageBytes = candidate?.content?.parts?.find((p) => p.inlineData?.data)
+      ?.inlineData?.data;
     if (!imageBytes) {
+      // Usually a safety block or a text-only reply — finishReason says which.
       console.error(
-        "[generateRecipeImage] Imagen returned no image data:",
-        JSON.stringify(response.generatedImages ?? null)?.slice(0, 300)
+        "[generateRecipeImage] Gemini returned no image data:",
+        JSON.stringify({
+          finishReason: candidate?.finishReason ?? null,
+          promptFeedback: response.promptFeedback ?? null,
+        }).slice(0, 300)
       );
       return {
         ok: false,
         reason: "generic",
-        message: "Google Imagen did not return any image data.",
+        message: "Gemini did not return any image data.",
       };
     }
 
