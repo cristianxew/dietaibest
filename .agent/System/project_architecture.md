@@ -484,6 +484,7 @@ discontinued 2026-06-14.
 - `gemini-3.5-flash-lite` — recipe import (`llm-gemma.ts`) + ingredient canonicalizer (`ingredient-canonicalizer.ts`)
 - `gemini-3.5-flash` — nutrition Stage-2 food/portion selection (`recipe-analyzer.ts`)
 - `GEMMA_MODEL` overrides **all three** at once — leave it unset in prod
+- `gemini-3.1-flash-image` — recipe photo generation (`tools/generateRecipeImage.ts`; replaced Imagen, retired 2026-06-30). Not affected by `GEMMA_MODEL`. It's only served from global/multi-region endpoints, so it calls the multi-region matching `GOOGLE_VERTEX_LOCATION` (`europe-*` → `eu`, `us-*` → `us`, else `global`) to keep data residency; see `toMultiRegionLocation` in `genai-options.ts`.
 
 **Implementation:** `src/lib/chat/llm-gemma.ts`, `src/lib/chat/tools/importRecipeFromImage.ts`
 

@@ -59,6 +59,21 @@ const PRO: Entitlements = {
   },
 };
 
+/** Shape of a Gemini generateContent reply carrying one inline image. */
+function imageResponse(bytes: string) {
+  return {
+    candidates: [
+      {
+        content: {
+          parts: [
+            { inlineData: { mimeType: "image/png", data: Buffer.from(bytes).toString("base64") } },
+          ],
+        },
+      },
+    ],
+  };
+}
+
 function makeCtx(): AgentContext {
   return {
     userId: "user-123",
@@ -118,19 +133,13 @@ describe("generateRecipeImage tool", () => {
     prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as any);
     prismaFake.recipe.update.mockResolvedValue({ id: "recipe-123" } as any);
 
-    const generateImagesMock = vi.fn().mockResolvedValue({
-      generatedImages: [
-        {
-          image: {
-            imageBytes: Buffer.from("fake-imagen-generated-bytes").toString("base64"),
-          },
-        },
-      ],
-    });
+    const generateContentMock = vi
+      .fn()
+      .mockResolvedValue(imageResponse("fake-gemini-generated-bytes"));
 
     const clientMock = {
       models: {
-        generateImages: generateImagesMock,
+        generateContent: generateContentMock,
       } as any,
     };
 
@@ -145,14 +154,12 @@ describe("generateRecipeImage tool", () => {
     }
 
     // Verify Google Gen AI mock was called correctly
-    expect(generateImagesMock).toHaveBeenCalledWith({
-      model: "imagen-3.0-generate-002",
-      prompt: expect.stringContaining("Premium professional food photography of Ensalada Caprese"),
+    expect(generateContentMock).toHaveBeenCalledWith({
+      model: "gemini-3.1-flash-image",
+      contents: expect.stringContaining("Premium professional food photography of Ensalada Caprese"),
       config: {
-        numberOfImages: 1,
-        aspectRatio: "4:3",
-        outputMimeType: "image/jpeg",
-        negativePrompt: expect.any(String),
+        responseModalities: ["IMAGE"],
+        imageConfig: { aspectRatio: "4:3" },
       },
     });
 
@@ -176,7 +183,7 @@ describe("generateRecipeImage tool", () => {
     });
   });
 
-  it("logs Imagen failures server-side so production errors are diagnosable", async () => {
+  it("logs image-generation failures server-side so production errors are diagnosable", async () => {
     // Failure messages only travel to the MODEL as tool results — without a
     // server-side log line, prod failures (auth, quota, retired model) are
     // invisible in the container logs.
@@ -184,7 +191,7 @@ describe("generateRecipeImage tool", () => {
     prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
     const clientMock = {
       models: {
-        generateImages: vi.fn().mockRejectedValue(new Error("PERMISSION_DENIED: billing disabled")),
+        generateContent: vi.fn().mockRejectedValue(new Error("PERMISSION_DENIED: billing disabled")),
       },
     };
     setGoogleGenAIClientForTest(clientMock as never);
@@ -199,12 +206,12 @@ describe("generateRecipeImage tool", () => {
     errorSpy.mockRestore();
   });
 
-  it("handles Imagen API errors gracefully", async () => {
+  it("handles Gemini image API errors gracefully", async () => {
     prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as any);
 
     const clientMock = {
       models: {
-        generateImages: vi.fn().mockRejectedValue(new Error("Imagen service offline")),
+        generateContent: vi.fn().mockRejectedValue(new Error("image service offline")),
       } as any,
     };
 
@@ -215,8 +222,34 @@ describe("generateRecipeImage tool", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("generic");
-      expect(result.message).toContain("Google Imagen generation failed: Imagen service offline");
+      expect(result.message).toContain("Gemini image generation failed: image service offline");
     }
+  });
+
+  it("fails without touching storage when Gemini returns no image (e.g. safety block)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
+    setGoogleGenAIClientForTest({
+      models: {
+        generateContent: vi.fn().mockResolvedValue({
+          candidates: [{ finishReason: "IMAGE_SAFETY", content: { parts: [] } }],
+        }),
+      },
+    } as never);
+
+    const result = await generateRecipeImage.execute({ recipeId: "recipe-123" }, makeCtx());
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe("Gemini did not return any image data.");
+    }
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("no image data"),
+      expect.stringContaining("IMAGE_SAFETY")
+    );
+    expect(storage.deleteRecipeImage).not.toHaveBeenCalled();
+    expect(storage.uploadRecipeImage).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   describe("gated confirmation", () => {
@@ -299,8 +332,8 @@ describe("generateRecipeImage tool", () => {
 
     it("execute no-ops gracefully without calling the image model", async () => {
       prismaFake.recipe.findUnique.mockResolvedValue(ownedRecipe as never);
-      const generateImages = vi.fn();
-      setGoogleGenAIClientForTest({ models: { generateImages } } as never);
+      const generateContent = vi.fn();
+      setGoogleGenAIClientForTest({ models: { generateContent } } as never);
 
       const result = await generateRecipeImage.execute(
         { recipeId: "recipe-123", askFirst: true },
@@ -317,7 +350,7 @@ describe("generateRecipeImage tool", () => {
         expect(result.data.note).toMatch(/already has an image/i);
         expect(result.data.note).toMatch(/askFirst: false/);
       }
-      expect(generateImages).not.toHaveBeenCalled();
+      expect(generateContent).not.toHaveBeenCalled();
       expect(prismaFake.recipe.update).not.toHaveBeenCalled();
     });
 
@@ -328,11 +361,7 @@ describe("generateRecipeImage tool", () => {
       prismaFake.recipe.update.mockResolvedValue({ id: "recipe-123" } as never);
       const clientMock = {
         models: {
-          generateImages: vi.fn().mockResolvedValue({
-            generatedImages: [
-              { image: { imageBytes: Buffer.from("fake-image").toString("base64") } },
-            ],
-          }),
+          generateContent: vi.fn().mockResolvedValue(imageResponse("fake-image")),
         },
       };
       setGoogleGenAIClientForTest(clientMock as never);
@@ -343,7 +372,7 @@ describe("generateRecipeImage tool", () => {
       );
 
       expect(result.ok).toBe(true);
-      expect(clientMock.models.generateImages).toHaveBeenCalledTimes(1);
+      expect(clientMock.models.generateContent).toHaveBeenCalledTimes(1);
     });
   });
 });

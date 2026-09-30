@@ -81,6 +81,20 @@ export function resolveGoogleServiceAccountAuth(
 }
 
 /**
+ * Maps a Vertex location to the multi-region endpoint in the same geography:
+ * `europe-*` → `eu`, `us-*` → `us`, anything else → `global`.
+ *
+ * For models served only from multi-region / global endpoints (e.g.
+ * gemini-3.1-flash-image is not in single regions like europe-west3), this
+ * keeps traffic in the same data-residency zone as GOOGLE_VERTEX_LOCATION.
+ */
+export function toMultiRegionLocation(location: string): string {
+  if (location === "eu" || location.startsWith("europe-")) return "eu";
+  if (location === "us" || location.startsWith("us-")) return "us";
+  return "global";
+}
+
+/**
  * Builds the Vertex AI options for `new GoogleGenAI(...)` from environment.
  *
  * Returns `null` when `GOOGLE_CLOUD_PROJECT_ID` is missing so the caller can

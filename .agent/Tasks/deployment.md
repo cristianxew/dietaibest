@@ -100,7 +100,8 @@ CHAT_LLM_MODEL=<override chat model>
 GEMMA_MODEL=<vertex model>        # leave UNSET: overrides every Gemini caller's per-module default
 GOOGLE_VERTEX_LOCATION=<vertex region>
 FEATURE_MULTIMODAL_IMPORT=true
-# Google Cloud (Vertex AI — Gemma extraction + Imagen images — AND Document AI OCR)
+# Google Cloud (Vertex AI — Gemini extraction + Gemini image generation — AND Document AI OCR)
+# Image generation uses the multi-region of GOOGLE_VERTEX_LOCATION (europe-west3 → eu).
 GOOGLE_CLOUD_PROJECT_ID=<gcp-project-id>
 GOOGLE_VERTEX_LOCATION=us-central1
 DOCUMENT_AI_LOCATION=eu
@@ -115,8 +116,8 @@ GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"...",.
 
 #### Google service-account credentials (inline JSON env var — preferred)
 
-The same service account authenticates **Vertex AI** (Gemma recipe extraction +
-Imagen image generation) and **Document AI** (recipe OCR). All three resolve
+The same service account authenticates **Vertex AI** (Gemini recipe extraction +
+Gemini image generation) and **Document AI** (recipe OCR). All three resolve
 credentials through `resolveGoogleServiceAccountAuth`
 (`src/lib/chat/tools/genai-options.ts`): inline JSON first, key-file path second.
 
