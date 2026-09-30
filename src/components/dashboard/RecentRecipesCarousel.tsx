@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -18,6 +18,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+import { useRecipeModal } from "@/hooks/use-recipe-modal";
 
 interface Recipe {
   id: string;
@@ -35,17 +36,41 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
   const t = useTranslations("dashboard.recentRecipes");
   const params = useParams();
   const locale = (params?.locale as string) || "en";
+  // The recipe modal is mounted by the protected layout, so open it in place
+  // rather than routing through the /recipes/new redirect shim.
+  const { openCreate } = useRecipeModal();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 1);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollState();
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [updateScrollState, recipes.length]);
 
   const scroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const scrollAmount = 200;
-      scrollRef.current.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    const el = scrollRef.current;
+    if (!el) return;
+    // Page by most of the visible width so one click reveals new cards.
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
   };
+
+  const hasOverflow = canScrollLeft || canScrollRight;
 
   // Empty state
   if (recipes.length === 0) {
@@ -64,17 +89,22 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
               {t("noRecipesDescription")}
             </p>
             <div className="flex gap-2">
-              <Button asChild size="default" className="shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-                <Link href="/recipes/new" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  {t("createRecipe")}
-                </Link>
+              <Button
+                size="default"
+                onClick={openCreate}
+                className="gap-2 shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                {t("createRecipe")}
               </Button>
-              <Button asChild variant="outline" size="default" className="hover:bg-muted transition-all">
-                <Link href="/recipes/new?mode=url" className="gap-2">
-                  <Link2 className="h-4 w-4" />
-                  {t("importRecipe")}
-                </Link>
+              <Button
+                variant="outline"
+                size="default"
+                onClick={openCreate}
+                className="gap-2 hover:bg-muted transition-all"
+              >
+                <Link2 className="h-4 w-4" />
+                {t("importRecipe")}
               </Button>
             </div>
           </div>
@@ -86,18 +116,48 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
   return (
     <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-display font-semibold tracking-tight">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg font-display font-semibold tracking-tight truncate">
             {t("title")}
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="text-xs gap-1">
-              <Link href="/recipes/new">
-                <Plus className="h-3 w-3" />
-                {t("createRecipe")}
-              </Link>
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Scroll controls live in the header so they never cover a card.
+                Touch devices swipe instead, so they're hidden on small screens. */}
+            {hasOverflow && (
+              <div className="hidden sm:flex items-center gap-1 mr-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => scroll("left")}
+                  disabled={!canScrollLeft}
+                  aria-label="Scroll left"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => scroll("right")}
+                  disabled={!canScrollRight}
+                  aria-label="Scroll right"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openCreate}
+              aria-label={t("createRecipe")}
+              className="text-xs gap-1 h-8 px-2 sm:px-3"
+            >
+              <Plus className="h-3 w-3" />
+              <span className="hidden sm:inline">{t("createRecipe")}</span>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
+            <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
               <Link href="/recipes">
                 {t("viewAll")}
                 <ArrowRight className="h-3 w-3" />
@@ -108,45 +168,26 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
       </CardHeader>
 
       <CardContent className="relative pt-0">
-        {/* Scroll buttons */}
-        {recipes.length > 3 && (
-          <>
-            <button
-              onClick={() => scroll("left")}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700 flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-stone-50 dark:hover:bg-stone-700 transition-all"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </>
-        )}
-
-        {/* Fade gradients */}
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card to-transparent z-[5] pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card to-transparent z-[5] pointer-events-none" />
+        {/* Edge fades only where more content is hidden */}
+        <div
+          className={`absolute left-0 top-0 bottom-2 w-6 bg-gradient-to-r from-card to-transparent z-[5] pointer-events-none transition-opacity ${canScrollLeft ? "opacity-100" : "opacity-0"}`}
+        />
+        <div
+          className={`absolute right-0 top-0 bottom-2 w-6 bg-gradient-to-l from-card to-transparent z-[5] pointer-events-none transition-opacity ${canScrollRight ? "opacity-100" : "opacity-0"}`}
+        />
 
         {/* Scrollable container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-2 px-2"
-          style={{ scrollSnapType: "x mandatory" }}
+          onScroll={updateScrollState}
+          className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-2"
         >
           {recipes.map((recipe, index) => (
             <Link
               key={recipe.id}
               href={recipeHref(locale, recipe.id, "/dashboard")}
-              className="flex-shrink-0 w-40 group p-2 -m-2 rounded-xl hover:bg-stone-50/80 dark:hover:bg-stone-800/50 transition-colors"
-              style={{
-                scrollSnapAlign: "start",
-                animationDelay: `${index * 50}ms`,
-              }}
+              className="snap-start shrink-0 w-[42%] min-w-32 max-w-44 sm:w-40 group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               {/* Image */}
               <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 mb-2">
@@ -155,8 +196,8 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                     src={recipe.imageUrl}
                     alt={recipe.title}
                     fill
-                    className="object-cover"
-                    sizes="160px"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 640px) 45vw, 160px"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -176,14 +217,14 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
               </div>
 
               {/* Title */}
-              <h4 className="font-medium text-sm text-foreground line-clamp-2">
+              <h4 className="font-medium text-sm text-foreground line-clamp-2 group-hover:text-brand-600 transition-colors">
                 {recipe.title}
               </h4>
 
               {/* Calories */}
-              {recipe.calories && (
-                <p className="text-xs text-muted-foreground mt-0.5 font-mono">
-                  {recipe.calories} {t("kcal")}
+              {recipe.calories != null && recipe.calories > 0 && (
+                <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                  {Math.round(recipe.calories)} {t("kcal")}
                 </p>
               )}
             </Link>

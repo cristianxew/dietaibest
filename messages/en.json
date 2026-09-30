@@ -1799,7 +1799,8 @@
       },
       "dashboard": {
         "title": "Your assistant can help",
-        "subtitle": "Tap a suggestion to try it in the chat."
+        "subtitle": "Tap a suggestion to try it in the chat.",
+        "dismiss": "Dismiss"
       }
     },
     "proGate": {

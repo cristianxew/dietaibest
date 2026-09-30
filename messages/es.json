@@ -1798,7 +1798,8 @@
       },
       "dashboard": {
         "title": "Tu asistente puede ayudarte",
-        "subtitle": "Toca una sugerencia para probarla en el chat."
+        "subtitle": "Toca una sugerencia para probarla en el chat.",
+        "dismiss": "Cerrar"
       }
     },
     "proGate": {

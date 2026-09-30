@@ -1793,7 +1793,8 @@
       },
       "dashboard": {
         "title": "Twój asystent może pomóc",
-        "subtitle": "Dotknij sugestii, aby wypróbować ją na czacie."
+        "subtitle": "Dotknij sugestii, aby wypróbować ją na czacie.",
+        "dismiss": "Zamknij"
       }
     },
     "proGate": {
