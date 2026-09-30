@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Calendar,
   ArrowRight,
+  ChevronRight,
   Sun,
   Sunset,
   Moon,
@@ -219,7 +220,10 @@ export function ActivePlanPreview({
 
         {/* View Plan Button */}
         <Button asChild variant="outline" size="sm">
-          <Link href="/meal-plans" className="gap-2">
+          <Link
+            href={`/meal-plans?selected=${encodeURIComponent(templateId)}`}
+            className="gap-2"
+          >
             {t("viewPlan")}
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -249,12 +253,13 @@ export function ActivePlanEmpty() {
               {t("noActivePlanDescription")}
             </p>
           </div>
-          <Button asChild size="default" className="shadow-lg shadow-brand-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all">
-            <Link href="/meal-plans" className="gap-2">
-              {t("schedulePlan")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+          <Link
+            href="/meal-plans"
+            className="inline-flex items-center gap-0.5 text-sm font-medium text-brand-600 hover:underline underline-offset-4"
+          >
+            {t("schedulePlan")}
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       </CardContent>
     </Card>

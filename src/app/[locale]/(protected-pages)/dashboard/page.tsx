@@ -53,15 +53,6 @@ async function DashboardContent() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 slide-in-from-bottom-4">
-      {/* Hero CTA - Smart empty state based on user journey */}
-      {showHeroCTA && (
-        <HeroCTA
-          dashboardState={dashboardState}
-          recipeCount={recipeStats?.totalRecipes || 0}
-          mealPlanCount={mealPlanStats?.totalTemplates || 0}
-        />
-      )}
-
       <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-end">
         <div className="flex-1 min-w-0">
           <WelcomeHeader
@@ -91,7 +82,16 @@ async function DashboardContent() {
         </div>
       </div>
 
-      {/* Full Width AI Assistant Panel */}
+      {/* Next-step banner - smart empty state based on user journey */}
+      {showHeroCTA && (
+        <HeroCTA
+          dashboardState={dashboardState}
+          recipeCount={recipeStats?.totalRecipes || 0}
+          mealPlanCount={mealPlanStats?.totalTemplates || 0}
+        />
+      )}
+
+      {/* AI Assistant discovery popup */}
       <AssistantCapabilityCard />
 
       {/* Main Content Grid */}
