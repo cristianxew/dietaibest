@@ -3,6 +3,8 @@
 import { useRef } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { recipeHref } from "@/lib/recipe-back-link";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,8 @@ interface RecentRecipesCarouselProps {
 
 export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
   const t = useTranslations("dashboard.recentRecipes");
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -137,7 +141,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
           {recipes.map((recipe, index) => (
             <Link
               key={recipe.id}
-              href={`/recipes/${recipe.id}`}
+              href={recipeHref(locale, recipe.id, "/dashboard")}
               className="flex-shrink-0 w-40 group p-2 -m-2 rounded-xl hover:bg-stone-50/80 dark:hover:bg-stone-800/50 transition-colors"
               style={{
                 scrollSnapAlign: "start",

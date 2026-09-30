@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { duplicateMealPlan, getPublicMealPlans } from "@/actions/meal-plan";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { RecipeThumb } from "./shared";
 
 type PublicPlansData = NonNullable<
@@ -110,7 +111,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
         {plans.map((plan) => (
           <div
             key={plan.id}
-            className="p-4 bg-card border border-border rounded-xl flex flex-col gap-3"
+            className="min-w-0 p-3.5 lg:p-4 bg-card border border-border rounded-xl flex flex-col gap-2.5 lg:gap-3"
           >
             {/* Title + author */}
             <div>
@@ -123,7 +124,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             </div>
 
             {/* Overview stats */}
-            <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] touch:text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="w-[11px] h-[11px]" />
                 {plan.duration}d
@@ -143,7 +144,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {(plan.targetProtein != null ||
               plan.targetCarbs != null ||
               plan.targetFat != null) && (
-              <div className="flex flex-wrap gap-2 text-[10px] font-medium">
+              <div className="flex flex-wrap gap-2 text-[10px] touch:text-xs font-medium">
                 {plan.targetProtein != null && (
                   <span className="px-1.5 py-0.5 rounded-md bg-sage-500/10 text-sage-600 dark:text-sage-400">
                     {Math.round(plan.targetProtein)}g P
@@ -165,7 +166,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {/* Recipe preview */}
             {plan.recipes.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="text-[10px] touch:text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {t("recipes")}
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -178,7 +179,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
                     />
                   ))}
                   {plan.recipeCount > 5 && (
-                    <span className="text-[11px] font-medium text-muted-foreground ml-0.5">
+                    <span className="text-[11px] touch:text-xs font-medium text-muted-foreground ml-0.5">
                       +{plan.recipeCount - 5}
                     </span>
                   )}
@@ -186,10 +187,14 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
               </div>
             )}
 
+            {/* 36px below lg, with a hit slop that keeps the touch target at 44px */}
             <Button
               size="sm"
               variant="outline"
-              className="mt-auto gap-2 self-start"
+              className={cn(
+                "mt-auto gap-2 self-start max-lg:h-9 max-lg:px-3.5 lg:touch:h-11 lg:touch:px-4",
+                "relative max-lg:after:absolute max-lg:after:-inset-1 max-lg:after:content-['']"
+              )}
               disabled={duplicatingId === plan.id}
               onClick={() => handleDuplicate(plan)}
             >
@@ -204,6 +209,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
         <div className="flex justify-center">
           <Button
             variant="outline"
+            className="touch:h-11"
             disabled={isPending}
             onClick={() => loadPage(page + 1)}
           >

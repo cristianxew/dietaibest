@@ -36,8 +36,17 @@ export default async function MealPlansPage({
 
   return (
     <Suspense>
-      <PlannerNutritionBanner />
-      <MealPlanner reference={reference} />
+      {/* The banner renders inside the planner's own scroll area: as a sibling it
+          pushed the full-height planner 58px past the viewport, which made the
+          shell (#main-content) scroll too and leaked that offset into the next page. */}
+      <MealPlanner
+        reference={reference}
+        banner={
+          <Suspense fallback={null}>
+            <PlannerNutritionBanner />
+          </Suspense>
+        }
+      />
     </Suspense>
   );
 }

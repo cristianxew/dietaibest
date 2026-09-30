@@ -4,15 +4,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ChefHat, CalendarDays, Plus } from "lucide-react";
 import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
+import {
+  GRID_COL_MIN_DENSE,
+  GRID_COL_MIN_REGULAR,
+  GRID_LABEL_COL,
+  splitSlotCols,
+  stackSlotCols,
+} from "./layout-classes";
 
 /* ── PlanSwitcherSkeleton ──────────────────────────────── */
 export function PlanSwitcherSkeleton() {
   return (
-    <div className="flex flex-wrap gap-2.5 items-stretch animate-pulse">
+    <div className="flex flex-nowrap lg:flex-wrap gap-2.5 items-stretch overflow-x-auto lg:overflow-visible -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 animate-pulse">
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="min-w-[200px] px-4 py-3.5 bg-card border border-border rounded-xl flex flex-col justify-between"
+          className="w-[200px] sm:w-[240px] lg:w-[260px] shrink-0 p-3 lg:px-4 lg:py-3.5 bg-card border border-border rounded-xl flex flex-col justify-between"
         >
           <div className="mb-3">
             {/* Title Line */}
@@ -37,7 +44,7 @@ export function PlanSwitcherSkeleton() {
       ))}
       <div
         className={cn(
-          "min-w-[140px] px-4 py-3.5",
+          "min-w-[120px] lg:min-w-[140px] shrink-0 p-3 lg:px-4 lg:py-3.5",
           "flex flex-col items-center justify-center gap-1.5",
           "bg-transparent border-[1.5px] border-dashed border-border rounded-xl opacity-60"
         )}
@@ -54,14 +61,14 @@ export function WeeklyMacroStripSkeleton() {
   return (
     <div
       className={cn(
-        "grid gap-3.5 px-[18px] py-3.5 animate-pulse",
-        "grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
+        "grid gap-x-3 gap-y-2.5 p-3.5 sm:gap-x-3.5 sm:gap-y-3 sm:p-4 lg:gap-y-4 lg:px-[18px] lg:py-3.5 animate-pulse",
+        "grid-cols-2 sm:grid-cols-4 lg:grid-cols-[1fr_repeat(4,minmax(120px,160px))]",
         "bg-card border border-border rounded-xl"
       )}
     >
       {/* Label block */}
-      <div className="flex flex-col justify-center">
-        <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 mb-1.5" />
+      <div className="flex flex-row items-center justify-between lg:flex-col lg:items-start lg:justify-center col-span-2 sm:col-span-4 lg:col-span-1">
+        <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 lg:mb-1.5" />
         <Skeleton className="h-3 w-36 bg-stone-200 dark:bg-slate-800" />
       </div>
 
@@ -119,7 +126,9 @@ export function MealCellSkeleton({ dense = false, compact = false }: { dense?: b
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-border/70 bg-card/40 text-center animate-pulse",
-        compact ? "p-2.5 min-h-[64px]" : dense ? "p-2.5 min-h-[72px]" : "p-3.5 min-h-[88px]"
+        compact ? "p-2.5 min-h-[64px]" : dense ? "p-2.5 min-h-[72px]" : "p-3.5 min-h-[88px]",
+        // Phones render meals as short rows (MealCell variant="row")
+        "max-sm:min-h-14 max-sm:p-2"
       )}
     >
       <Skeleton className="w-4 h-4 rounded-full bg-stone-200 dark:bg-slate-800" />
@@ -150,52 +159,59 @@ export function DayMacrosSkeleton({ compact = false }: { compact?: boolean }) {
 export function GridLayoutSkeleton({ density }: { density: "regular" | "compact" }) {
   const dense = density === "compact";
   const numDays = 7;
-  const cellMin = dense ? "minmax(110px, 1fr)" : "minmax(132px, 1fr)";
-  const gridCols = `72px repeat(${numDays}, ${cellMin})`;
+  const gridCols = `${GRID_LABEL_COL} repeat(${numDays}, minmax(var(--grid-col-min), 1fr))`;
+  const minWidth = `calc(${GRID_LABEL_COL} + ${numDays} * (var(--grid-col-min) + 0.5rem))`;
 
   const slots = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
 
   return (
-    <div className="flex flex-col animate-pulse">
-      {/* Day headers */}
-      <div className="grid gap-2 mb-2.5 pb-1.5" style={{ gridTemplateColumns: gridCols }}>
-        <div />
-        {Array.from({ length: numDays }).map((_, idx) => (
-          <div key={idx} className="text-center py-1.5 px-1 flex flex-col items-center">
-            <Skeleton className="h-2 w-8 bg-stone-200 dark:bg-slate-800 mb-1" />
-            <Skeleton className="h-5 w-6 bg-stone-200 dark:bg-slate-800" />
-          </div>
-        ))}
-      </div>
-
-      {/* Meal rows */}
-      {slots.map((slot) => {
-        const meta = MEAL_SLOT_META[slot as keyof typeof MEAL_SLOT_META] || { iconName: "Sparkles", colorClass: "text-brand-500", i18nKey: "slots.breakfast" };
-        return (
-          <div key={slot} className="grid gap-2 mb-2.5" style={{ gridTemplateColumns: gridCols }}>
-            {/* Row label */}
-            <div className="flex flex-col items-start justify-center pt-1.5">
-              <Skeleton className="w-6 h-6 rounded-md bg-stone-200 dark:bg-slate-800" />
-              <Skeleton className="h-3 w-12 bg-stone-200 dark:bg-slate-800 mt-1.5" />
+    <div
+      className={cn(
+        "overflow-x-auto overscroll-x-contain scrollbar-thin pb-2 animate-pulse",
+        dense ? GRID_COL_MIN_DENSE : GRID_COL_MIN_REGULAR
+      )}
+    >
+      <div className="flex flex-col" style={{ minWidth }}>
+        {/* Day headers */}
+        <div className="grid gap-2 mb-2.5 pb-1.5" style={{ gridTemplateColumns: gridCols }}>
+          <div />
+          {Array.from({ length: numDays }).map((_, idx) => (
+            <div key={idx} className="text-center py-1.5 px-1 flex flex-col items-center">
+              <Skeleton className="h-2 w-8 bg-stone-200 dark:bg-slate-800 mb-1" />
+              <Skeleton className="h-5 w-6 bg-stone-200 dark:bg-slate-800" />
             </div>
-            {/* Cells */}
-            {Array.from({ length: numDays }).map((_, dayIdx) => (
-              <MealCellSkeleton key={dayIdx} dense={dense} />
-            ))}
-          </div>
-        );
-      })}
-
-      {/* Macro footer */}
-      <div className="grid gap-2 mt-2 pt-3.5 border-t border-border" style={{ gridTemplateColumns: gridCols }}>
-        <div className="text-[10px] font-bold tracking-widest uppercase text-stone-400 self-center">
-          TOTAL
+          ))}
         </div>
-        {Array.from({ length: numDays }).map((_, dayIdx) => (
-          <div key={dayIdx} className="py-1 px-1.5">
-            <DayMacrosSkeleton compact />
+
+        {/* Meal rows */}
+        {slots.map((slot) => {
+          const meta = MEAL_SLOT_META[slot as keyof typeof MEAL_SLOT_META] || { iconName: "Sparkles", colorClass: "text-brand-500", i18nKey: "slots.breakfast" };
+          return (
+            <div key={slot} className="grid gap-2 mb-2.5" style={{ gridTemplateColumns: gridCols }}>
+              {/* Row label */}
+              <div className="flex flex-col items-start justify-center pt-1.5">
+                <Skeleton className="w-6 h-6 rounded-md bg-stone-200 dark:bg-slate-800" />
+                <Skeleton className="h-3 w-12 bg-stone-200 dark:bg-slate-800 mt-1.5" />
+              </div>
+              {/* Cells */}
+              {Array.from({ length: numDays }).map((_, dayIdx) => (
+                <MealCellSkeleton key={dayIdx} dense={dense} />
+              ))}
+            </div>
+          );
+        })}
+
+        {/* Macro footer */}
+        <div className="grid gap-2 mt-2 pt-3.5 border-t border-border" style={{ gridTemplateColumns: gridCols }}>
+          <div className="text-[10px] font-bold tracking-widest uppercase text-stone-400 self-center">
+            TOTAL
           </div>
-        ))}
+          {Array.from({ length: numDays }).map((_, dayIdx) => (
+            <div key={dayIdx} className="py-1 px-1.5">
+              <DayMacrosSkeleton compact />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -209,14 +225,14 @@ export function StackLayoutSkeleton({ density }: { density: "regular" | "compact
   return (
     <div className="flex flex-col gap-3.5 animate-pulse">
       {[1, 2, 3].map((dayNum) => (
-        <div key={dayNum} className="bg-card border border-border rounded-[14px] p-[18px]">
+        <div key={dayNum} className="bg-card border border-border rounded-[14px] p-3.5 sm:p-4 lg:p-[18px]">
           <div className="flex items-start justify-between mb-3.5 gap-4">
             <div className="flex items-baseline gap-3">
               <Skeleton className="h-6 w-20 bg-stone-200 dark:bg-slate-800" />
             </div>
             <DayMacrosSkeleton compact />
           </div>
-          <div className="grid gap-2.5 grid-cols-4">
+          <div className={cn("grid gap-2.5", stackSlotCols(slots.length))}>
             {slots.map((slot) => (
               <div key={slot}>
                 <div className="flex items-center gap-1.5 mb-1.5">
@@ -239,13 +255,13 @@ export function SplitLayoutSkeleton({ density }: { density: "regular" | "compact
   const slots = ["BREAKFAST", "LUNCH", "DINNER", "SNACK"];
 
   return (
-    <div className="grid gap-[18px] items-start animate-pulse" style={{ gridTemplateColumns: "200px 1fr" }}>
+    <div className="grid gap-3 lg:gap-[18px] items-start grid-cols-1 lg:grid-cols-[200px_1fr] animate-pulse">
       {/* Day rail */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
         {[1, 2, 3, 4, 5].map((dayNum) => (
           <div
             key={dayNum}
-            className="w-full text-left px-3 py-2.5 rounded-[10px] bg-transparent border border-border flex flex-col gap-1.5"
+            className="flex-shrink-0 min-w-[88px] min-h-11 lg:min-w-0 lg:w-full text-left px-3 py-2 lg:py-2.5 rounded-[10px] bg-transparent border border-border flex flex-col gap-1.5"
           >
             <Skeleton className="h-4 w-12 bg-stone-200 dark:bg-slate-800" />
             <Skeleton className="h-3 w-16 bg-stone-200 dark:bg-slate-800" />
@@ -255,7 +271,7 @@ export function SplitLayoutSkeleton({ density }: { density: "regular" | "compact
       </div>
 
       {/* Day editor pane */}
-      <div className="bg-card border border-border rounded-[14px] p-6">
+      <div className="bg-card border border-border rounded-[14px] p-3.5 sm:p-5 lg:p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
             <Skeleton className="h-3 w-24 bg-stone-200 dark:bg-slate-800 mb-1" />
@@ -265,7 +281,7 @@ export function SplitLayoutSkeleton({ density }: { density: "regular" | "compact
         <div className="mb-5">
           <DayMacrosSkeleton />
         </div>
-        <div className="grid gap-3 grid-cols-4">
+        <div className={cn("grid gap-3", splitSlotCols(slots.length))}>
           {slots.map((slot) => (
             <div key={slot}>
               <div className="flex items-center gap-1.5 mb-2">

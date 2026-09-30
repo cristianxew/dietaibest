@@ -746,7 +746,12 @@
       "noMealsPlanned": "Brak zaplanowanych posiłków na ten dzień",
       "moreSchedules": "+{count} więcej",
       "yourMealPlans": "Twoje Plany Posiłków",
-      "dragInstruction": "Przeciągnij plany posiłków na daty kalendarza, aby je zaplanować",
+      "clickOrDragInstruction": "Kliknij dzień, aby dodać plan posiłków, lub przeciągnij plan na datę",
+      "tapOrDragInstruction": "Dotknij dnia, aby dodać plan posiłków, lub przytrzymaj plan i przeciągnij go na datę",
+      "pickPlanTitle": "Zaplanuj plan posiłków",
+      "pickPlanStarting": "Początek: {date}",
+      "pickPlanEmpty": "Nie masz jeszcze żadnych planów posiłków. Najpierw utwórz plan, a potem zaplanuj go tutaj.",
+      "scheduleOnDay": "Zaplanuj plan posiłków na {date}",
       "noPlansAvailable": "Brak dostępnych planów posiłków",
       "today": "Dzisiaj",
       "scheduledLegend": "Zaplanowane (kolorowane według planu posiłków)",
@@ -771,11 +776,18 @@
       "prevMonth": "Poprzedni miesiąc",
       "nextMonth": "Następny miesiąc",
       "clickToUnschedule": "Kliknij zaplanowany dzień, aby usunąć harmonogram",
+      "tapToUnschedule": "Dotknij zaplanowanego dnia, aby usunąć harmonogram",
       "noMealsForDay": "Brak posiłków przypisanych na ten dzień."
     },
     "generateWithAI": "Generuj z AI",
+    "tabs": {
+      "plannerShort": "Plany",
+      "calendarShort": "Kalendarz",
+      "discoverShort": "Społeczność"
+    },
     "aiGeneratePrompt": "Wygeneruj dla mnie plan posiłków",
     "dragToSlot": "Przeciągnij do slotu planu",
+    "holdToDrag": "Przytrzymaj przepis i przeciągnij do slotu",
     "selectPlanToEdit": "Wybierz plan do edycji",
     "dragOrSuggest": "Upuść lub zaproponuj",
     "tapToAdd": "Dotknij, aby dodać",
@@ -815,6 +827,13 @@
       "compact": "Zwarty"
     },
     "showServings": "Pokaż Porcje",
+    "viewOptions": {
+      "title": "Opcje widoku",
+      "description": "Wybierz, jak wyświetlać plan posiłków.",
+      "layout": "Układ",
+      "density": "Gęstość",
+      "done": "Gotowe"
+    },
     "slot": {
       "dragToMove": "Przeciągnij, aby przenieść posiłek",
       "removeMeal": "Usuń posiłek",

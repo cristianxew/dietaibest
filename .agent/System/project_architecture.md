@@ -255,6 +255,7 @@ dietaibest/
 - Active plan management
 - Public sharing with share tokens
 - "Generate with AI" header button deep-links to the in-app chat agent
+- Responsive on phone and tablet: tablet keeps the recipe library, long-press touch drag with tap-to-add fallback, sticky toolbar via measured CSS variable, bottom-sheet dialogs and a tap-a-day sheet in the calendar (see [Design System - Responsive & Touch Conventions](./design_system.md#responsive--touch-conventions))
 
 **Key Components (`src/components/meal-plans/`):**
 - `MealPlanner.tsx` - Shell: header, planner/calendar tabs, loads templates, wires mutations

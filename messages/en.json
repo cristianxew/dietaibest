@@ -751,7 +751,12 @@
       "noMealsPlanned": "No meals planned for this day",
       "moreSchedules": "+{count} more",
       "yourMealPlans": "Your Meal Plans",
-      "dragInstruction": "Drag meal plans onto calendar dates to schedule them",
+      "clickOrDragInstruction": "Click a day to schedule a plan, or drag a plan onto a date",
+      "tapOrDragInstruction": "Tap a day to schedule a plan, or press and hold a plan and drag it onto a date",
+      "pickPlanTitle": "Schedule a meal plan",
+      "pickPlanStarting": "Starting {date}",
+      "pickPlanEmpty": "You don't have any meal plans yet. Create one first, then schedule it here.",
+      "scheduleOnDay": "Schedule a meal plan on {date}",
       "noPlansAvailable": "No meal plans available",
       "today": "Today",
       "scheduledLegend": "Scheduled (colored by meal plan)",
@@ -776,11 +781,18 @@
       "prevMonth": "Previous month",
       "nextMonth": "Next month",
       "clickToUnschedule": "Click a scheduled day to unschedule",
+      "tapToUnschedule": "Tap a scheduled day to unschedule",
       "noMealsForDay": "No meals assigned for this day."
     },
     "generateWithAI": "Generate with AI",
+    "tabs": {
+      "plannerShort": "Planner",
+      "calendarShort": "Calendar",
+      "discoverShort": "Community"
+    },
     "aiGeneratePrompt": "Generate a meal plan for me",
     "dragToSlot": "Drag to a plan slot",
+    "holdToDrag": "Press and hold a recipe, then drag to a slot",
     "selectPlanToEdit": "Select a plan to edit it",
     "dragOrSuggest": "Drop or suggest",
     "tapToAdd": "Tap to add",
@@ -820,6 +832,13 @@
       "compact": "Compact"
     },
     "showServings": "Show Servings",
+    "viewOptions": {
+      "title": "View options",
+      "description": "Choose how your meal plan is laid out.",
+      "layout": "Layout",
+      "density": "Density",
+      "done": "Done"
+    },
     "slot": {
       "dragToMove": "Drag to move meal",
       "removeMeal": "Remove meal",

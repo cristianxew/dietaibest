@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getRecipe } from "@/actions/recipe";
 import { notFound } from "next/navigation";
+import { resolveRecipeBackLink } from "@/lib/recipe-back-link";
 import { RecipeDetailClient } from "../../../../../components/recipes/RecipeDetailClient";
 
 export async function generateMetadata({
@@ -24,8 +25,10 @@ export async function generateMetadata({
 
 export default async function RecipeDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }) {
   const { locale, id } = await params;
   const { data: recipe, error } = await getRecipe(id);
@@ -33,6 +36,16 @@ export default async function RecipeDetailPage({
   if (error || !recipe) {
     notFound();
   }
+
+  // Back goes to the page the recipe was opened from (e.g. the meal plan), not always the library
+  const backLink = resolveRecipeBackLink(locale, await searchParams);
+  const tRecipes = await getTranslations({ locale, namespace: "recipes" });
+  const backLabel = {
+    recipes: () => tRecipes("backToRecipes"),
+    dashboard: () => tRecipes("backToDashboard"),
+    "meal-plans": async () => (await getTranslations({ locale, namespace: "mealPlans" }))("backToMealPlans"),
+    previous: async () => (await getTranslations({ locale, namespace: "common" }))("back"),
+  }[backLink.target];
 
   const isOwner = recipe.viewerIsOwner;
   const isFavorited = recipe.favoritedBy.length > 0;
@@ -44,6 +57,8 @@ export default async function RecipeDetailPage({
       isFavorited={isFavorited}
       locale={locale}
       authorName={recipe.authorName}
+      backHref={backLink.href}
+      backLabel={await backLabel()}
     />
   );
 }

@@ -123,6 +123,7 @@ Best practices, workflows, and step-by-step guides for common development tasks.
 - Semantic color tokens for light/dark modes
 - Component styling patterns (cards, buttons, forms)
 - Landing page components (scoped `.landing` tokens, light/dark, `landing.*` i18n, Stripe-backed pricing, SEO/OG metadata)
+- Responsive and touch conventions (tiers, 44px targets, dvh, bottom sheets)
 - Utility classes (glass effect, animations)
 - Dark mode implementation
 - Migration guide from old design system
