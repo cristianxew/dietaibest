@@ -97,7 +97,7 @@ CRON_SECRET=<auth for /api/cron/* endpoints>
 ENTITLEMENTS_ENFORCED=true        # gate Pro features
 CHAT_COST_CAP_ENFORCED=true       # enforce chat spend cap
 CHAT_LLM_MODEL=<override chat model>
-GEMMA_MODEL=<vertex gemma model>
+GEMMA_MODEL=<vertex model>        # leave UNSET: overrides every Gemini caller's per-module default
 GOOGLE_VERTEX_LOCATION=<vertex region>
 FEATURE_MULTIMODAL_IMPORT=true
 # Google Cloud (Vertex AI — Gemma extraction + Imagen images — AND Document AI OCR)

@@ -15,14 +15,18 @@ import { createIngestLogger } from "@/lib/ingest/log";
 // credentials exist (local dev) — on the self-hosted VPS it falls back to the
 // GCP metadata server and every call fails ("All promises were rejected").
 //
-// Default model: gemini-2.5-flash (see DEFAULT_MODEL) — vision + native structured
+// Default model: gemini-3.5-flash-lite (see DEFAULT_MODEL) — vision + native structured
 // output. Extraction runs through models.generateContent() with a responseSchema
 // (responseMimeType "application/json") derived from importedRecipeSchema.
 //
 // The provider factory (getGemmaProvider/setGemmaProviderForTest) lives here and is
 // shared by both import tools — importRecipeFromImage and importRecipeFromUrl.
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+// Gemini 2.5 Flash is retiring on Vertex (public retirement 2026-10-20, shutdown
+// 2027-03-31). Flash-Lite is enough for single-shot structured extraction and
+// is priced like 2.5 Flash. GEMMA_MODEL overrides this default for every
+// Gemini caller, so leave it unset in prod to keep the per-task defaults.
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 export class GemmaExtractionError extends Error {
   readonly reason:

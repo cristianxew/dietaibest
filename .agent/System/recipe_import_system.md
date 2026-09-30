@@ -1,6 +1,6 @@
 # Recipe Import System
 
-**Document Last Updated:** 2026-06-14
+**Document Last Updated:** 2026-09-29
 **Status:** Recipe import runs on one shared pipeline (Supadata + Gemma), reachable
 from both the in-app AI chat and the "Add Recipe" modal.
 
@@ -40,7 +40,7 @@ and the modal state machine in
   markdown → **Gemma** (`extractRecipeFromText`). Returns an `ImportedRecipe`.
   Both the chat tool `importRecipeFromUrl` and the modal route call this.
 - **Image / PDF:** [`GemmaProvider.extractRecipe`](../../src/lib/chat/llm-gemma.ts)
-  (Gemini 2.5 Flash) — vision + native PDF. Returns `ImportedRecipeData`.
+  (Gemini 3.5 Flash-Lite) — vision + native PDF. Returns `ImportedRecipeData`.
   Both the chat tool `importRecipeFromImage` and the modal route call this.
 
 ---

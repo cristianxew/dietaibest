@@ -1,6 +1,6 @@
 # Nutrition Unit Handling (FDC pipeline)
 
-**Last Updated:** 2026-06-22
+**Last Updated:** 2026-09-29
 
 How DietAI turns a written ingredient line into grams, and from grams into a
 nutrition profile via USDA FoodData Central (FDC). This is the source of truth
@@ -186,7 +186,7 @@ Foundation matches — the biggest source of wrong recipe nutrition.
 
 `analyzeRecipeProfileAction` is **LLM-primary, single-pass**. Before matching, it
 canonicalizes **every** ingredient name once via
-[`canonicalizeCached`](../../src/lib/ingredient-name-repo.ts) (Gemini 2.5 Flash
+[`canonicalizeCached`](../../src/lib/ingredient-name-repo.ts) (Gemini 3.5 Flash-Lite
 on Vertex, [`ingredient-canonicalizer.ts`](../../src/lib/ingredient-canonicalizer.ts)),
 then runs the deterministic staple/search/rank/guard layers on the canonical
 name. This replaced the old two-pass retry + the in-parser `SYNONYMS` table,
@@ -218,7 +218,7 @@ generic-but-wrong matches that passed the guard and pre-empted the LLM.
 ### Stage 2 — recipe RAG resolution + analysis cache (ADR 0003 C+D, ADR 0004)
 
 After search + candidate fetch, one recipe-scoped LLM call resolves the recipe:
-[`RecipeAnalyzer`](../../src/lib/recipe-analyzer.ts) (Gemini on Vertex) is given the
+[`RecipeAnalyzer`](../../src/lib/recipe-analyzer.ts) (Gemini 3.5 Flash on Vertex) is given the
 recipe + each ingredient's top-N fetched USDA candidates (id, description, dataType,
 per-100g macros) and returns, **per ingredient (matched by index)**:
 

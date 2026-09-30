@@ -27,7 +27,10 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { buildGenAIVertexOptions } from "./chat/tools/genai-options";
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+// Gemini 2.5 Flash is retiring on Vertex (shutdown 2027-03-31). Food + portion
+// selection is the reasoning-heavy stage, so it gets full 3.5 Flash while the
+// canonicalizer and recipe import run on Flash-Lite.
+const DEFAULT_MODEL = "gemini-3.5-flash";
 
 /**
  * Below this confidence the cooked/raw judgment + gram override are not trusted:
