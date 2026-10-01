@@ -216,8 +216,6 @@
     "todaysMacros": {
       "title": "Today's Nutrition",
       "noTarget": "Set up targets",
-      "viewPlan": "View Full Plan",
-      "calories": "Calories",
       "protein": "Protein",
       "carbs": "Carbs",
       "fat": "Fat",
@@ -228,8 +226,6 @@
       "noTargets": "Tell us your goals to unlock insights",
       "setupTargets": "Set Up Targets",
       "planned": "Planned",
-      "remaining": "remaining",
-      "ofTarget": "of target",
       "quickActions": {
         "quickLog": "Quick Log",
         "adjustServings": "Adjust Servings",

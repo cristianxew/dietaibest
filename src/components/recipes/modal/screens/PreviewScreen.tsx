@@ -15,12 +15,14 @@ export function PreviewScreen() {
 
   const totalTime = (importedPreview.prepTime || 0) + (importedPreview.cookTime || 0);
 
+  // Macro identity colours (design_system.md → "Macro Display Colors") in the
+  // Chip text shades, AA on the card in both themes; fiber stays neutral.
   const macros = [
-    { key: "kcal", label: "Kcal", value: importedPreview.calories, color: "text-primary" },
-    { key: "protein", label: "Protein", value: importedPreview.protein ? `${importedPreview.protein}g` : null, color: "text-sage-500" },
-    { key: "carbs", label: "Carbs", value: importedPreview.carbs ? `${importedPreview.carbs}g` : null, color: "text-amber-500" },
-    { key: "fat", label: "Fat", value: importedPreview.fat ? `${importedPreview.fat}g` : null, color: "text-muted-foreground" },
-    { key: "fiber", label: "Fiber", value: importedPreview.fiber ? `${importedPreview.fiber}g` : null, color: "text-sage-400" },
+    { key: "kcal", label: "Kcal", value: importedPreview.calories, color: "text-brand-700 dark:text-brand-600" },
+    { key: "protein", label: "Protein", value: importedPreview.protein ? `${importedPreview.protein}g` : null, color: "text-slate-600 dark:text-slate-400" },
+    { key: "carbs", label: "Carbs", value: importedPreview.carbs ? `${importedPreview.carbs}g` : null, color: "text-gold-700 dark:text-gold-400" },
+    { key: "fat", label: "Fat", value: importedPreview.fat ? `${importedPreview.fat}g` : null, color: "text-sage-700 dark:text-sage-600" },
+    { key: "fiber", label: "Fiber", value: importedPreview.fiber ? `${importedPreview.fiber}g` : null, color: "text-foreground" },
   ].filter(m => m.value);
 
   const handleSaveAsIs = async () => {

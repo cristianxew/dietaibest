@@ -45,36 +45,38 @@ export function MacroDisplay({
         </span>
       </div>
 
+      {/* Macro identity colours: the meal planner's Chip tint/text pairs
+          (design_system.md → "Macro Display Colors"), AA in both themes. */}
       <div className="grid grid-cols-4 divide-x divide-border/40">
-        <div className="flex flex-col items-center justify-center py-5 bg-brand-50/40 dark:bg-brand-900/10">
-          <span className="font-bold text-xl sm:text-2xl tabular-nums text-brand-600 dark:text-brand-400">
+        <div className="flex flex-col items-center justify-center py-5 bg-brand-500/8 text-brand-700 dark:text-brand-600">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums">
             {displayCals.toFixed(0)}
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-brand-600/70 dark:text-brand-400/70 mt-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">
             {t("cal", { fallback: "Calories" })}
           </span>
         </div>
-        <div className="flex flex-col items-center justify-center py-5 bg-sage-50/40 dark:bg-sage-900/10">
-          <span className="font-bold text-xl sm:text-2xl tabular-nums text-sage-600 dark:text-sage-400">
+        <div className="flex flex-col items-center justify-center py-5 bg-slate-500/10 text-slate-600 dark:text-slate-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums">
             {protein.toFixed(0)}g
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-sage-600/70 dark:text-sage-400/70 mt-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">
             {t("protein", { fallback: "Protein" })}
           </span>
         </div>
-        <div className="flex flex-col items-center justify-center py-5 bg-gold-50/40 dark:bg-gold-900/10">
-          <span className="font-bold text-xl sm:text-2xl tabular-nums text-gold-600 dark:text-gold-400">
+        <div className="flex flex-col items-center justify-center py-5 bg-gold-500/10 text-gold-700 dark:text-gold-400">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums">
             {carbs.toFixed(0)}g
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-gold-600/70 dark:text-gold-400/70 mt-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">
             {t("carbs", { fallback: "Carbs" })}
           </span>
         </div>
-        <div className="flex flex-col items-center justify-center py-5 bg-stone-50 dark:bg-stone-900/20">
-          <span className="font-bold text-xl sm:text-2xl tabular-nums text-stone-600 dark:text-stone-400">
+        <div className="flex flex-col items-center justify-center py-5 bg-sage-500/10 text-sage-700 dark:text-sage-600">
+          <span className="font-bold text-xl sm:text-2xl tabular-nums">
             {fat.toFixed(0)}g
           </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-stone-600/70 dark:text-stone-400/70 mt-0.5">
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">
             {t("fat", { fallback: "Fat" })}
           </span>
         </div>
@@ -85,7 +87,8 @@ export function MacroDisplay({
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground w-24">Fiber</span>
             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-sage-500 rounded-full" style={{ width: `${Math.min(100, (fiber / 30) * 100)}%` }} />
+              {/* Neutral: sage now belongs to fat, which sits right above. */}
+              <div className="h-full bg-stone-500 dark:bg-stone-400 rounded-full" style={{ width: `${Math.min(100, (fiber / 30) * 100)}%` }} />
             </div>
             <span className="text-sm font-bold w-12 text-right">{fiber.toFixed(1)}g</span>
           </div>

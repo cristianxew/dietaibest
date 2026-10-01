@@ -21,18 +21,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { MICRONUTRIENT_GROUPS } from "@/lib/nutrition-fields";
 
+// Macro identity colours (design_system.md → "Macro Display Colors"); fiber
+// stays neutral because sage belongs to fat.
 const MACRO_TILES = [
   { key: "calories" as const, unit: "kcal", accent: "brand" },
-  { key: "protein" as const, unit: "g", accent: "sage" },
+  { key: "protein" as const, unit: "g", accent: "slate" },
   { key: "carbs" as const, unit: "g", accent: "gold" },
-  { key: "fat" as const, unit: "g", accent: "neutral" },
-  { key: "fiber" as const, unit: "g", accent: "sage" },
+  { key: "fat" as const, unit: "g", accent: "sage" },
+  { key: "fiber" as const, unit: "g", accent: "neutral" },
 ];
 
+// The Chip text shades: AA on the card in both themes.
 const ACCENT_TEXT_CLASSES: Record<string, string> = {
-  brand: "text-primary",
-  sage: "text-sage-600 dark:text-sage-400",
-  gold: "text-amber-600 dark:text-amber-400",
+  brand: "text-brand-700 dark:text-brand-600",
+  slate: "text-slate-600 dark:text-slate-400",
+  gold: "text-gold-700 dark:text-gold-400",
+  sage: "text-sage-700 dark:text-sage-600",
   neutral: "text-foreground",
 };
 

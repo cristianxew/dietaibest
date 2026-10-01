@@ -211,8 +211,6 @@
     "todaysMacros": {
       "title": "Dzisiejsze Odżywianie",
       "noTarget": "Ustaw cele",
-      "viewPlan": "Zobacz Pełny Plan",
-      "calories": "Kalorie",
       "protein": "Białko",
       "carbs": "Węglowodany",
       "fat": "Tłuszcz",
@@ -223,8 +221,6 @@
       "noTargets": "Powiedz nam o swoich celach, aby odblokować statystyki",
       "setupTargets": "Ustaw Cele",
       "planned": "Zaplanowane",
-      "remaining": "pozostało",
-      "ofTarget": "z celu",
       "quickActions": {
         "quickLog": "Szybki Zapis",
         "adjustServings": "Dostosuj Porcje",

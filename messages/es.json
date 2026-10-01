@@ -216,8 +216,6 @@
     "todaysMacros": {
       "title": "Nutrición de Hoy",
       "noTarget": "Establecer objetivos",
-      "viewPlan": "Ver Plan Completo",
-      "calories": "Calorías",
       "protein": "Proteína",
       "carbs": "Carbohidratos",
       "fat": "Grasa",
@@ -228,8 +226,6 @@
       "noTargets": "Cuéntanos tus objetivos para desbloquear información",
       "setupTargets": "Configurar Objetivos",
       "planned": "Planificado",
-      "remaining": "restante",
-      "ofTarget": "del objetivo",
       "quickActions": {
         "quickLog": "Registro Rápido",
         "adjustServings": "Ajustar Porciones",

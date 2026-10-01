@@ -468,17 +468,42 @@ Introduced with the meal plans responsive pass. Source of truth: `src/lib/respon
 5. **Don't create new color variables** without updating both themes
 
 ### Macro Display Colors
-For nutritional/macro displays, use semantic colors:
-- **Calories**: Coral (`brand-500`)
-- **Protein**: Slate blue (`#64748B`)
-- **Carbs**: Gold (`gold-500`)
-- **Fat**: Coral/Brand (`brand-400`)
-- **Fiber**: Sage (`sage-500`)
+Macro **identity** colours: which nutrient a number, bar, dot or chip belongs to. They are the same on every screen:
+- **Calories**: Coral (`brand-500`; `Chip color="coral"`)
+- **Protein**: Slate blue (`slate-500`, Tailwind's default scale, `#62748E` in v4; `Chip color="slate"`)
+- **Carbs**: Gold (`gold-500`; `Chip color="gold"`)
+- **Fat**: Sage (`sage-500`; `Chip color="sage"`). It used to be `brand-400`, which was indistinguishable from calories.
+- **Fiber**: Neutral (`text-foreground`; `stone-500` / `dark:stone-400` for the `MacroDisplay` bar). Sage belongs to fat, and fiber sits next to fat on recipe screens.
+
+**Fills** (bars, legend dots, donut segments) use the `-500` token. In Recharts, pass the theme variable (`fill="var(--gold-500)"`, `var(--sage-500)`, `var(--brand-500)`, `var(--color-slate-500)`), never a hex, so dark mode follows.
+
+**Text** uses the `Chip` text shade, with the matching tint when the text sits on a tinted cell or chip:
+
+| Macro | Tint | Text | Light: card / page | Dark: card / page |
+|-------|------|------|-------|------|
+| Calories | `bg-brand-500/8` | `text-brand-700 dark:text-brand-600` | 4.80 / 4.57 | 5.89 / 6.58 |
+| Protein | `bg-slate-500/10` | `text-slate-600 dark:text-slate-400` | 6.71 / 6.39 | 6.05 / 6.74 |
+| Carbs | `bg-gold-500/10` | `text-gold-700 dark:text-gold-400` | 6.54 / 6.24 | 9.48 / 10.81 |
+| Fat | `bg-sage-500/10` | `text-sage-700 dark:text-sage-600` | 7.22 / 6.89 | 7.44 / 8.35 |
+
+(Contrast with the tint composited over the surface; without a tint each ratio is higher. Computed from the `globals.css` tokens and confirmed with rendered colours in the browser.)
+
+**Where it applies:**
+- Meal planner: `MacroBar`, `DayMacros` legend dots, `PlanMacroSummary` bars, meal and recipe `Chip`s
+- Dashboard: `WeeklyMacroChart` bars and toggle dots, `CompactNutrition` donut and % labels
+- Recipes: `RecipeCard` macro chips, `MacroDisplay` (recipe page + planner sheet), import modal `Step2Nutrition` / `PreviewScreen` / `SuccessScreen`
+- Nutrition calculator: `MacrosSummary`
+
+The nutrition hub (`/nutrition/*`) has no macro identity colours. Its bars are status colours (`DayFillBar`) and its face-offs colour the two *sides*, not nutrients (item A = coral, item B = gold). The calculator's Source badges show where each value came from (USDA data type: purple / blue / indigo / orange; Estimated: gold; Not found: red), not macros. They use a `-500/10` tint with `-800` text in light and `-300` in dark (≥ 6:1, hovered rows included).
+
+**Chip contrast:** every `Chip` colour (`src/components/meal-plans/shared.tsx`) reaches WCAG AA (4.5:1) in both themes on card and page surfaces and on the planner's `bg-muted/40` rows over a card (coral: 4.62). Coral is the tightest pair: on a solid `bg-muted` it drops to 4.36:1 in light mode, so don't put coral text on solid muted. The brand / sage / gold scales are inverted in dark mode (`globals.css`), so a `-700` text shade is dark in light mode and light in dark mode; slate and red are Tailwind's fixed scales, so they get an explicit `dark:` shade.
 
 ### Status Colors
 - **On Track**: Sage green (`sage-*`)
 - **Under Target**: Gold (`gold-*`)
 - **Over Target**: Coral (`brand-*`)
+
+Status is a separate axis from macro identity. A status element is coloured by how a value compares with its target, whatever the nutrient (`src/lib/meal-plan-macros.ts`, nutrition hub `DayFillBar`). Don't recolour status elements to match macro identity, or the reverse.
 
 ---
 

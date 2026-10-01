@@ -13,6 +13,15 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 import { RecipeDeleteButton } from "./RecipeDeleteButton";
 
+// Macro identity colours: the meal planner's Chip pairs (design_system.md →
+// "Macro Display Colors"), AA in both themes on the card surface.
+const MACRO_CHIP_CLASSES = {
+  calories: "bg-brand-500/8 text-brand-700 dark:text-brand-600",
+  protein: "bg-slate-500/10 text-slate-600 dark:text-slate-400",
+  carbs: "bg-gold-500/10 text-gold-700 dark:text-gold-400",
+  fat: "bg-sage-500/10 text-sage-700 dark:text-sage-600",
+};
+
 interface RecipeCardProps {
   recipe: Recipe & {
     categories: RecipeCategory[];
@@ -254,16 +263,16 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                 {(recipe.calories || recipe.protein || recipe.carbs || recipe.fat) && (
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] font-medium text-muted-foreground pt-1">
                     {recipe.calories && (
-                      <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>
+                      <span className={cn(MACRO_CHIP_CLASSES.calories, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.calories)} kcal</span>
                     )}
                     {recipe.protein && (
-                      <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>
+                      <span className={cn(MACRO_CHIP_CLASSES.protein, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.protein)}g P</span>
                     )}
                     {recipe.carbs && (
-                      <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>
+                      <span className={cn(MACRO_CHIP_CLASSES.carbs, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.carbs)}g C</span>
                     )}
                     {recipe.fat && (
-                      <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>
+                      <span className={cn(MACRO_CHIP_CLASSES.fat, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.fat)}g F</span>
                     )}
                   </div>
                 )}
@@ -286,10 +295,10 @@ export function RecipeCard({ recipe, showAuthor = false, viewMode = "grid" }: Re
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-medium mt-2 sm:mt-3">
-                  {recipe.calories && <span className="bg-brand-50/60 dark:bg-brand-500/10 text-brand-500/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.calories)} kcal</span>}
-                  {recipe.protein && <span className="bg-sage-50/80 dark:bg-sage-500/10 text-sage-600/90 dark:text-sage-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.protein)}g P</span>}
-                  {recipe.carbs && <span className="bg-gold-50/80 dark:bg-gold-500/10 text-gold-600/90 dark:text-gold-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.carbs)}g C</span>}
-                  {recipe.fat && <span className="bg-brand-50/40 dark:bg-brand-500/10 text-brand-400/90 dark:text-brand-400 px-1.5 py-0.5 rounded-md">{Math.round(recipe.fat)}g F</span>}
+                  {recipe.calories && <span className={cn(MACRO_CHIP_CLASSES.calories, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.calories)} kcal</span>}
+                  {recipe.protein && <span className={cn(MACRO_CHIP_CLASSES.protein, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.protein)}g P</span>}
+                  {recipe.carbs && <span className={cn(MACRO_CHIP_CLASSES.carbs, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.carbs)}g C</span>}
+                  {recipe.fat && <span className={cn(MACRO_CHIP_CLASSES.fat, "px-1.5 py-0.5 rounded-md")}>{Math.round(recipe.fat)}g F</span>}
                   {totalTime > 0 && (
                     <span className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded-sm text-stone-500 dark:text-stone-400">
                       <Clock className="w-3 h-3" />{totalTime}m
