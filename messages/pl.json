@@ -451,7 +451,6 @@
     "firstPage": "Pierwsza strona",
     "lastPage": "Ostatnia strona",
     "goToPage": "Przejdź do:",
-    "libraryEyebrow": "Biblioteka przepisów",
     "gridView": "Siatka",
     "listView": "Lista",
     "totalTime": "Razem",
@@ -1105,7 +1104,6 @@
   },
   "nutritionHub": {
     "myWeek": {
-      "kicker": "Twój Tydzień",
       "title": "Napraw Mój Tydzień",
       "description": "Twój zaplanowany tydzień zmierzony względem Twoich osobistych celów — i to, co warto zmienić najpierw.",
       "hero": {
@@ -1163,7 +1161,6 @@
       "basis": { "personalized": "Cele spersonalizowane", "generic": "Ogólne wartości dzienne" }
     },
     "hub": {
-      "kicker": "Centrum Nauki",
       "title": "Wiedz, co masz na talerzu",
       "description": "Porównuj produkty, mierz posiłki względem swojego dnia i poznawaj rolę każdego składnika — aby każdy kęs był świadomym wyborem.",
       "faceoff": {
@@ -1238,7 +1235,6 @@
       "onlyOneHas": "Tylko {winner} zawiera: {nutrient}"
     },
     "vsDay": {
-      "kicker": "Twój Dzień",
       "title": "Posiłek vs Twój Dzień",
       "description": "Wybierz produkt lub własny przepis i zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa.",
       "pickPrompt": "Co jesz?",
@@ -1264,7 +1260,6 @@
     },
     "encyclopedia": {
       "meta": {
-        "kicker": "Ucz się",
         "title": "Encyklopedia Składników",
         "description": "Każdy składnik odżywczy ma swoje zadanie. Dowiedz się, co robi, dlaczego ma znaczenie i gdzie go znaleźć.",
         "dailyTarget": "cel dzienny",
@@ -1407,7 +1402,6 @@
       }
     },
     "swaps": {
-      "kicker": "Ulepszaj",
       "title": "Mądre Zamiany",
       "description": "Proste zamiany z realną, zweryfikowaną w danych USDA korzyścią odżywczą. Małe zmiany, duży skumulowany efekt.",
       "insteadOf": "Zamiast",
@@ -1429,7 +1423,6 @@
       }
     },
     "compare": {
-      "kicker": "Porównaj",
       "title": "Pojedynek Produktów",
       "description": "Wybierz dwóch zawodników — dowolny produkt USDA lub własny przepis — i poznaj pełną historię odżywczą, obok siebie.",
       "slotA": "Zawodnik A",
@@ -1497,7 +1490,6 @@
     },
     "calculator": {
       "page": {
-        "kicker": "Odżywianie",
         "title": "Kalkulator Żywieniowy",
         "description": "Analizuj składniki przepisu i obliczaj dokładne wartości odżywcze dzięki USDA FoodData Central."
       },

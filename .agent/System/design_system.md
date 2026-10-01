@@ -216,6 +216,15 @@ All components should use semantic tokens rather than raw color values.
 </div>
 ```
 
+### Page Titles (app pages)
+Every in-app page (dashboard, recipes, recipe detail, meal plans, shopping, profile, settings, nutrition hub and its tools, nutrient detail, shared plan) uses one title style, with nothing above it: no icon tile, no uppercase eyebrow label. Content metadata (e.g. recipe category/tag badges) goes below the title. An optional `text-muted-foreground` description may follow.
+```tsx
+<h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
+  Page Title
+</h1>
+```
+Out of scope: sign-in/sign-up cards, the subscribe hero, and landing sections (which use the Section Header below).
+
 ### Section Headers
 ```tsx
 <div className="mb-16 max-w-2xl">

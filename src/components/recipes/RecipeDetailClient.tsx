@@ -382,6 +382,11 @@ export function RecipeDetailClient({
         {/* Details Column */}
         <div className="lg:col-span-7 space-y-5">
 
+          {/* Title */}
+          <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight leading-[1.1] break-words">
+            {recipe.title}
+          </h1>
+
           {/* Tags row: categories + difficulty + tags */}
           <div className="flex flex-wrap gap-2">
             {recipe.categories.map((cat) => (
@@ -403,11 +408,6 @@ export function RecipeDetailClient({
               </Badge>
             ))}
           </div>
-
-          {/* Title */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-display font-bold text-foreground leading-[1.1] break-words">
-            {recipe.title}
-          </h1>
 
           {/* Author attribution for public recipes viewed by non-owners */}
           {!isOwner && authorName && (

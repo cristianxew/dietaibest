@@ -195,8 +195,7 @@
     },
     "settingsHeader": {
       "title": "Settings",
-      "subtitle": "Manage your application preferences and automations",
-      "section": "Preferences"
+      "subtitle": "Manage your application preferences and automations"
     }
   },
   "dashboard": {
@@ -456,7 +455,6 @@
     "firstPage": "First page",
     "lastPage": "Last page",
     "goToPage": "Go to:",
-    "libraryEyebrow": "Recipe Library",
     "gridView": "Grid",
     "listView": "List",
     "totalTime": "Total",
@@ -1111,7 +1109,6 @@
   },
   "nutritionHub": {
     "myWeek": {
-      "kicker": "Your Week",
       "title": "Fix My Week",
       "description": "Your planned week, measured against your personal targets — and the one thing to change first.",
       "hero": {
@@ -1169,7 +1166,6 @@
       "basis": { "personalized": "Personalized targets", "generic": "Generic daily values" }
     },
     "hub": {
-      "kicker": "Learning Hub",
       "title": "Know what's on your plate",
       "description": "Compare foods, measure meals against your day, and learn what every nutrient does — so every bite is a conscious choice.",
       "faceoff": {
@@ -1244,7 +1240,6 @@
       "onlyOneHas": "Only {winner} has {nutrient}"
     },
     "vsDay": {
-      "kicker": "Your Day",
       "title": "Meal vs Your Day",
       "description": "Pick a food or one of your recipes and see how much of your daily nutrient needs it really covers.",
       "pickPrompt": "What are you eating?",
@@ -1270,7 +1265,6 @@
     },
     "encyclopedia": {
       "meta": {
-        "kicker": "Learn",
         "title": "Nutrient Encyclopedia",
         "description": "Every nutrient has a job. Learn what it does, why it matters, and where to find it.",
         "dailyTarget": "daily target",
@@ -1413,7 +1407,6 @@
       }
     },
     "swaps": {
-      "kicker": "Improve",
       "title": "Smart Swaps",
       "description": "Simple trades with a real, USDA-verified nutritional win. Small changes, big compounding payoff.",
       "insteadOf": "Instead of",
@@ -1435,7 +1428,6 @@
       }
     },
     "compare": {
-      "kicker": "Compare",
       "title": "Food Face-Off",
       "description": "Pick two contenders — any USDA food or one of your own recipes — and see the full nutritional story, side by side.",
       "slotA": "Contender A",
@@ -1503,7 +1495,6 @@
     },
     "calculator": {
       "page": {
-        "kicker": "Nutrition",
         "title": "Nutrition Calculator",
         "description": "Analyze recipe ingredients and calculate accurate nutrition information powered by USDA FoodData Central."
       },
