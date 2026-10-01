@@ -56,8 +56,8 @@ export function PlanSwitcherSkeleton() {
   );
 }
 
-/* ── WeeklyMacroStripSkeleton ──────────────────────────── */
-export function WeeklyMacroStripSkeleton() {
+/* ── PlanMacroSummarySkeleton ──────────────────────────── */
+export function PlanMacroSummarySkeleton() {
   return (
     <div
       className={cn(
@@ -146,7 +146,7 @@ export function DayMacrosSkeleton({ compact = false }: { compact?: boolean }) {
         <Skeleton className="h-3 w-12 bg-stone-200 dark:bg-slate-800" />
       </div>
       <Skeleton className="h-1 w-full bg-stone-200 dark:bg-slate-800 rounded-full" />
-      <div className="flex gap-2.5 text-[10px] text-muted-foreground font-mono">
+      <div className="flex gap-2.5 text-[11px] text-muted-foreground font-mono">
         <Skeleton className="h-3 w-10 bg-stone-200 dark:bg-slate-800" />
         <Skeleton className="h-3 w-10 bg-stone-200 dark:bg-slate-800" />
         <Skeleton className="h-3 w-10 bg-stone-200 dark:bg-slate-800" />
@@ -203,7 +203,7 @@ export function GridLayoutSkeleton({ density }: { density: "regular" | "compact"
 
         {/* Macro footer */}
         <div className="grid gap-2 mt-2 pt-3.5 border-t border-border" style={{ gridTemplateColumns: gridCols }}>
-          <div className="text-[10px] font-bold tracking-widest uppercase text-stone-400 self-center">
+          <div className="text-[11px] font-bold tracking-widest uppercase text-stone-400 self-center">
             TOTAL
           </div>
           {Array.from({ length: numDays }).map((_, dayIdx) => (

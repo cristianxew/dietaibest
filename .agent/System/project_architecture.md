@@ -255,22 +255,27 @@ dietaibest/
 - Active plan management
 - Public sharing with share tokens
 - "Generate with AI" header button deep-links to the in-app chat agent
+- Page order: hero (eyebrow + title; the subtitle only while the user has no plans) → plan switcher → `PlanMacroSummary` → view controls (layout / density / servings; desktop's recipe search + category filters live in the recipe library sidebar) → day layouts → aggregate `MicronutrientPanel`
+- Day header bar: with a calorie target it fills `calories / target` (protein / carbs / fat segments by energy share) and marks the target when over; with a target the under / on-track / over pill shows in every layout
+- Meals whose recipe calories contradict its macros (`hasCalorieMacroMismatch` in `src/lib/nutrition-consistency.ts`: > 25% and > 40 kcal off 4P+4C+9F, per serving) show a gold warning next to the kcal chip; stored data is not changed
+- Removing a meal shows an "Undo" toast action that re-adds the same recipe, slot and servings (skipped if the slot was filled meanwhile)
 - Responsive on phone and tablet: tablet keeps the recipe library, long-press touch drag with tap-to-add fallback, sticky toolbar via measured CSS variable, bottom-sheet dialogs and a tap-a-day sheet in the calendar (see [Design System - Responsive & Touch Conventions](./design_system.md#responsive--touch-conventions))
 
 **Key Components (`src/components/meal-plans/`):**
 - `MealPlanner.tsx` - Shell: header, planner/calendar tabs, loads templates, wires mutations
 - `planner.tsx` - Exports `PlanSwitcher`, `RecipeLibrary`, `MealCell`, `DayMacros`, and the 3 editor layouts (`GridLayout` / `StackLayout` / `SplitLayout`)
 - `ScheduleCalendar.tsx` - Month-grid calendar for scheduling templates on specific dates
-- `WeeklyMacroStrip.tsx` - Weekly macro summary strip
+- `PlanMacroSummary.tsx` - "Plan summary" strip: each macro as the plan's daily average vs the daily target ("Daily average · N days"); formerly `WeeklyMacroStrip`
 - `MicronutrientPanel.tsx` - Collapsible micronutrient totals (`variant="aggregate"` daily-average panel + `variant="day"` per-day panel) with %DV bars (DIE-44)
-- `shared.tsx` - Shared primitives: `RecipeThumb`, `MacroBar`, `Chip`
+- `shared.tsx` - Shared primitives: `RecipeThumb`, `MacroBar` (a calorie progress track split by macro energy when a target exists, see `getMacroBarLayout`), `Chip` (AA-contrast colours incl. `slate` for protein)
 - `icons.tsx` - Lucide-react icon wrapper
 - `MealPlanForm.tsx` - Create/edit meal plan dialog (unchanged)
 
 **Shared Libraries:**
 - `src/lib/meal-plan-adapter.ts` - `toTemplateDisplay()`: converts a Prisma `MealPlanTemplate` payload to the `MealPlanTemplateDisplay` display type
 - `src/lib/meal-slot-meta.ts` - `MEAL_SLOT_META`: per-`MealType` icon / color / i18n-key metadata map (7 entries)
-- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()`; plus `calculateMealMicros()` / `sumMicros()` / `emptyMicros()` for daily micronutrient aggregation (DIE-44)
+- `src/lib/meal-plan-macros.ts` - `calculateMealMacros()`, `sumMacros()`; plus `calculateMealMicros()` / `sumMicros()` / `emptyMicros()` for daily micronutrient aggregation (DIE-44), and `getMacroBarLayout()` for the day calorie bar
+- `src/lib/nutrition-consistency.ts` - `atwaterCalories()` / `hasCalorieMacroMismatch()`: flags recipes whose stored calories contradict their macros (legacy rows from before the FDC Atwater-energy fix)
 - `src/lib/nutrition-rda.ts` - `getReferenceIntakes(profile?)` (DRI RDA by age+sex, FDA Daily Value fallback) + `percentOfReference()` for the micronutrient %DV display (DIE-44)
 
 **Server Actions (`src/actions/meal-plan.ts` — unchanged from pre-migration):**

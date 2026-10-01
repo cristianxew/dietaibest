@@ -616,7 +616,6 @@
       "search": "Buscar"
     },
     "currentPlan": "Plan Actual",
-    "savedPlans": "Planes Guardados",
     "noActivePlan": "Sin Plan Activo",
     "noPlanDescription": "Crea un nuevo plan de comidas para comenzar",
     "createFirstPlan": "Crear Tu Primer Plan",
@@ -650,6 +649,7 @@
     "createAdditional": "Crea planes adicionales para verlos aquí",
     "mealAdded": "¡Comida añadida al plan!",
     "mealRemoved": "¡Comida eliminada!",
+    "undoSlotTaken": "Ese espacio ya tiene una comida, así que no se ha restaurado la que eliminaste.",
     "mealMoved": "¡Comida movida!",
     "backToDashboard": "Volver al Panel",
     "recipes": "Recetas",
@@ -798,8 +798,8 @@
     "tapToAdd": "Tocá para agregar",
     "servingsAbbrev": "porc.",
     "total": "Total",
-    "weeklySummary": "Resumen semanal",
-    "dailyAverageWithCalories": "Promedio diario · {calories} kcal",
+    "planSummary": "Resumen del plan",
+    "dailyAverageForDays": "Promedio diario · {days, plural, one {# día} other {# días}}",
     "perDay": "/día",
     "macroLabels": {
       "calories": "Calorías",
@@ -844,7 +844,8 @@
       "removeMeal": "Eliminar comida",
       "decreaseServings": "Reducir porciones",
       "increaseServings": "Aumentar porciones",
-      "viewRecipe": "Ver detalles de la receta"
+      "viewRecipe": "Ver detalles de la receta",
+      "caloriesMismatch": "Las calorías no coinciden con los macronutrientes de esta receta. Vuelve a analizar su información nutricional para corregirlo."
     },
     "picker": {
       "selectRecipe": "Seleccionar Receta",

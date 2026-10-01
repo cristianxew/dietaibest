@@ -64,7 +64,9 @@ export function MicronutrientPanel({
             <span className="font-display font-bold text-[15px] lg:text-base text-foreground">
               {t("title")}
             </span>
-            <span className="text-xs lg:text-[11px] font-medium text-muted-foreground">
+            {/* The trigger sits in an <h3>, which inherits the display serif;
+                the small qualifier reads better in the body sans */}
+            <span className="font-sans text-xs font-normal not-italic tracking-normal text-muted-foreground">
               {variant === "aggregate" ? t("dailyAverage") : t("perDay")}
             </span>
           </div>
@@ -74,7 +76,7 @@ export function MicronutrientPanel({
             <div className="space-y-6">
               {groups.map((group) => (
                 <div key={group.id}>
-                  <h5 className="text-[11px] font-bold tracking-[0.1em] text-muted-foreground uppercase mb-2">
+                  <h5 className="font-sans text-[11px] font-bold tracking-[0.1em] text-muted-foreground uppercase mb-2">
                     {t(`group.${group.id}`)}
                   </h5>
                   <div className="divide-y divide-border/40">

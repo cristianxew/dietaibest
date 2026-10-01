@@ -616,7 +616,6 @@
       "search": "Search"
     },
     "currentPlan": "Current Plan",
-    "savedPlans": "Saved Plans",
     "noActivePlan": "No Active Meal Plan",
     "noPlanDescription": "Create a new meal plan to get started",
     "createFirstPlan": "Create Your First Plan",
@@ -650,6 +649,7 @@
     "createAdditional": "Create additional meal plans to see them here",
     "mealAdded": "Meal added to plan!",
     "mealRemoved": "Meal removed!",
+    "undoSlotTaken": "That slot already has a meal, so the removed meal wasn't restored.",
     "mealMoved": "Meal moved!",
     "backToDashboard": "Back to Dashboard",
     "recipes": "Recipes",
@@ -798,8 +798,8 @@
     "tapToAdd": "Tap to add",
     "servingsAbbrev": "serv.",
     "total": "Total",
-    "weeklySummary": "Weekly Summary",
-    "dailyAverageWithCalories": "Daily average · {calories} kcal",
+    "planSummary": "Plan summary",
+    "dailyAverageForDays": "Daily average · {days, plural, one {# day} other {# days}}",
     "perDay": "/day",
     "macroLabels": {
       "calories": "Calories",
@@ -844,7 +844,8 @@
       "removeMeal": "Remove meal",
       "decreaseServings": "Decrease servings",
       "increaseServings": "Increase servings",
-      "viewRecipe": "View recipe details"
+      "viewRecipe": "View recipe details",
+      "caloriesMismatch": "Calories don't match this recipe's macros — re-analyze its nutrition to fix it."
     },
     "picker": {
       "selectRecipe": "Select Recipe",

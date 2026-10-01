@@ -471,10 +471,10 @@ function CalendarCell({
             className="hidden sm:block mt-1 px-2 py-1 rounded-md"
             style={{ backgroundColor: scheduledInfo.color.text }}
           >
-            <p className="text-[10px] touch:text-xs font-bold leading-tight line-clamp-1" style={{ color: "#1C1A17" }}>
+            <p className="text-[11px] touch:text-xs font-bold leading-tight line-clamp-1" style={{ color: "#1C1A17" }}>
               {scheduledInfo.templateName}
             </p>
-            <p className="text-[10px] touch:text-xs mt-0.5" style={{ color: "rgba(28,26,23,0.75)" }}>
+            <p className="text-[11px] touch:text-xs mt-0.5" style={{ color: "rgba(28,26,23,0.75)" }}>
               {t("calendar.dayNumber", { number: scheduledInfo.dayNumber })}
             </p>
           </div>

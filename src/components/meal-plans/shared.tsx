@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Icon } from './icons';
 import { cn } from '@/lib/utils';
+import { getMacroBarLayout } from '@/lib/meal-plan-macros';
 
 /* ── RecipeThumb ─────────────────────────────────── */
 interface RecipeThumbProps {
@@ -68,39 +69,51 @@ interface MacroBarProps {
   p: number;
   c: number;
   f: number;
+  /** Calories shown by the bar; with `calorieTarget` it becomes a progress track. */
+  calories?: number;
+  /** Daily calorie target. Without one the bar shows the macro composition only. */
+  calorieTarget?: number | null;
   height?: number;
 }
 
-export function MacroBar({ p, c, f, height = 4 }: MacroBarProps) {
-  const totalCal = p * 4 + c * 4 + f * 9;
-
-  if (totalCal === 0) {
-    return (
-      <div
-        className="rounded-full bg-muted"
-        style={{ height }}
-      />
-    );
-  }
-
-  const pP = (p * 4 / totalCal) * 100;
-  const pC = (c * 4 / totalCal) * 100;
-  const pF = (f * 9 / totalCal) * 100;
+/**
+ * Macro bar. With a calorie target it fills `calories / target` of the track,
+ * split into protein / carbs / fat by energy share, and past the target it
+ * fills the track and marks where the target falls. Without a target it is a
+ * full-width composition bar. Decorative: callers render the numbers as text.
+ */
+export function MacroBar({ p, c, f, calories = 0, calorieTarget, height = 4 }: MacroBarProps) {
+  const { fill, shares, targetMarker } = getMacroBarLayout(
+    { calories, protein: p, carbs: c, fat: f },
+    calorieTarget,
+  );
+  const hasShares = shares.protein + shares.carbs + shares.fat > 0;
 
   return (
-    <div
-      className="flex rounded-full overflow-hidden bg-muted"
-      style={{ height }}
-    >
-      <div className="bg-brand-500 flex-shrink-0" style={{ width: `${pP}%` }} />
-      <div className="bg-gold-500 flex-shrink-0" style={{ width: `${pC}%` }} />
-      <div className="bg-sage-500 flex-shrink-0" style={{ width: `${pF}%` }} />
+    <div aria-hidden className="relative rounded-full overflow-hidden bg-muted" style={{ height }}>
+      {fill > 0 && (
+        <div
+          // Calories without macro data still fill the track, in a neutral tone
+          className={cn('flex h-full rounded-full overflow-hidden', !hasShares && 'bg-muted-foreground/40')}
+          style={{ width: `${fill}%` }}
+        >
+          <div className="bg-slate-500 flex-shrink-0" style={{ width: `${shares.protein}%` }} />
+          <div className="bg-gold-500 flex-shrink-0" style={{ width: `${shares.carbs}%` }} />
+          <div className="bg-sage-500 flex-shrink-0" style={{ width: `${shares.fat}%` }} />
+        </div>
+      )}
+      {targetMarker != null && (
+        <div
+          className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground"
+          style={{ left: `${targetMarker}%` }}
+        />
+      )}
     </div>
   );
 }
 
 /* ── Chip ────────────────────────────────────────── */
-type ChipColor = 'neutral' | 'coral' | 'sage' | 'gold' | 'danger';
+type ChipColor = 'neutral' | 'coral' | 'sage' | 'gold' | 'slate' | 'danger';
 type ChipSize = 'xs' | 'sm' | 'md';
 
 interface ChipProps {
@@ -111,16 +124,23 @@ interface ChipProps {
   style?: React.CSSProperties;
 }
 
-const CHIP_COLOR_CLASSES: Record<ChipColor, string> = {
-  neutral: 'bg-muted text-muted-foreground',
-  coral:   'bg-brand-500/10 text-brand-600 dark:text-brand-400',
-  sage:    'bg-sage-500/10 text-sage-600 dark:text-sage-400',
-  gold:    'bg-gold-500/10 text-gold-600 dark:text-gold-400',
-  danger:  'bg-destructive/10 text-destructive',
+/**
+ * Every pair reaches WCAG AA (4.5:1) in both themes on card, muted-row and page
+ * surfaces. The brand / sage / gold scales are inverted in dark mode (see
+ * globals.css), so a `-700` text shade stays dark in light mode and light in
+ * dark mode; slate and red are Tailwind's fixed scales and need a `dark:` shade.
+ */
+export const CHIP_COLOR_CLASSES: Record<ChipColor, string> = {
+  neutral: 'bg-muted text-secondary-foreground',
+  coral:   'bg-brand-500/8 text-brand-700 dark:text-brand-600',
+  sage:    'bg-sage-500/10 text-sage-700 dark:text-sage-600',
+  gold:    'bg-gold-500/10 text-gold-700 dark:text-gold-400',
+  slate:   'bg-slate-500/10 text-slate-600 dark:text-slate-400',
+  danger:  'bg-destructive/10 text-red-700 dark:text-red-300',
 };
 
 const CHIP_SIZE_CLASSES: Record<ChipSize, { wrapper: string; iconSize: number }> = {
-  xs: { wrapper: 'py-[2px] px-[7px] text-[10px] touch:text-xs',  iconSize: 12 },
+  xs: { wrapper: 'py-[2px] px-[7px] text-[11px] touch:text-xs',  iconSize: 12 },
   sm: { wrapper: 'py-[3px] px-[9px] text-[11px] touch:text-xs',  iconSize: 13 },
   md: { wrapper: 'py-[5px] px-[11px] text-xs',                   iconSize: 14 },
 };

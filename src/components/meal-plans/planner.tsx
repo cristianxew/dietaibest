@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Icon } from './icons';
-import { RecipeThumb, MacroBar, Chip } from './shared';
+import { RecipeThumb, MacroBar, Chip, CHIP_COLOR_CLASSES } from './shared';
 import { cn } from '@/lib/utils';
 import { mealPlansReturnPath, recipeHref } from '@/lib/recipe-back-link';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
@@ -18,6 +18,7 @@ import { getRecipes, getCategories } from '@/actions/recipe';
 import { toast } from 'sonner';
 import { MEAL_SLOT_META } from '@/lib/meal-slot-meta';
 import { compareMacro, getMacroStatusColor } from '@/lib/meal-plan-macros';
+import { hasCalorieMacroMismatch } from '@/lib/nutrition-consistency';
 import { RecipeSidebarSkeleton } from './MealPlannerSkeletons';
 import {
   GRID_COL_MIN_DENSE,
@@ -216,10 +217,10 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
                 <Chip color="coral" size="xs">{Math.round(recipe.calories)} kcal</Chip>
               )}
               {recipe.protein != null && (
-                <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
+                <Chip color="slate" size="xs">{Math.round(recipe.protein)}g P</Chip>
               )}
               {recipe.prepTime != null && (
-                <span className="text-[10px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
+                <span className="text-[11px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
                   <Icon name="Clock" size={10} />{recipe.prepTime}m
                 </span>
               )}
@@ -237,14 +238,14 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             {recipe.categories?.slice(0, 2).map((cat) => (
-              <Badge key={cat.id} className="badge-brand text-[9px] uppercase tracking-wider font-bold px-2 py-0.5">
+              <Badge key={cat.id} className="badge-brand text-[11px] uppercase tracking-wider font-bold px-2 py-0.5">
                 {cat.name}
               </Badge>
             ))}
             {recipe.difficulty && (
               <Badge
                 variant="outline"
-                className={cn("text-[9px] font-semibold px-2 py-0.5", difficultyBadgeClass[recipe.difficulty])}
+                className={cn("text-[11px] font-semibold px-2 py-0.5", difficultyBadgeClass[recipe.difficulty])}
               >
                 {t(`difficulty.${recipe.difficulty}`, { fallback: recipe.difficulty })}
               </Badge>
@@ -279,7 +280,7 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
         )}
 
         {/* Stats line */}
-        <div className="flex gap-3 text-[10px] text-muted-foreground">
+        <div className="flex gap-3 text-[11px] text-muted-foreground">
           {recipe.prepTime != null && (
             <span className="flex items-center gap-1">
               <Icon name="Clock" size={11} /> {recipe.prepTime}m {t('prepTime', { fallback: 'prep' }).toLowerCase()}
@@ -302,7 +303,7 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
             <Chip color="coral" size="xs">{Math.round(recipe.calories)} kcal</Chip>
           )}
           {recipe.protein != null && (
-            <Chip color="sage" size="xs">{Math.round(recipe.protein)}g P</Chip>
+            <Chip color="slate" size="xs">{Math.round(recipe.protein)}g P</Chip>
           )}
           {recipe.carbs != null && (
             <Chip color="gold" size="xs">{Math.round(recipe.carbs)}g C</Chip>
@@ -315,7 +316,7 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
         {/* Ingredients preview */}
         {ingredientsList.length > 0 && (
           <div className="space-y-1 pt-1 border-t border-border/40">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
               {t('ingredients', { fallback: 'Ingredients' })}
             </div>
             <div className="grid grid-cols-1 gap-1">
@@ -328,7 +329,7 @@ function DraggableRecipeRow({ recipe, dense, planId }: { recipe: RecipeWithCateg
                 </div>
               ))}
               {ingredientsList.length > 4 && (
-                <div className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 pl-2">
+                <div className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 pl-2">
                   {t('moreIngredients', { count: ingredientsList.length - 4, fallback: `+ ${ingredientsList.length - 4} more` })}
                 </div>
               )}
@@ -399,6 +400,42 @@ export function RecipeLibrary({ dense = false, searchQuery = '', selectedCategor
         )}
       </div>
     </div>
+  );
+}
+
+/* ── Calorie / macro mismatch flag ─────────────── */
+
+/**
+ * Whether the meal's recipe has calories that contradict its macros. Meal
+ * values are scaled by servings, so compare per serving: the check is about
+ * the recipe, not how many servings were planned.
+ */
+function mealHasCalorieMismatch(meal: MealDisplay): boolean {
+  const servings = meal.servings > 0 ? meal.servings : 1;
+  return hasCalorieMacroMismatch({
+    calories: meal.calories / servings,
+    protein: meal.protein / servings,
+    carbs: meal.carbs / servings,
+    fat: meal.fat / servings,
+  });
+}
+
+function CalorieMismatchBadge({ compact = false }: { compact?: boolean }) {
+  const t = useTranslations('mealPlans');
+  const label = t('slot.caloriesMismatch');
+  return (
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={cn(
+        'inline-flex flex-shrink-0 items-center justify-center rounded-full',
+        CHIP_COLOR_CLASSES.gold,
+        compact ? 'size-4' : 'size-5',
+      )}
+    >
+      <Icon name="TriangleAlert" size={compact ? 10 : 12} />
+    </span>
   );
 }
 
@@ -560,6 +597,11 @@ export function MealCell({
     );
   }
 
+  // Display-only rounding; the meal keeps its unrounded values
+  const kcal = Math.round(meal.calories);
+  const proteinG = Math.round(meal.protein);
+  const calorieMismatch = mealHasCalorieMismatch(meal);
+
   const servingsStepper = (
     <>
       <button
@@ -581,7 +623,7 @@ export function MealCell({
       >
         <Icon name="Plus" size={10} />
       </button>
-      <span className="text-[10px] touch:text-xs text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
+      <span className="text-[11px] touch:text-xs text-muted-foreground ml-0.5">{t('servingsAbbrev')}</span>
     </>
   );
 
@@ -638,8 +680,9 @@ export function MealCell({
                 {meal.recipeName}
               </div>
               <div className={cn('flex gap-1.5 flex-wrap items-center', dense ? 'mt-0.5' : 'mt-1')}>
-                <Chip color="coral" size="xs">{meal.calories} kcal</Chip>
-                <Chip color="sage" size="xs">{meal.protein}g P</Chip>
+                <Chip color="coral" size="xs">{kcal} kcal</Chip>
+                {calorieMismatch && <CalorieMismatchBadge />}
+                <Chip color="slate" size="xs">{proteinG}g P</Chip>
               </div>
             </div>
           </div>
@@ -688,7 +731,8 @@ export function MealCell({
         onClick={(e) => { e.stopPropagation(); onRemove(meal.id); }}
         className={cn(
           'absolute top-1 right-1 z-10 w-5 h-5 touch:w-7 touch:h-7 rounded-full',
-          "bg-black/50 flex items-center justify-center after:absolute after:-inset-2 after:content-['']",
+          // 32px hit area on pointer devices, 44px on touch
+          "bg-black/50 flex items-center justify-center after:absolute after:-inset-1.5 touch:after:-inset-2 after:content-['']",
           'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150',
           'cursor-pointer border-none',
         )}
@@ -697,14 +741,16 @@ export function MealCell({
         <Icon name="X" size={11} className="text-white touch:size-[14px]" />
       </button>
 
-      {/* View Details button — hover-revealed, outside drag listeners */}
+      {/* View Details button — hover-revealed, outside drag listeners. Its centre
+          sits 32px (pointer) / 44px (touch) from Remove's, so the hit areas touch
+          without overlapping */}
       {meal.recipeId && onViewRecipeDetail && (
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onViewRecipeDetail(meal.recipeId!); }}
           className={cn(
-            'absolute top-1 right-7 touch:right-12 z-10 w-5 h-5 touch:w-7 touch:h-7 rounded-full',
-            "bg-black/50 flex items-center justify-center after:absolute after:-inset-2 after:content-['']",
+            'absolute top-1 right-9 touch:right-12 z-10 w-5 h-5 touch:w-7 touch:h-7 rounded-full',
+            "bg-black/50 flex items-center justify-center after:absolute after:-inset-1.5 touch:after:-inset-2 after:content-['']",
             'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 touch:opacity-100 transition-opacity duration-150',
             'cursor-pointer border-none',
           )}
@@ -732,7 +778,10 @@ export function MealCell({
               <div className="text-[11px] touch:text-xs font-semibold text-foreground overflow-hidden text-ellipsis whitespace-nowrap leading-[1.25]">
                 {meal.recipeName}
               </div>
-              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono">{meal.calories} kcal</div>
+              <div className="flex items-center gap-1 text-[11px] touch:text-xs text-muted-foreground font-mono">
+                <span>{kcal} kcal</span>
+                {calorieMismatch && <CalorieMismatchBadge compact />}
+              </div>
             </div>
           </div>
           {/* Servings stepper */}
@@ -783,8 +832,9 @@ export function MealCell({
 
           {/* Macro line */}
           <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
-            <Chip color="coral" size="xs">{meal.calories} kcal</Chip>
-            <Chip color="sage" size="xs">{meal.protein}g P</Chip>
+            <Chip color="coral" size="xs">{kcal} kcal</Chip>
+            {calorieMismatch && <CalorieMismatchBadge />}
+            <Chip color="slate" size="xs">{proteinG}g P</Chip>
           </div>
 
           {/* Servings stepper — outside drag listeners */}
@@ -817,27 +867,43 @@ export function DayMacros({ macros, targets, compact = false }: DayMacrosProps) 
     comparison.status === 'under' ? t('underTarget') :
       comparison.status === 'over' ? t('overTarget') :
         t('onTrack');
+  // Without a target there is nothing to be under or over
+  const hasTarget = targets?.calories != null && targets.calories > 0;
 
   return (
     <div className={cn('flex flex-col gap-1.5', !compact && 'min-w-[200px]')}>
-      <div className="flex items-baseline gap-2">
+      {/* Compact cells can be narrow (grid footer), so the pill may wrap below */}
+      <div className={cn('flex items-baseline gap-x-2', compact && 'flex-wrap gap-y-1')}>
         <div className={cn('font-mono font-medium text-foreground', compact ? 'text-sm' : 'text-[17px]')}>
           {Math.round(macros.calories)}
         </div>
-        {targets?.calories != null && (
-          <div className="text-[10px] touch:text-xs text-muted-foreground">
-            / {targets.calories} kcal
+        {hasTarget && (
+          <div className="text-[11px] touch:text-xs text-muted-foreground">
+            / {targets!.calories} kcal
           </div>
         )}
-        {!compact && comparison.status && (
-          <div className={cn('inline-flex items-center text-[10px] touch:text-xs font-semibold ml-auto px-1.5 py-0.5 rounded-full border', statusColor)}>
+        {hasTarget && (
+          <div
+            className={cn(
+              'inline-flex items-center font-semibold ml-auto rounded-full border whitespace-nowrap',
+              compact ? 'text-[11px] leading-4 px-1.5' : 'text-[11px] touch:text-xs px-1.5 py-0.5',
+              statusColor,
+            )}
+          >
             {statusLabel}
           </div>
         )}
       </div>
-      <MacroBar p={macros.protein} c={macros.carbs} f={macros.fat} height={5} />
-      <div className="flex flex-wrap gap-x-2.5 text-[10px] touch:text-xs text-muted-foreground font-mono">
-        <span><span className="text-brand-500">●</span> {Math.round(macros.protein)}g P</span>
+      <MacroBar
+        p={macros.protein}
+        c={macros.carbs}
+        f={macros.fat}
+        calories={macros.calories}
+        calorieTarget={targets?.calories}
+        height={5}
+      />
+      <div className="flex flex-wrap gap-x-2.5 text-[11px] touch:text-xs text-muted-foreground font-mono">
+        <span><span className="text-slate-500">●</span> {Math.round(macros.protein)}g P</span>
         <span><span className="text-gold-500">●</span> {Math.round(macros.carbs)}g C</span>
         <span><span className="text-sage-500">●</span> {Math.round(macros.fat)}g F</span>
       </div>
@@ -881,7 +947,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange, onSl
           <div className={labelCellClass} />
           {template.days.map(day => (
             <div key={day.id} className="text-center py-1.5 px-1 snap-start">
-              <div className="text-[10px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground">
+              <div className="text-[11px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground">
                 {t('calendar.dayPrefix')}
               </div>
               <div className="font-display text-lg font-semibold text-foreground">
@@ -934,7 +1000,7 @@ export function GridLayout({ template, density, onRemove, onServingsChange, onSl
           className="grid gap-2 mt-2 pt-3.5 border-t border-border"
           style={{ gridTemplateColumns: gridCols }}
         >
-          <div className={cn('text-[10px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground self-center', labelCellClass)}>
+          <div className={cn('text-[11px] touch:text-xs font-bold tracking-widest uppercase text-muted-foreground self-center', labelCellClass)}>
             {t('total')}
           </div>
           {template.days.map(day => (
@@ -988,7 +1054,7 @@ export function StackLayout({ template, density, onRemove, onServingsChange, onS
                   <div key={slot}>
                     <div className={cn('flex items-center gap-1.5', dense ? 'mb-1 lg:mb-1.5' : 'mb-1.5')}>
                       <Icon name={meta.iconName} size={12} className={meta.colorClass} />
-                      <span className={cn('text-[10px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
+                      <span className={cn('text-[11px] touch:text-xs font-bold tracking-[0.1em] uppercase', meta.colorClass)}>
                         {t(meta.i18nKey)}
                       </span>
                     </div>
@@ -1061,7 +1127,7 @@ export function SplitLayout({ template, density, onRemove, onServingsChange, onS
                   {t('calendar.dayNumber', { number: day.dayNumber })}
                 </div>
               </div>
-              <div className="text-[10px] touch:text-xs text-muted-foreground font-mono whitespace-nowrap mb-1 lg:mb-1.5">
+              <div className="text-[11px] touch:text-xs text-muted-foreground font-mono whitespace-nowrap mb-1 lg:mb-1.5">
                 {Math.round(day.macros.calories)} kcal
               </div>
               <div className="h-[3px] bg-muted rounded-full overflow-hidden">

@@ -13,6 +13,7 @@ import {
   MICRONUTRIENT_KEYS,
   type MicronutrientKey,
 } from "@/lib/nutrition-fields";
+import { ATWATER_KCAL_PER_GRAM } from "@/lib/nutrition-consistency";
 
 /**
  * Calculate macros for a single meal based on recipe data and servings
@@ -209,9 +210,9 @@ export function getMacroStatusColor(
     case "under":
       return "text-gold-700 bg-gold-50 border-gold-200 dark:text-gold-400 dark:bg-gold-500/10 dark:border-gold-500/30";
     case "on-track":
-      return "text-sage-700 bg-sage-50 border-sage-200 dark:text-sage-400 dark:bg-sage-500/10 dark:border-sage-500/30";
+      return "text-sage-700 bg-sage-50 border-sage-200 dark:text-sage-600 dark:bg-sage-500/10 dark:border-sage-500/30";
     case "over":
-      return "text-brand-700 bg-brand-50 border-brand-200 dark:text-brand-400 dark:bg-brand-500/10 dark:border-brand-500/30";
+      return "text-brand-700 bg-brand-50 border-brand-200 dark:text-brand-600 dark:bg-brand-500/10 dark:border-brand-500/30";
   }
 }
 
@@ -254,6 +255,60 @@ export function getMacroStatusLabel(
 export function formatMacroValue(value: number, type: "calories" | "macros"): string {
   const rounded = Math.round(value * 10) / 10;
   return type === "calories" ? `${rounded} cal` : `${rounded}g`;
+}
+
+export interface MacroBarLayout {
+  /** Share of the track that is filled, 0–100. */
+  fill: number;
+  /**
+   * Each macro's share of the filled part, 0–100, by energy (4 / 4 / 9 kcal
+   * per gram). They add up to 100 whenever any macro is present.
+   */
+  shares: { protein: number; carbs: number; fat: number };
+  /** A calorie target exists and the calories exceed it. */
+  over: boolean;
+  /** Where the target falls on the track (0–100) when over it, else null. */
+  targetMarker: number | null;
+}
+
+/**
+ * Layout of a day's calorie bar.
+ *
+ * With a calorie target the bar is a progress track: it fills
+ * `min(calories / target, 1)` of its width, and protein / carbs / fat split
+ * that fill by their share of macro energy. Over the target it fills the whole
+ * track and marks where the target falls, so the part past the marker is the
+ * excess. Without a target it is a composition bar that fills the track.
+ */
+export function getMacroBarLayout(
+  macros: MacroSummary,
+  calorieTarget?: number | null
+): MacroBarLayout {
+  const energy = {
+    protein: Math.max(0, macros.protein) * ATWATER_KCAL_PER_GRAM.protein,
+    carbs: Math.max(0, macros.carbs) * ATWATER_KCAL_PER_GRAM.carbs,
+    fat: Math.max(0, macros.fat) * ATWATER_KCAL_PER_GRAM.fat,
+  };
+  const macroEnergy = energy.protein + energy.carbs + energy.fat;
+  const share = (value: number) => (macroEnergy > 0 ? (value / macroEnergy) * 100 : 0);
+  const shares = {
+    protein: share(energy.protein),
+    carbs: share(energy.carbs),
+    fat: share(energy.fat),
+  };
+
+  if (calorieTarget == null || !(calorieTarget > 0)) {
+    return { fill: macroEnergy > 0 ? 100 : 0, shares, over: false, targetMarker: null };
+  }
+
+  const calories = Math.max(0, macros.calories);
+  const over = calories > calorieTarget;
+  return {
+    fill: Math.min(calories / calorieTarget, 1) * 100,
+    shares,
+    over,
+    targetMarker: over ? (calorieTarget / calories) * 100 : null,
+  };
 }
 
 /**

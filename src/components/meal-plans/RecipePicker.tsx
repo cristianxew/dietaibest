@@ -152,12 +152,12 @@ export function RecipePicker({
                         </Chip>
                       )}
                       {recipe.protein != null && (
-                        <Chip color="sage" size="xs">
+                        <Chip color="slate" size="xs">
                           {Math.round(recipe.protein)}g P
                         </Chip>
                       )}
                       {recipe.prepTime != null && (
-                        <span className="text-[10px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
+                        <span className="text-[11px] touch:text-xs text-muted-foreground flex items-center gap-[3px]">
                           <Icon name="Clock" size={10} />
                           {recipe.prepTime}m
                         </span>

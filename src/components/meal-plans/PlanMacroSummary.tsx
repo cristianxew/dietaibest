@@ -5,47 +5,45 @@ import { calculateWeeklyMacros, getProgressPercentage } from "@/lib/meal-plan-ma
 import type { MealPlanTemplateDisplay } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 
-interface WeeklyMacroStripProps {
+interface PlanMacroSummaryProps {
   template: MealPlanTemplateDisplay;
 }
 
-export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
+/**
+ * Plan-level macro summary: each metric is the plan's daily average against
+ * the daily target, so plans of any length read the same way as a day.
+ */
+export function PlanMacroSummary({ template }: PlanMacroSummaryProps) {
   const t = useTranslations("mealPlans");
-  const weekly = calculateWeeklyMacros(template.days);
-  const { totalMacros, averageDailyMacros } = weekly;
-  const duration = template.duration;
-
-  const weeklyCaloriesTarget = (template.targets?.calories ?? 0) * duration;
-  const weeklyProteinTarget = (template.targets?.protein ?? 0) * duration;
-  const weeklyCarbsTarget = (template.targets?.carbs ?? 0) * duration;
-  const weeklyFatTarget = (template.targets?.fat ?? 0) * duration;
+  const { averageDailyMacros } = calculateWeeklyMacros(template.days);
+  const targets = template.targets;
 
   const metrics = [
     {
       label: t("macroLabels.calories"),
-      value: Math.round(totalMacros.calories),
-      target: weeklyCaloriesTarget,
+      value: Math.round(averageDailyMacros.calories),
+      target: targets?.calories ?? 0,
       unit: "kcal",
       barColor: "bg-brand-500",
     },
     {
       label: t("macroLabels.protein"),
-      value: Math.round(totalMacros.protein),
-      target: weeklyProteinTarget,
+      value: Math.round(averageDailyMacros.protein),
+      target: targets?.protein ?? 0,
       unit: "g",
-      barColor: "bg-brand-500",
+      barColor: "bg-slate-500",
     },
     {
       label: t("macroLabels.carbs"),
-      value: Math.round(totalMacros.carbs),
-      target: weeklyCarbsTarget,
+      value: Math.round(averageDailyMacros.carbs),
+      target: targets?.carbs ?? 0,
       unit: "g",
       barColor: "bg-gold-500",
     },
     {
       label: t("macroLabels.fat"),
-      value: Math.round(totalMacros.fat),
-      target: weeklyFatTarget,
+      value: Math.round(averageDailyMacros.fat),
+      target: targets?.fat ?? 0,
       unit: "g",
       barColor: "bg-sage-500",
     },
@@ -61,15 +59,15 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
     >
       {/* Label block — a single line below lg */}
       <div className="col-span-2 sm:col-span-4 lg:col-span-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 lg:block">
-        <div className="text-[10px] touch:text-xs font-bold tracking-[0.12em] uppercase text-muted-foreground lg:mb-1">
-          {t("weeklySummary")}
+        <div className="text-[11px] touch:text-xs font-bold tracking-[0.12em] uppercase text-muted-foreground lg:mb-1">
+          {t("planSummary")}
         </div>
         <div className="text-xs text-muted-foreground">
-          {t("dailyAverageWithCalories", { calories: Math.round(averageDailyMacros.calories) })}
+          {t("dailyAverageForDays", { days: template.days.length })}
         </div>
       </div>
 
-      {/* Metric cells */}
+      {/* Metric cells: daily average / daily target */}
       {metrics.map((m) => {
         const pct = getProgressPercentage(m.value, m.target);
         const hasTarget = m.target > 0;
@@ -77,7 +75,7 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
         return (
           <div key={m.label}>
             <div className="flex justify-between items-baseline mb-0.5 lg:mb-1">
-              <span className="text-[10px] touch:text-xs font-bold tracking-[0.1em] uppercase text-muted-foreground">
+              <span className="text-[11px] touch:text-xs font-bold tracking-[0.1em] uppercase text-muted-foreground">
                 {m.label}
               </span>
             </div>
@@ -85,14 +83,16 @@ export function WeeklyMacroStrip({ template }: WeeklyMacroStripProps) {
               <span className="font-mono text-[18px] max-lg:leading-none font-medium text-foreground">
                 {m.value.toLocaleString()}
               </span>
-              {/* Below lg the unit is shown once ("/ 14,000 kcal") so the
+              {/* Below lg the unit is shown once ("/ 2,650 kcal") so the
                   value and target fit on one line in the narrow columns */}
-              {hasTarget && (
-                <span className="text-[10px] touch:text-xs text-muted-foreground">
+              {hasTarget ? (
+                <span className="text-[11px] touch:text-xs text-muted-foreground">
                   <span className="max-lg:hidden">{m.unit} </span>/ {m.target.toLocaleString()}
                   <span className="lg:hidden"> </span>
                   {m.unit}
                 </span>
+              ) : (
+                <span className="text-[11px] touch:text-xs text-muted-foreground">{m.unit}</span>
               )}
             </div>
             <div className="h-[4px] bg-muted rounded-full overflow-hidden">
