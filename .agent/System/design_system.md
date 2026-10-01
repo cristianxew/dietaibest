@@ -173,7 +173,7 @@ All components should use semantic tokens rather than raw color values.
 | `--card` | #FFFFFF | Card backgrounds |
 | `--card-foreground` | #1C1A17 | Card text |
 | `--muted` | #F5F3EF | Subdued backgrounds |
-| `--muted-foreground` | #7A7367 | Secondary text |
+| `--muted-foreground` | #6F685C | Secondary text |
 | `--border` | #E8E4DD | Borders and dividers |
 | `--primary` | #E07A5F | Primary actions, CTAs |
 | `--primary-foreground` | #FFFFFF | Text on primary |
@@ -191,10 +191,14 @@ All components should use semantic tokens rather than raw color values.
 | `--background` | #0F0E0D | Deep charcoal |
 | `--foreground` | #FAF9F7 | Light text |
 | `--card` | #1A1918 | Card backgrounds |
+| `--muted` | #221F1D | Subdued backgrounds |
+| `--muted-foreground` | #A8A092 | Secondary text |
 | `--primary` | #F47B5C | Brighter coral |
 | `--primary-foreground` | #1C1A17 | Dark text on primary |
 | `--accent` | #D4A017 | Gold highlights |
 | `--success` | #6B9B6B | Brighter sage |
+
+**Muted text contrast (WCAG AA, 4.5:1):** `--muted-foreground` is theme-specific — never copy the dark value into `:root`. Light `#6F685C` (same warm stone hue as the neutrals, h38 s9): 5.51:1 on card, 5.24 on background, 4.97 on solid `bg-muted`, 4.95 on `bg-accent`, and ≥4.75 on the pale tints it sits on (`bg-muted/40–50`, `bg-brand-500/10`, `bg-sage-500/10`). Dark `#A8A092`: 6.78 on card, 7.45 on background, 6.33 on `bg-muted`. Opacity variants (`text-muted-foreground/40–70`) fall below AA in both themes, so keep them for decorative or disabled text only.
 
 ---
 
