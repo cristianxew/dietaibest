@@ -200,21 +200,22 @@
     }
   },
   "dashboard": {
-    "dashboardLabel": "Panel de Control",
     "planActive": "Plan Activo",
     "dayOne": "Día 1",
+    "proBadge": "Pro",
+    "loadError": "No se pudieron cargar los datos del panel.",
     "greeting": {
       "morning": "Buenos días",
       "afternoon": "Buenas tardes",
       "evening": "Buenas noches",
       "default": "Bienvenido de nuevo"
     },
-    "subtitle": {
-      "new": "Comencemos tu viaje nutricional hoy",
-      "returning": "Tu panel personalizado de planificación de comidas"
-    },
     "todaysMacros": {
-      "title": "Nutrición de Hoy",
+      "plannedToday": "Planificado para hoy",
+      "plannedForDay": "Planificado para el día {day}",
+      "ofCalorieTarget": "{progress, number, ::percent} de {target, number} kcal",
+      "calorieShares": "Proteína {protein, number, ::percent}, carbohidratos {carbs, number, ::percent}, grasa {fat, number, ::percent} de las calorías",
+      "gramUnit": "g",
       "noTarget": "Establecer objetivos",
       "protein": "Proteína",
       "carbs": "Carbohidratos",
@@ -245,6 +246,10 @@
       "viewAllPlans": "Ver Todos los Planes",
       "noMealsToday": "No hay comidas programadas para hoy",
       "noRecipe": "Sin receta",
+      "eyebrow": "Plan activo",
+      "dayMeals": "Comidas del día {day}",
+      "calendarDay": "{date}, día {day} de {total} del plan",
+      "calendarDayOutside": "{date}, fuera del plan",
       "kcalUnit": "kcal"
     },
     "recentRecipes": {
@@ -254,6 +259,8 @@
       "noRecipesDescription": "Crea o importa desde cualquier sitio web de recetas",
       "createRecipe": "Crear Receta",
       "importRecipe": "Importar desde URL",
+      "scrollLeft": "Desplazar a la izquierda",
+      "scrollRight": "Desplazar a la derecha",
       "kcal": "kcal"
     },
     "quickStats": {
@@ -280,7 +287,17 @@
       "trendUp": "Subiendo",
       "trendDown": "Bajando",
       "trendStable": "Estable",
-      "targetLabel": "Meta"
+      "targetLabel": "Meta",
+      "unitKcal": "kcal",
+      "unitGrams": "g",
+      "noMeals": "Sin comidas planificadas",
+      "toggleLabel": "Nutriente a mostrar",
+      "toggle": {
+        "calories": "Kcal",
+        "protein": "Proteína",
+        "carbs": "Carbos",
+        "fat": "Grasa"
+      }
     },
     "smartActions": {
       "addFirstRecipe": "Añade Tu Primera Receta",
@@ -1796,7 +1813,8 @@
       "dashboard": {
         "title": "Tu asistente puede ayudarte",
         "subtitle": "Toca una sugerencia para probarla en el chat.",
-        "dismiss": "Cerrar"
+        "dismiss": "Cerrar",
+        "regionLabel": "Asistente de DietAI"
       }
     },
     "proGate": {

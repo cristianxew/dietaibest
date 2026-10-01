@@ -131,7 +131,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                   className="h-8 w-8"
                   onClick={() => scroll("left")}
                   disabled={!canScrollLeft}
-                  aria-label="Scroll left"
+                  aria-label={t("scrollLeft")}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -141,22 +141,12 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                   className="h-8 w-8"
                   onClick={() => scroll("right")}
                   disabled={!canScrollRight}
-                  aria-label="Scroll right"
+                  aria-label={t("scrollRight")}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openCreate}
-              aria-label={t("createRecipe")}
-              className="text-xs gap-1 h-8 px-2 sm:px-3"
-            >
-              <Plus className="h-3 w-3" />
-              <span className="hidden sm:inline">{t("createRecipe")}</span>
-            </Button>
             <Button asChild variant="ghost" size="sm" className="text-xs gap-1 h-8">
               <Link href="/recipes">
                 {t("viewAll")}
@@ -209,7 +199,7 @@ export function RecentRecipesCarousel({ recipes }: RecentRecipesCarouselProps) {
                 {recipe.categories[0] && (
                   <Badge
                     variant="secondary"
-                    className="absolute top-2 left-2 text-[10px] px-1.5 py-0 bg-white/90 dark:bg-black/70 backdrop-blur-sm"
+                    className="absolute top-2 left-2 text-[11px] px-1.5 py-0 bg-white/90 dark:bg-black/70 backdrop-blur-sm"
                   >
                     {recipe.categories[0].name}
                   </Badge>

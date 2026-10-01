@@ -7,25 +7,35 @@ import { WeeklyMacroChart } from "./WeeklyMacroChart";
 import { ActivePlanPreview, ActivePlanEmpty } from "./ActivePlanPreview";
 import { RecentRecipesCarousel } from "./RecentRecipesCarousel";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import type { WeeklyMacroData } from "@/actions/dashboard";
+import type { MacroTargets } from "@/lib/macro-breakdown";
 
 interface InteractiveDashboardGridProps {
   todaysMacros: any;
-  weeklyMacros: any;
+  weeklyMacros: WeeklyMacroData[];
   activePlan: any;
-  profile: any;
+  /** Resolved once in the data layer; every card measures against these. */
+  targets: MacroTargets;
   recentRecipes: any;
   hasActivePlan: boolean;
+}
+
+/** `iso` (YYYY-MM-DD) moved by `days`, computed in UTC so no time zone shifts it. */
+function shiftIsoDate(iso: string, days: number): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 export function InteractiveDashboardGrid({
   todaysMacros,
   weeklyMacros,
   activePlan,
-  profile,
+  targets,
   recentRecipes,
   hasActivePlan,
 }: InteractiveDashboardGridProps) {
-  const t = useTranslations("dashboard");
+  const t = useTranslations("dashboard.todaysMacros");
   const [selectedDayNumber, setSelectedDayNumber] = useState(
     activePlan?.currentDayNumber || 1
   );
@@ -63,16 +73,46 @@ export function InteractiveDashboardGrid({
     }
   }
 
-  const isToday = selectedDayNumber === activePlan?.currentDayNumber;
+  const isToday = !activePlan || selectedDayNumber === activePlan.currentDayNumber;
   const nutritionTitle = isToday
-    ? t("todaysMacros.title") || "Today's Nutrition"
-    : `Day ${selectedDayNumber} Nutrition`;
+    ? t("plannedToday")
+    : t("plannedForDay", { day: selectedDayNumber });
 
+  // The weekly chart's "today" row (computed on the server) anchors the
+  // selected plan day, so the client's time zone can't shift it.
+  const todayRow = weeklyMacros.find((d) => d.isToday);
+  const highlightDate =
+    todayRow && activePlan
+      ? shiftIsoDate(todayRow.date, selectedDayNumber - activePlan.currentDayNumber)
+      : todayRow?.date;
+
+  // DOM order is the phone order: plan, planned nutrition, weekly chart,
+  // recent recipes. From lg the plan and the nutrition column sit side by side
+  // at the top, and recipes fill the space under the plan.
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Left Column - Nutrition & Quick Actions */}
-      <div className="lg:col-span-6 xl:col-span-5 flex flex-col gap-6 h-full">
-        {/* Compact Nutrition Card */}
+    <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-6">
+      {hasActivePlan && activePlan ? (
+        <div className="relative group lg:col-span-7">
+          <div className="absolute -inset-0.5 bg-gradient-to-br from-sage-300/30 to-brand-300/30 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
+          <ActivePlanPreview
+            templateId={activePlan.templateId}
+            templateName={activePlan.templateName}
+            startDate={activePlan.startDate}
+            duration={activePlan.duration}
+            currentDayNumber={activePlan.currentDayNumber}
+            daysRemaining={activePlan.daysRemaining}
+            selectedDayNumber={selectedDayNumber}
+            onSelectDay={setSelectedDayNumber}
+            selectedMeals={selectedMeals}
+          />
+        </div>
+      ) : (
+        <div className="lg:col-span-7">
+          <ActivePlanEmpty />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-6 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
         <Card className="border-stone-200/70 dark:border-stone-800/70 bg-card/50 backdrop-blur-sm overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-display font-semibold tracking-tight">
@@ -85,49 +125,26 @@ export function InteractiveDashboardGrid({
               protein={displayMacros?.protein || 0}
               carbs={displayMacros?.carbs || 0}
               fat={displayMacros?.fat || 0}
-              targetCalories={displayMacros?.targetCalories || null}
-              targetProtein={displayMacros?.targetProtein || null}
-              targetCarbs={displayMacros?.targetCarbs || null}
-              targetFat={displayMacros?.targetFat || null}
+              targetCalories={targets.calories}
+              targetProtein={targets.protein}
+              targetCarbs={targets.carbs}
+              targetFat={targets.fat}
               hasActivePlan={hasActivePlan}
             />
           </CardContent>
         </Card>
 
-        {/* Weekly Progress */}
         <WeeklyMacroChart
           data={weeklyMacros}
-          targetCalories={profile?.dailyCalories || null}
-          targetProtein={profile?.proteinGrams || null}
-          targetCarbs={profile?.carbsGrams || null}
-          targetFat={profile?.fatGrams || null}
-          className="flex-1"
+          targetCalories={targets.calories}
+          targetProtein={targets.protein}
+          targetCarbs={targets.carbs}
+          targetFat={targets.fat}
+          highlightDate={highlightDate}
         />
       </div>
 
-      {/* Right Column - Active Plan & Recent Recipes */}
-      <div className="lg:col-span-6 xl:col-span-7 space-y-6">
-        {/* Active Plan Card */}
-        {hasActivePlan && activePlan ? (
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-br from-sage-300/30 to-brand-300/30 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500" />
-            <ActivePlanPreview
-              templateId={activePlan.templateId}
-              templateName={activePlan.templateName}
-              startDate={activePlan.startDate}
-              duration={activePlan.duration}
-              currentDayNumber={activePlan.currentDayNumber}
-              daysRemaining={activePlan.daysRemaining}
-              selectedDayNumber={selectedDayNumber}
-              onSelectDay={setSelectedDayNumber}
-              selectedMeals={selectedMeals}
-            />
-          </div>
-        ) : (
-          <ActivePlanEmpty />
-        )}
-
-        {/* Recent Recipes */}
+      <div className="lg:col-span-7 lg:col-start-1">
         <RecentRecipesCarousel recipes={recentRecipes || []} />
       </div>
     </div>

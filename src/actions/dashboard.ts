@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma";
 import { getRecipeStats, getRecentRecipes } from "./recipe";
 import { getActiveMealPlanSchedule, getMealPlanStats } from "./meal-plan";
 import { getUserProfile } from "./profile";
+import { isPro } from "@/lib/plan";
+import { resolveMacroTargets, type MacroTargets } from "@/lib/macro-breakdown";
 
 // Helper to get authenticated user
 async function getAuthenticatedUser() {
@@ -32,6 +34,10 @@ export interface DashboardData {
   recentRecipes: Awaited<ReturnType<typeof getRecentRecipes>>["data"];
   activePlan: Awaited<ReturnType<typeof getActiveMealPlanSchedule>>["data"];
   weeklyMacros: WeeklyMacroData[];
+  /** Today's targets (plan first, profile fallback), shared by every card. */
+  targets: MacroTargets;
+  /** Subscription plan, for the header badge (UI hint only). */
+  isPro: boolean;
 }
 
 export interface WeeklyMacroData {
@@ -52,7 +58,7 @@ export async function getDashboardData(): Promise<{
   error: string | null;
 }> {
   try {
-    await getAuthenticatedUser();
+    const user = await getAuthenticatedUser();
 
     const [
       profileResult,
@@ -78,6 +84,8 @@ export async function getDashboardData(): Promise<{
         recentRecipes: recentRecipesResult.data,
         activePlan: activePlanResult.data,
         weeklyMacros: weeklyMacrosResult.data || [],
+        targets: resolveMacroTargets(activePlanResult.data, profileResult.data),
+        isPro: isPro(user),
       },
       error: null,
     };
@@ -244,7 +252,7 @@ export async function getTodaysMacros(): Promise<{
     ]);
 
     const activePlan = activePlanResult.data;
-    const profile = profileResult.data;
+    const targets = resolveMacroTargets(activePlan, profileResult.data);
 
     // Calculate today's macros from active plan
     const todaysMacros = {
@@ -273,12 +281,10 @@ export async function getTodaysMacros(): Promise<{
         protein: Math.round(todaysMacros.protein),
         carbs: Math.round(todaysMacros.carbs),
         fat: Math.round(todaysMacros.fat),
-        targetCalories:
-          activePlan?.targetCalories || profile?.dailyCalories || null,
-        targetProtein:
-          activePlan?.targetProtein || profile?.proteinGrams || null,
-        targetCarbs: activePlan?.targetCarbs || profile?.carbsGrams || null,
-        targetFat: activePlan?.targetFat || profile?.fatGrams || null,
+        targetCalories: targets.calories,
+        targetProtein: targets.protein,
+        targetCarbs: targets.carbs,
+        targetFat: targets.fat,
       },
       error: null,
     };

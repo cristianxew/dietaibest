@@ -131,9 +131,11 @@ export function HeroCTA({
             {ctaContent}
           </button>
         )}
+        {/* 28px visually; the ::after hit slop makes it 44px on touch. */}
         <button
+          type="button"
           onClick={handleDismiss}
-          className="absolute top-3 right-3 sm:static p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          className="absolute top-3 right-3 sm:relative sm:top-auto sm:right-auto p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors pointer-coarse:after:absolute pointer-coarse:after:-inset-2 pointer-coarse:after:content-['']"
           aria-label={t("dismiss")}
         >
           <X className="h-4 w-4" />

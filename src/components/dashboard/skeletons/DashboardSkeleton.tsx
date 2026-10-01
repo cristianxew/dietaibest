@@ -4,27 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export function WelcomeHeaderSkeleton() {
-  return (
-    <div className="space-y-3">
-      <Skeleton className="h-10 w-64 bg-stone-200/50 dark:bg-stone-800/50" />
-      <Skeleton className="h-5 w-96 bg-stone-200/30 dark:bg-stone-800/30" />
-    </div>
-  );
-}
-
-export function CompactStatsSkeleton() {
-  return (
-    <div className="hidden lg:block">
-      <div className="flex gap-4 p-2 rounded-2xl border border-stone-200/50 dark:border-stone-800/50">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="px-4 py-2 w-28 border-r border-stone-200/50 dark:border-stone-800/50 last:border-0">
-            <Skeleton className="h-3 w-16 mb-2 bg-stone-200/30 dark:bg-stone-800/30" />
-            <Skeleton className="h-8 w-12 bg-stone-200/50 dark:bg-stone-800/50" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  // Greeting line only (text-3xl / lg:text-[2rem]).
+  return <Skeleton className="h-9 w-64 bg-stone-200/50 dark:bg-stone-800/50" />;
 }
 
 export function CompactNutritionSkeleton() {
@@ -34,17 +15,22 @@ export function CompactNutritionSkeleton() {
         <Skeleton className="h-6 w-40 bg-stone-200/50 dark:bg-stone-800/50" />
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="flex flex-row items-center gap-6 sm:gap-8 py-6">
-          {/* Donut Chart Placeholder */}
-          <Skeleton className="h-[90px] w-[90px] rounded-full shrink-0 bg-stone-200/30 dark:bg-stone-800/30" />
+        <div className="flex flex-row items-center gap-5 sm:gap-6 py-4">
+          {/* Donut + "% of target" line */}
+          <div className="flex flex-col items-center gap-2 shrink-0">
+            <Skeleton className="h-[90px] w-[90px] rounded-full bg-stone-200/30 dark:bg-stone-800/30" />
+            <Skeleton className="h-3 w-20 bg-stone-200/30 dark:bg-stone-800/30" />
+          </div>
 
-          {/* Stats Columns */}
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 flex-wrap">
+          {/* Macro rows */}
+          <div className="flex-1 min-w-0 space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 min-w-[50px]">
-                <Skeleton className="h-6 w-12 bg-stone-200/50 dark:bg-stone-800/50" />
-                <Skeleton className="h-3 w-8 bg-stone-200/30 dark:bg-stone-800/30" />
-                <Skeleton className="h-3 w-8 rounded-full bg-stone-200/20 dark:bg-stone-800/20" />
+              <div key={i} className="space-y-1.5">
+                <div className="flex justify-between gap-2">
+                  <Skeleton className="h-3 w-12 bg-stone-200/30 dark:bg-stone-800/30" />
+                  <Skeleton className="h-4 w-16 bg-stone-200/50 dark:bg-stone-800/50" />
+                </div>
+                <Skeleton className="h-1.5 w-full rounded-full bg-stone-200/20 dark:bg-stone-800/20" />
               </div>
             ))}
           </div>
@@ -56,7 +42,7 @@ export function CompactNutritionSkeleton() {
 
 export function WeeklyChartSkeleton() {
   return (
-    <Card className="border-stone-200/50 dark:border-stone-800/50 flex-1">
+    <Card className="border-stone-200/50 dark:border-stone-800/50">
       <CardHeader className="pb-2">
         <Skeleton className="h-6 w-40 bg-stone-200/50 dark:bg-stone-800/50" />
       </CardHeader>
@@ -71,8 +57,11 @@ export function ActivePlanSkeleton() {
   return (
     <Card className="border-stone-200/50 dark:border-stone-800/50">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-6 w-36 bg-stone-200/50 dark:bg-stone-800/50" />
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-20 bg-stone-200/30 dark:bg-stone-800/30" />
+            <Skeleton className="h-6 w-36 bg-stone-200/50 dark:bg-stone-800/50" />
+          </div>
           <Skeleton className="h-5 w-24 rounded-full bg-stone-200/30 dark:bg-stone-800/30" />
         </div>
       </CardHeader>
@@ -109,10 +98,7 @@ export function RecentRecipesSkeleton() {
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <Skeleton className="h-6 w-36 bg-stone-200/50 dark:bg-stone-800/50" />
-          <div className="flex gap-2">
-            <Skeleton className="h-8 w-24 rounded-md bg-stone-200/30 dark:bg-stone-800/30" />
-            <Skeleton className="h-8 w-20 rounded-md bg-stone-200/30 dark:bg-stone-800/30" />
-          </div>
+          <Skeleton className="h-8 w-20 rounded-md bg-stone-200/30 dark:bg-stone-800/30" />
         </div>
       </CardHeader>
       <CardContent>
@@ -134,26 +120,21 @@ export function DashboardSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
 
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-end">
-        <div className="flex-1 min-w-0">
-          <WelcomeHeaderSkeleton />
+      <WelcomeHeaderSkeleton />
+
+      {/* Main Grid: mirrors InteractiveDashboardGrid (plan, nutrition,
+          weekly, recipes on phones; plan beside nutrition from lg) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 lg:items-start gap-6">
+        <div className="lg:col-span-7">
+          <ActivePlanSkeleton />
         </div>
-        <CompactStatsSkeleton />
-      </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* Left Column */}
-        <div className="lg:col-span-6 xl:col-span-5 flex flex-col gap-6 h-full">
+        <div className="flex flex-col gap-6 lg:col-span-5 lg:col-start-8 lg:row-span-2 lg:row-start-1">
           <CompactNutritionSkeleton />
           <WeeklyChartSkeleton />
         </div>
 
-        {/* Right Column */}
-        <div className="lg:col-span-6 xl:col-span-7 space-y-6">
-          <ActivePlanSkeleton />
+        <div className="lg:col-span-7 lg:col-start-1">
           <RecentRecipesSkeleton />
         </div>
       </div>
