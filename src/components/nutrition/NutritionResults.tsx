@@ -38,26 +38,21 @@ function profileMacros(p: Profile): Macro {
 
 const ZERO_MACRO: Macro = { kcal: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 };
 
+// Tinted badge + dark text in light, light text in dark: ≥ 6:1 on the card and
+// on hovered (bg-muted/50) rows in both themes. Unknown types fall back to the
+// plain secondary badge.
+const DATA_TYPE_CLASSES: Record<string, string> = {
+  Foundation: "bg-purple-500/10 text-purple-800 dark:text-purple-300",
+  "Survey (FNDDS)": "bg-blue-500/10 text-blue-800 dark:text-blue-300",
+  "SR Legacy": "bg-indigo-500/10 text-indigo-800 dark:text-indigo-300",
+  Branded: "bg-orange-500/10 text-orange-800 dark:text-orange-300",
+};
+
 function DataTypeBadge({ dataType }: { dataType: string | null }) {
   if (!dataType) return null;
 
-  const getColor = (type: string) => {
-    switch (type) {
-      case "Foundation":
-        return "bg-purple-600 hover:bg-purple-700";
-      case "Survey (FNDDS)":
-        return "bg-blue-600 hover:bg-blue-700";
-      case "SR Legacy":
-        return "bg-indigo-600 hover:bg-indigo-700";
-      case "Branded":
-        return "bg-orange-600 hover:bg-orange-700";
-      default:
-        return "";
-    }
-  };
-
   return (
-    <Badge variant="secondary" className={getColor(dataType)}>
+    <Badge variant="secondary" className={DATA_TYPE_CLASSES[dataType]}>
       {dataType}
     </Badge>
   );
@@ -72,7 +67,7 @@ function SourceCell({ item }: { item: IngredientProfileResult }) {
     return (
       <Badge
         variant="secondary"
-        className="bg-amber-500 hover:bg-amber-600 text-white"
+        className="bg-gold-500/10 text-gold-700 dark:text-gold-400"
       >
         <Sparkles className="mr-1 h-3 w-3" />
         Estimated

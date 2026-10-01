@@ -1,7 +1,5 @@
 export { WelcomeHeader } from "./WelcomeHeader";
 export { DashboardStats } from "./DashboardStats";
-export { TodaysMacroProgress } from "./TodaysMacroProgress";
-export { CalorieRingChart } from "./CalorieRingChart";
 export { CompactNutrition } from "./CompactNutrition";
 export { ActivePlanPreview, ActivePlanEmpty } from "./ActivePlanPreview";
 export { WeeklyMacroChart } from "./WeeklyMacroChart";

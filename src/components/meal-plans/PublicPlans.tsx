@@ -8,7 +8,7 @@ import { duplicateMealPlan, getPublicMealPlans } from "@/actions/meal-plan";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { RecipeThumb } from "./shared";
+import { Chip, RecipeThumb } from "./shared";
 
 type PublicPlansData = NonNullable<
   Awaited<ReturnType<typeof getPublicMealPlans>>["data"]
@@ -144,21 +144,15 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {(plan.targetProtein != null ||
               plan.targetCarbs != null ||
               plan.targetFat != null) && (
-              <div className="flex flex-wrap gap-2 text-[10px] touch:text-xs font-medium">
+              <div className="flex flex-wrap gap-1.5">
                 {plan.targetProtein != null && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-sage-500/10 text-sage-600 dark:text-sage-400">
-                    {Math.round(plan.targetProtein)}g P
-                  </span>
+                  <Chip color="slate" size="xs">{Math.round(plan.targetProtein)}g P</Chip>
                 )}
                 {plan.targetCarbs != null && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-gold-500/10 text-gold-600 dark:text-gold-400">
-                    {Math.round(plan.targetCarbs)}g C
-                  </span>
+                  <Chip color="gold" size="xs">{Math.round(plan.targetCarbs)}g C</Chip>
                 )}
                 {plan.targetFat != null && (
-                  <span className="px-1.5 py-0.5 rounded-md bg-stone-500/10 text-stone-600 dark:text-stone-400">
-                    {Math.round(plan.targetFat)}g F
-                  </span>
+                  <Chip color="sage" size="xs">{Math.round(plan.targetFat)}g F</Chip>
                 )}
               </div>
             )}
@@ -166,7 +160,7 @@ export function PublicPlans({ onDuplicated }: PublicPlansProps) {
             {/* Recipe preview */}
             {plan.recipes.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[10px] touch:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <div className="text-[11px] touch:text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   {t("recipes")}
                 </div>
                 <div className="flex items-center gap-1.5">

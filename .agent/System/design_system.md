@@ -173,7 +173,7 @@ All components should use semantic tokens rather than raw color values.
 | `--card` | #FFFFFF | Card backgrounds |
 | `--card-foreground` | #1C1A17 | Card text |
 | `--muted` | #F5F3EF | Subdued backgrounds |
-| `--muted-foreground` | #7A7367 | Secondary text |
+| `--muted-foreground` | #6F685C | Secondary text |
 | `--border` | #E8E4DD | Borders and dividers |
 | `--primary` | #E07A5F | Primary actions, CTAs |
 | `--primary-foreground` | #FFFFFF | Text on primary |
@@ -191,10 +191,14 @@ All components should use semantic tokens rather than raw color values.
 | `--background` | #0F0E0D | Deep charcoal |
 | `--foreground` | #FAF9F7 | Light text |
 | `--card` | #1A1918 | Card backgrounds |
+| `--muted` | #221F1D | Subdued backgrounds |
+| `--muted-foreground` | #A8A092 | Secondary text |
 | `--primary` | #F47B5C | Brighter coral |
 | `--primary-foreground` | #1C1A17 | Dark text on primary |
 | `--accent` | #D4A017 | Gold highlights |
 | `--success` | #6B9B6B | Brighter sage |
+
+**Muted text contrast (WCAG AA, 4.5:1):** `--muted-foreground` is theme-specific — never copy the dark value into `:root`. Light `#6F685C` (same warm stone hue as the neutrals, h38 s9): 5.51:1 on card, 5.24 on background, 4.97 on solid `bg-muted`, 4.95 on `bg-accent`, and ≥4.75 on the pale tints it sits on (`bg-muted/40–50`, `bg-brand-500/10`, `bg-sage-500/10`). Dark `#A8A092`: 6.78 on card, 7.45 on background, 6.33 on `bg-muted`. Opacity variants (`text-muted-foreground/40–70`) fall below AA in both themes, so keep them for decorative or disabled text only.
 
 ---
 
@@ -438,10 +442,10 @@ Introduced with the meal plans responsive pass. Source of truth: `src/lib/respon
 - **Horizontal overflow:** flex children that hold page content need `min-w-0` (the app shell `<main>` in `AppSidebarDock` has it) so intrinsic width can't widen the document. Carousel cards get a fixed width (`w-[200px] sm:w-[240px] lg:w-[260px]`) and clamp long titles (`line-clamp-2`) instead of `min-w-*` alone.
 - **Drag and drop:** dnd-kit uses `MouseSensor`, `KeyboardSensor` and a long-press `TouchSensor` (200ms delay, 8px tolerance) so page scroll keeps working; every drag action also has a tap alternative (recipe picker, day sheet).
 - **Tap to schedule:** on the Calendar tab, tapping/clicking an empty day that is today or later opens a plan picker (`Dialog` with `mobileSheet`). Picker and drag-and-drop both call `schedulePlanOnDate`, with date rules in `src/lib/meal-plan-schedule.ts` (`canScheduleOn`, `overlapsSchedule`).
-- **Floating chat button:** the fixed chat FAB (`ChatFAB`, `h-14` at `bottom-6`) overlaps page bottoms, so scroll content below `lg` ends with `pb-[calc(env(safe-area-inset-bottom)+6rem)]`.
-- **Phone simplifications:** the meal planner offers Stack and Split on phones and hides Grid (a stored Grid choice renders as Stack via `effectiveLayout` and returns on wider tiers), and hides the header description. Tabs use short text-only labels on phones and icon + short label on tablets, with full labels from `lg`. Snap carousels inside `-mx-* px-*` gutters also set a matching `scroll-px-*` so snapped cards align with the gutter.
+- **Floating chat button:** the fixed chat FAB (`ChatFAB`, `h-14` at `bottom-6`) overlaps page bottoms, so scroll content ends with `pb-[calc(env(safe-area-inset-bottom)+6rem)]` below `lg` and `lg:pb-24` from `lg` up (the FAB never hides on desktop, so the last row must clear it there too). Padding only helps at the end of a page, so below `lg` the FAB also slides off-screen on scroll down and returns on scroll up (`useHideOnAnyScroll` in `src/hooks/use-hide-on-scroll.ts`, same 8px tolerance and step logic as the toolbar's `useHideOnScroll`). Pages scroll in nested containers, so it listens for `scroll` on `document` in the capture phase and tracks direction per scroll target; carousels that only scroll sideways are ignored. While hidden it is `pointer-events-none`, `inert` and `aria-hidden`; it never hides while the chat is open, near the top of the scrolled container, or from `lg` up, and `motion-reduce` drops the slide.
+- **Phone simplifications:** the meal planner offers Stack and Split on phones and hides Grid (a stored Grid choice renders as Stack via `effectiveLayout` and returns on wider tiers), and hides the header description (on wider tiers it only shows while the user has no plans). Tabs use short text-only labels on phones and icon + short label on tablets, with full labels from `lg`. Snap carousels inside `-mx-* px-*` gutters also set a matching `scroll-px-*` so snapped cards align with the gutter.
 - **Meal plans mirrors the recipes toolbar (below `lg`):** the tab bar is a sticky full-bleed `bg-background/95 backdrop-blur-md` bar that hides on scroll down via `useHideOnScroll` (`HideOnScrollBar` in `MealPlanner.tsx`, pinned while an overlay is open); tabs are a 36px segmented control with a vertical `::after` hit slop to 44px; "Create Plan" / "Generate with AI" sit in the page header; phones get layout/density/servings in a bottom `ViewOptionsDrawer` (the inline controls row shows from `sm`). Drawer chips are the shared `FilterChip` / `FilterSection` (`src/components/custom-ui/filter-chip.tsx`), also used by the recipes filters drawer. On phones Stack/Split render meals as flat rows (`MealCell variant="row"`) and slot columns start at `sm`.
-- **Text:** meaningful labels are at least 12px.
+- **Text:** meaningful labels are at least 12px on touch (`touch:text-xs`). On pointer devices nothing in the meal planner (`src/components/meal-plans/`) goes below 11px (`text-[11px]`, `Chip` `xs`), and tiny labels inside `<h*>` elements (e.g. the accordion trigger in `MicronutrientPanel`) set `font-sans`, since headings inherit the display serif.
 - **Returning from a recipe:** links into a recipe page carry the page they came from as `?from=<in-app path>` (`recipeHref(locale, id, from)` / `withReturnPath` in `src/lib/recipe-back-link.ts`; meal plans pass `mealPlansReturnPath(planId)`, the dashboard `/dashboard`, chat links the page the chat is open on). The recipe page resolves "Back" with `resolveRecipeBackLink`: only same-site paths are honored (anything else falls back to the library), recipe forms are never a target, and the label is "Back to Meal Plans / Dashboard / Recipes" or a generic "Back". On phones, tapping a meal row opens its recipe page.
 - **One scroll container per page:** full-height pages with their own scroller (the meal planner) must not have siblings in `#main-content`; render extras (e.g. `PlannerNutritionBanner`) inside that scroller, or the shell scrolls too and the offset leaks into the next page.
 - **Testing:** Playwright `mobile` (iPhone 13) and `tablet` (iPad gen 7) projects run only `*.responsive.spec.ts`. The share page spec needs `E2E_SHARE_TOKEN`; the meal plans spec needs `E2E_STORAGE_STATE` (storage state of a signed-in session). Both skip without them.
@@ -468,17 +472,42 @@ Introduced with the meal plans responsive pass. Source of truth: `src/lib/respon
 5. **Don't create new color variables** without updating both themes
 
 ### Macro Display Colors
-For nutritional/macro displays, use semantic colors:
-- **Calories**: Coral (`brand-500`)
-- **Protein**: Slate blue (`#64748B`)
-- **Carbs**: Gold (`gold-500`)
-- **Fat**: Coral/Brand (`brand-400`)
-- **Fiber**: Sage (`sage-500`)
+Macro **identity** colours: which nutrient a number, bar, dot or chip belongs to. They are the same on every screen:
+- **Calories**: Coral (`brand-500`; `Chip color="coral"`)
+- **Protein**: Slate blue (`slate-500`, Tailwind's default scale, `#62748E` in v4; `Chip color="slate"`)
+- **Carbs**: Gold (`gold-500`; `Chip color="gold"`)
+- **Fat**: Sage (`sage-500`; `Chip color="sage"`). It used to be `brand-400`, which was indistinguishable from calories.
+- **Fiber**: Neutral (`text-foreground`; `stone-500` / `dark:stone-400` for the `MacroDisplay` bar). Sage belongs to fat, and fiber sits next to fat on recipe screens.
+
+**Fills** (bars, legend dots, donut segments) use the `-500` token. In Recharts, pass the theme variable (`fill="var(--gold-500)"`, `var(--sage-500)`, `var(--brand-500)`, `var(--color-slate-500)`), never a hex, so dark mode follows.
+
+**Text** uses the `Chip` text shade, with the matching tint when the text sits on a tinted cell or chip:
+
+| Macro | Tint | Text | Light: card / page | Dark: card / page |
+|-------|------|------|-------|------|
+| Calories | `bg-brand-500/8` | `text-brand-700 dark:text-brand-600` | 4.80 / 4.57 | 5.89 / 6.58 |
+| Protein | `bg-slate-500/10` | `text-slate-600 dark:text-slate-400` | 6.71 / 6.39 | 6.05 / 6.74 |
+| Carbs | `bg-gold-500/10` | `text-gold-700 dark:text-gold-400` | 6.54 / 6.24 | 9.48 / 10.81 |
+| Fat | `bg-sage-500/10` | `text-sage-700 dark:text-sage-600` | 7.22 / 6.89 | 7.44 / 8.35 |
+
+(Contrast with the tint composited over the surface; without a tint each ratio is higher. Computed from the `globals.css` tokens and confirmed with rendered colours in the browser.)
+
+**Where it applies:**
+- Meal planner: `MacroBar`, `DayMacros` legend dots, `PlanMacroSummary` bars, meal and recipe `Chip`s
+- Dashboard: `WeeklyMacroChart` bars and toggle dots, `CompactNutrition` donut and % labels
+- Recipes: `RecipeCard` macro chips, `MacroDisplay` (recipe page + planner sheet), import modal `Step2Nutrition` / `PreviewScreen` / `SuccessScreen`
+- Nutrition calculator: `MacrosSummary`
+
+The nutrition hub (`/nutrition/*`) has no macro identity colours. Its bars are status colours (`DayFillBar`) and its face-offs colour the two *sides*, not nutrients (item A = coral, item B = gold). The calculator's Source badges show where each value came from (USDA data type: purple / blue / indigo / orange; Estimated: gold; Not found: red), not macros. They use a `-500/10` tint with `-800` text in light and `-300` in dark (≥ 6:1, hovered rows included).
+
+**Chip contrast:** every `Chip` colour (`src/components/meal-plans/shared.tsx`) reaches WCAG AA (4.5:1) in both themes on card and page surfaces and on the planner's `bg-muted/40` rows over a card (coral: 4.62). Coral is the tightest pair: on a solid `bg-muted` it drops to 4.36:1 in light mode, so don't put coral text on solid muted. The brand / sage / gold scales are inverted in dark mode (`globals.css`), so a `-700` text shade is dark in light mode and light in dark mode; slate and red are Tailwind's fixed scales, so they get an explicit `dark:` shade.
 
 ### Status Colors
 - **On Track**: Sage green (`sage-*`)
 - **Under Target**: Gold (`gold-*`)
 - **Over Target**: Coral (`brand-*`)
+
+Status is a separate axis from macro identity. A status element is coloured by how a value compares with its target, whatever the nutrient (`src/lib/meal-plan-macros.ts`, nutrition hub `DayFillBar`). Don't recolour status elements to match macro identity, or the reverse.
 
 ---
 

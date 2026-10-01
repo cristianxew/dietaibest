@@ -211,8 +211,6 @@
     "todaysMacros": {
       "title": "Dzisiejsze Odżywianie",
       "noTarget": "Ustaw cele",
-      "viewPlan": "Zobacz Pełny Plan",
-      "calories": "Kalorie",
       "protein": "Białko",
       "carbs": "Węglowodany",
       "fat": "Tłuszcz",
@@ -223,8 +221,6 @@
       "noTargets": "Powiedz nam o swoich celach, aby odblokować statystyki",
       "setupTargets": "Ustaw Cele",
       "planned": "Zaplanowane",
-      "remaining": "pozostało",
-      "ofTarget": "z celu",
       "quickActions": {
         "quickLog": "Szybki Zapis",
         "adjustServings": "Dostosuj Porcje",
@@ -611,7 +607,6 @@
       "search": "Szukaj"
     },
     "currentPlan": "Aktualny Plan",
-    "savedPlans": "Zapisane Plany",
     "noActivePlan": "Brak Aktywnego Planu",
     "noPlanDescription": "Utwórz nowy plan posiłków, aby rozpocząć",
     "createFirstPlan": "Utwórz Swój Pierwszy Plan",
@@ -645,6 +640,7 @@
     "createAdditional": "Utwórz dodatkowe plany, aby zobaczyć je tutaj",
     "mealAdded": "Posiłek dodany do planu!",
     "mealRemoved": "Posiłek usunięty!",
+    "undoSlotTaken": "W tym miejscu jest już posiłek, więc usunięty posiłek nie został przywrócony.",
     "mealMoved": "Posiłek przeniesiony!",
     "backToDashboard": "Powrót do Pulpitu",
     "recipes": "Przepisy",
@@ -793,8 +789,8 @@
     "tapToAdd": "Dotknij, aby dodać",
     "servingsAbbrev": "por.",
     "total": "Łącznie",
-    "weeklySummary": "Podsumowanie tygodniowe",
-    "dailyAverageWithCalories": "Średnia dzienna · {calories} kcal",
+    "planSummary": "Podsumowanie planu",
+    "dailyAverageForDays": "Średnia dzienna · {days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
     "perDay": "/dzień",
     "macroLabels": {
       "calories": "Kalorie",
@@ -839,7 +835,8 @@
       "removeMeal": "Usuń posiłek",
       "decreaseServings": "Zmniejsz porcje",
       "increaseServings": "Zwiększ porcje",
-      "viewRecipe": "Pokaż szczegóły przepisu"
+      "viewRecipe": "Pokaż szczegóły przepisu",
+      "caloriesMismatch": "Kalorie nie zgadzają się z makroskładnikami tego przepisu — przeanalizuj ponownie jego wartości odżywcze, aby to poprawić."
     },
     "picker": {
       "selectRecipe": "Wybierz Przepis",

@@ -64,31 +64,31 @@ export function MacrosSummary({
                 label="Calories"
                 value={perServing.kcal}
                 unit="kcal"
-                color="text-orange-600 dark:text-orange-400"
+                color="text-brand-700 dark:text-brand-600"
               />
               <MacroCard
                 label="Protein"
                 value={perServing.protein}
                 unit="g"
-                color="text-blue-600 dark:text-blue-400"
+                color="text-slate-600 dark:text-slate-400"
               />
               <MacroCard
                 label="Fat"
                 value={perServing.fat}
                 unit="g"
-                color="text-yellow-600 dark:text-yellow-400"
+                color="text-sage-700 dark:text-sage-600"
               />
               <MacroCard
                 label="Carbs"
                 value={perServing.carbs}
                 unit="g"
-                color="text-green-600 dark:text-green-400"
+                color="text-gold-700 dark:text-gold-400"
               />
               <MacroCard
                 label="Fiber"
                 value={perServing.fiber}
                 unit="g"
-                color="text-purple-600 dark:text-purple-400"
+                color="text-foreground"
               />
             </div>
           </TabsContent>
@@ -102,31 +102,31 @@ export function MacrosSummary({
                 label="Calories"
                 value={total.kcal}
                 unit="kcal"
-                color="text-orange-600 dark:text-orange-400"
+                color="text-brand-700 dark:text-brand-600"
               />
               <MacroCard
                 label="Protein"
                 value={total.protein}
                 unit="g"
-                color="text-blue-600 dark:text-blue-400"
+                color="text-slate-600 dark:text-slate-400"
               />
               <MacroCard
                 label="Fat"
                 value={total.fat}
                 unit="g"
-                color="text-yellow-600 dark:text-yellow-400"
+                color="text-sage-700 dark:text-sage-600"
               />
               <MacroCard
                 label="Carbs"
                 value={total.carbs}
                 unit="g"
-                color="text-green-600 dark:text-green-400"
+                color="text-gold-700 dark:text-gold-400"
               />
               <MacroCard
                 label="Fiber"
                 value={total.fiber}
                 unit="g"
-                color="text-purple-600 dark:text-purple-400"
+                color="text-foreground"
               />
             </div>
           </TabsContent>

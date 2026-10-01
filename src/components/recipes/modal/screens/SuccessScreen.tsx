@@ -51,17 +51,17 @@ export function SuccessScreen() {
         {(calories || protein || carbs) && (
           <div className="flex justify-center gap-1.5 mb-7">
             {calories && (
-              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-primary">
+              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-brand-700 dark:text-brand-600">
                 {calories} kcal
               </span>
             )}
             {protein && (
-              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-sage-500">
+              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-slate-600 dark:text-slate-400">
                 {protein}g protein
               </span>
             )}
             {carbs && (
-              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-amber-500">
+              <span className="px-3 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-gold-700 dark:text-gold-400">
                 {carbs}g carbs
               </span>
             )}

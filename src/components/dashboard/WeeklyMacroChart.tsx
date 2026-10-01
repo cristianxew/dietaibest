@@ -21,30 +21,27 @@ interface WeeklyMacroChartProps {
 
 type MacroType = "calories" | "protein" | "carbs" | "fat";
 
+// Macro identity colours (design_system.md → "Macro Display Colors").
 const macroConfig: Record<
   MacroType,
-  { color: string; bgColor: string; label: string; unit: string }
+  { bgColor: string; label: string; unit: string }
 > = {
   calories: {
-    color: "#E07A5F",
     bgColor: "bg-brand-500",
     label: "Cal",
     unit: "kcal",
   },
   protein: {
-    color: "#3B82F6",
-    bgColor: "bg-blue-500",
+    bgColor: "bg-slate-500",
     label: "Pro",
     unit: "g",
   },
   carbs: {
-    color: "#D4A017",
     bgColor: "bg-gold-500",
     label: "Carb",
     unit: "g",
   },
   fat: {
-    color: "#4A7C59",
     bgColor: "bg-sage-500",
     label: "Fat",
     unit: "g",
@@ -133,8 +130,7 @@ export function WeeklyMacroChart({
                 )}
               >
                 <div
-                  className="w-2 h-2 rounded-full mr-1.5"
-                  style={{ backgroundColor: macroConfig[macro].color }}
+                  className={cn("w-2 h-2 rounded-full mr-1.5", macroConfig[macro].bgColor)}
                 />
                 {macroConfig[macro].label}
               </Button>

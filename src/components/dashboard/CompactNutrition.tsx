@@ -6,6 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Label } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Settings, ArrowRight } from "lucide-react";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+import { cn } from "@/lib/utils";
 
 interface CompactNutritionProps {
   calories: number;
@@ -81,13 +82,17 @@ export function CompactNutrition({
     );
   }
 
+  // Macro identity colours (design_system.md → "Macro Display Colors"). Fills
+  // read the theme tokens so the donut follows dark mode; the % text uses the
+  // darker Chip text shade so it stays ≥ 4.5:1 on the card.
   const stats = [
     {
       label: t("carbs"),
       value: carbs,
       target: targetCarbs,
       unit: "g",
-      color: "#D4A017", // Gold
+      fill: "var(--gold-500)",
+      textClass: "text-gold-700 dark:text-gold-400",
       percent: getPercent(carbs, 4),
     },
     {
@@ -95,7 +100,8 @@ export function CompactNutrition({
       value: fat,
       target: targetFat,
       unit: "g",
-      color: "#4A7C59", // Sage
+      fill: "var(--sage-500)",
+      textClass: "text-sage-700 dark:text-sage-600",
       percent: getPercent(fat, 9),
     },
     {
@@ -103,7 +109,8 @@ export function CompactNutrition({
       value: protein,
       target: targetProtein,
       unit: "g",
-      color: "#3B82F6", // Blue
+      fill: "var(--color-slate-500)",
+      textClass: "text-slate-600 dark:text-slate-400",
       percent: getPercent(protein, 4),
     },
   ];
@@ -111,7 +118,7 @@ export function CompactNutrition({
   const chartData = stats.map((s) => ({
     name: s.label,
     value: s.value || 1,
-    color: s.color,
+    color: s.fill,
   }));
 
   const caloriePercent = getTargetPercent(calories, targetCalories);
@@ -191,10 +198,7 @@ export function CompactNutrition({
             <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">
               {stat.label}
             </span>
-            <span
-              className="text-[10px] font-semibold tabular-nums"
-              style={{ color: stat.color }}
-            >
+            <span className={cn("text-[10px] font-semibold tabular-nums", stat.textClass)}>
               {stat.percent}%
             </span>
             {stat.target && (

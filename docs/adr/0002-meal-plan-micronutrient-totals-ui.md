@@ -10,9 +10,11 @@ decision (the issue was marked HITL). This ADR records those decisions.
 ## Decisions
 
 1. **Placement — aggregate panel everywhere + per-day panel where there's room.**
-   - A full-width **aggregate panel** (`variant="aggregate"`) renders the plan's
-     **average daily** micronutrient totals directly under `WeeklyMacroStrip` in
-     `MealPlanner`. It is visible in every layout.
+   - An **aggregate panel** (`variant="aggregate"`) renders the plan's
+     **average daily** micronutrient totals in `MealPlanner`, after the day
+     layouts. It is visible in every layout. (It first sat directly under the
+     summary strip, now `PlanMacroSummary`; it moved below the days so the plan
+     itself starts above the fold, since the collapsed panel is secondary.)
    - A **per-day panel** (`variant="day"`) renders a single day's totals inside
      `StackLayout` (each day card) and `SplitLayout` (the focused-day editor),
      which have full-width regions for it.

@@ -3,6 +3,9 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { MEDIA_QUERY } from "@/lib/responsive";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useHideOnAnyScroll } from "@/hooks/use-hide-on-scroll";
 import { LogoSymbol } from "./LogoSymbol";
 
 interface ChatFABProps {
@@ -15,12 +18,21 @@ const ARC_GRADIENT =
 
 export function ChatFAB({ isOpen, onClick }: ChatFABProps) {
   const t = useTranslations("chat");
+  // Below lg the FAB covers content mid-scroll (and the meal rows' remove
+  // buttons), so it slides away on scroll down and returns on scroll up, like
+  // the planner's toolbar. Never while the chat is open.
+  const belowDesktop = useMediaQuery(MEDIA_QUERY.belowDesktop);
+  const { ref, hidden } = useHideOnAnyScroll({ disabled: isOpen || !belowDesktop });
 
   return (
     <div
+      ref={ref}
+      aria-hidden={hidden || undefined}
+      inert={hidden}
       className={cn(
-        "fixed bottom-6 z-40 h-14 w-14 transition-[right] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]",
+        "fixed bottom-6 z-40 h-14 w-14 transition-[right,translate,opacity] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none",
         isOpen ? "right-[444px]" : "right-6",
+        hidden && "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0",
       )}
     >
       {/* Spinning AI arc ring — fades out when the drawer is open */}

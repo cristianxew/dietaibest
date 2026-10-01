@@ -41,13 +41,13 @@ import {
 import { PlanSwitcher, GridLayout, StackLayout, SplitLayout, RecipeLibrary } from "./planner";
 import { PublicPlans } from "./PublicPlans";
 import { ScheduleCalendar } from "./ScheduleCalendar";
-import { WeeklyMacroStrip } from "./WeeklyMacroStrip";
+import { PlanMacroSummary } from "./PlanMacroSummary";
 import { MicronutrientPanel } from "./MicronutrientPanel";
 import { RecipePicker } from "./RecipePicker";
 import { ViewOptionsDrawer } from "./ViewOptionsDrawer";
 import type { ReferenceIntakes } from "@/lib/nutrition-rda";
 import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
-import type { MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
+import type { AddMealData, MealPlanTemplateDisplay, MealType } from "@/types/meal-plan";
 import { useTranslations } from "next-intl";
 import {
   DndContext,
@@ -61,10 +61,9 @@ import {
 } from "@dnd-kit/core";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import type { Recipe } from "@/generated/prisma";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   PlanSwitcherSkeleton,
-  WeeklyMacroStripSkeleton,
+  PlanMacroSummarySkeleton,
   GridLayoutSkeleton,
   StackLayoutSkeleton,
   SplitLayoutSkeleton,
@@ -210,6 +209,8 @@ interface MealPlannerProps {
 
 export function MealPlanner({ reference, banner }: MealPlannerProps) {
   const t = useTranslations("mealPlans");
+  // The app's shared "Undo" label lives with the nutrition hub swaps
+  const tUndo = useTranslations("nutritionHub.myWeek.swaps");
   const searchParams = useSearchParams();
   const params = useParams();
   const locale = (params?.locale as string) || "en";
@@ -350,20 +351,80 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
 
   // ── Mutation handlers ─────────────────────────────────────────────────────────
 
+  // Latest values for toast callbacks, which can run after the plan or its
+  // meals changed
+  const selectedPlanIdRef = useRef(selectedPlanId);
+  selectedPlanIdRef.current = selectedPlanId;
+  const editingTemplateRef = useRef(editingTemplate);
+  editingTemplateRef.current = editingTemplate;
+
+  const refreshPlan = useCallback(
+    (planId: string | null) => {
+      // Skip the plan reload if the user has switched plans since
+      if (planId && planId === selectedPlanIdRef.current) {
+        handleSelectPlan(planId, { showLoading: false });
+      }
+      loadTemplates({ showLoading: false });
+    },
+    [handleSelectPlan, loadTemplates]
+  );
+
+  const handleUndoRemoveMeal = useCallback(
+    (removed: AddMealData, planId: string | null) => {
+      // Never stack a second meal into a slot that was filled in the meantime
+      const slotTaken = editingTemplateRef.current?.days
+        .find((d) => d.id === removed.mealPlanDayId)
+        ?.meals.some((m) => m.mealType === removed.mealType);
+      if (slotTaken) {
+        toast.error(t("undoSlotTaken"));
+        return;
+      }
+      startTransition(async () => {
+        const result = await addMealToDay(removed);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          refreshPlan(planId);
+        }
+      });
+    },
+    [refreshPlan, t]
+  );
+
   const handleRemoveMeal = useCallback(
     (mealId: string) => {
+      // Capture what's needed to put the meal back before it's gone
+      const day = editingTemplateRef.current?.days.find((d) =>
+        d.meals.some((m) => m.id === mealId)
+      );
+      const meal = day?.meals.find((m) => m.id === mealId);
+      const removed: AddMealData | null =
+        day && meal?.recipeId
+          ? {
+            mealPlanDayId: day.id,
+            recipeId: meal.recipeId,
+            mealType: meal.mealType,
+            servings: meal.servings,
+          }
+          : null;
+      const planId = selectedPlanId;
+
       startTransition(async () => {
         const result = await removeMealFromDay(mealId);
         if (result.error) {
           toast.error(result.error);
         } else {
-          toast.success(t("mealRemoved"));
-          if (selectedPlanId) handleSelectPlan(selectedPlanId, { showLoading: false });
-          loadTemplates({ showLoading: false });
+          toast.success(
+            t("mealRemoved"),
+            removed
+              ? { action: { label: tUndo("undo"), onClick: () => handleUndoRemoveMeal(removed, planId) } }
+              : undefined
+          );
+          refreshPlan(planId);
         }
       });
     },
-    [selectedPlanId, handleSelectPlan, loadTemplates, t]
+    [selectedPlanId, refreshPlan, handleUndoRemoveMeal, t, tUndo]
   );
 
   const handleServingsChange = useCallback(
@@ -635,9 +696,10 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
     }
   }, [templates, selectedPlanId, editingTemplate, handleSelectPlan, searchParams]);
 
-  const recipeFilters = (
+  /** Search + category filters; `stacked` fills the narrow desktop sidebar. */
+  const renderRecipeFilters = (stacked = false) => (
     <>
-      <div className="relative flex-1 min-w-0">
+      <div className={cn("relative min-w-0", stacked ? "w-full" : "flex-1")}>
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
           <Search className="w-4 h-4" />
         </div>
@@ -651,9 +713,14 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
           )}
         />
       </div>
-      <div className="flex-shrink-0">
+      <div className={cn("flex-shrink-0", stacked && "w-full")}>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-[180px] h-9 touch:h-11 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200">
+          <SelectTrigger
+            className={cn(
+              "w-full h-9 touch:h-11 border-border bg-background text-[13px] font-medium hover:border-brand-300 dark:hover:border-brand-500/50 transition-all duration-200",
+              !stacked && "sm:w-[180px]"
+            )}
+          >
             <SelectValue placeholder={t("allCategories")} />
           </SelectTrigger>
           <SelectContent className="border-border">
@@ -698,9 +765,13 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold lg:font-semibold text-foreground tracking-tight">
                 {t("title")}
               </h1>
-              <p className="hidden sm:block text-base text-muted-foreground max-w-lg leading-relaxed">
-                {t("subtitle")}
-              </p>
+              {/* Onboarding copy: only for users with no plans yet, so the plan
+                  itself stays above the fold for everyone else */}
+              {!isLoadingTemplates && templates.length === 0 && (
+                <p className="hidden sm:block text-base text-muted-foreground max-w-lg leading-relaxed">
+                  {t("subtitle")}
+                </p>
+              )}
             </div>
 
             <div className="flex lg:hidden items-center gap-2 shrink-0">
@@ -810,17 +881,9 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
         {/* ── Non-scrollable body container (main viewport handles scroll) ── */}
         <div className="flex-1 min-h-0">
           {/* Planner tab. Every tab's bottom padding clears the fixed chat FAB
-              (h-14 at bottom-6, see ChatFAB) below lg. */}
-          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10 space-y-3 sm:space-y-4 lg:space-y-5">
-            {/* Plan count */}
-            {isLoadingTemplates ? (
-              <Skeleton className="h-4 w-24 bg-stone-200 dark:bg-slate-800" />
-            ) : (
-              <p className="text-[12px] font-semibold text-muted-foreground tracking-[0.04em]">
-                {templates.length} {t("savedPlans").toLowerCase()}
-              </p>
-            )}
-
+              (h-14 at bottom-6, see ChatFAB) on every tier: it only hides on
+              scroll below lg, so the last row must clear it on desktop too. */}
+          <TabsContent value="planner" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-24 space-y-3 sm:space-y-4 lg:space-y-5">
             {isLoadingTemplates ? (
               <PlanSwitcherSkeleton />
             ) : (
@@ -840,37 +903,23 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
               onDragEnd={handleDragEnd}
             >
               <div className="flex flex-col gap-3 lg:gap-4">
-                {/* Weekly macro summary strip — full width */}
+                {/* Plan macro summary (daily average vs daily target) — full width */}
                 {isLoadingTemplates || isLoadingPlan ? (
-                  <WeeklyMacroStripSkeleton />
+                  <PlanMacroSummarySkeleton />
                 ) : (
-                  editingTemplate && (
-                    <>
-                      <WeeklyMacroStrip template={editingTemplate} />
-                      {/* Daily-average micronutrient totals — full width */}
-                      <MicronutrientPanel
-                        variant="aggregate"
-                        micros={editingTemplate.averageMicros}
-                        reference={reference}
-                      />
-                    </>
-                  )
+                  editingTemplate && <PlanMacroSummary template={editingTemplate} />
                 )}
                 {/* Unified control panel wrapper — phones get these controls in the
                     toolbar's view options drawer; tablets get a bare compact row */}
                 <div
                   ref={controlsRef}
-                  className="hidden sm:block relative lg:sticky lg:top-[var(--planner-toolbar-h,78px)] z-20 lg:pt-5 lg:pb-3 bg-background"
+                  className="hidden sm:block relative lg:sticky lg:top-[var(--planner-toolbar-h,78px)] z-20 lg:py-2 bg-background"
                 >
-                  {/* Unified control panel: Search + Categories + Layout + Density */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 lg:p-4 lg:bg-card lg:border lg:border-border lg:rounded-xl lg:shadow-sm lg:hover:shadow-md lg:transition-all lg:duration-300">
-                    {/* Left: Search & Category Filters — desktop only; on tablet they
-                        live in the collapsible recipe panel, on phones in the picker */}
-                    <div className="hidden lg:flex lg:flex-row lg:items-center gap-3 flex-1 max-w-2xl w-full">
-                      {recipeFilters}
-                    </div>
-
-                    {/* Right: Layout & Density controls */}
+                  {/* View controls: Layout + Density + Servings. The recipe search and
+                      category filters live with the recipes they filter: the desktop
+                      sidebar, the tablet recipe panel, and the phone picker. With only
+                      view controls left, a bare right-aligned row replaces the card. */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between lg:justify-end gap-4">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       {/* Layout switcher (sm+; phones pick Stack/Split in the view options drawer) */}
                       <div className="flex gap-0.5 p-0.5 bg-muted border border-border rounded-lg">
@@ -972,7 +1021,7 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
                     </button>
                     {showRecipePanel && (
                       <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-                        <div className="flex flex-row items-center gap-3">{recipeFilters}</div>
+                        <div className="flex flex-row items-center gap-3">{renderRecipeFilters()}</div>
                         <div className="h-[40dvh] min-h-[240px]">
                           <RecipeLibrary
                             dense={density === "compact"}
@@ -988,18 +1037,21 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
 
                 {/* 2-column grid: recipe library + meal layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-[18px] items-start">
-                  {/* Recipe library sidebar — drag source, desktop widths only. */}
+                  {/* Recipe library sidebar — drag source, desktop widths only. A flex
+                      column so the list takes whatever height the header and filters
+                      leave and scrolls inside the sidebar. */}
                   {tier === "desktop" && (
-                    <div className="bg-card border border-border rounded-xl p-4 lg:h-[calc(100dvh-var(--planner-toolbar-h,78px)-var(--planner-controls-h,100px)-32px)] lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10">
-                      <div className="mb-2.5">
+                    <div className="flex flex-col bg-card border border-border rounded-xl p-4 lg:h-[calc(100dvh-var(--planner-toolbar-h,78px)-var(--planner-controls-h,100px)-32px)] lg:sticky lg:top-[calc(var(--planner-toolbar-h,78px)+var(--planner-controls-h,100px))] z-10">
+                      <div className="shrink-0">
                         <div className="font-display text-[17px] font-semibold text-foreground">
                           {t("recipes")}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {touchFirst ? t("holdToDrag") : t("dragToSlot")}
                         </div>
+                        <div className="flex flex-col gap-2 mt-3">{renderRecipeFilters(true)}</div>
                       </div>
-                      <div className="h-[calc(100%-60px)] pt-2.5">
+                      <div className="flex-1 min-h-0 pt-3">
                         <RecipeLibrary
                           dense={density === "compact"}
                           searchQuery={searchQuery}
@@ -1061,6 +1113,14 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
                             onViewRecipeDetail={setSelectedRecipeIdForDetail}
                           />
                         )}
+                        {/* Daily-average micronutrient totals — after the days so
+                            the plan starts right below the summary and controls */}
+                        <MicronutrientPanel
+                          variant="aggregate"
+                          micros={editingTemplate.averageMicros}
+                          reference={reference}
+                          className="mt-3 lg:mt-4"
+                        />
                       </>
                     ) : (
                       <div className="flex items-center justify-center py-16 text-sm text-muted-foreground italic">
@@ -1100,12 +1160,12 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
           </TabsContent>
 
           {/* Calendar tab */}
-          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10 space-y-6">
+          <TabsContent value="calendar" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-24 space-y-6">
             <ScheduleCalendar templates={templates} onUpdate={loadTemplates} />
           </TabsContent>
 
           {/* Discover tab: browse other users' public plans */}
-          <TabsContent value="discover" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-10">
+          <TabsContent value="discover" className="px-4 sm:px-6 lg:px-10 pt-4 lg:pt-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] lg:pb-24">
             <PublicPlans
               onDuplicated={(id) => {
                 loadTemplates({ showLoading: false });
