@@ -1,7 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
+import { recipeHref } from "@/lib/recipe-back-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +62,12 @@ const getMealLabel = (mealType: string) => {
   return mealType.charAt(0).toUpperCase() + mealType.slice(1);
 };
 
+// The row bleeds 8px past the content edge (-mx-2) so its hover background
+// has even padding on both sides while the title lines up with the meal-type
+// label (icon 14px + gap 8px) and the kcal stays on the card's content edge.
+const mealRowClass =
+  "-mx-2 flex items-center justify-between rounded-lg py-1.5 pl-7.5 pr-2 pointer-coarse:min-h-11";
+
 export function ActivePlanPreview({
   templateId,
   templateName,
@@ -72,6 +79,7 @@ export function ActivePlanPreview({
   selectedMeals = [],
 }: ActivePlanPreviewProps) {
   const t = useTranslations("dashboard.activePlan");
+  const locale = useLocale();
 
   // Generate mini calendar days (3 before today, today, 3 after)
   const today = new Date();
@@ -196,21 +204,39 @@ export function ActivePlanPreview({
                         {getMealLabel(mealType)}
                       </span>
                     </div>
-                    {meals.map((meal) => (
-                      <div
-                        key={meal.id}
-                        className="flex items-center justify-between pl-5 py-1.5 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
-                      >
-                        <span className="text-sm text-foreground truncate flex-1">
-                          {meal.recipe?.title || t("noRecipe")}
-                        </span>
-                        {meal.recipe?.calories && (
-                          <span className="text-xs text-muted-foreground font-mono ml-2">
-                            {meal.recipe.calories} {t("kcalUnit")}
+                    {meals.map((meal) => {
+                      const content = (
+                        <>
+                          <span className="text-sm text-foreground truncate flex-1">
+                            {meal.recipe?.title || t("noRecipe")}
                           </span>
-                        )}
-                      </div>
-                    ))}
+                          {/* Recipe calories are per serving: scale by the
+                              meal's servings, like the totals above. */}
+                          {meal.recipe?.calories ? (
+                            <span className="text-xs text-muted-foreground font-mono ml-2">
+                              {Math.round(meal.recipe.calories * meal.servings)} {t("kcalUnit")}
+                            </span>
+                          ) : null}
+                        </>
+                      );
+
+                      return meal.recipe ? (
+                        <Link
+                          key={meal.id}
+                          href={recipeHref(locale, meal.recipe.id, "/dashboard")}
+                          className={cn(
+                            mealRowClass,
+                            "outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                          )}
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div key={meal.id} className={mealRowClass}>
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })}
