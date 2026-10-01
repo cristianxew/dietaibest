@@ -54,13 +54,14 @@ export function AssistantCapabilityCard() {
   return (
     <div
       role="complementary"
-      aria-label="DietAI Assistant"
+      aria-label={t("regionLabel")}
       className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-2xl border border-ai-200/60 dark:border-ai-800/40 bg-card p-4 shadow-xl shadow-stone-900/10"
     >
+      {/* 26px visually; the ::after hit slop makes it 44px on touch. */}
       <button
         onClick={dismiss}
         aria-label={t("dismiss")}
-        className="absolute right-2 top-2 rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        className="absolute right-2 top-2 rounded-full p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors pointer-coarse:after:absolute pointer-coarse:after:-inset-[9px] pointer-coarse:after:content-['']"
       >
         <X size={14} />
       </button>

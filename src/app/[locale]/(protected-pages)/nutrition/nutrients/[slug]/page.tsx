@@ -77,7 +77,7 @@ export default async function NutrientDetailPage({
           >
             <div className="space-y-2">
               <Icon className={cn("w-10 h-10", ACCENT_ICON[entry.accent])} />
-              <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight">
+              <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
                 {name}
               </h1>
               <p className="text-muted-foreground max-w-md leading-relaxed">

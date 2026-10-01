@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import {
-  GraduationCap,
   Swords,
   CircleGauge,
   BookOpenText,
@@ -79,15 +78,7 @@ export default async function NutritionHubPage() {
       <PageContainer className="space-y-8">
         {/* Header */}
         <div className="space-y-3 animate-fade-up">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-brand-100 to-brand-50 dark:from-brand-500/20 dark:to-brand-500/10 border border-brand-200/50 dark:border-brand-500/20">
-              <GraduationCap className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-            </div>
-            <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-widest">
-              {t("kicker")}
-            </span>
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
             {t("title")}
           </h1>
           <p className="text-muted-foreground max-w-lg leading-relaxed">

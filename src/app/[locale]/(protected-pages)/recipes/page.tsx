@@ -42,10 +42,7 @@ export default async function RecipesPage({
         {/* Header — below lg the "Add recipe" action sits here instead of in the toolbar */}
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <span className="text-xs tracking-widest text-brand-500 uppercase mb-1">
-              {t("libraryEyebrow")}
-            </span>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
+            <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
               {t("title") || "My Recipes"}
             </h1>
           </div>

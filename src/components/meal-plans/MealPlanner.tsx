@@ -750,19 +750,11 @@ export function MealPlanner({ reference, banner }: MealPlannerProps) {
       >
         {banner}
         {/* Hero Header — below lg the page actions sit here, right of the title
-            (recipes pattern); phones drop the icon badge and description */}
+            (recipes pattern); phones drop the description */}
         <div className="px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 lg:pt-8 bg-background">
           <div className="flex items-end justify-between gap-4 pb-3 sm:pb-5">
             <div className="min-w-0 space-y-0.5 sm:space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="hidden lg:flex w-[30px] h-[30px] rounded-lg bg-brand-500/[0.14] items-center justify-center flex-shrink-0">
-                  <CalendarDays className="w-[15px] h-[15px] text-brand-500 dark:text-brand-600" />
-                </div>
-                <span className="text-xs lg:font-semibold text-brand-500 dark:text-brand-600 uppercase tracking-widest">
-                  {t("mealPlanner")}
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-bold lg:font-semibold text-foreground tracking-tight">
+              <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
                 {t("title")}
               </h1>
               {/* Onboarding copy: only for users with no plans yet, so the plan

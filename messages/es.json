@@ -195,26 +195,26 @@
     },
     "settingsHeader": {
       "title": "Configuración",
-      "subtitle": "Gestiona tus preferencias y automatizaciones de la aplicación",
-      "section": "Preferencias"
+      "subtitle": "Gestiona tus preferencias y automatizaciones de la aplicación"
     }
   },
   "dashboard": {
-    "dashboardLabel": "Panel de Control",
     "planActive": "Plan Activo",
     "dayOne": "Día 1",
+    "proBadge": "Pro",
+    "loadError": "No se pudieron cargar los datos del panel.",
     "greeting": {
       "morning": "Buenos días",
       "afternoon": "Buenas tardes",
       "evening": "Buenas noches",
       "default": "Bienvenido de nuevo"
     },
-    "subtitle": {
-      "new": "Comencemos tu viaje nutricional hoy",
-      "returning": "Tu panel personalizado de planificación de comidas"
-    },
     "todaysMacros": {
-      "title": "Nutrición de Hoy",
+      "plannedToday": "Planificado para hoy",
+      "plannedForDay": "Planificado para el día {day}",
+      "ofCalorieTarget": "{progress, number, ::percent} de {target, number} kcal",
+      "calorieShares": "Proteína {protein, number, ::percent}, carbohidratos {carbs, number, ::percent}, grasa {fat, number, ::percent} de las calorías",
+      "gramUnit": "g",
       "noTarget": "Establecer objetivos",
       "protein": "Proteína",
       "carbs": "Carbohidratos",
@@ -245,6 +245,10 @@
       "viewAllPlans": "Ver Todos los Planes",
       "noMealsToday": "No hay comidas programadas para hoy",
       "noRecipe": "Sin receta",
+      "eyebrow": "Plan activo",
+      "dayMeals": "Comidas del día {day}",
+      "calendarDay": "{date}, día {day} de {total} del plan",
+      "calendarDayOutside": "{date}, fuera del plan",
       "kcalUnit": "kcal"
     },
     "recentRecipes": {
@@ -254,6 +258,8 @@
       "noRecipesDescription": "Crea o importa desde cualquier sitio web de recetas",
       "createRecipe": "Crear Receta",
       "importRecipe": "Importar desde URL",
+      "scrollLeft": "Desplazar a la izquierda",
+      "scrollRight": "Desplazar a la derecha",
       "kcal": "kcal"
     },
     "quickStats": {
@@ -280,7 +286,17 @@
       "trendUp": "Subiendo",
       "trendDown": "Bajando",
       "trendStable": "Estable",
-      "targetLabel": "Meta"
+      "targetLabel": "Meta",
+      "unitKcal": "kcal",
+      "unitGrams": "g",
+      "noMeals": "Sin comidas planificadas",
+      "toggleLabel": "Nutriente a mostrar",
+      "toggle": {
+        "calories": "Kcal",
+        "protein": "Proteína",
+        "carbs": "Carbos",
+        "fat": "Grasa"
+      }
     },
     "smartActions": {
       "addFirstRecipe": "Añade Tu Primera Receta",
@@ -439,7 +455,6 @@
     "firstPage": "Primera página",
     "lastPage": "Última página",
     "goToPage": "Ir a:",
-    "libraryEyebrow": "Biblioteca de recetas",
     "gridView": "Cuadrícula",
     "listView": "Lista",
     "totalTime": "Total",
@@ -1093,7 +1108,6 @@
   },
   "nutritionHub": {
     "myWeek": {
-      "kicker": "Tu Semana",
       "title": "Arregla Mi Semana",
       "description": "Tu semana planificada, medida contra tus objetivos personales — y lo primero que conviene cambiar.",
       "hero": {
@@ -1151,7 +1165,6 @@
       "basis": { "personalized": "Objetivos personalizados", "generic": "Valores diarios genéricos" }
     },
     "hub": {
-      "kicker": "Centro de Aprendizaje",
       "title": "Conoce lo que hay en tu plato",
       "description": "Compara alimentos, mide tus comidas frente a tu día y aprende qué hace cada nutriente — para que cada bocado sea una decisión consciente.",
       "faceoff": {
@@ -1226,7 +1239,6 @@
       "onlyOneHas": "Solo {winner} aporta {nutrient}"
     },
     "vsDay": {
-      "kicker": "Tu Día",
       "title": "Comida vs Tu Día",
       "description": "Elige un alimento o una de tus recetas y descubre cuánto de tus necesidades diarias cubre realmente.",
       "pickPrompt": "¿Qué vas a comer?",
@@ -1252,7 +1264,6 @@
     },
     "encyclopedia": {
       "meta": {
-        "kicker": "Aprender",
         "title": "Enciclopedia de Nutrientes",
         "description": "Cada nutriente tiene un trabajo. Aprende qué hace, por qué importa y dónde encontrarlo.",
         "dailyTarget": "objetivo diario",
@@ -1395,7 +1406,6 @@
       }
     },
     "swaps": {
-      "kicker": "Mejorar",
       "title": "Cambios Inteligentes",
       "description": "Cambios simples con una ganancia nutricional real verificada con datos del USDA. Pequeños cambios, gran recompensa acumulada.",
       "insteadOf": "En lugar de",
@@ -1417,7 +1427,6 @@
       }
     },
     "compare": {
-      "kicker": "Comparar",
       "title": "Duelo de Alimentos",
       "description": "Elige dos contendientes — cualquier alimento del USDA o una de tus recetas — y descubre su historia nutricional completa, lado a lado.",
       "slotA": "Contendiente A",
@@ -1485,7 +1494,6 @@
     },
     "calculator": {
       "page": {
-        "kicker": "Nutrición",
         "title": "Calculadora Nutricional",
         "description": "Analiza los ingredientes de una receta y calcula información nutricional precisa con USDA FoodData Central."
       },
@@ -1796,7 +1804,8 @@
       "dashboard": {
         "title": "Tu asistente puede ayudarte",
         "subtitle": "Toca una sugerencia para probarla en el chat.",
-        "dismiss": "Cerrar"
+        "dismiss": "Cerrar",
+        "regionLabel": "Asistente de DietAI"
       }
     },
     "proGate": {

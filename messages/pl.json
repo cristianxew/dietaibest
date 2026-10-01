@@ -195,21 +195,22 @@
     }
   },
   "dashboard": {
-    "dashboardLabel": "Panel Kontrolny",
     "planActive": "Plan Aktywny",
     "dayOne": "Dzień 1",
+    "proBadge": "Pro",
+    "loadError": "Nie udało się wczytać danych panelu.",
     "greeting": {
       "morning": "Dzień dobry",
       "afternoon": "Dzień dobry",
       "evening": "Dobry wieczór",
       "default": "Witaj ponownie"
     },
-    "subtitle": {
-      "new": "Zacznijmy Twoją podróż żywieniową już dziś",
-      "returning": "Twój spersonalizowany panel planowania posiłków"
-    },
     "todaysMacros": {
-      "title": "Dzisiejsze Odżywianie",
+      "plannedToday": "Zaplanowane na dziś",
+      "plannedForDay": "Zaplanowane na dzień {day}",
+      "ofCalorieTarget": "{progress, number, ::percent} z {target, number} kcal",
+      "calorieShares": "Białko {protein, number, ::percent}, węglowodany {carbs, number, ::percent}, tłuszcz {fat, number, ::percent} kalorii",
+      "gramUnit": "g",
       "noTarget": "Ustaw cele",
       "protein": "Białko",
       "carbs": "Węglowodany",
@@ -240,6 +241,10 @@
       "viewAllPlans": "Zobacz Wszystkie Plany",
       "noMealsToday": "Brak zaplanowanych posiłków na dziś",
       "noRecipe": "Brak przepisu",
+      "eyebrow": "Aktywny plan",
+      "dayMeals": "Posiłki na dzień {day}",
+      "calendarDay": "{date}, dzień planu {day} z {total}",
+      "calendarDayOutside": "{date}, poza planem",
       "kcalUnit": "kcal"
     },
     "recentRecipes": {
@@ -249,6 +254,8 @@
       "noRecipesDescription": "Utwórz lub zaimportuj z dowolnej strony z przepisami",
       "createRecipe": "Utwórz Przepis",
       "importRecipe": "Importuj z URL",
+      "scrollLeft": "Przewiń w lewo",
+      "scrollRight": "Przewiń w prawo",
       "kcal": "kcal"
     },
     "quickStats": {
@@ -275,7 +282,17 @@
       "trendUp": "Wzrost",
       "trendDown": "Spadek",
       "trendStable": "Stabilny",
-      "targetLabel": "Cel"
+      "targetLabel": "Cel",
+      "unitKcal": "kcal",
+      "unitGrams": "g",
+      "noMeals": "Brak zaplanowanych posiłków",
+      "toggleLabel": "Wyświetlany składnik",
+      "toggle": {
+        "calories": "Kcal",
+        "protein": "Białko",
+        "carbs": "Węgl.",
+        "fat": "Tłuszcz"
+      }
     },
     "smartActions": {
       "addFirstRecipe": "Dodaj Swój Pierwszy Przepis",
@@ -434,7 +451,6 @@
     "firstPage": "Pierwsza strona",
     "lastPage": "Ostatnia strona",
     "goToPage": "Przejdź do:",
-    "libraryEyebrow": "Biblioteka przepisów",
     "gridView": "Siatka",
     "listView": "Lista",
     "totalTime": "Razem",
@@ -1088,7 +1104,6 @@
   },
   "nutritionHub": {
     "myWeek": {
-      "kicker": "Twój Tydzień",
       "title": "Napraw Mój Tydzień",
       "description": "Twój zaplanowany tydzień zmierzony względem Twoich osobistych celów — i to, co warto zmienić najpierw.",
       "hero": {
@@ -1146,7 +1161,6 @@
       "basis": { "personalized": "Cele spersonalizowane", "generic": "Ogólne wartości dzienne" }
     },
     "hub": {
-      "kicker": "Centrum Nauki",
       "title": "Wiedz, co masz na talerzu",
       "description": "Porównuj produkty, mierz posiłki względem swojego dnia i poznawaj rolę każdego składnika — aby każdy kęs był świadomym wyborem.",
       "faceoff": {
@@ -1221,7 +1235,6 @@
       "onlyOneHas": "Tylko {winner} zawiera: {nutrient}"
     },
     "vsDay": {
-      "kicker": "Twój Dzień",
       "title": "Posiłek vs Twój Dzień",
       "description": "Wybierz produkt lub własny przepis i zobacz, jaką część dziennego zapotrzebowania naprawdę pokrywa.",
       "pickPrompt": "Co jesz?",
@@ -1247,7 +1260,6 @@
     },
     "encyclopedia": {
       "meta": {
-        "kicker": "Ucz się",
         "title": "Encyklopedia Składników",
         "description": "Każdy składnik odżywczy ma swoje zadanie. Dowiedz się, co robi, dlaczego ma znaczenie i gdzie go znaleźć.",
         "dailyTarget": "cel dzienny",
@@ -1390,7 +1402,6 @@
       }
     },
     "swaps": {
-      "kicker": "Ulepszaj",
       "title": "Mądre Zamiany",
       "description": "Proste zamiany z realną, zweryfikowaną w danych USDA korzyścią odżywczą. Małe zmiany, duży skumulowany efekt.",
       "insteadOf": "Zamiast",
@@ -1412,7 +1423,6 @@
       }
     },
     "compare": {
-      "kicker": "Porównaj",
       "title": "Pojedynek Produktów",
       "description": "Wybierz dwóch zawodników — dowolny produkt USDA lub własny przepis — i poznaj pełną historię odżywczą, obok siebie.",
       "slotA": "Zawodnik A",
@@ -1480,7 +1490,6 @@
     },
     "calculator": {
       "page": {
-        "kicker": "Odżywianie",
         "title": "Kalkulator Żywieniowy",
         "description": "Analizuj składniki przepisu i obliczaj dokładne wartości odżywcze dzięki USDA FoodData Central."
       },
@@ -1791,7 +1800,8 @@
       "dashboard": {
         "title": "Twój asystent może pomóc",
         "subtitle": "Dotknij sugestii, aby wypróbować ją na czacie.",
-        "dismiss": "Zamknij"
+        "dismiss": "Zamknij",
+        "regionLabel": "Asystent DietAI"
       }
     },
     "proGate": {

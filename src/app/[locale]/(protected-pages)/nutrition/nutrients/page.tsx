@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { BookOpenText } from "lucide-react";
 import { PageContainer } from "@/components/ui/page-container";
 import { ENCYCLOPEDIA } from "@/lib/nutrients/encyclopedia";
 import { computeRdaProfile } from "@/lib/nutrients/rda";
@@ -25,15 +24,7 @@ export default async function NutrientsIndexPage() {
 
       <PageContainer className="space-y-8">
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-gold-100 to-gold-50 dark:from-gold-500/20 dark:to-gold-500/10 border border-gold-200/50 dark:border-gold-500/20">
-              <BookOpenText className="w-5 h-5 text-gold-600 dark:text-gold-400" />
-            </div>
-            <span className="text-xs font-semibold text-gold-600 dark:text-gold-400 uppercase tracking-widest">
-              {t("kicker")}
-            </span>
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-display font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
             {t("title")}
           </h1>
           <p className="text-muted-foreground max-w-lg leading-relaxed">

@@ -18,6 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 import { addDays, format } from "date-fns";
 import { EmptyStateIcon } from "@/components/custom-ui/EmptyStateIcon";
+import { MEAL_SLOT_META } from "@/lib/meal-slot-meta";
+import type { MealType } from "@/types/meal-plan";
 
 interface Meal {
   id: string;
@@ -58,9 +60,9 @@ const getMealIcon = (mealType: string) => {
   }
 };
 
-const getMealLabel = (mealType: string) => {
-  return mealType.charAt(0).toUpperCase() + mealType.slice(1);
-};
+/** `mealPlans` translation key for a meal type, or null for an unknown type. */
+const getMealLabelKey = (mealType: string) =>
+  MEAL_SLOT_META[mealType as MealType]?.i18nKey ?? null;
 
 // The row bleeds 8px past the content edge (-mx-2) so its hover background
 // has even padding on both sides while the title lines up with the meal-type
@@ -79,7 +81,13 @@ export function ActivePlanPreview({
   selectedMeals = [],
 }: ActivePlanPreviewProps) {
   const t = useTranslations("dashboard.activePlan");
+  const tMeal = useTranslations("mealPlans");
   const locale = useLocale();
+
+  const mealLabel = (mealType: string) => {
+    const key = getMealLabelKey(mealType);
+    return key ? tMeal(key) : mealType.charAt(0).toUpperCase() + mealType.slice(1);
+  };
 
   // Generate mini calendar days (3 before today, today, 3 after)
   const today = new Date();
@@ -96,6 +104,11 @@ export function ActivePlanPreview({
       isWithinPlan,
       dayName: format(date, "EEE").slice(0, 2),
       dayOfMonth: format(date, "d"),
+      fullDate: date.toLocaleDateString(locale, {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      }),
     });
   }
 
@@ -119,11 +132,14 @@ export function ActivePlanPreview({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1 min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t("eyebrow")}
+            </p>
             <CardTitle className="text-lg font-display font-semibold tracking-tight truncate">
               {templateName}
             </CardTitle>
             <p className="text-xs text-muted-foreground">
-              {t("day", { current: currentDayNumber, total: duration })}
+              {t("day", { current: selectedDayNumber ?? currentDayNumber, total: duration })}
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="text-xs gap-1">
@@ -136,44 +152,53 @@ export function ActivePlanPreview({
       </CardHeader>
 
       <CardContent className="pt-0 space-y-4">
-        {/* Mini Calendar */}
-        <div className="flex justify-between items-center gap-1">
-          {calendarDays.map((day, index) => (
-            <div
-              key={index}
+        {/* Mini Calendar. Each day is one button spanning its column, so the
+            hit area is as wide as the row allows and ≥ 44px tall. */}
+        <div className="flex justify-between items-stretch gap-0.5">
+          {calendarDays.map((day) => (
+            <button
+              key={day.dayNumber}
+              type="button"
+              disabled={!day.isWithinPlan}
+              aria-pressed={day.isWithinPlan ? day.isSelected : undefined}
+              aria-label={
+                day.isWithinPlan
+                  ? t("calendarDay", { date: day.fullDate, day: day.dayNumber, total: duration })
+                  : t("calendarDayOutside", { date: day.fullDate })
+              }
+              onClick={() => onSelectDay?.(day.dayNumber)}
               className={cn(
-                "flex flex-col items-center gap-1 transition-all duration-200",
+                "group/day flex flex-1 min-w-0 flex-col items-center gap-1 rounded-xl py-1 outline-none transition-all duration-200 pointer-coarse:min-h-11",
+                "focus-visible:ring-2 focus-visible:ring-ring",
+                day.isWithinPlan ? "cursor-pointer" : "cursor-default",
                 day.isToday && "scale-105"
               )}
             >
               <span
+                aria-hidden
                 className={cn(
-                  "text-[10px] uppercase tracking-wide",
+                  "text-[11px] uppercase tracking-wide",
                   day.isSelected
-                    ? "text-brand-600 dark:text-brand-400 font-semibold"
+                    ? "text-brand-700 dark:text-brand-600 font-semibold"
                     : "text-muted-foreground"
                 )}
               >
                 {day.dayName}
               </span>
-              <div
-                onClick={() => {
-                  if (day.isWithinPlan) {
-                    onSelectDay?.(day.dayNumber);
-                  }
-                }}
+              <span
+                aria-hidden
                 className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all",
+                  "w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium tabular-nums transition-all",
                   day.isSelected
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/30 cursor-pointer"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-brand-500/30"
                     : day.isWithinPlan
-                      ? "bg-stone-100 dark:bg-stone-800 text-foreground hover:opacity-80 cursor-pointer"
+                      ? "bg-stone-100 dark:bg-stone-800 text-foreground group-hover/day:opacity-80"
                       : "text-muted-foreground/50"
                 )}
               >
                 {day.dayOfMonth}
-              </div>
-            </div>
+              </span>
+            </button>
           ))}
         </div>
 
@@ -183,11 +208,13 @@ export function ActivePlanPreview({
         {/* Today's Meals */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">
-            {selectedDayNumber === currentDayNumber ? t("todaysMeals") : `Day ${selectedDayNumber} Meals`}
+            {selectedDayNumber === undefined || selectedDayNumber === currentDayNumber
+              ? t("todaysMeals")
+              : t("dayMeals", { day: selectedDayNumber })}
           </h4>
 
           {selectedMeals.length === 0 ? (
-            <p className="text-sm text-muted-foreground/70 italic">
+            <p className="text-sm text-muted-foreground italic">
               {t("noMealsToday")}
             </p>
           ) : (
@@ -201,7 +228,7 @@ export function ActivePlanPreview({
                     <div className="flex items-center gap-2">
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        {getMealLabel(mealType)}
+                        {mealLabel(mealType)}
                       </span>
                     </div>
                     {meals.map((meal) => {
@@ -213,7 +240,7 @@ export function ActivePlanPreview({
                           {/* Recipe calories are per serving: scale by the
                               meal's servings, like the totals above. */}
                           {meal.recipe?.calories ? (
-                            <span className="text-xs text-muted-foreground font-mono ml-2">
+                            <span className="text-xs text-muted-foreground tabular-nums ml-2">
                               {Math.round(meal.recipe.calories * meal.servings)} {t("kcalUnit")}
                             </span>
                           ) : null}

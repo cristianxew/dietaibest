@@ -150,6 +150,7 @@ Three font families are used across the application:
 - **Display (Playfair Display)**: Headlines, hero text, section titles, pricing, card titles - adds editorial sophistication
 - **Body (DM Sans)**: Paragraphs, descriptions, form labels, navigation links - clean and readable
 - **Mono (Geist Mono)**: Terminal displays, code snippets, technical data
+- **Data numbers** (kcal, grams, percentages in cards and charts): body sans with `tabular-nums`, not display or mono
 
 ### Font Classes
 ```css
@@ -214,6 +215,15 @@ All components should use semantic tokens rather than raw color values.
   {/* Card content */}
 </div>
 ```
+
+### Page Titles (app pages)
+Every in-app page (dashboard, recipes, recipe detail, meal plans, shopping, profile, settings, nutrition hub and its tools, nutrient detail, shared plan) uses one title style, with nothing above it: no icon tile, no uppercase eyebrow label. Content metadata (e.g. recipe category/tag badges) goes below the title. An optional `text-muted-foreground` description may follow.
+```tsx
+<h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight">
+  Page Title
+</h1>
+```
+Out of scope: sign-in/sign-up cards, the subscribe hero, and landing sections (which use the Section Header below).
 
 ### Section Headers
 ```tsx
@@ -445,7 +455,7 @@ Introduced with the meal plans responsive pass. Source of truth: `src/lib/respon
 - **Floating chat button:** the fixed chat FAB (`ChatFAB`, `h-14` at `bottom-6`) overlaps page bottoms, so scroll content ends with `pb-[calc(env(safe-area-inset-bottom)+6rem)]` below `lg` and `lg:pb-24` from `lg` up (the FAB never hides on desktop, so the last row must clear it there too). Padding only helps at the end of a page, so below `lg` the FAB also slides off-screen on scroll down and returns on scroll up (`useHideOnAnyScroll` in `src/hooks/use-hide-on-scroll.ts`, same 8px tolerance and step logic as the toolbar's `useHideOnScroll`). Pages scroll in nested containers, so it listens for `scroll` on `document` in the capture phase and tracks direction per scroll target; carousels that only scroll sideways are ignored. While hidden it is `pointer-events-none`, `inert` and `aria-hidden`; it never hides while the chat is open, near the top of the scrolled container, or from `lg` up, and `motion-reduce` drops the slide.
 - **Phone simplifications:** the meal planner offers Stack and Split on phones and hides Grid (a stored Grid choice renders as Stack via `effectiveLayout` and returns on wider tiers), and hides the header description (on wider tiers it only shows while the user has no plans). Tabs use short text-only labels on phones and icon + short label on tablets, with full labels from `lg`. Snap carousels inside `-mx-* px-*` gutters also set a matching `scroll-px-*` so snapped cards align with the gutter.
 - **Meal plans mirrors the recipes toolbar (below `lg`):** the tab bar is a sticky full-bleed `bg-background/95 backdrop-blur-md` bar that hides on scroll down via `useHideOnScroll` (`HideOnScrollBar` in `MealPlanner.tsx`, pinned while an overlay is open); tabs are a 36px segmented control with a vertical `::after` hit slop to 44px; "Create Plan" / "Generate with AI" sit in the page header; phones get layout/density/servings in a bottom `ViewOptionsDrawer` (the inline controls row shows from `sm`). Drawer chips are the shared `FilterChip` / `FilterSection` (`src/components/custom-ui/filter-chip.tsx`), also used by the recipes filters drawer. On phones Stack/Split render meals as flat rows (`MealCell variant="row"`) and slot columns start at `sm`.
-- **Text:** meaningful labels are at least 12px on touch (`touch:text-xs`). On pointer devices nothing in the meal planner (`src/components/meal-plans/`) goes below 11px (`text-[11px]`, `Chip` `xs`), and tiny labels inside `<h*>` elements (e.g. the accordion trigger in `MicronutrientPanel`) set `font-sans`, since headings inherit the display serif.
+- **Text:** meaningful labels are at least 12px on touch (`touch:text-xs`). On pointer devices nothing in the meal planner (`src/components/meal-plans/`) or the dashboard (`src/components/dashboard/`) goes below 11px (`text-[11px]`, `Chip` `xs`), and tiny labels inside `<h*>` elements (e.g. the accordion trigger in `MicronutrientPanel`) set `font-sans`, since headings inherit the display serif.
 - **Returning from a recipe:** links into a recipe page carry the page they came from as `?from=<in-app path>` (`recipeHref(locale, id, from)` / `withReturnPath` in `src/lib/recipe-back-link.ts`; meal plans pass `mealPlansReturnPath(planId)`, the dashboard `/dashboard`, chat links the page the chat is open on). The recipe page resolves "Back" with `resolveRecipeBackLink`: only same-site paths are honored (anything else falls back to the library), recipe forms are never a target, and the label is "Back to Meal Plans / Dashboard / Recipes" or a generic "Back". On phones, tapping a meal row opens its recipe page.
 - **One scroll container per page:** full-height pages with their own scroller (the meal planner) must not have siblings in `#main-content`; render extras (e.g. `PlannerNutritionBanner`) inside that scroller, or the shell scrolls too and the offset leaks into the next page.
 - **Testing:** Playwright `mobile` (iPhone 13) and `tablet` (iPad gen 7) projects run only `*.responsive.spec.ts`. The share page spec needs `E2E_SHARE_TOKEN`; the meal plans spec needs `E2E_STORAGE_STATE` (storage state of a signed-in session). Both skip without them.
@@ -494,7 +504,7 @@ Macro **identity** colours: which nutrient a number, bar, dot or chip belongs to
 
 **Where it applies:**
 - Meal planner: `MacroBar`, `DayMacros` legend dots, `PlanMacroSummary` bars, meal and recipe `Chip`s
-- Dashboard: `WeeklyMacroChart` bars and toggle dots, `CompactNutrition` donut and % labels
+- Dashboard: `WeeklyMacroChart` bars and toggle dots, `CompactNutrition` donut segments, macro labels and progress bars. Order is Calories, Protein, Carbs, Fat. The donut is sized by macro kcal (4P / 4C / 9F) and its accessible label lists each macro's calorie share; shares come from `calorieShares` in `src/lib/macro-breakdown.ts` and always add up to 100. Targets are resolved once in `getDashboardData` (`resolveMacroTargets`: active plan first, profile fallback per macro) and passed to both cards.
 - Recipes: `RecipeCard` macro chips, `MacroDisplay` (recipe page + planner sheet), import modal `Step2Nutrition` / `PreviewScreen` / `SuccessScreen`
 - Nutrition calculator: `MacrosSummary`
 

@@ -38,7 +38,7 @@ export default async function SharedMealPlanPage({
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Plan header */}
         <header className="bg-card border border-border rounded-xl px-4 sm:px-6 py-5 space-y-3">
-          <h1 className="font-display break-words text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-3xl lg:text-[2rem] font-display font-bold text-foreground tracking-tight break-words">
             {plan.name}
           </h1>
           <p className="text-sm text-muted-foreground">
